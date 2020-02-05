@@ -93,11 +93,13 @@ typedef struct
 			"**pp_payload: 0x%x, %s:%d\n",\
 			(uint32_t)*pp_payload,\
 			**pp_payload, __FILE__, __LINE__))
-#define cbor_decode_assert(expr, msgformat, ...) \
+#define cbor_decode_assert(expr, ...) \
 do { \
-	if (!expr) { \
-		printk("assertion failed at %s:%d:\n\n" #expr "\n" msgformat, \
-			__VA_ARGS__); \
+	if (!(expr)) { \
+		printk("ASSERTION \n  \"" #expr \
+			"\"\nfailed at %s:%d with message:\n  ", \
+			__FILE__, __LINE__); \
+		printk(__VA_ARGS__);\
 		return false; \
 	} \
 } while(0)

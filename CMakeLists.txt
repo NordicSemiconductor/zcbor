@@ -7,7 +7,6 @@
 set(CDDL_GEN_BASE ${CMAKE_CURRENT_LIST_DIR} CACHE FILEPATH
   "Directory of the cddl_gen repo."
   )
-message("CDDL_GEN_BASE: ${CDDL_GEN_BASE}")
 
 include(${CMAKE_CURRENT_LIST_DIR}/cmake/extensions.cmake)
 add_subdirectory(src)

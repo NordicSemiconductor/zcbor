@@ -98,7 +98,7 @@ static bool value_extract(uint8_t const **const pp_payload,
 
 	cbor_decode_trace();
 
-	cbor_decode_assert(result_len == 0, "0-length result not supported.");
+	cbor_decode_assert(result_len != 0, "0-length result not supported.\n");
 
 	FAIL_AND_DECR_IF(*p_elem_count == 0);
 	FAIL_AND_DECR_IF(*pp_payload > p_payload_end);
@@ -194,7 +194,7 @@ static bool uint32_decode(uint8_t const **const pp_payload,
 	if (!PTR_VALUE_IN_RANGE(uint32_t, p_result, p_min_value, p_max_value)) {
 		FAIL();
 	}
-	cbor_decode_print("val: %u\r\n", *p_result);
+	cbor_decode_print("val: %u\r\n", *(uint32_t *)p_result);
 	return true;
 }
 
@@ -362,8 +362,8 @@ bool any_decode(uint8_t const **const pp_payload,
 				void *p_result, void *p_min_result,
 				void *p_max_result)
 {
-	cbor_decode_assert(p_result != NULL,
-			"'any' type cannot be returned, only skipped.");
+	cbor_decode_assert(p_result == NULL,
+			"'any' type cannot be returned, only skipped.\n");
 
 	uint8_t major_type = MAJOR_TYPE(**pp_payload);
 	uint64_t value;

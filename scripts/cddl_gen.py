@@ -30,18 +30,33 @@ def sizeof(num):
         raise ValueError("Number too large (more than 64 bits).")
 
 
-# Global counter
-_counter = 0
+# Global verbose flag
+verbose = False
+
+
+# Print only if verbose
+def verbose_print(*things):
+    if verbose:
+        print(*things)
+
+
+# Pretty print only if verbose
+def verbose_pprint(*things):
+    if verbose:
+        pprint(*things)
+
+
+global_counter = 0
 
 
 # Retrieve a unique id.
 def counter(reset=False):
-    global _counter
+    global global_counter
     if reset:
-        _counter = 0
-        return _counter
-    _counter += 1
-    return _counter
+        global_counter = 0
+        return global_counter
+    global_counter += 1
+    return global_counter
 
 
 # Replace an element in a list or tuple and return the list. For use in
@@ -217,7 +232,7 @@ class CddlParser:
                 self.min_value = value
                 self.max_value = value
 
-    # Set the self.type and self.minValue and self.maxValue (or self.minSize and self.maxSize depending on the type) of
+    # Set the self.type and self.minValue and self.maxValue (or self.minSize and self.max_size depending on the type) of
     # this element. For use during CDDL parsing.
     def type_and_range(self, new_type, min_val, max_val):
         if new_type not in ["INT", "UINT", "NINT"]:
@@ -286,13 +301,13 @@ class CddlParser:
     def set_size(self, size):
         if self.type is None:
             raise TypeError("Cannot have size before value: " + str(size))
-        elif self.type == "UINT" and size not in [0, None]:
-            return self.set_size_range(0, size)
+        elif self.type == "UINT":
+            return self.set_max_size(size)
         elif self.type not in ["UINT", "BSTR", "TSTR"]:
             raise TypeError(".size cannot be applied to %s" % self.type)
         self.size = size
 
-    # Set the self.minValue and self.maxValue or self.minSize and self.maxSize of this element based on what values
+    # Set the self.minValue and self.maxValue or self.minSize and self.max_size of this element based on what values
     # can be contained within an integer of a certain size. For use during
     # CDDL parsing.
     def set_size_range(self, min_size, max_size):
@@ -304,16 +319,23 @@ class CddlParser:
                 (min_size, max_size))
         else:
             self.set_size(None)
+        self.set_min_size(min_size)
+        self.set_max_size(max_size)
 
-        if self.type == "UINT":
+    # Set self.minSize, and self.minValue if type is UINT.
+    def set_min_size(self, minSize):
+        if self.type is "UINT":
+            self.minValue = 256**min(0, abs(minSize-1))
+        self.minSize = minSize
+
+    # Set self.max_size, and self.maxValue if type is UINT.
+    def set_max_size(self, max_size):
+        if self.type is "UINT" and max_size is not None:
             if max_size > 8:
                 raise TypeError(
                     "Size too large for integer. size %d" %
                     max_size)
-        if self.type == "UINT":
-            self.min_value = 256 ** min(0, abs(min_size - 1))
-            self.max_value = 256 ** max_size - 1
-        self.min_size = min_size
+            self.maxValue = 256**max_size - 1
         self.max_size = max_size
 
     # Set the self.cbor of this element. For use during CDDL parsing.
@@ -1248,7 +1270,7 @@ def unique_types(types):
             else:
                 assert (''.join(type_names[type_name]) == ''.join(type_def[0])),\
                        ("Two elements share the type name %s, but their implementations are not identical. "
-                        + "Please change one or both names. One of them is %s") % (type_name, pprint(mtype.type_def()))
+                        + "Please change one or both names. One of them is %s") % (type_name, pformat(mtype.type_def()))
     return out_types
 
 
@@ -1319,10 +1341,6 @@ payload buffer. This is useful to reduce the size of typedefs, or to break up
 decoding. Using this mechanism is necessary when the CDDL contains self-
 referencing types, since the C type cannot be self referencing.
 
-The verbose flag turns on printing, both in the CBOR primitive decoding, and in
-the generated code. This is meant for debugging when decoding fails since the
-point at which decoding failed is not returned to the caller in normal operation.
-
 This script requires 'regex' for lookaround functionality not present in 're'.''',
         formatter_class=RawDescriptionHelpFormatter)
 
@@ -1345,7 +1363,7 @@ This script requires 'regex' for lookaround functionality not present in 're'.''
         required=False,
         action="store_true",
         default=False,
-        help="Whether the C code should include printing.")
+        help="Print more information while parsing CDDL and generating code.")
 
     return parser.parse_args()
 
@@ -1389,13 +1407,12 @@ bool cbor_{decoder.decode_func_name()}(const uint8_t * p_payload, size_t payload
 
 
 # Render the entire generated C file contents.
-def render_c_file(functions, header_file_name, entry_types, verbose):
+def render_c_file(functions, header_file_name, entry_types):
     return f"""#include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <string.h>
 
-{"#define CDDL_CBOR_VERBOSE" if verbose else ""}
 #include "cbor_decode.h"
 #include "{header_file_name}"
 
@@ -1432,9 +1449,11 @@ def main():
     # Parse command line arguments.
     args = parse_args()
     entry_type_names = args.entry_types
+    verbose = args.verbose
 
     # Read CDDL file. my_types will become a dict {name:str => definition:str}
     # for all types in the CDDL file.
+    print ("Parsing " + args.input)
     with open(args.input, 'r') as f:
         my_types = get_types(strip_comments(f.read()))
 
@@ -1455,6 +1474,10 @@ def main():
     for my_type in my_types:
         my_types[my_type].post_validate()
 
+    # Parsing is done, pretty print the result.
+    verbose_print("Parsed CDDL types:")
+    verbose_pprint(my_types)
+
     # Prepare the list of types that will have exposed decoder functions.
     entry_types = [my_types[entry] for entry in entry_type_names]
 
@@ -1469,9 +1492,9 @@ def main():
     # Create and populate the generated c and h file.
     makedirs("./" + path.dirname(args.output_c), exist_ok=True)
     with open(args.output_c, 'w') as f:
-        print("Writing to " + args.output_c)
+        print ("Writing to " + args.output_c)
         f.write(render_c_file(functions=u_funcs, header_file_name=path.basename(args.output_h),
-                              entry_types=entry_types, verbose=args.verbose))
+                              entry_types=entry_types))
     makedirs("./" + path.dirname(args.output_h), exist_ok=True)
     with open(args.output_h, 'w') as f:
         print("Writing to " + args.output_h)
