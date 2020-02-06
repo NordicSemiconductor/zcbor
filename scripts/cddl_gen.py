@@ -31,18 +31,18 @@ def sizeof(num):
 
 
 # Global verbose flag
-verbose = False
+verbose_flag = False
 
 
 # Print only if verbose
 def verbose_print(*things):
-    if verbose:
+    if verbose_flag:
         print(*things)
 
 
 # Pretty print only if verbose
 def verbose_pprint(*things):
-    if verbose:
+    if verbose_flag:
         pprint(*things)
 
 
@@ -517,9 +517,12 @@ class CddlParser:
             if self.value not in my_types.keys() or not isinstance(
                     my_types[self.value], type(self)):
                 raise TypeError("%s has not been parsed." % self.value)
-        if self.type == "ANY":
-            if self.minQ != self.maxQ:
-                raise TypeError("ambiguous use of 'any' is not supported.")
+        if self.type == "LIST":
+            for child in self.value[:-1]:
+                if child.type == "ANY":
+                    if child.minQ != child.maxQ:
+                        raise TypeError(f"ambiguous quantity of 'any' is not supported in list, "
+                                        + "except as last element:\n{str(child)}")
         if self.type == "UNION" and len(self.value) > 1:
             if any(((not child.key and child.type == "ANY") or (
                     child.key and child.key.type == "ANY")) for child in self.value):
@@ -806,10 +809,10 @@ class CodeGenerator(CddlParser):
         return self.multi_var_condition() or self.repeated_multi_var_condition()
 
     # Take a multi member type name and create a variable declaration. Make it an array if the element is repeated.
-    def add_var_name(self, var_type):
+    def add_var_name(self, var_type, full=False):
         if var_type:
             assert(var_type[-1][-1] == "}" or len(var_type) == 1), f"Expected single var: {var_type!r}"
-            var_type[-1] += " %s%s;" % (self.var_name(), "[%d]" % self.maxQ if self.maxQ != 1 else "")
+            var_type[-1] += " %s%s;" % (self.var_name(), "[%d]" % self.maxQ if full and self.maxQ != 1 else "")
         return var_type
 
     # The type for this element as a member variable.
@@ -852,12 +855,12 @@ class CodeGenerator(CddlParser):
             assert multi_var == self.repeated_multi_var_condition(
             ), f"""type: {self.type}
             multivar is {multi_var} while
-            self.repeatedMultiVarCondition() is {self.repeated_multi_var_condition()} for
+            self.repeated_multi_var_condition() is {self.repeated_multi_var_condition()} for
             decl {decl}
-            self.keyVarCondition() is {self.key_var_condition()}
+            self.key_var_condition() is {self.key_var_condition()}
             self.key is {self.key}
             self.cbor_var_condition() is {self.cbor_var_condition()}
-            self.choiceVarCondition() is {self.choice_var_condition()}
+            self.choice_var_condition() is {self.choice_var_condition()}
             self.value is {self.value}"""
         return decl
 
@@ -867,7 +870,7 @@ class CodeGenerator(CddlParser):
 
         if self.multi_var_condition():
             decl = self.add_var_name(
-                [self.repeated_type_name()] if self.repeated_type_name() is not None else [])
+                [self.repeated_type_name()] if self.repeated_type_name() is not None else [], full=True)
         else:
             decl = self.repeated_declaration()
 
@@ -888,9 +891,12 @@ class CodeGenerator(CddlParser):
     # always returns a single type with no name.
     # If full is False, only repeated part is used.
     def single_var_type(self, full=True):
-        if self.multi_member():
+        if full and self.multi_member():
             return self.enclose(
-                "struct", self.full_declaration() if full else self.repeated_declaration())
+                "struct", self.full_declaration())
+        elif not full and self.repeated_multi_var_condition():
+            return self.enclose(
+                "struct", self.repeated_declaration())
         else:
             return self.var_type()
 
@@ -1444,12 +1450,12 @@ def render_h_file(type_defs, header_guard, entry_types):
 
 
 def main():
-    global my_types, entry_type_names
+    global my_types, entry_type_names, verbose_flag
 
     # Parse command line arguments.
     args = parse_args()
     entry_type_names = args.entry_types
-    verbose = args.verbose
+    verbose_flag = args.verbose
 
     # Read CDDL file. my_types will become a dict {name:str => definition:str}
     # for all types in the CDDL file.
@@ -1499,7 +1505,8 @@ def main():
     with open(args.output_h, 'w') as f:
         print("Writing to " + args.output_h)
         f.write(render_h_file(type_defs=u_types,
-                              header_guard=path.basename(args.output_h).replace(".", "_").upper() + "__",
+                              header_guard=path.basename(args.output_h).replace(".", "_").replace("-", "_").upper()
+                                           + "__",
                               entry_types=entry_types))
 
 

@@ -37,7 +37,7 @@ COSE_Encrypt0_Tagged = any
 SUIT_Digest = [
   suit-digest-algorithm-id : $suit-digest-algorithm-ids,
   suit-digest-bytes : bstr,
-  ? suit-digest-parameters : bstr
+  ? suit-digest-parameters : any
 ]
 
 ; Named Information Hash Algorithm Identifiers

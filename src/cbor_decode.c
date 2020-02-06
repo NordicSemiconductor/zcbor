@@ -92,24 +92,25 @@ static bool value_extract(uint8_t const **const pp_payload,
 		uint8_t const *const p_payload_end, size_t *const p_elem_count,
 		void * const p_result, size_t result_len)
 {
-	uint8_t *p_u8_result  = (uint8_t *)p_result;
-	uint8_t additional = ADDITIONAL(**pp_payload);
-	(*pp_payload)++;
-
 	cbor_decode_trace();
-
 	cbor_decode_assert(result_len != 0, "0-length result not supported.\n");
 
 	FAIL_AND_DECR_IF(*p_elem_count == 0);
-	FAIL_AND_DECR_IF(*pp_payload > p_payload_end);
+	FAIL_AND_DECR_IF(*pp_payload >= p_payload_end);
+
+	uint8_t *p_u8_result  = (uint8_t *)p_result;
+	uint8_t additional = ADDITIONAL(**pp_payload);
+
+	(*pp_payload)++;
 
 	memset(p_result, 0, result_len);
+	if (additional <= VALUE_IN_HEADER) {
 #ifdef CONFIG_BIG_ENDIAN
-	p_u8_result[result_len - 1] = additional;
+		p_u8_result[result_len - 1] = additional;
 #else
-	p_u8_result[0] = additional;
+		p_u8_result[0] = additional;
 #endif /* CONFIG_BIG_ENDIAN */
-	if (additional > VALUE_IN_HEADER) {
+	} else {
 		uint32_t len = additional_len(additional);
 
 		FAIL_AND_DECR_IF(len > result_len);
@@ -122,6 +123,7 @@ static bool value_extract(uint8_t const **const pp_payload,
 			p_u8_result[i] = (*pp_payload)[len - i - 1];
 		}
 #endif /* CONFIG_BIG_ENDIAN */
+
 		(*pp_payload) += len;
 	}
 
@@ -219,7 +221,7 @@ bool uintx32_decode(uint8_t const **const pp_payload,
 }
 
 
-bool size_decode(uint8_t const **const pp_payload,
+static bool size_decode(uint8_t const **const pp_payload,
 		uint8_t const *const p_payload_end,
 		size_t *const p_elem_count,
 		size_t *p_result, size_t *p_min_value,
@@ -366,20 +368,30 @@ bool any_decode(uint8_t const **const pp_payload,
 			"'any' type cannot be returned, only skipped.\n");
 
 	uint8_t major_type = MAJOR_TYPE(**pp_payload);
-	uint64_t value;
+	uint32_t value;
+	uint32_t num_decode;
+	void *p_null_result = NULL;
 
 	if (!value_extract(pp_payload, p_payload_end,
-			p_elem_count, &value, 8)) {
-		/* Should not happen? */
+			p_elem_count, &value, sizeof(value))) {
+		/* Can happen because of p_elem_count (or p_payload_end) */
 		FAIL();
 	}
 
 	switch (major_type) {
 		case CBOR_MAJOR_TYPE_BSTR:
 		case CBOR_MAJOR_TYPE_TSTR:
-		case CBOR_MAJOR_TYPE_LIST:
-		case CBOR_MAJOR_TYPE_MAP:
 			(*pp_payload) += value;
+			break;
+		case CBOR_MAJOR_TYPE_MAP:
+			value *= 2; /* Because all members have a key. */
+			/* Fallthrough */
+		case CBOR_MAJOR_TYPE_LIST:
+			if (!multi_decode(value, value, &num_decode, any_decode,
+					pp_payload, p_payload_end, &value,
+					&p_null_result,	NULL, NULL, 0)) {
+				FAIL();
+			}
 			break;
 		default:
 			/* Do nothing */

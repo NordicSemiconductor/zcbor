@@ -7,7 +7,7 @@ By calling the python script, you can autogenerate C code that validates and dec
 The code generation is performed by the Python script cddl_gen.py in scripts/.
 The generated code depends on a CBOR decoding library (cbor_decode) in src/.
 There are tests for the code generation in tests/.
-The tests require Zephyr (If your shell is set up to build Zephyr samples, the tests should also build)
+For now the tests require Zephyr (if your shell is set up to build Zephyr samples, the tests should also build).
 
 Features
 ========
@@ -27,8 +27,8 @@ Currently, only decoding of CBOR is supported.
 Build system
 ------------
 
-There is some Cmake code available which requires Zephyr to run.
-The `target_cddl_source()` Cmake function sets up build steps necessary to call the script on the provided CDDL file, and adds the generated file as well as the cbor_decode library to your project.
+There is some CMake code available which requires Zephyr to run.
+The `target_cddl_source()` CMake function sets up build steps necessary to call the script on the provided CDDL file, and adds the generated file as well as the cbor_decode library to your project.
 As long as the `target_cddl_source()` function is called in your project, you should be able to #include the generated file and use it in your code.
 
 Usage Example
@@ -52,7 +52,7 @@ Call the Python script
 python3 <ccdlgen base>/scripts/cddl_gen.py -i pet.cddl -t Pet
 ```
 
-Or add the following line to your Cmake code:
+Or add the following line to your CMake code:
 
 ```cmake
 target_cddl_source(app pet.cddl ENTRY_TYPES Pet)

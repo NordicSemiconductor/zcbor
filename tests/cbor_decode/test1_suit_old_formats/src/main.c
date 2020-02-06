@@ -5,8 +5,8 @@
  */
 
 #include <ztest.h>
-#include "manifestm3.h"
-#include "manifestm4.h"
+#include "manifest-moran3.h"
+#include "manifest-moran4.h"
 
 
 uint8_t test_vector2[] = {
@@ -186,7 +186,7 @@ void test_2(void)
 			._OuterWrapper_textExt
 			._OuterWrapper_textExt_cbor[0]
 			._Text_tstr[0]
-			._Text_tstr[0]
+			._Text_tstr
 			.value,
 			sizeof(expected_updateDescription) - 1,
 			"Expected lorem ipsum text.");

@@ -10,8 +10,8 @@ add_subdirectory(../../.. ${PROJECT_BINARY_DIR}/cddl_gen)
 
 project(NONE)
 
-target_cddl_source(app manifestm3.cddl ENTRY_TYPES OuterWrapper)
-target_cddl_source(app manifestm4.cddl ENTRY_TYPES SUIT_Outer_Wrapper)
+target_cddl_source(app manifest-moran3.cddl ENTRY_TYPES OuterWrapper)
+target_cddl_source(app manifest-moran4.cddl ENTRY_TYPES SUIT_Outer_Wrapper)
 
 FILE(GLOB app_sources src/*.c)
 target_sources(app PRIVATE

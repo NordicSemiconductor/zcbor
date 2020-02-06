@@ -48,7 +48,7 @@ function(target_cddl_source target cddl_file)
     --oc ${c_file}
     --oh ${h_file}
     -t ${CDDL_ENTRY_TYPES}
-    $<$<BOOL:${CDDL_VERBOSE}>:"-v">
+    $<$<BOOL:${CDDL_VERBOSE}>:-v>
     DEPENDS
     ${cddl_path}
     ${CDDL_GEN_BASE}/scripts/cddl_gen.py
