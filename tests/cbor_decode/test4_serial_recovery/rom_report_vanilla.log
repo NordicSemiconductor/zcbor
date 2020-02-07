@@ -1,34 +1,34 @@
-[1/1] cd /home/oyro/git/ncs/cddl_gen/tests/cbor_decode/test4_serial_recovery/build_mcuboot1/zephyr/cmake/reports && /usr/bin/python3 /home/oyro/git/ncs/zephyr/scripts/footprint/size_report -F --objdump /usr/bin/arm-none-eabi-objdump --objcopy /usr/bin/arm-none-eabi-objcopy --nm /usr/bin/arm-none-eabi-nm -o /home/oyro/git/ncs/cddl_gen/tests/cbor_decode/test4_serial_recovery/build_mcuboot1/zephyr
-Path                                                                                    Size 
+[1/2] cd /home/oyro/git/ncs/cddl_gen/tests/cbor_decode/test4_serial_recovery/build_mcuboot1/zephyr/cmake/reports && /usr/bin/python3 /home/oyro/git/ncs/zephyr/scripts/footprint/size_report -F --objdump /opt/gnuarmemb/gcc-arm-none-eabi-8-2019-q3-update/bin/arm-none-eabi-objdump --objcopy /opt/gnuarmemb/gcc-arm-none-eabi-8-2019-q3-update/bin/arm-none-eabi-objcopy --nm /opt/gnuarmemb/gcc-arm-none-eabi-8-2019-q3-update/bin/arm-none-eabi-nm -o /home/oyro/git/ncs/cddl_gen/tests/cbor_decode/test4_serial_recovery/build_mcuboot1/zephyr
+Path                                                                                    Size
 ====================================================================================================
-                                                                                       24448
-    home                                                                               24448
-      oyro                                                                             24448
-        git                                                                            24448
-          ncs                                                                          24448
-            bootloader                                                                 10470
-              mcuboot                                                                  10470
-                boot                                                                   10470
-                  boot_serial                                                           2330
-                    src                                                                 2330
-                      boot_serial.c                                                     2330
-                        boot_serial_in_dec                                               114
+                                                                                       24260
+    home                                                                               24260
+      oyro                                                                             24260
+        git                                                                            24260
+          ncs                                                                          24260
+            bootloader                                                                 10510
+              mcuboot                                                                  10510
+                boot                                                                   10510
+                  boot_serial                                                           2370
+                    src                                                                 2370
+                      boot_serial.c                                                     2370
+                        boot_serial_in_dec                                               110
                         boot_serial_input                                                160
-                        boot_serial_output                                               348
+                        boot_serial_output                                               344
                         boot_serial_start                                                172
                         bs_cbor_writer                                                    44
                         bs_empty_rsp                                                      72
                         bs_list                                                          284
                         bs_list_img_ver                                                   56
                         bs_reset                                                          20
-                        bs_upload                                                        972
+                        bs_upload                                                       1016
                         bs_writer                                                          8
-                        u32toa                                                            80
-                  bootutil                                                              6802
-                    src                                                                 6802
-                      bootutil_misc.c                                                   1092
+                        u32toa                                                            84
+                  bootutil                                                              6818
+                    src                                                                 6818
+                      bootutil_misc.c                                                   1086
                         boot_find_status                                                 112
-                        boot_flag_decode                                                  12
+                        boot_flag_decode                                                  10
                         boot_magic_compatible_check                                       32
                         boot_magic_decode                                                 24
                         boot_read_swap_size                                               54
@@ -45,32 +45,32 @@ Path                                                                            
                         boot_write_image_ok                                               14
                         boot_write_magic                                                  32
                         boot_write_swap_info                                              36
-                        boot_write_swap_size                                              34
-                        boot_write_trailer                                               104
+                        boot_write_swap_size                                              32
+                        boot_write_trailer                                               102
                         boot_write_trailer_flag                                           22
-                      image_rsa.c                                                        618
+                      image_rsa.c                                                        608
                         bootutil_cmp_rsasig                                              232
-                        bootutil_parse_rsakey                                            170
-                        bootutil_verify_sig                                              108
+                        bootutil_parse_rsakey                                            164
+                        bootutil_verify_sig                                              104
                         pss_mgf1                                                         100
                         pss_zeros                                                          8
                       image_validate.c                                                   590
                         bootutil_find_key                                                104
                         bootutil_img_hash                                                126
                         bootutil_img_validate                                            360
-                      loader.c                                                          2076
+                      loader.c                                                          2086
                         boot_check_header_erased                                          90
                         boot_complete_partial_swap                                       140
                         boot_copy_region                                                  88
                         boot_erase_region                                                  8
                         boot_go                                                           16
                         boot_image_check                                                  52
-                        boot_initialize_area                                              58
+                        boot_initialize_area                                              56
                         boot_is_header_valid                                              64
                         boot_perform_update                                               74
                         boot_prepare_image_for_update                                    360
                         boot_read_image_headers                                           54
-                        boot_read_image_size                                             162
+                        boot_read_image_size                                             174
                         boot_read_sectors                                                 44
                         boot_status_is_reset                                              34
                         boot_status_reset                                                 20
@@ -80,13 +80,13 @@ Path                                                                            
                         boot_write_status                                                102
                         boot_write_sz                                                     10
                         context_boot_go                                                  280
-                      swap_misc.c                                                        394
+                      swap_misc.c                                                        396
                         swap_erase_trailer_sectors                                       112
                         swap_read_status                                                 114
                         swap_set_copy_done                                                38
-                        swap_set_image_ok                                                 62
+                        swap_set_image_ok                                                 64
                         swap_status_init                                                  68
-                      swap_move.c                                                       1646
+                      swap_move.c                                                       1666
                         boot_move_sector_up                                              136
                         boot_read_image_header                                           184
                         boot_slots_compatible                                            180
@@ -94,24 +94,24 @@ Path                                                                            
                         boot_swap_sectors                                                180
                         fixup_revert                                                     188
                         g_last_idx                                                         4
-                        swap_read_status_bytes                                           236
+                        swap_read_status_bytes                                           252
                         swap_run                                                         276
-                        swap_status_source                                               212
+                        swap_status_source                                               216
                       tlv.c                                                              386
                         bootutil_tlv_iter_begin                                          202
                         bootutil_tlv_iter_next                                           184
-                  zephyr                                                                1338
+                  zephyr                                                                1322
                     flash_map_extended.c                                                 164
                       flash_area_erased_val                                                4
                       flash_area_id_from_multi_image_slot                                 20
                       flash_area_read_is_empty                                            44
                       flash_device_base                                                   68
                       flash_device_get_binding                                            28
-                    main.c                                                               452
+                    main.c                                                               436
                       boot_funcs                                                           8
                       do_boot                                                             60
                       log_const_mcuboot                                                    8
-                      main                                                               376
+                      main                                                               360
                     os.c                                                                  20
                       os_heap_init                                                        20
                     serial_adapter.c                                                     702
@@ -136,26 +136,26 @@ Path                                                                            
                           generated                                                        2
                             configs.c                                                      2
                               _ConfigAbsSyms                                               2
-            modules                                                                    13702
-              crypto                                                                   10420
-                mbedtls                                                                10420
-                  library                                                              10392
+            modules                                                                    13474
+              crypto                                                                   10260
+                mbedtls                                                                10260
+                  library                                                              10232
                     asn1parse.c                                                          288
                       mbedtls_asn1_get_len                                               202
                       mbedtls_asn1_get_mpi                                                48
                       mbedtls_asn1_get_tag                                                38
-                    bignum.c                                                            5534
+                    bignum.c                                                            5414
                       mbedtls_clz                                                         24
-                      mbedtls_int_div_int                                                 92
-                      mbedtls_mpi_add_abs                                                168
+                      mbedtls_int_div_int                                                 74
+                      mbedtls_mpi_add_abs                                                164
                       mbedtls_mpi_add_mpi                                                 84
-                      mbedtls_mpi_bitlen                                                  46
-                      mbedtls_mpi_cmp_abs                                                116
+                      mbedtls_mpi_bitlen                                                  44
+                      mbedtls_mpi_cmp_abs                                                114
                       mbedtls_mpi_cmp_int                                                 48
-                      mbedtls_mpi_cmp_mpi                                                144
-                      mbedtls_mpi_copy                                                   102
-                      mbedtls_mpi_div_mpi                                                936
-                      mbedtls_mpi_exp_mod                                               1180
+                      mbedtls_mpi_cmp_mpi                                                146
+                      mbedtls_mpi_copy                                                   100
+                      mbedtls_mpi_div_mpi                                                922
+                      mbedtls_mpi_exp_mod                                               1116
                       mbedtls_mpi_free                                                    36
                       mbedtls_mpi_get_bit                                                 32
                       mbedtls_mpi_grow                                                    82
@@ -166,7 +166,7 @@ Path                                                                            
                       mbedtls_mpi_mul_mpi                                                202
                       mbedtls_mpi_read_binary                                             98
                       mbedtls_mpi_shift_l                                                164
-                      mbedtls_mpi_shift_r                                                144
+                      mbedtls_mpi_shift_r                                                142
                       mbedtls_mpi_size                                                    12
                       mbedtls_mpi_sub_abs                                                118
                       mbedtls_mpi_sub_mpi                                                 88
@@ -174,17 +174,17 @@ Path                                                                            
                       mbedtls_mpi_zeroize                                                 10
                       mpi_bigendian_to_host                                               48
                       mpi_montg_init                                                      46
-                      mpi_montmul                                                        220
+                      mpi_montmul                                                        218
                       mpi_montred                                                         32
-                      mpi_mul_hlp                                                        834
-                      mpi_sub_hlp                                                         78
+                      mpi_mul_hlp                                                        824
+                      mpi_sub_hlp                                                         76
                       mpi_uint_bigendian_to_host                                           8
                       mpi_uint_bigendian_to_host_c                                        36
-                    memory_buffer_alloc.c                                                912
-                      buffer_alloc_calloc                                                344
-                      buffer_alloc_free                                                  312
+                    memory_buffer_alloc.c                                                904
+                      buffer_alloc_calloc                                                336
+                      buffer_alloc_free                                                  308
                       mbedtls_memory_buffer_alloc_init                                   104
-                      verify_chain                                                        72
+                      verify_chain                                                        76
                       verify_header                                                       80
                     platform.c                                                            68
                       mbedtls_calloc                                                      16
@@ -198,14 +198,14 @@ Path                                                                            
                     platform_util.c                                                       24
                       mbedtls_platform_zeroize                                            20
                       memset_func                                                          4
-                    rsa.c                                                                722
-                      mbedtls_rsa_check_pubkey                                            92
+                    rsa.c                                                                690
+                      mbedtls_rsa_check_pubkey                                            84
                       mbedtls_rsa_free                                                   112
                       mbedtls_rsa_import                                                 116
                       mbedtls_rsa_init                                                    28
                       mbedtls_rsa_public                                                 132
                       mbedtls_rsa_set_padding                                             10
-                      rsa_check_context                                                  232
+                      rsa_check_context                                                  208
                     sha256.c                                                            2844
                       K                                                                  256
                       mbedtls_internal_sha256_process                                   1960
@@ -217,9 +217,9 @@ Path                                                                            
                     __config_sys_init__mbedtls_init0                                      12
                     __device_sys_init__mbedtls_init0                                      12
                     _mbedtls_init                                                          4
-              hal                                                                        770
-                nordic                                                                   770
-                  nrfx                                                                   770
+              hal                                                                        710
+                nordic                                                                   710
+                  nrfx                                                                   710
                     drivers                                                              230
                       src                                                                230
                         nrfx_nvmc.c                                                      230
@@ -236,21 +236,20 @@ Path                                                                            
                           nvmc_readonly_mode_set                                          16
                           nvmc_word_write                                                 24
                           nvmc_write_mode_set                                             16
-                    mdk                                                                  540
-                      nrf9160_erratas.h                                                  148
-                        errata_14                                                         36
-                        errata_15                                                         36
-                        errata_20                                                         36
-                        errata_31                                                         20
-                        errata_6                                                          20
-                      system_nrf9160.c                                                   392
-                        SystemCoreClockUpdate                                             16
-                        SystemInit                                                       328
-                        uicr_HFXOCNT_erased                                               24
-                        uicr_HFXOSRC_erased                                               24
-              lib                                                                       2512
-                tinycbor                                                                2512
-                  src                                                                   2512
+                    mdk                                                                  480
+                      nrf53_erratas.h                                                    224
+                        nrf53_errata_42                                                   36
+                        nrf53_errata_46                                                   36
+                        nrf53_errata_49                                                   36
+                        nrf53_errata_55                                                   44
+                        nrf53_errata_64                                                   36
+                        nrf53_errata_69                                                   36
+                      system_nrf5340_application.c                                       256
+                        SystemCoreClockUpdate                                             32
+                        SystemInit                                                       224
+              lib                                                                       2504
+                tinycbor                                                                2504
+                  src                                                                   2504
                     cbor_buf_reader.c                                                    208
                       cbor_buf_reader_cmp                                                 24
                       cbor_buf_reader_cpy                                                 18
@@ -260,56 +259,56 @@ Path                                                                            
                       cbuf_buf_reader_get32                                               28
                       cbuf_buf_reader_get64                                               30
                       cbuf_buf_reader_get8                                                 6
-                    cborencoder.c                                                        762
-                      cbor_encode_int                                                    168
+                    cborencoder.c                                                        740
+                      cbor_encode_int                                                    146
                       cbor_encode_text_string                                             16
-                      cbor_encode_uint                                                   128
-                      cbor_encoder_close_container                                        72
+                      cbor_encode_uint                                                   122
+                      cbor_encoder_close_container                                        74
                       cbor_encoder_create_array                                           10
                       cbor_encoder_create_map                                             32
                       cbor_encoder_cust_writer_init                                       10
-                      create_container                                                   176
-                      encode_string                                                      150
-                    cborparser.c                                                        1542
+                      create_container                                                   178
+                      encode_string                                                      152
+                    cborparser.c                                                        1556
                       _cbor_value_copy_string                                             76
                       _cbor_value_decode_int64_internal                                   50
-                      _cbor_value_extract_number                                         150
+                      _cbor_value_extract_number                                         170
                       advance_internal                                                    46
-                      advance_recursive                                                  128
+                      advance_recursive                                                  126
                       cbor_parser_cust_reader_init                                        28
                       cbor_value_advance                                                  20
                       cbor_value_calculate_string_length                                  20
                       cbor_value_enter_container                                         156
                       cbor_value_leave_container                                          12
-                      extract_length                                                      50
+                      extract_length                                                      52
                       get_string_chunk                                                   188
                       get_string_chunk_update                                             40
                       is_fixed_type                                                       36
                       iterate_noop                                                         4
-                      iterate_string_chunks                                              150
+                      iterate_string_chunks                                              146
                       preparse_next_value                                                 76
-                      preparse_value                                                     312
-:                                                                                        584
+                      preparse_value                                                     310
+:                                                                                        616
   SystemCoreClock                                                                          4
-  _sw_isr_table                                                                          520
+  _sw_isr_table                                                                          552
   boot_img_magic                                                                          16
   bootutil_key_cnt                                                                         4
   bootutil_keys                                                                            8
-  config_levels.8368                                                                      20
+  config_levels.9103                                                                      20
   mbedtls_exit                                                                             4
   mpu_config                                                                               8
-arch                                                                                    2148
-  arm                                                                                   1888
-    core                                                                                1888
-      aarch32                                                                           1888
-        cortex_m                                                                        1668
+arch                                                                                    2156
+  arm                                                                                   1880
+    core                                                                                1880
+      aarch32                                                                           1880
+        cortex_m                                                                        1660
           cmse                                                                            20
             arm_core_cmse.c                                                               20
               arm_cmse_mpu_region_get                                                     20
-          fault.c                                                                        538
+          fault.c                                                                        530
             bus_fault                                                                     84
             fault_handle                                                                  54
-            hard_fault                                                                   100
+            hard_fault                                                                    92
             mem_manage_fault                                                              72
             memory_fault_recoverable                                                       4
             usage_fault                                                                   48
@@ -355,16 +354,24 @@ arch                                                                            
           arch_swap                                                                       52
         thread.c                                                                           8
           configure_builtin_stack_guard                                                    8
-  common                                                                                 260
-    isr_tables.c                                                                         260
-      _irq_vector_table                                                                  260
-drivers                                                                                 4936
-  clock_control                                                                          788
-    nrf_power_clock.c                                                                    788
+  common                                                                                 276
+    isr_tables.c                                                                         276
+      _irq_vector_table                                                                  276
+boards                                                                                    82
+  arm                                                                                     82
+    nrf5340_dk_nrf5340                                                                    82
+      nrf5340_cpunet_reset.c                                                              82
+        __config_sys_init_remoteproc_mgr_boot0                                            12
+        __device_sys_init_remoteproc_mgr_boot0                                            12
+        remoteproc_mgr_boot                                                               18
+        remoteproc_mgr_config                                                             40
+drivers                                                                                 5336
+  clock_control                                                                          786
+    nrf_power_clock.c                                                                    786
       __config_clock_nrf                                                                  12
       __device_clock_nrf                                                                  12
       clk_init                                                                            64
-      clkstarted_handle                                                                   38
+      clkstarted_handle                                                                   36
       clock_async_start                                                                  172
       clock_control_api                                                                   20
       clock_event_check_and_clean                                                         40
@@ -381,16 +388,16 @@ drivers                                                                         
       list_get                                                                            62
       log_const_clock_control                                                              8
       nrf_power_clock_isr                                                                 64
-  flash                                                                                  612
+  flash                                                                                  614
     flash_page_layout.c                                                                   84
       flash_page_foreach                                                                  84
-    soc_flash_nrf.c                                                                      528
+    soc_flash_nrf.c                                                                      530
       __config_nrf_flash                                                                  12
       __device_nrf_flash                                                                  12
       erase                                                                               24
       erase_op                                                                            36
       flash_nrf_api                                                                       24
-      flash_nrf_erase                                                                    106
+      flash_nrf_erase                                                                    108
       flash_nrf_pages_layout                                                              16
       flash_nrf_read                                                                      74
       flash_nrf_write                                                                     96
@@ -400,40 +407,43 @@ drivers                                                                         
       shift_write_context                                                                 20
       write                                                                               22
       write_op                                                                            38
-  gpio                                                                                  1644
-    gpio_nrfx.c                                                                         1644
+  gpio                                                                                  1864
+    gpio_nrfx.c                                                                         1864
       __config_gpio_nrfx_p0                                                               12
+      __config_gpio_nrfx_p1                                                               12
       __device_gpio_nrfx_p0                                                               12
-      cfg_level_pins                                                                     108
-      check_level_trigger_pins                                                            96
-      gpio_nrfx_config                                                                   392
+      __device_gpio_nrfx_p1                                                               12
+      cfg_level_pins                                                                     124
+      check_level_trigger_pins                                                           112
+      gpio_nrfx_config                                                                   424
       gpio_nrfx_drv_api_funcs                                                             28
       gpio_nrfx_init                                                                      56
       gpio_nrfx_manage_callback                                                           96
       gpio_nrfx_p0_cfg                                                                     8
+      gpio_nrfx_p1_cfg                                                                     8
       gpio_nrfx_pin_disable_callback                                                      10
       gpio_nrfx_pin_enable_callback                                                       10
       gpio_nrfx_pin_manage_callback                                                       82
       gpio_nrfx_read                                                                      48
       gpio_nrfx_write                                                                     66
-      gpiote_channel_alloc                                                               136
+      gpiote_channel_alloc                                                               140
       gpiote_channel_free                                                                 84
-      gpiote_event_handler                                                               212
-      gpiote_pin_int_cfg                                                                 188
-  serial                                                                                1372
-    uart_nrfx_uarte.c                                                                   1372
+      gpiote_event_handler                                                               316
+      gpiote_pin_int_cfg                                                                 204
+  serial                                                                                1552
+    uart_nrfx_uarte.c                                                                   1552
       __config_uart_nrfx_uarte0                                                           12
       __device_uart_nrfx_uarte0                                                           12
-      baudrate_set                                                                       296
+      baudrate_set                                                                       340
       log_const_uart_nrfx_uarte                                                            8
       uart_nrfx_uarte_driver_api                                                          76
       uarte0_int_driven                                                                   16
       uarte_0_data                                                                        16
       uarte_0_init                                                                        52
       uarte_0z_config                                                                      8
-      uarte_instance_init                                                                180
+      uarte_instance_init                                                                280
       uarte_nrfx_config_get                                                               16
-      uarte_nrfx_configure                                                               178
+      uarte_nrfx_configure                                                               212
       uarte_nrfx_err_check                                                                16
       uarte_nrfx_fifo_fill                                                                72
       uarte_nrfx_fifo_read                                                                34
@@ -450,7 +460,7 @@ drivers                                                                         
       uarte_nrfx_irq_update                                                                4
       uarte_nrfx_isr_int                                                                  66
       uarte_nrfx_poll_in                                                                  40
-      uarte_nrfx_poll_out                                                                 48
+      uarte_nrfx_poll_out                                                                 50
   timer                                                                                  520
     nrf_rtc_timer.c                                                                      492
       counter                                                                             12
@@ -466,7 +476,7 @@ drivers                                                                         
       __device_sys_init_z_clock_driver_init0                                              12
       sys_clock_disable                                                                    2
       z_clock_isr                                                                          2
-kernel                                                                                  2066
+kernel                                                                                  2052
   device.c                                                                               132
     z_impl_device_get_binding                                                             80
     z_sys_device_do_config_level                                                          52
@@ -495,12 +505,12 @@ kernel                                                                          
     __device_sys_init_init_static_pools3                                                  12
     init_static_pools                                                                     32
     k_mem_pool_init                                                                       16
-  sched.c                                                                                910
+  sched.c                                                                                898
     pended_on                                                                              4
     update_cache                                                                          68
-    z_add_thread_to_ready_q                                                              140
+    z_add_thread_to_ready_q                                                              136
     z_impl_k_current_get                                                                  12
-    z_impl_k_sleep                                                                       112
+    z_impl_k_sleep                                                                       108
     z_is_t1_higher_prio_than_t2                                                           20
     z_priq_dumb_best                                                                      14
     z_priq_dumb_remove                                                                    48
@@ -509,47 +519,47 @@ kernel                                                                          
     z_thread_single_abort                                                                168
     z_thread_single_suspend                                                              132
     z_tick_sleep                                                                           4
-    z_unpend_first_thread                                                                122
+    z_unpend_first_thread                                                                118
   sem.c                                                                                  100
     z_impl_k_sem_give                                                                    100
   thread.c                                                                                60
     z_impl_k_thread_suspend                                                               60
-  timeout.c                                                                              380
+  timeout.c                                                                              378
     elapsed                                                                               24
     first                                                                                 20
     next                                                                                  24
     next_timeout                                                                          30
-    remove_timeout                                                                        38
+    remove_timeout                                                                        36
     timeout_list                                                                           8
     z_abort_timeout                                                                       60
     z_clock_announce                                                                     176
-lib                                                                                     2532
-  libc                                                                                   218
-    minimal                                                                              218
-      include                                                                            218
-        string.h                                                                         218
+lib                                                                                     2524
+  libc                                                                                   212
+    minimal                                                                              212
+      include                                                                            212
+        string.h                                                                         212
           memcmp                                                                          46
-          memcpy                                                                          72
+          memcpy                                                                          70
           memset                                                                          60
-          strcmp                                                                          22
-          strlen                                                                          18
-  os                                                                                    2314
-    base64.c                                                                             784
+          strcmp                                                                          20
+          strlen                                                                          16
+  os                                                                                    2312
+    base64.c                                                                             764
       base64_dec_map                                                                     128
-      base64_decode                                                                      324
+      base64_decode                                                                      304
       base64_enc_map                                                                      64
       base64_encode                                                                      268
     crc16_sw.c                                                                            86
       crc16                                                                               86
     fdtable.c                                                                             20
       fdtable_lock                                                                        20
-    mempool.c                                                                            134
+    mempool.c                                                                            132
       block_ptr                                                                            8
-      z_sys_mem_pool_base_init                                                           126
-    printk.c                                                                            1290
+      z_sys_mem_pool_base_init                                                           124
+    printk.c                                                                            1310
       _char_out                                                                            4
-      _printk_dec_ulong                                                                  164
-      _printk_hex_ulong                                                                  182
+      _printk_dec_ulong                                                                  176
+      _printk_hex_ulong                                                                  190
       arch_printk_char_out                                                                 4
       char_out                                                                            20
       print_err                                                                           24
@@ -557,19 +567,19 @@ lib                                                                             
       vprintk                                                                             32
       z_vprintk                                                                          832
 root                                                                                       0
-soc                                                                                      112
-  arm                                                                                    112
+soc                                                                                      136
+  arm                                                                                    136
     common                                                                                32
       cortex_m                                                                            32
         arm_mpu_regions.c                                                                 32
           mpu_regions                                                                     32
-    nordic_nrf                                                                            80
-      nrf91                                                                               80
-        soc.c                                                                             80
-          __config_sys_init_nordicsemi_nrf91_init0                                        12
-          __device_sys_init_nordicsemi_nrf91_init0                                        12
+    nordic_nrf                                                                           104
+      nrf53                                                                              104
+        soc.c                                                                            104
+          __config_sys_init_nordicsemi_nrf53_init0                                        12
+          __device_sys_init_nordicsemi_nrf53_init0                                        12
           log_const_soc                                                                    8
-          nordicsemi_nrf91_init                                                           40
+          nordicsemi_nrf53_init                                                           64
           z_platform_init                                                                  8
 subsys                                                                                  1238
   logging                                                                                494
@@ -611,4 +621,4 @@ subsys                                                                          
         flash_map                                                                          4
         flash_map_entries                                                                  4
 ====================================================================================================
-                                                                                       40632
+                                                                                       40952
