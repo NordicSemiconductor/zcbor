@@ -1,0 +1,55 @@
+
+Numbers = [
+	one: 1,
+	minustwo: -2,
+	fourtoten: 4..10,
+	twobytes: uint .size 2,
+	onetofourbytes: uint .size 1..4,
+	minusfivektoplustwohunred: -5000..200,
+	fourbillion: 0xEE6B2800,
+	negint: nint,
+	posint: uint,
+	integer: int,
+]
+
+Strings = [
+	hello: "hello",
+	threehundrebytebstr: bstr .size 300,
+	tentothirtybytetstr: tstr .size 10..30,
+	cborNumbers: bstr .cbor Numbers,
+	cborseqPrimitives: bstr .cborseq Primitives,
+	?optCborStrings: bstr .cbor Strings,
+]
+
+Primitives = [
+	booltrue: true,
+	boolfalse: false,
+	boolval: bool,
+	nilval: nil,
+]
+
+Optional = [
+	boolval: bool,
+	?optbool: bool,
+	?opttwo: 2,
+	manduint: uint,
+]
+
+Group = (1,-2)
+MultiGroup = +(3,-4)
+Union = Group / MultiGroup / (3,4) / "hello"
+
+Map = {
+	listkey: [5,6] => bool,
+	union: (7=>uint) / (-8=>uint),
+	twotothree: 2**3 nil => bstr,
+}
+
+NestedListMap = [*{?1 => 4}]
+NestedMapListMap = {+[] => [*{}]}
+
+Level1 = [Level2]
+Level2 = [2**3Level3]
+Level3 = [4**5Level4]
+Level4 = [0]
+

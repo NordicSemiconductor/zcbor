@@ -1,6 +1,6 @@
 #!/bin/bash
 
-for dir in 'test1_suit_old_formats/' 'test2_suit/' 'test3_simple/' ;
+for dir in 'test1_suit_old_formats/' 'test2_suit/' 'test3_simple/' 'test5_strange/' ;
 do
         pushd "$dir"
         if [ -d "build" ]; then rm -r build; fi
