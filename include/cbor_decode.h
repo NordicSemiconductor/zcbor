@@ -89,10 +89,10 @@ typedef struct
 
 #ifdef CDDL_CBOR_VERBOSE
 #include <sys/printk.h>
-#define cbor_decode_trace() (printk("*pp_payload: 0x%x, "\
-			"**pp_payload: 0x%x, %s:%d\n",\
-			(uint32_t)*pp_payload,\
-			**pp_payload, __FILE__, __LINE__))
+#define cbor_decode_trace() (printk("p_state->p_payload: 0x%x, "\
+	"*p_state->p_payload: 0x%x, p_state->elem_count: 0x%x, %s:%d\n",\
+	(uint32_t)p_state->p_payload, *p_state->p_payload, p_state->elem_count,\
+	__FILE__, __LINE__))
 #define cbor_decode_assert(expr, ...) \
 do { \
 	if (!(expr)) { \
@@ -110,13 +110,18 @@ do { \
 #define cbor_decode_print(...)
 #endif
 
+typedef struct {
+	uint8_t const *p_payload;
+	uint8_t const *p_payload_end;
+	size_t elem_count;
+} cbor_decode_state_t;
+
 /** Function pointer type used with multi_decode.
  *
  * This type is compatible with all decoding functions here and in the generated
  * code, except for multi_decode.
  */
-typedef bool(decoder_t)(uint8_t const **, uint8_t const *const, size_t *const,
-			void *, void *, void *);
+typedef bool(decoder_t)(cbor_decode_state_t *, void *, void *, void *);
 
 /** Decode a PINT/NINT into a int32_t.
  *
@@ -144,36 +149,28 @@ typedef bool(decoder_t)(uint8_t const **, uint8_t const *const, size_t *const,
  *                acceptable range, or the value was larger than can fit in the
  *                result variable.
  */
-bool intx32_decode(uint8_t const **const pp_payload,
-		uint8_t const *const p_payload_end, size_t *const p_elem_count,
-		int32_t *p_result, void *p_min_value, void *p_max_value);
+bool intx32_decode(cbor_decode_state_t * p_state, int32_t *p_result, void *p_min_value, void *p_max_value);
 
 /** Decode a PINT into a uint32_t.
  *
  * @details See @ref intx32_decode for information about parameters and return
  *          values.
  */
-bool uintx32_decode(uint8_t const **const pp_payload,
-		uint8_t const *const p_payload_end, size_t *const p_elem_count,
-		uint32_t *p_result, void *p_min_value, void *p_max_value);
+bool uintx32_decode(cbor_decode_state_t * p_state, uint32_t *p_result, void *p_min_value, void *p_max_value);
 
 /** Decode a BSTR or TSTR, but leave pp_payload pointing at the payload.
  *
  * @details See @ref intx32_decode for information about parameters and return
  *          values. For strings, the value refers to the length of the string.
  */
-bool strx_start_decode(uint8_t const **const pp_payload,
-		uint8_t const *const p_payload_end, size_t *const p_elem_count,
-		cbor_string_type_t *p_result, void *p_min_len, void *p_max_len);
+bool strx_start_decode(cbor_decode_state_t * p_state, cbor_string_type_t *p_result, void *p_min_len, void *p_max_len);
 
 /** Decode a BSTR or TSTR, and move pp_payload to after the payload.
  *
  * @details See @ref intx32_decode for information about parameters and return
  *          values. For strings, the value refers to the length of the string.
  */
-bool strx_decode(uint8_t const **const pp_payload,
-		uint8_t const *const p_payload_end, size_t *const p_elem_count,
-		cbor_string_type_t *p_result, void *p_min_len, void *p_max_len);
+bool strx_decode(cbor_decode_state_t * p_state, cbor_string_type_t *p_result, void *p_min_len, void *p_max_len);
 
 /** Decode a LIST or MAP, but leave pp_payload pointing at the payload.
  *
@@ -181,18 +178,14 @@ bool strx_decode(uint8_t const **const pp_payload,
  *          values. For lists and maps, the value refers to the number of
  *          elements.
  */
-bool list_start_decode(uint8_t const **const pp_payload,
-		uint8_t const *const p_payload_end, size_t *const p_elem_count,
-		size_t *p_result, size_t min_num, size_t max_num);
+bool list_start_decode(cbor_decode_state_t * p_state, size_t *p_result, size_t min_num, size_t max_num);
 
 /** Decode a primitive value.
  *
  * @details See @ref intx32_decode for information about parameters and return
  *          values.
  */
-bool primx_decode(uint8_t const **const pp_payload,
-		uint8_t const *const p_payload_end, size_t *const p_elem_count,
-		uint8_t *p_result, void *p_min_result, void *p_max_result);
+bool primx_decode(cbor_decode_state_t * p_state, uint8_t *p_result, void *p_min_result, void *p_max_result);
 
 /** Decode a boolean primitive value.
  *
@@ -200,9 +193,7 @@ bool primx_decode(uint8_t const **const pp_payload,
  *          values. The result is translated internally from the primitive
  *          values for true/false (20/21) to 0/1.
  */
-bool boolx_decode(uint8_t const **const pp_payload,
-		uint8_t const *const p_payload_end, size_t *const p_elem_count,
-		bool *p_result, void *p_min_result, void *p_max_result);
+bool boolx_decode(cbor_decode_state_t * p_state, bool *p_result, void *p_min_result, void *p_max_result);
 
 /** Decode a float
  *
@@ -211,9 +202,7 @@ bool boolx_decode(uint8_t const **const pp_payload,
  * @details See @ref intx32_decode for information about parameters and return
  *          values.
  */
-bool float_decode(uint8_t const **const pp_payload,
-		uint8_t const *const p_payload_end, size_t *const p_elem_count,
-		double *p_result, void *p_min_result, void *p_max_result);
+bool float_decode(cbor_decode_state_t * p_state, double *p_result, void *p_min_result, void *p_max_result);
 
 /** Skip a single element, regardless of type and value.
  *
@@ -221,9 +210,7 @@ bool float_decode(uint8_t const **const pp_payload,
  *          values. @p p_result, @p p_min_result, and @p p_max_result must be
  *          NULL.
  */
-bool any_decode(uint8_t const **const pp_payload,
-		uint8_t const *const p_payload_end, size_t *const p_elem_count,
-		void *p_result, void *p_min_result, void *p_max_result);
+bool any_decode(cbor_decode_state_t * p_state, void *p_result, void *p_min_result, void *p_max_result);
 
 /** Decode 0 or more elements with the same type and constraints.
  *
@@ -271,9 +258,7 @@ bool any_decode(uint8_t const **const pp_payload,
  *                values.
  */
 bool multi_decode(size_t min_decode, size_t max_decode, size_t *p_num_decode,
-		decoder_t decoder, uint8_t const **const pp_payload,
-		uint8_t const *const p_payload_end, size_t *const p_elem_count,
-		void *p_result, void *p_min_result, void *p_max_result,
+		decoder_t decoder, cbor_decode_state_t * p_state, void *p_result, void *p_min_result, void *p_max_result,
 		size_t result_len);
 
 #endif

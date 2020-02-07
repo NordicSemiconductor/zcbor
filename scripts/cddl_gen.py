@@ -109,6 +109,17 @@ def max_val_or_null(value):
     return val_or_null(value, "max_value")
 
 
+# Return an argument list for a function call to a decoder function.
+def decode_args(res, min_val, max_val):
+    return "p_state, %s, %s, %s" % (
+        "&(%s)" % res if res != "NULL" else res, min_val, max_val)
+
+# Return the code that calls a decoder function with a given set of
+# arguments.
+def decode_statement(func, *sargs, **kwargs):
+    return "(%s(%s))" % (func, decode_args(*sargs, **kwargs))
+
+
 # Class for parsing CDDL. One instance represents one CBOR data item, with a few caveats:
 #  - For repeated data, one instance represents all repetitions.
 #  - For "OTHER" types, one instance points to another type definition.
@@ -254,10 +265,8 @@ class CddlParser:
             self.set_size_range(sizeof(abs(max_val)), sizeof(abs(min_val)))
         if new_type == "INT":
             self.set_size_range(
-                0, max(
-                    sizeof(
-                        abs(max_val)), sizeof(
-                        abs(min_val))))
+                0, max(sizeof(abs(max_val)),
+                       sizeof(abs(min_val))))
 
     # Set the self.value and self.size of this element. For use during CDDL
     # parsing.
@@ -283,7 +292,7 @@ class CddlParser:
             (r"\?", lambda mo: (0, 1)),
             (r"\*", lambda mo: (0, None)),
             (r"\+", lambda mo: (1, None)),
-            (r"(\d*)\*(\d*)", lambda mo: (int(mo.groups()[0]), int(mo.groups()[1]))),
+            (r"(\d*)\*\*(\d*)", lambda mo: (int(mo.groups()[0] or 0), int(mo.groups()[1] or 0))),
         ]
 
         self.quantifier = quantifier
@@ -303,7 +312,7 @@ class CddlParser:
             raise TypeError("Cannot have size before value: " + str(size))
         elif self.type == "UINT":
             return self.set_max_size(size)
-        elif self.type not in ["UINT", "BSTR", "TSTR"]:
+        elif self.type not in ["INT", "UINT", "NINT", "BSTR", "TSTR"]:
             raise TypeError(".size cannot be applied to %s" % self.type)
         self.size = size
 
@@ -394,39 +403,39 @@ class CddlParser:
              lambda union_str: self.add_value(parse("(%s)" % union_str if ',' in union_str else union_str)[0])),
             (r'([+*?])',
              self.set_quantifier),
-            (r'(\d*\*\d*)',
+            (r'(\d*\*\*\d*)',
              self.set_quantifier),
-            (r'uint',
+            (r'uint(?!\w)',
              lambda _: self.type_and_value("UINT", lambda: None)),
-            (r'nint',
+            (r'nint(?!\w)',
              lambda _: self.type_and_value("NINT", lambda: None)),
-            (r'int',
+            (r'int(?!\w)',
              lambda _: self.type_and_value("INT", lambda:None)),
-            (r'float',
+            (r'float(?!\w)',
              lambda _: self.type_and_value("FLOAT", lambda: None)),
-            (r'float16',
+            (r'float16(?!\w)',
              lambda _: self.type_value_size("FLOAT", None, 2)),
-            (r'float32',
+            (r'float32(?!\w)',
              lambda _: self.type_value_size("FLOAT", None, 4)),
-            (r'float64',
+            (r'float64(?!\w)',
              lambda _: self.type_value_size("FLOAT", None, 8)),
             (r'\-?\d*\.\d+',
              lambda num: self.type_and_value("FLOAT", lambda: int(num))),
-            (r'\-\d+',
-             lambda num: self.type_and_value("NINT", lambda: int(num))),
             (r'\d+\.\.\d+',
              lambda _range: self.type_and_range("UINT", *map(int, _range.split("..")))),
             (r'\-\d+\.\.\d+',
              lambda _range: self.type_and_range("INT", *map(int, _range.split("..")))),
             (r'\-\d+\.\.\-\d+',
              lambda _range: self.type_and_range("NINT", *map(int, _range.split("..")))),
-            (r'\d+',
-             lambda num: self.type_and_value("UINT", lambda: int(num))),
+            (r'\-\d+',
+             lambda num: self.type_and_value("NINT", lambda: int(num))),
             (r'0[xbo]\w+',
              lambda num: self.type_and_value("UINT", lambda: int(num, 0))),
-            (r'bstr',
+            (r'\d+',
+             lambda num: self.type_and_value("UINT", lambda: int(num))),
+            (r'bstr(?!\w)',
              lambda _: self.type_and_value("BSTR", lambda: None)),
-            (r'tstr',
+            (r'tstr(?!\w)',
              lambda _: self.type_and_value("TSTR", lambda: None)),
             (r'\".*?\"(?<!\\)',
              lambda string: self.type_and_value("TSTR", lambda: string.strip('"'))),
@@ -436,22 +445,22 @@ class CddlParser:
              lambda group_str: self.type_and_value("GROUP", lambda: parse(group_str))),
             (r'{(?P<item>(?>[^{}]+|(?R))*)}',
              lambda _map: self.type_and_value("MAP", lambda: parse(_map))),
-            (r'bool',
+            (r'bool(?!\w)',
              lambda _: self.type_and_value("BOOL", lambda: None)),
-            (r'true',
+            (r'true(?!\w)',
              lambda _: self.type_and_value("BOOL", lambda: True)),
-            (r'false',
+            (r'false(?!\w)',
              lambda _: self.type_and_value("BOOL", lambda: False)),
-            (r'nil',
+            (r'nil(?!\w)',
              lambda _: self.type_and_value("NIL", lambda: None)),
-            (r'any',
+            (r'any(?!\w)',
              lambda _: self.type_and_value("ANY", lambda: None)),
             (r'(\$?\$?[\w-]+)',
              lambda other_str: self.type_and_value("OTHER", lambda: other_str.strip("$"))),
-            (r'\.size \(?(?P<item>\d+)\)?',
-             lambda size: self.set_size(int(size))),
             (r'\.size \(?(?P<item>\d+\.\.\d+)\)?',
              lambda _range: self.set_size_range(*map(int, _range.split("..")))),
+            (r'\.size \(?(?P<item>\d+)\)?',
+             lambda size: self.set_size(int(size))),
             (r'\.cbor (?P<item>[\w-]+)',
              lambda type_str: self.set_cbor(parse(type_str)[0], False)),
             (r'\.cborseq (?P<item>[\w-]+)',
@@ -479,7 +488,10 @@ class CddlParser:
                         match_str = match_obj.group("item")
                     except IndexError:
                         match_str = match_obj.group(0)
-                    handler(match_str)
+                    try:
+                        handler(match_str)
+                    except Exception as e:
+                        raise Exception("Failed while parsing this: '%s'" % match_str) from e
                     self.match_str += match_str
                     old_len = len(instr)
                     instr = sub(reg, '', instr, count=1).lstrip()
@@ -489,7 +501,7 @@ class CddlParser:
 
             if not match_obj:
                 raise TypeError("Could not parse this: '%s'" % instr)
-            
+
         instr = instr[1:]
         if not self.type:
             raise ValueError("No proper value while parsing: %s" % instr)
@@ -558,11 +570,6 @@ class CodeGenerator(CddlParser):
         # different situations.
         # The delimiter used between elements in the accessPrefix.
         self.access_delimiter = "."
-        # The depth of indirection of the elem_count within the current C
-        # function. This is
-        self.count_indirection = 0
-        # incremented e.g. when decoding elements in a list, and decremented when the list has
-        # been decoded.
         # Used as a guard against endless recursion in self.dependsOn()
         self.dependsOnCall = False
         self.base_name = base_name  # Used as default for self.get_base_name()
@@ -572,6 +579,7 @@ class CodeGenerator(CddlParser):
         return ((self.base_name or self.label
                  or (self.key.value if self.key and self.key.type in ["TSTR", "OTHER"] else None)
                  or (f"{self.value}_{self.type.lower()}" if self.type == "TSTR" and self.value is not None else None)
+                 or (f"{self.type.lower()}{self.value}" if self.type in ["INT", "UINT"] and self.value is not None else None)
                  or (next((key for key, value in my_types.items() if value == self), None))
                  or ("_"+self.value if self.type == "OTHER" else None)
                  or ("_"+self.value[0].get_base_name()
@@ -609,9 +617,9 @@ class CodeGenerator(CddlParser):
             "BOOL": lambda: "bool",
             "NIL": lambda: None,
             "ANY": lambda: None,
-            "LIST": lambda: self.value[0].type_name(),
-            "MAP": lambda: self.value[0].type_name(),
-            "GROUP": lambda: self.value[0].type_name(),
+            "LIST": lambda: self.value[0].type_name() if len(self.value) >= 1 else None,
+            "MAP": lambda: self.value[0].type_name() if len(self.value) >= 1 else None,
+            "GROUP": lambda: self.value[0].type_name() if len(self.value) >= 1 else None,
             "UNION": lambda: self.union_type(),
             "OTHER": lambda: my_types[self.value].type_name(),
         }[self.type]()
@@ -741,7 +749,8 @@ class CodeGenerator(CddlParser):
     def multi_val_condition(self):
         return (self.type in ["LIST", "MAP", "GROUP", "UNION"]
                 and (len(self.value) > 1
-                     or self.value[0].multi_member()))
+                     or (len(self.value) == 1
+                        and self.value[0].multi_member())))
 
     # Whether any extra variables are to be included for this element for each
     # repetition.
@@ -849,19 +858,19 @@ class CodeGenerator(CddlParser):
             decl += cbor_var
             multi_var = cbor_var != []
 
-        if self.type not in ["LIST", "MAP", "GROUP"] or len(self.value) <= 1:
+        # if self.type not in ["LIST", "MAP", "GROUP"] or len(self.value) <= 1:
             # This assert isn't accurate for value lists with NIL or ANY
             # members.
-            assert multi_var == self.repeated_multi_var_condition(
-            ), f"""type: {self.type}
-            multivar is {multi_var} while
-            self.repeated_multi_var_condition() is {self.repeated_multi_var_condition()} for
-            decl {decl}
-            self.key_var_condition() is {self.key_var_condition()}
-            self.key is {self.key}
-            self.cbor_var_condition() is {self.cbor_var_condition()}
-            self.choice_var_condition() is {self.choice_var_condition()}
-            self.value is {self.value}"""
+            # assert multi_var == self.repeated_multi_var_condition(
+            # ), f"""assert {multi_var} == {self.repeated_multi_var_condition()}
+            # type: {self.type}
+            # decl {decl}
+            # self.key_var_condition() is {self.key_var_condition()}
+            # self.key is {self.key}
+            # self.key.full_declaration() is {self.key.full_declaration()}
+            # self.cbor_var_condition() is {self.cbor_var_condition()}
+            # self.choice_var_condition() is {self.choice_var_condition()}
+            # self.value is {self.value}"""
         return decl
 
     # Declaration of the full type for this element.
@@ -936,42 +945,15 @@ class CodeGenerator(CddlParser):
             ret_val.extend([(self.single_var_type(), self.type_name())])
         return ret_val
 
-    # The variable to use as the running element count for this variable. Since an instance of this variable must be
-    # kept for each level of the data structure, sometimes a function must
-    # keep an array of such counts.
-    def element_count_var(self, indirection=None):
-        if indirection is None:
-            indirection = self.count_indirection
-        if indirection == 0:
-            return "p_elem_count"
-        else:
-            return "(&elem_count[%d])" % (indirection - 1)
-
-    # Return a code snippet that sets the relevant element count and max count variables. This is used when entering
-    # a new level of the data structure.
-    def set_elem_counts(self, new_max):
-        return ("(%s)" % " || ".join((
-            "(*%s = %s)" % (self.element_count_var(self.count_indirection + 1), new_max),
-            "1"
-        )))
-
-    # Return an argument list for a function call to a decoder function.
-    def decade_args(self, res, min_val, max_val, count_indirection=None):
-        elem_count_var = self.element_count_var(count_indirection)
-        return "pp_payload, p_payload_end, %s, %s, %s, %s" % (
-            elem_count_var, "&(%s)" % res if res != "NULL" else res, min_val, max_val)
-
-    # Return the code that calls a decoder function with a given set of
-    # arguments.
-    def decode_statement(self, func, *sargs, **kwargs):
-        return "(%s(%s))" % (func, self.decade_args(*sargs, **kwargs))
-
     # Return the function name and arguments to call to decode this element. Only used when this element DOESN'T define
     # its own decoder function (when it's a primitive type, for which functions already exist, or when the function is
     # defined elsewhere ("OTHER"))
     def single_func_prim(self):
         vals = [self.val_access(), min_val_or_null(self.min_value), max_val_or_null(self.max_value)]
         sizes = [self.val_access(), min_val_or_null(self.min_size), max_val_or_null(self.max_size)]
+
+        if self.type in ["LIST", "MAP"]:
+            assert len(self.value) <= 1, f"List must be empty or have a single element, has {len(self.value)} children."
 
         # Will fail runtime if we don't use lambda for single_func()
         # pylint: disable=unnecessary-lambda
@@ -985,8 +967,9 @@ class CodeGenerator(CddlParser):
             "BOOL": lambda: ["boolx_decode", self.val_access(), min_val_or_null(1 if self.value else 0),
                              max_val_or_null(0 if not self.value else 1)],
             "NIL": lambda: ["primx_decode", "NULL", min_val_or_null(22), max_val_or_null(22)],
+            "MAP":  lambda: self.value[0].single_func() if len(self.value) >= 1 else ["list_start_decode", self.count_var_access(), "0", "0"],
+            "LIST": lambda: self.value[0].single_func() if len(self.value) >= 1 else ["list_start_decode", self.count_var_access(), "0", "0"],
             "ANY": lambda: ["any_decode", "NULL", "NULL", "NULL"],
-            "LIST": lambda: self.value[0].single_func(),
             "OTHER": lambda: list_replace_if_not_null(my_types[self.value].single_func(), 1, self.val_access()),
         }[self.type]()
         return retval
@@ -1042,7 +1025,7 @@ class CodeGenerator(CddlParser):
 
     # Make a string from the list returned by single_func_prim()
     def decode_single_func_prim(self):
-        return self.decode_statement(*self.single_func_prim())
+        return decode_statement(*self.single_func_prim())
 
     # Return the full code needed to decode a "BSTR" or "TSTR" element.
     def decode_str(self):
@@ -1080,38 +1063,33 @@ class CodeGenerator(CddlParser):
     def decode_list(self):
         assert self.type in ["LIST", "MAP"], "Expected LIST or MAP type, was %s." % self.type
         min_counts, max_counts = zip(*(child.list_counts() for child in self.value)) if self.value else ((0,), (0,))
-        return "(%s)" % (self.newl_ind + "&& ").join((self.decode_statement("list_start_decode",
-                                                                            "temp_elem_count",
-                                                                            str(sum(min_counts)),
-                                                                            str(sum(max_counts))),)
-                                                     + (self.set_elem_counts("(%s * %d)" %
-                                                                             ("temp_elem_count", 2
-                                                                              if self.type == "MAP" else 1)),)
-                                                     + tuple(child.full_decode(self.count_indirection + 1)
-                                                             for child in self.value))
+        return "(%s)" % (self.newl_ind + "&& ").join((decode_statement("list_start_decode",
+                                "*(p_temp_elem_count++)",
+                                str(sum(min_counts)),
+                                str(sum(max_counts))),)
+         + tuple(child.full_decode()
+                 for child in self.value)
+         + ("((p_state->elem_count = *(--p_temp_elem_count)) || 1)",))
 
     # Return the full code needed to decode a "GROUP" element's children.
     def decode_group(self):
         assert self.type in ["GROUP"], "Expected GROUP type."
         return "(%s)" % (self.newl_ind + "&& ").join(
-            (child.full_decode(self.count_indirection) for child in self.value))
+            (child.full_decode() for child in self.value))
 
     # Return the full code needed to decode a "UNION" element's children.
     def decode_union(self):
         assert self.type in ["UNION"], "Expected UNION type."
-        child_values = ("(%s && %s && ((%s = %s) || 1))" %
-                        ("(*pp_payload = p_payload_bak) && ((*%s = elem_count_bak) || 1)" %
-                         self.element_count_var(), child.full_decode(self.count_indirection),
-                         self.choice_var_access(), child.var_name()) for child in self.value)
-        return "((p_payload_bak = *pp_payload) && ((elem_count_bak = *%s) || 1) && (%s))" % \
-               (self.element_count_var(), (self.newl_ind + "|| ").join(child_values))
+        child_values = ["(%s && ((%s = %s) || 1))" %
+                        (child.full_decode(),
+                         self.choice_var_access(), child.var_name()) for child in self.value]
 
-    # Return the full code needed to decode an "OTHER" element. This fetches
-    # the code of the type referenced by self.value.
-    def decode_other(self):
-        assert self.type in ["OTHER"], "Expected OTHER type."
-        return my_types[self.value].decode_statement(
-            *self.single_func_prim(), count_indirection=self.count_indirection)
+        # Reset state for all but the first child.
+        for i in range(1, len(child_values)):
+            child_values[i] = f"((p_state->p_payload = p_payload_bak) && ((p_state->elem_count = elem_count_bak) || 1) && {child_values[i]})"
+
+        return "((p_payload_bak = p_state->p_payload) && ((elem_count_bak = p_state->elem_count) || 1) && (%s))" % \
+               (self.newl_ind + "|| ").join(child_values)
 
     # Return the full code needed to decode this element, including children,
     # key and cbor, excluding repetitions.
@@ -1130,26 +1108,26 @@ class CodeGenerator(CddlParser):
             "MAP": self.decode_list,
             "GROUP": self.decode_group,
             "UNION": self.decode_union,
-            "OTHER": self.decode_other,
+            "OTHER": self.decode_single_func_prim,
         }[self.type]()
         if self.key or self.cbor:
-            arguments = ([self.key.full_decode(self.count_indirection)] if self.key is not None else [])\
+            arguments = ([self.key.full_decode()] if self.key is not None else [])\
                 + ([decoder])\
-                + ([self.set_elem_counts(str(self.maxQ)), self.cbor.full_decode(self.count_indirection + 1)]
+                + ([f"(p_state->elem_count += {self.cbor.maxQ})", self.cbor.full_decode()]
                    if self.cbor_var_condition() else [])
             decoder = "(%s)" % ((self.newl_ind + "&& ").join(arguments),)
         return decoder
 
     # Code for the size of the repeated part of this element.
     def result_len(self):
-        if self.type == "ANY":
+        if self.repeated_type_name() is None:
             return "0"
         else:
             return "sizeof(%s)" % self.repeated_type_name()
 
     # Return the full code needed to decode this element, including children,
     # key, cbor, and repetitions.
-    def full_decode(self, count_indirection):
+    def full_decode(self):
         if self.multi_decode_condition():
             func, *arguments = self.repeated_single_func()
             return (
@@ -1158,13 +1136,9 @@ class CodeGenerator(CddlParser):
                  self.maxQ,
                  self.count_var_access() if self.count_var_condition() else self.present_var_access(),
                  func,
-                 self.decade_args(
-                     *
-                     arguments,
-                     count_indirection),
-                    self.result_len()))
+                 decode_args(*arguments),
+                 self.result_len()))
         else:
-            self.count_indirection = count_indirection
             return self.repeated_decode()
 
     # Return the body of the decoder function for this element.
@@ -1188,39 +1162,12 @@ class CodeGenerator(CddlParser):
         if self.type == "OTHER" and self.value not in entry_type_names:
             for decoder in my_types[self.value].decoders():
                 yield decoder
-        if self.repeated_single_func_impl_condition() and self.count_indirection == 0:
-            yield (self.decode(), self.repeated_decode_func_name(), self.repeated_type_name(),
-                   self.max_count_indirection(0))
+        if self.repeated_single_func_impl_condition():
+            yield (self.decode(), self.repeated_decode_func_name(), self.repeated_type_name())
         if ((self.type != "OTHER") or self.repeated_multi_var_condition()) and (
-                self.single_func_impl_condition() and self.count_indirection == 0):
+                self.single_func_impl_condition()):
             decode_body = self.decode()
-            yield (decode_body, self.decode_func_name(), self.type_name(), self.max_count_indirection(0))
-
-    # Find the maximum indirection for the element count variable for this
-    # element.
-    def max_count_indirection(self, current):
-        if self.count_indirection < current:
-            return current
-
-        candidates = [self.count_indirection]
-
-        if self.type in ["LIST", "MAP", "GROUP", "UNION"]:
-            candidates += [child.max_count_indirection(self.count_indirection)
-                           for child in self.value]
-            if any([child.minQ != 1 or child.maxQ != 1 for child in self.value]):
-                candidates.append(self.count_indirection + 1)
-        if self.cbor_var_condition():
-            candidates.append(
-                self.cbor.max_count_indirection(
-                    self.count_indirection))
-        if self.key:
-            candidates.append(
-                self.key.max_count_indirection(
-                    self.count_indirection))
-        if self.multi_decode_condition():
-            candidates.append(current + 1)
-        return max(candidates)
-
+            yield (decode_body, self.decode_func_name(), self.type_name())
 
 # Consumes and parses a single CDDL type, returning a
 # CodeGenerator instance.
@@ -1308,8 +1255,7 @@ def used_funcs(types, entry_types):
     entry_types = [
         (func_type.decode(),
          func_type.decode_func_name(),
-         func_type.type_name(),
-         func_type.max_count_indirection(0)) for func_type in entry_types]
+         func_type.type_name()) for func_type in entry_types]
     out_types = [func_type for func_type in entry_types]
     full_code = "".join([func_type[0] for func_type in entry_types])
     for func_type in reversed(types):
@@ -1379,13 +1325,12 @@ def render_function(decoder):
     body = decoder[0]
     return f"""
 static bool {decoder[1]}(
-		uint8_t const ** pp_payload, uint8_t const * const p_payload_end,
-		size_t * const p_elem_count, void * p_result, void * p_min_value,
+		cbor_decode_state_t *p_state, void * p_result, void * p_min_value,
 		void * p_max_value)
 {{
 	cbor_decode_print("{ decoder[1] }\\n");
-	{"size_t temp_elem_count;" if "temp_elem_count" in body else ""}
-	{f"size_t elem_count[{ decoder[3] }];" if "elem_count[" in body else ""}
+	{f"size_t temp_elem_counts[{body.count('p_temp_elem_count')}];" if "p_temp_elem_count" in body else ""}
+	{"size_t *p_temp_elem_count = temp_elem_counts;" if "p_temp_elem_count" in body else ""}
 	{"uint32_t current_list_num;" if "current_list_num" in body else ""}
 	{"uint8_t const * p_payload_bak;" if "p_payload_bak" in body else ""}
 	{"size_t elem_count_bak;" if "elem_count_bak" in body else ""}
@@ -1393,12 +1338,15 @@ static bool {decoder[1]}(
 	{"uint32_t max_value;" if "max_value" in body else ""}
 	{decoder[2]}* p_type_result = ({decoder[2]}*)p_result;
 
-	if (!{ body })
+	bool result = ({ body });
+
+	if (!result)
 	{{
 		cbor_decode_trace();
-		return false;
 	}}
-	return true;
+
+	{"p_state->elem_count = temp_elem_counts[0];" if "p_temp_elem_count" in body else ""}
+	return result;
 }}""".replace("	\n", "")  # call replace() to remove empty lines.
 
 
@@ -1407,8 +1355,13 @@ def render_entry_function(decoder):
     return f"""
 bool cbor_{decoder.decode_func_name()}(const uint8_t * p_payload, size_t payload_len, {decoder.type_name()} * p_result)
 {{
-	size_t elem_count = 1;
-	return {decoder.decode_func_name()}(&p_payload, p_payload + payload_len, &elem_count, p_result, NULL, NULL);
+	cbor_decode_state_t state = {{
+		.p_payload = p_payload,
+		.p_payload_end = p_payload + payload_len,
+		.elem_count = 1
+	}};
+
+	return {decoder.decode_func_name()}(&state, p_result, NULL, NULL);
 }}"""
 
 

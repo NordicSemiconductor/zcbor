@@ -36,6 +36,8 @@ if [ "$1" = "nrf52840_pca10056" ]; then
 	flash_offset=0xC200
 elif [ "$1" = "nrf9160_pca10090" ]; then
 	flash_offset=0x10200
+elif [ "$1" = "nrf5340_dk_nrf5340_cpuapp" ]; then
+	flash_offset=0x10200
 fi
 
 build "build_hello" "-DBOARD=$1 ${ZEPHYR_BASE}/samples/hello_world -DCONFIG_FLASH_LOAD_OFFSET=$flash_offset"
