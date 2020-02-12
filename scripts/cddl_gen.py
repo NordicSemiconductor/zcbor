@@ -10,6 +10,7 @@ from pprint import pformat, pprint
 from os import path, linesep, makedirs
 from collections import defaultdict
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
+from datetime import datetime
 
 my_types = {}
 entry_type_names = []
@@ -1317,6 +1318,8 @@ This script requires 'regex' for lookaround functionality not present in 're'.''
         action="store_true",
         default=False,
         help="Print more information while parsing CDDL and generating code.")
+    parser.add_argument("--time-header", required=False, action="store_true", default=False,
+                        help="Put the current time in a comment in the generated files.")
 
     return parser.parse_args()
 
@@ -1367,12 +1370,15 @@ bool cbor_{decoder.decode_func_name()}(const uint8_t * p_payload, size_t payload
 
 
 # Render the entire generated C file contents.
-def render_c_file(functions, header_file_name, entry_types):
-    return f"""#include <stdint.h>
+def render_c_file(functions, header_file_name, entry_types, print_time):
+    return f"""/* Generated with cddl_gen.py (https://github.com/oyvindronningstad/cddl_gen){'''
+ * at: ''' + datetime.now().strftime('%Y-%m-%d %H:%M:%S') if print_time else ''}
+ */
+
+#include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <string.h>
-
 #include "cbor_decode.h"
 #include "{header_file_name}"
 
@@ -1383,9 +1389,13 @@ def render_c_file(functions, header_file_name, entry_types):
 
 
 # Render the entire generated header file contents.
-def render_h_file(type_defs, header_guard, entry_types):
+def render_h_file(type_defs, header_guard, entry_types, print_time):
     return \
-        f"""#ifndef {header_guard}
+        f"""/* Generated with cddl_gen.py (https://github.com/oyvindronningstad/cddl_gen){'''
+ * at: ''' + datetime.now().strftime('%Y-%m-%d %H:%M:%S') if print_time else ''}
+ */
+
+#ifndef {header_guard}
 #define {header_guard}
 
 #include <stdint.h>
@@ -1454,14 +1464,14 @@ def main():
     with open(args.output_c, 'w') as f:
         print ("Writing to " + args.output_c)
         f.write(render_c_file(functions=u_funcs, header_file_name=path.basename(args.output_h),
-                              entry_types=entry_types))
+                              entry_types=entry_types, print_time=args.time_header))
     makedirs("./" + path.dirname(args.output_h), exist_ok=True)
     with open(args.output_h, 'w') as f:
         print("Writing to " + args.output_h)
         f.write(render_h_file(type_defs=u_types,
                               header_guard=path.basename(args.output_h).replace(".", "_").replace("-", "_").upper()
                                            + "__",
-                              entry_types=entry_types))
+                              entry_types=entry_types, print_time=args.time_header))
 
 
 if __name__ == "__main__":
