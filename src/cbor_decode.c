@@ -40,10 +40,10 @@ static uint32_t additional_len(uint8_t additional)
 }
 
 /** Extract the major type, i.e. the first 3 bits of the header byte. */
-#define MAJOR_TYPE(header_byte) ((header_byte) >> 5) & 0x7
+#define MAJOR_TYPE(header_byte) (((header_byte) >> 5) & 0x7)
 
 /** Extract the additional info, i.e. the last 5 bits of the header byte. */
-#define ADDITIONAL(header_byte) (header_byte) & 0x1F;
+#define ADDITIONAL(header_byte) ((header_byte) & 0x1F)
 
 /** Shorthand macro to check if a result is within min/max constraints.
  */
