@@ -238,6 +238,7 @@ bool strx_start_decode(cbor_decode_state_t * p_state,
 	return true;
 }
 
+
 bool strx_decode(cbor_decode_state_t * p_state,
 		cbor_string_type_t *p_result, void *p_min_len, void *p_max_len)
 {
@@ -277,7 +278,6 @@ bool primx_decode(cbor_decode_state_t * p_state,
 {
 	uint8_t major_type = MAJOR_TYPE(*p_state->p_payload);
 	uint32_t val;
-
 
 	if (major_type != CBOR_MAJOR_TYPE_PRIM) {
 		/* Value to be read doesn't have the right type. */
