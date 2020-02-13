@@ -399,12 +399,12 @@ bool multi_decode(size_t min_decode,
 			if (i < min_decode) {
 				FAIL();
 			} else {
-				cbor_decode_print("Found %d elements.\n", i);
+				cbor_decode_print("Found %zu elements.\n", i);
 			}
 			return true;
 		}
 	}
-	cbor_decode_print("Found %d elements.\n", max_decode);
+	cbor_decode_print("Found %zu elements.\n", max_decode);
 	*p_num_decode = max_decode;
 	return true;
 }

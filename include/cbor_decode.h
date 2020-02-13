@@ -90,7 +90,7 @@ typedef struct
 #ifdef CDDL_CBOR_VERBOSE
 #include <sys/printk.h>
 #define cbor_decode_trace() (printk("p_state->p_payload: 0x%x, "\
-	"*p_state->p_payload: 0x%x, p_state->elem_count: 0x%x, %s:%d\n",\
+	"*p_state->p_payload: 0x%x, p_state->elem_count: 0x%zx, %s:%d\n",\
 	(uint32_t)p_state->p_payload, *p_state->p_payload, p_state->elem_count,\
 	__FILE__, __LINE__))
 #define cbor_decode_assert(expr, ...) \
