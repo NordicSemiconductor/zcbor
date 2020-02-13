@@ -30,13 +30,15 @@ typedef enum
  */
 static uint32_t additional_len(uint8_t additional)
 {
-	switch (additional) {
-	case 24: return 1;
-	case 25: return 2;
-	case 26: return 4;
-	case 27: return 8;
-	default: return 0;
+	if (24 <= additional && additional <= 27) {
+		/* 24 => 1
+		 * 25 => 2
+		 * 26 => 4
+		 * 27 => 8
+		 */
+		return 1 << (additional - 24);
 	}
+	return 0;
 }
 
 /** Extract the major type, i.e. the first 3 bits of the header byte. */
