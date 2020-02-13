@@ -221,8 +221,6 @@ void test_3(void)
 		      ._SUIT_Outer_Wrapper_suit_manifest_cbor
 		      ._SUIT_Manifest_suit_install
 		      ._SUIT_Manifest_suit_install
-		      ._SUIT_Severable_Command_Sequence3
-		      ._SUIT_Severable_Command_Sequence3_SUIT_Command_Sequence
 		      ._SUIT_Severable_Command_Sequence3_SUIT_Command_Sequence_cbor
 		      ._SUIT_Command_Sequence__SUIT_Command_count,
 		      "Expected x commands.");
@@ -231,8 +229,6 @@ void test_3(void)
 		      ._SUIT_Outer_Wrapper_suit_manifest_cbor
 		      ._SUIT_Manifest_suit_install
 		      ._SUIT_Manifest_suit_install
-		      ._SUIT_Severable_Command_Sequence3
-		      ._SUIT_Severable_Command_Sequence3_SUIT_Command_Sequence
 		      ._SUIT_Severable_Command_Sequence3_SUIT_Command_Sequence_cbor
 		      ._SUIT_Command_Sequence__SUIT_Command[0]
 		      ._SUIT_Command_union_choice,
@@ -242,11 +238,8 @@ void test_3(void)
 		      ._SUIT_Outer_Wrapper_suit_manifest_cbor
 		      ._SUIT_Manifest_suit_install
 		      ._SUIT_Manifest_suit_install
-		      ._SUIT_Severable_Command_Sequence3
-		      ._SUIT_Severable_Command_Sequence3_SUIT_Command_Sequence
 		      ._SUIT_Severable_Command_Sequence3_SUIT_Command_Sequence_cbor
 		      ._SUIT_Command_Sequence__SUIT_Command[0]
-		      ._SUIT_Command_union
 		      ._SUIT_Command_union__SUIT_Directive
 		      ._SUIT_Directive_choice,
 		      "Expected Component_Index");
@@ -255,14 +248,9 @@ void test_3(void)
 		      ._SUIT_Outer_Wrapper_suit_manifest_cbor
 		      ._SUIT_Manifest_suit_install
 		      ._SUIT_Manifest_suit_install
-		      ._SUIT_Severable_Command_Sequence3
-		      ._SUIT_Severable_Command_Sequence3_SUIT_Command_Sequence
 		      ._SUIT_Severable_Command_Sequence3_SUIT_Command_Sequence_cbor
 		      ._SUIT_Command_Sequence__SUIT_Command[0]
-		      ._SUIT_Command_union
 		      ._SUIT_Command_union__SUIT_Directive
-		      ._SUIT_Directive
-		      ._SUIT_Directive_SUIT_Directive_Set_Component_Index
 		      ._SUIT_Directive_SUIT_Directive_Set_Component_Index_choice,
 		      NULL);
 	zassert_equal(_SUIT_Command_union__SUIT_Directive,
@@ -270,8 +258,6 @@ void test_3(void)
 		      ._SUIT_Outer_Wrapper_suit_manifest_cbor
 		      ._SUIT_Manifest_suit_install
 		      ._SUIT_Manifest_suit_install
-		      ._SUIT_Severable_Command_Sequence3
-		      ._SUIT_Severable_Command_Sequence3_SUIT_Command_Sequence
 		      ._SUIT_Severable_Command_Sequence3_SUIT_Command_Sequence_cbor
 		      ._SUIT_Command_Sequence__SUIT_Command[1]
 		      ._SUIT_Command_union_choice,
@@ -281,11 +267,8 @@ void test_3(void)
 		      ._SUIT_Outer_Wrapper_suit_manifest_cbor
 		      ._SUIT_Manifest_suit_install
 		      ._SUIT_Manifest_suit_install
-		      ._SUIT_Severable_Command_Sequence3
-		      ._SUIT_Severable_Command_Sequence3_SUIT_Command_Sequence
 		      ._SUIT_Severable_Command_Sequence3_SUIT_Command_Sequence_cbor
 		      ._SUIT_Command_Sequence__SUIT_Command[1]
-		      ._SUIT_Command_union
 		      ._SUIT_Command_union__SUIT_Directive
 		      ._SUIT_Directive_choice,
 		      "Expected Set_Parameters");
@@ -294,14 +277,9 @@ void test_3(void)
 		      ._SUIT_Outer_Wrapper_suit_manifest_cbor
 		      ._SUIT_Manifest_suit_install
 		      ._SUIT_Manifest_suit_install
-		      ._SUIT_Severable_Command_Sequence3
-		      ._SUIT_Severable_Command_Sequence3_SUIT_Command_Sequence
 		      ._SUIT_Severable_Command_Sequence3_SUIT_Command_Sequence_cbor
 		      ._SUIT_Command_Sequence__SUIT_Command[1]
-		      ._SUIT_Command_union
 		      ._SUIT_Command_union__SUIT_Directive
-		      ._SUIT_Directive
-		      ._SUIT_Directive_SUIT_Directive_Set_Parameters
 		      ._SUIT_Directive_SUIT_Directive_Set_Parameters__SUIT_Parameters_count,
 		      "Expected 1 parameter");
 zassert_equal(_SUIT_Parameters_SUIT_Parameter_URI_List,
@@ -309,14 +287,9 @@ zassert_equal(_SUIT_Parameters_SUIT_Parameter_URI_List,
 		      ._SUIT_Outer_Wrapper_suit_manifest_cbor
 		      ._SUIT_Manifest_suit_install
 		      ._SUIT_Manifest_suit_install
-		      ._SUIT_Severable_Command_Sequence3
-		      ._SUIT_Severable_Command_Sequence3_SUIT_Command_Sequence
 		      ._SUIT_Severable_Command_Sequence3_SUIT_Command_Sequence_cbor
 		      ._SUIT_Command_Sequence__SUIT_Command[1]
-		      ._SUIT_Command_union
 		      ._SUIT_Command_union__SUIT_Directive
-		      ._SUIT_Directive
-		      ._SUIT_Directive_SUIT_Directive_Set_Parameters
 		      ._SUIT_Directive_SUIT_Directive_Set_Parameters__SUIT_Parameters[0]
 		      ._SUIT_Parameters_choice,
 		      "Expected uri list parameter");
@@ -325,17 +298,10 @@ zassert_equal(_SUIT_Parameters_SUIT_Parameter_URI_List,
 		      ._SUIT_Outer_Wrapper_suit_manifest_cbor
 		      ._SUIT_Manifest_suit_install
 		      ._SUIT_Manifest_suit_install
-		      ._SUIT_Severable_Command_Sequence3
-		      ._SUIT_Severable_Command_Sequence3_SUIT_Command_Sequence
 		      ._SUIT_Severable_Command_Sequence3_SUIT_Command_Sequence_cbor
 		      ._SUIT_Command_Sequence__SUIT_Command[1]
-		      ._SUIT_Command_union
 		      ._SUIT_Command_union__SUIT_Directive
-		      ._SUIT_Directive
-		      ._SUIT_Directive_SUIT_Directive_Set_Parameters
 		      ._SUIT_Directive_SUIT_Directive_Set_Parameters__SUIT_Parameters[0]
-		      ._SUIT_Parameters
-		      ._SUIT_Parameters_SUIT_Parameter_URI_List
 		      ._SUIT_Parameters_SUIT_Parameter_URI_List_cbor
 		      ._SUIT_URI_List__SUIT_Prioritized_URI_count,
 		      "Expected 1 uri");
@@ -344,17 +310,10 @@ zassert_equal(_SUIT_Parameters_SUIT_Parameter_URI_List,
 		      ._SUIT_Outer_Wrapper_suit_manifest_cbor
 		      ._SUIT_Manifest_suit_install
 		      ._SUIT_Manifest_suit_install
-		      ._SUIT_Severable_Command_Sequence3
-		      ._SUIT_Severable_Command_Sequence3_SUIT_Command_Sequence
 		      ._SUIT_Severable_Command_Sequence3_SUIT_Command_Sequence_cbor
 		      ._SUIT_Command_Sequence__SUIT_Command[1]
-		      ._SUIT_Command_union
 		      ._SUIT_Command_union__SUIT_Directive
-		      ._SUIT_Directive
-		      ._SUIT_Directive_SUIT_Directive_Set_Parameters
 		      ._SUIT_Directive_SUIT_Directive_Set_Parameters__SUIT_Parameters[0]
-		      ._SUIT_Parameters
-		      ._SUIT_Parameters_SUIT_Parameter_URI_List
 		      ._SUIT_Parameters_SUIT_Parameter_URI_List_cbor
 		      ._SUIT_URI_List__SUIT_Prioritized_URI[0]
 		      ._SUIT_Prioritized_URI_priority,
@@ -364,17 +323,10 @@ zassert_equal(_SUIT_Parameters_SUIT_Parameter_URI_List,
 		      ._SUIT_Outer_Wrapper_suit_manifest_cbor
 		      ._SUIT_Manifest_suit_install
 		      ._SUIT_Manifest_suit_install
-		      ._SUIT_Severable_Command_Sequence3
-		      ._SUIT_Severable_Command_Sequence3_SUIT_Command_Sequence
 		      ._SUIT_Severable_Command_Sequence3_SUIT_Command_Sequence_cbor
 		      ._SUIT_Command_Sequence__SUIT_Command[1]
-		      ._SUIT_Command_union
 		      ._SUIT_Command_union__SUIT_Directive
-		      ._SUIT_Directive
-		      ._SUIT_Directive_SUIT_Directive_Set_Parameters
 		      ._SUIT_Directive_SUIT_Directive_Set_Parameters__SUIT_Parameters[0]
-		      ._SUIT_Parameters
-		      ._SUIT_Parameters_SUIT_Parameter_URI_List
 		      ._SUIT_Parameters_SUIT_Parameter_URI_List_cbor
 		      ._SUIT_URI_List__SUIT_Prioritized_URI[0]
 		      ._SUIT_Prioritized_URI_uri.value,
@@ -385,8 +337,6 @@ zassert_equal(_SUIT_Parameters_SUIT_Parameter_URI_List,
 		      ._SUIT_Outer_Wrapper_suit_manifest_cbor
 		      ._SUIT_Manifest_suit_install
 		      ._SUIT_Manifest_suit_install
-		      ._SUIT_Severable_Command_Sequence3
-		      ._SUIT_Severable_Command_Sequence3_SUIT_Command_Sequence
 		      ._SUIT_Severable_Command_Sequence3_SUIT_Command_Sequence_cbor
 		      ._SUIT_Command_Sequence__SUIT_Command[2]
 		      ._SUIT_Command_union_choice,
@@ -396,11 +346,8 @@ zassert_equal(_SUIT_Parameters_SUIT_Parameter_URI_List,
 		      ._SUIT_Outer_Wrapper_suit_manifest_cbor
 		      ._SUIT_Manifest_suit_install
 		      ._SUIT_Manifest_suit_install
-		      ._SUIT_Severable_Command_Sequence3
-		      ._SUIT_Severable_Command_Sequence3_SUIT_Command_Sequence
 		      ._SUIT_Severable_Command_Sequence3_SUIT_Command_Sequence_cbor
 		      ._SUIT_Command_Sequence__SUIT_Command[2]
-		      ._SUIT_Command_union
 		      ._SUIT_Command_union__SUIT_Directive
 		      ._SUIT_Directive_choice,
 		      "Expected Directive_Fetch");

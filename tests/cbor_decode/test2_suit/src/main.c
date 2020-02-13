@@ -56,8 +56,6 @@ void test_5(void)
 			"wrong manifest variant");
 	manifest = &outerwrapper1
 			._SUIT_Outer_Wrapper__SUIT_Manifest_Wrapped
-			._SUIT_Manifest_Wrapped
-			._SUIT_Manifest_Wrapped_suit_manifest
 			._SUIT_Manifest_Wrapped_suit_manifest_cbor;
 	zassert_equal(1, manifest
 			->_SUIT_Manifest_suit_manifest_version,
@@ -159,10 +157,7 @@ void test_5(void)
 			"Should be a directive.");
 	zassert_equal(2, sequence
 			._SUIT_Command_Sequence__SUIT_Command[0]
-			._SUIT_Command
 			._SUIT_Command__SUIT_Directive
-			._SUIT_Directive
-			._SUIT_Directive___suit_directive_set_parameters
 			._SUIT_Directive___suit_directive_set_parameters_map__SUIT_Parameters_count,
 			"Should be two vars (parameters).");
 	cbor_decode_print("\r\n");

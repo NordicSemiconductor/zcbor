@@ -122,6 +122,11 @@ def decode_statement(func, *sargs, **kwargs):
     return "(%s(%s))" % (func, decode_args(*sargs, **kwargs))
 
 
+def add_semicolon(decl):
+    if len(decl) != 0 and decl[-1][-1] != ";":
+        decl[-1] += ";"
+    return decl
+
 # Class for parsing CDDL. One instance represents one CBOR data item, with a few caveats:
 #  - For repeated data, one instance represents all repetitions.
 #  - For "OTHER" types, one instance points to another type definition.
@@ -785,8 +790,7 @@ class CodeGenerator(CddlParser):
     # Declaration of the variables of all children.
     def child_single_declarations(self):
         decl = [
-            line for child in self.value for line in child.add_var_name(
-                child.single_var_type())]
+            line for child in self.value for line in child.add_var_name(child.single_var_type(), anonymous=True)]
         return decl
 
     # Enclose a list of declarations in a block (struct, union or enum).
@@ -802,14 +806,9 @@ class CodeGenerator(CddlParser):
     # Recursively set the access prefix for this element and all its children.
     def set_access_prefix(self, prefix):
         self.accessPrefix = prefix
-        if self.type in ["LIST", "MAP", "GROUP"]:
+        if self.type in ["LIST", "MAP", "GROUP", "UNION"]:
             list(map(lambda child: child.set_access_prefix(
                 self.var_access()), self.value))
-        if self.type == "UNION":
-            list(map(lambda child:
-                     child.set_access_prefix(self.access_append_delimiter(self.val_access(), self.access_delimiter,
-                                                                          child.var_name())
-                                             if child.multi_member() else self.val_access()), self.value))
         if self.key is not None:
             self.key.set_access_prefix(self.var_access())
         if self.cbor_var_condition():
@@ -820,10 +819,12 @@ class CodeGenerator(CddlParser):
         return self.multi_var_condition() or self.repeated_multi_var_condition()
 
     # Take a multi member type name and create a variable declaration. Make it an array if the element is repeated.
-    def add_var_name(self, var_type, full=False):
+    def add_var_name(self, var_type, full=False, anonymous=False):
         if var_type:
             assert(var_type[-1][-1] == "}" or len(var_type) == 1), f"Expected single var: {var_type!r}"
-            var_type[-1] += " %s%s;" % (self.var_name(), "[%d]" % self.maxQ if full and self.maxQ != 1 else "")
+            if not anonymous or var_type[-1][-1] != "}":
+                var_type[-1] += " %s%s" % (self.var_name(), "[%d]" % self.maxQ if full and self.maxQ != 1 else "")
+            var_type = add_semicolon(var_type)
         return var_type
 
     # The type for this element as a member variable.
@@ -839,7 +840,7 @@ class CodeGenerator(CddlParser):
         var_type = self.var_type()
         multi_var = False
 
-        decl = self.add_var_name(var_type)
+        decl = self.add_var_name(var_type, anonymous = self.type == "UNION")
 
         if self.type in ["LIST", "MAP", "GROUP"]:
             decl += self.child_declarations()
