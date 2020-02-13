@@ -94,11 +94,11 @@ def do_flatten(to_flatten, allow_multi=False):
         return [to_flatten]
 
 
-# Return a code snippet that assigns a variable the address of another
-# variable, or to NULL.
+# Return a code snippet that assigns the value to a variable var_name and
+# returns pointer to the variable, or returns NULL if the value is None.
 def val_or_null(value, var_name):
-    return "(%s=%d) ? &%s : &%s" % (var_name, value, var_name,
-                                    var_name) if value is not None else "NULL"
+    return "(%s=%d, &%s)" % (var_name, value,
+                                var_name) if value is not None else "NULL"
 
 
 # Assign the min_value variable.
