@@ -13,5 +13,9 @@ FILE(GLOB app_sources src/*.c)
 target_sources(app PRIVATE
   ${app_sources})
 
-target_cddl_source(app pet.cddl ENTRY_TYPES Pet)
-target_cddl_source(app serial_recovery.cddl ENTRY_TYPES Upload)
+target_cddl_source(app pet.cddl ENTRY_TYPES Pet
+  #VERBOSE
+  )
+target_cddl_source(app serial_recovery.cddl ENTRY_TYPES Upload
+  #VERBOSE
+  )

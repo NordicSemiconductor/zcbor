@@ -4,7 +4,10 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-# target_cddl_source(<target> <cddl_file> ENTRY_TYPES <entry_types> [VERBOSE])
+# target_cddl_source(<target>
+#                    <cddl_file>
+#                    ENTRY_TYPES <entry_types>
+#                    [VERBOSE])
 #
 # Add generated code to the project for decoding CBOR.
 #
@@ -31,12 +34,14 @@ function(target_cddl_source target cddl_file)
     message(FATAL_ERROR "CDDL input file ${cddl_file} does not exist.")
   endif()
 
-  get_filename_component(name ${cddl_path} NAME_WE)
-  set(c_file ${CMAKE_CURRENT_BINARY_DIR}/${name}.c)
-  set(h_file_dir ${CMAKE_CURRENT_BINARY_DIR}/zephyr/include/generated)
-  set(h_file ${h_file_dir}/${name}.h)
-
   cmake_parse_arguments(CDDL "VERBOSE" "" "ENTRY_TYPES" ${ARGN})
+
+  set(code "decode")
+
+  get_filename_component(name ${cddl_path} NAME_WE)
+  set(c_file ${CMAKE_CURRENT_BINARY_DIR}/${name}_${code}.c)
+  set(h_file_dir ${CMAKE_CURRENT_BINARY_DIR}/zephyr/include/generated)
+  set(h_file ${h_file_dir}/${name}_${code}.h)
 
   add_custom_command(
     OUTPUT
@@ -61,9 +66,12 @@ function(target_cddl_source target cddl_file)
     ${h_file_dir}
     ${CDDL_GEN_BASE}/include
     )
-  target_link_libraries(${target} PRIVATE cbor_decode zephyr_interface)
+
+  set(cbor_lib cbor_decode)
+  target_link_libraries(${target} PRIVATE ${cbor_lib} zephyr_interface)
   if (CDDL_VERBOSE)
-    target_compile_definitions(cbor_decode PRIVATE CDDL_CBOR_VERBOSE)
+    target_compile_definitions(${cbor_lib} PRIVATE CDDL_CBOR_VERBOSE)
     target_compile_definitions(${target} PRIVATE CDDL_CBOR_VERBOSE)
+    target_compile_definitions(cbor_common PRIVATE CDDL_CBOR_VERBOSE)
   endif()
 endfunction(target_cddl_source)

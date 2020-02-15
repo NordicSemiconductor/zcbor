@@ -5,8 +5,8 @@
  */
 
 #include <ztest.h>
-#include "manifest-moran3.h"
-#include "manifest-moran4.h"
+#include "manifest-moran3_decode.h"
+#include "manifest-moran4_decode.h"
 
 
 uint8_t test_vector2[] = {
@@ -356,10 +356,10 @@ zassert_equal(_SUIT_Parameters_SUIT_Parameter_URI_List,
 
 void test_main(void)
 {
-	ztest_test_suite(cbor_cddl_test,
+	ztest_test_suite(cbor_decode_test,
 			 ztest_unit_test(test_1),
 			 ztest_unit_test(test_2),
 			 ztest_unit_test(test_3)
 	);
-	ztest_run_test_suite(cbor_cddl_test);
+	ztest_run_test_suite(cbor_decode_test);
 }
