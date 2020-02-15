@@ -7,6 +7,7 @@
 # target_cddl_source(<target>
 #                    <cddl_file>
 #                    ENTRY_TYPES <entry_types>
+#                    DECODE|ENCODE
 #                    [VERBOSE])
 #
 # Add generated code to the project for decoding CBOR.
@@ -34,14 +35,22 @@ function(target_cddl_source target cddl_file)
     message(FATAL_ERROR "CDDL input file ${cddl_file} does not exist.")
   endif()
 
-  cmake_parse_arguments(CDDL "VERBOSE" "" "ENTRY_TYPES" ${ARGN})
+  cmake_parse_arguments(CDDL "DECODE;ENCODE;VERBOSE" "" "ENTRY_TYPES" ${ARGN})
 
-  set(code "decode")
+  if (CDDL_ENCODE)
+    set(code "encode")
+  else ()
+    set(code "decode")
+  endif()
 
   get_filename_component(name ${cddl_path} NAME_WE)
   set(c_file ${CMAKE_CURRENT_BINARY_DIR}/${name}_${code}.c)
   set(h_file_dir ${CMAKE_CURRENT_BINARY_DIR}/zephyr/include/generated)
   set(h_file ${h_file_dir}/${name}_${code}.h)
+
+  if ("${CDDL_DECODE}" STREQUAL "${CDDL_ENCODE}")
+    message(FATAL_ERROR "Please specify exactly one of DECODE or ENCODE")
+  endif()
 
   add_custom_command(
     OUTPUT
@@ -53,6 +62,8 @@ function(target_cddl_source target cddl_file)
     --oc ${c_file}
     --oh ${h_file}
     -t ${CDDL_ENTRY_TYPES}
+    $<$<BOOL:${CDDL_DECODE}>:-d>
+    $<$<BOOL:${CDDL_ENCODE}>:-e>
     $<$<BOOL:${CDDL_VERBOSE}>:-v>
     DEPENDS
     ${cddl_path}
@@ -67,7 +78,11 @@ function(target_cddl_source target cddl_file)
     ${CDDL_GEN_BASE}/include
     )
 
-  set(cbor_lib cbor_decode)
+  if (${CDDL_DECODE})
+    set(cbor_lib cbor_decode)
+  else()
+    set(cbor_lib cbor_encode)
+  endif()
   target_link_libraries(${target} PRIVATE ${cbor_lib} zephyr_interface)
   if (CDDL_VERBOSE)
     target_compile_definitions(${cbor_lib} PRIVATE CDDL_CBOR_VERBOSE)

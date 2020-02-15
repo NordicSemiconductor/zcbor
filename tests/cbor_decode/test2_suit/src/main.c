@@ -48,7 +48,7 @@ void test_5(void)
 	cbor_print("test_vector end at: 0x%x\r\n",
 				((uint32_t)test_vector1) + sizeof(test_vector1));
 	res = cbor_decode_SUIT_Outer_Wrapper(test_vector1,
-					sizeof(test_vector1), &outerwrapper1);
+					sizeof(test_vector1), &outerwrapper1, false);
 	zassert_true(res, "top-level decoding failed.");
 	zassert_equal(_SUIT_Manifest_Wrapped_suit_manifest, outerwrapper1
 			._SUIT_Outer_Wrapper__SUIT_Manifest_Wrapped
@@ -145,7 +145,7 @@ void test_5(void)
 			._SUIT_Common_suit_common_sequence
 			._SUIT_Common_suit_common_sequence
 			.len,
-			&sequence);
+			&sequence, false);
 	zassert_true(res, "Parsing common sequence failed.");
 	zassert_equal(1, sequence
 			._SUIT_Command_Sequence__SUIT_Command_count,
@@ -172,7 +172,7 @@ void test_5(void)
 			->_SUIT_Manifest_suit_run
 			._SUIT_Manifest_suit_run
 			.len,
-			&sequence);
+			&sequence, false);
 	zassert_true(res, "Parsing run command sequence failed.");
 }
 
