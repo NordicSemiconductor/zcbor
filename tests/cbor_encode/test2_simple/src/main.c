@@ -5,8 +5,8 @@
  */
 
 #include <ztest.h>
-#include "pet_decode.h"
-#include "serial_recovery_decode.h"
+#include "pet_encode.h"
+// #include "serial_recovery.h"
 
 uint8_t serial_rec_input1[] = {
 	/* "data" */
@@ -122,71 +122,71 @@ uint8_t serial_rec_input2[] = {
 
 void test_pet(void)
 {
-	Pet_t pet;
-	uint8_t input[] = {
+	Pet_t pet = {
+		._Pet_name_tstr = {{.value = "foo", .len = 3}, {.value = "bar", .len = 3}},
+		._Pet_name_tstr_count = 2,
+		._Pet_birthday = {.value = (uint8_t[]){1,2,3,4,5,6,7,8}, .len = 8},
+		._Pet_species_dog = 2,
+		._Pet_species_choice = _Pet_species_dog
+	};
+	uint8_t exp_output[] = {
 		0x83, 0x82, 0x63, 0x66, 0x6f, 0x6f, 0x63, 0x62, 0x61, 0x72,
-		0x48, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
-		0x02};
-	zassert_true(cbor_decode_Pet(input, sizeof(input), &pet, false), "");
+		0x48, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x02};
 
-	uint8_t exp_birthday[] = {1,2,3,4,5,6,7,8};
+	uint8_t output[20];
+	zassert_true(cbor_encode_Pet(output, sizeof(output), &pet, false), "");
 
-	zassert_equal(2, pet._Pet_name_tstr_count, "Expect 2 names");
-	zassert_mem_equal("foo", pet._Pet_name_tstr[0].value, 3, "Expect first name 'foo'");
-	zassert_mem_equal("bar", pet._Pet_name_tstr[1].value, 3, "Expect first name 'bar'");
-	zassert_equal(8, pet._Pet_birthday.len, "Expect len 8 birthday");
-	zassert_mem_equal(exp_birthday, pet._Pet_birthday.value, 8, "Expect birthday");
-	zassert_equal(_Pet_species_dog, pet._Pet_species_choice, "Expect dog");
+	zassert_mem_equal(exp_output, output, sizeof(exp_output), NULL);
 }
 
-void test_serial1(void)
-{
-	Upload_t upload;
-	bool ret = cbor_decode_Upload(serial_rec_input1,
-			sizeof(serial_rec_input1), &upload, false);
-	zassert_true(ret, "decoding failed.");
+// void test_serial1(void)
+// {
+// 	Upload_t upload;
+// 	bool ret = cbor_decode_Upload(serial_rec_input1,
+// 			sizeof(serial_rec_input1), &upload);
+// 	zassert_true(ret, "decoding failed.");
 
-	zassert_equal(5, upload._Upload_members_count,
-		"expect 5 members");
-	zassert_equal(_Member_data, upload._Upload_members[0]
-		._Member_choice, "expect data 1st");
-	zassert_equal(_Member_image, upload._Upload_members[1]
-		._Member_choice, "expect image 2nd");
-	zassert_equal(_Member_len, upload._Upload_members[2]
-		._Member_choice, "expect len 3rd");
-	zassert_equal(_Member_off, upload._Upload_members[3]
-		._Member_choice, "expect off 4th");
-	zassert_equal(_Member_sha, upload._Upload_members[4]
-		._Member_choice, "expect sha 5th");
-}
+// 	zassert_equal(5, upload._Upload_members_count,
+// 		"expect 5 members");
+// 	zassert_equal(_Member_data, upload._Upload_members[0]
+// 		._Member_choice, "expect data 1st");
+// 	zassert_equal(_Member_image, upload._Upload_members[1]
+// 		._Member_choice, "expect image 2nd");
+// 	zassert_equal(_Member_len, upload._Upload_members[2]
+// 		._Member_choice, "expect len 3rd");
+// 	zassert_equal(_Member_off, upload._Upload_members[3]
+// 		._Member_choice, "expect off 4th");
+// 	zassert_equal(_Member_sha, upload._Upload_members[4]
+// 		._Member_choice, "expect sha 5th");
+// }
 
-void test_serial2(void)
-{
-	Upload_t upload;
-	bool ret = cbor_decode_Upload(serial_rec_input2,
-			sizeof(serial_rec_input2), &upload, false);
-	zassert_true(ret, "decoding failed.");
+// void test_serial2(void)
+// {
+// 	Upload_t upload;
+// 	bool ret = cbor_decode_Upload(serial_rec_input2,
+// 			sizeof(serial_rec_input2), &upload);
+// 	zassert_true(ret, "decoding failed.");
 
-	zassert_equal(5, upload._Upload_members_count,
-		"expect 5 members");
-	zassert_equal(_Member_data, upload._Upload_members[0]
-		._Member_choice, "expect data 1st");
-	zassert_equal(_Member_image, upload._Upload_members[1]
-		._Member_choice, "expect image 2nd");
-	zassert_equal(_Member_len, upload._Upload_members[2]
-		._Member_choice, "expect len 3rd");
-	zassert_equal(_Member_off, upload._Upload_members[3]
-		._Member_choice, "expect off 4th");
-	zassert_equal(_Member_sha, upload._Upload_members[4]
-		._Member_choice, "expect sha 5th");
-}
+// 	zassert_equal(5, upload._Upload_members_count,
+// 		"expect 5 members");
+// 	zassert_equal(_Member_data, upload._Upload_members[0]
+// 		._Member_choice, "expect data 1st");
+// 	zassert_equal(_Member_image, upload._Upload_members[1]
+// 		._Member_choice, "expect image 2nd");
+// 	zassert_equal(_Member_len, upload._Upload_members[2]
+// 		._Member_choice, "expect len 3rd");
+// 	zassert_equal(_Member_off, upload._Upload_members[3]
+// 		._Member_choice, "expect off 4th");
+// 	zassert_equal(_Member_sha, upload._Upload_members[4]
+// 		._Member_choice, "expect sha 5th");
+// }
 
 void test_main(void)
 {
-	ztest_test_suite(cbor_decode_test3,
-			 ztest_unit_test(test_pet),
-			 ztest_unit_test(test_serial1),
-			 ztest_unit_test(test_serial2)
+	ztest_test_suite(cbor_encode_test2,
+			 ztest_unit_test(test_pet)
+			//  ztest_unit_test(test_serial1),
+			//  ztest_unit_test(test_serial2)
 	);
-	ztest_run_test_suite(cbor_decode_test3);
+	ztest_run_test_suite(cbor_encode_test2);
 }

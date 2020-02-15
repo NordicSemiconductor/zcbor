@@ -7,20 +7,27 @@
 cmake_minimum_required(VERSION 3.8.2)
 include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
 add_subdirectory(../../.. ${PROJECT_BINARY_DIR}/cddl_gen)
-
 project(NONE)
 
-target_cddl_source(app manifest-moran3.cddl
-  ENTRY_TYPES OuterWrapper
-  DECODE
+target_cddl_source(app manifest3.cddl
+  ENTRY_TYPES
+  SUIT_Outer_Wrapper
+  SUIT_Command_Sequence
+  SUIT_Authentication_Wrapper
+  ENCODE
   #VERBOSE
   )
-target_cddl_source(app manifest-moran4.cddl
-  ENTRY_TYPES SUIT_Outer_Wrapper
+
+target_cddl_source(app manifest3.cddl
+  ENTRY_TYPES
+  SUIT_Outer_Wrapper
+  SUIT_Command_Sequence
+  SUIT_Authentication_Wrapper
   DECODE
   #VERBOSE
   )
 
 FILE(GLOB app_sources src/*.c)
 target_sources(app PRIVATE
-  ${app_sources})
+  ${app_sources}
+  )

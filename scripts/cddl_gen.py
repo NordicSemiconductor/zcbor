@@ -15,7 +15,7 @@ from copy import copy
 
 my_types = {}
 entry_type_names = []
-
+mode = ""
 
 # Size of "additional" field if num is encoded as int
 def sizeof(num):
@@ -792,11 +792,11 @@ class CodeGenerator(CddlParser):
 
     # Name of the decoder function for this element.
     def decode_func_name(self):
-        return f"decode{self.var_name()}"
+        return f"{mode}{self.var_name()}"
 
     # Name of the decoder function for the repeated part of this element.
     def repeated_decode_func_name(self):
-        return f"decode_repeated{self.var_name()}"
+        return f"{mode}_repeated{self.var_name()}"
 
     # Declaration of the variables of all children.
     def child_declarations(self):
@@ -982,16 +982,16 @@ class CodeGenerator(CddlParser):
         # Will fail runtime if we don't use lambda for single_func()
         # pylint: disable=unnecessary-lambda
         retval = {
-            "INT": lambda: ["intx32_decode", *vals],
-            "UINT": lambda: ["uintx32_decode", *vals],
-            "NINT": lambda: ["intx32_decode", *vals],
-            "FLOAT": lambda: ["float_decode", *vals],
-            "BSTR": lambda: ["bstrx_decode" if not self.cbor_var_condition() else "bstrx_start_decode", *sizes],
-            "TSTR": lambda: ["tstrx_decode", *sizes],
-            "BOOL": lambda: ["boolx_decode", self.val_access(), min_val_or_null(1 if self.value == True  else 0),
+            "INT": lambda: [f"intx32_{mode}", *vals],
+            "UINT": lambda: [f"uintx32_{mode}", *vals],
+            "NINT": lambda: [f"intx32_{mode}", *vals],
+            "FLOAT": lambda: [f"float_{mode}", *vals],
+            "BSTR": lambda: [f"bstrx_{mode}" if not self.cbor_var_condition() else f"bstrx_start_{mode}", *sizes],
+            "TSTR": lambda: [f"tstrx_{mode}", *sizes],
+            "BOOL": lambda: [f"boolx_{mode}", self.val_access(), min_val_or_null(1 if self.value == True  else 0),
                                                                 max_val_or_null(0 if self.value == False else 1)],
-            "NIL": lambda: ["nilx_decode", "NULL", "NULL", "NULL"],
-            "ANY": lambda: ["any_decode", "NULL", "NULL", "NULL"],
+            "NIL": lambda: [f"nilx_{mode}", "NULL", "NULL", "NULL"],
+            "ANY": lambda: [f"any_{mode}" if mode == "decode" else f"nilx_{mode}", "NULL", "NULL", "NULL"],
             "OTHER": lambda: list_replace_if_not_null(my_types[self.value].single_func(), 1, self.val_access()),
         }[self.type]()
         return retval
@@ -1073,7 +1073,10 @@ class CodeGenerator(CddlParser):
         func = (self.decode_single_func_prim(),)
         memcmp = (("!memcmp(\"{0}\", {1}.value, {1}.len)".format(
                 self.value, self.val_access()),) if self.expected_string_condition() else tuple())
-        return " && ".join(func + memcmp)
+        if mode == "decode":
+            return " && ".join(func + memcmp)
+        else:
+            return " && ".join(memcmp + func)
 
     # Recursively sum the total minimum and maximum element count for this
     # element.
@@ -1101,8 +1104,8 @@ class CodeGenerator(CddlParser):
 
     # Return the full code needed to decode a "LIST" or "MAP" element with children.
     def decode_list(self):
-        start_func = f"{self.type.lower()}_start_decode"
-        end_func = f"{self.type.lower()}_end_decode"
+        start_func = f"{self.type.lower()}_start_{mode}"
+        end_func = f"{self.type.lower()}_end_{mode}"
         assert start_func in ["list_start_decode", "list_start_encode", "map_start_decode", "map_start_encode"]
         assert end_func in ["list_end_decode", "list_end_encode", "map_end_decode", "map_end_encode"]
         assert self.type in ["LIST", "MAP"], "Expected LIST or MAP type, was %s." % self.type
@@ -1121,9 +1124,14 @@ class CodeGenerator(CddlParser):
     # Return the full code needed to decode a "UNION" element's children.
     def decode_union(self):
         assert self.type in ["UNION"], "Expected UNION type."
-        child_values = ["(%s && ((%s = %s) || 1))" %
-                        (child.full_decode(), self.choice_var_access(), child.var_name())
-                        for child in self.value]
+        if mode == "decode":
+            child_values = ["(%s && ((%s = %s) || 1))" %
+                            (child.full_decode(), self.choice_var_access(), child.var_name())
+                            for child in self.value]
+        else:
+            child_values = ["((%s == %s) && %s)" %
+                            (self.choice_var_access(), child.var_name(), child.full_decode())
+                            for child in self.value]
 
         # Reset state for all but the first child.
         for i in range(1, len(child_values)):
@@ -1176,7 +1184,7 @@ class CodeGenerator(CddlParser):
         if self.multi_decode_condition():
             func, *arguments = self.repeated_single_func()
             return (
-                "multi_decode(%s, %s, &%s, (void*)%s, %s, %s)" %
+                f"multi_{mode}(%s, %s, &%s, (void*)%s, %s, %s)" %
                 (self.minQ,
                  self.maxQ,
                  self.count_var_access() if self.count_var_condition() else self.present_var_access(),
@@ -1363,6 +1371,10 @@ This script requires 'regex' for lookaround functionality not present in 're'.''
         help="Print more information while parsing CDDL and generating code.")
     parser.add_argument("--time-header", required=False, action="store_true", default=False,
                         help="Put the current time in a comment in the generated files.")
+    parser.add_argument("-d", "--decode", required = False, action="store_true",
+                        default = False, help="Generate decoding code.")
+    parser.add_argument("-e", "--encode", required = False, action="store_true",
+                        default = False, help="Generate encoding code.")
 
     return parser.parse_args()
 
@@ -1401,7 +1413,9 @@ static bool {decoder[1]}(
 # Render a single entry function (API function) with signature and body.
 def render_entry_function(decoder):
     return f"""
-bool cbor_{decoder.decode_func_name()}(const uint8_t * p_payload, size_t payload_len, {decoder.type_name()} * p_result)
+bool cbor_{decoder.xcode_func_name()}(
+		const uint8_t * p_payload, size_t payload_len,
+        {decoder.type_name()} * p_result, bool partial)
 {{
 	cbor_state_t state = {{
 		.p_payload = p_payload,
@@ -1409,17 +1423,20 @@ bool cbor_{decoder.decode_func_name()}(const uint8_t * p_payload, size_t payload
 		.elem_count = 1
 	}};
 
-	cbor_state_t state_backups[{xcoder.num_backups()+1}];
+	cbor_state_t state_backups[{decoder.num_backups()+1}];
 
 	cbor_state_backups_t backups = {{
 		.p_backup_list = state_backups,
 		.current_backup = 0,
-		.num_backups = {xcoder.num_backups()+1},
+		.num_backups = {decoder.num_backups()+1},
 	}};
 
 	state.p_backups = &backups;
 
-	bool result = {decoder.decode_func_name()}(&state, p_result, NULL, NULL);
+	bool result = {decoder.xcode_func_name()}(&state, p_result, NULL, NULL);
+	if (partial) {{
+		return result;
+	}}
 """ + (f"""
 	if (result) {{
 		if (state.p_payload == state.p_payload_end) {{
@@ -1431,6 +1448,8 @@ bool cbor_{decoder.decode_func_name()}(const uint8_t * p_payload, size_t payload
 		}}
 	}}
 	return false;
+}}""" if mode == "decode" else f"""
+	return result;
 }}""")
 
 
@@ -1444,7 +1463,7 @@ def render_c_file(functions, header_file_name, entry_types, print_time):
 #include <stdbool.h>
 #include <stddef.h>
 #include <string.h>
-#include "cbor_decode.h"
+#include "cbor_{mode}.h"
 #include "{header_file_name}"
 
 {linesep.join([render_function(decoder) for decoder in functions])}
@@ -1467,24 +1486,28 @@ def render_h_file(type_defs, header_guard, entry_types, print_time):
 #include <stdbool.h>
 #include <stddef.h>
 #include <string.h>
-#include "cbor_decode.h"
+#include "cbor_{mode}.h"
 
 
 {(linesep+linesep).join([f"typedef {linesep.join(typedef[0])} {typedef[1]};" for typedef in type_defs])}
 
-{(linesep+linesep).join([f"bool cbor_{decoder.decode_func_name()}(const uint8_t * p_payload, size_t payload_len, {decoder.type_name()} * p_result);" for decoder in entry_types])}
+{(linesep+linesep).join([f"bool cbor_{decoder.decode_func_name()}(const uint8_t * p_payload, size_t payload_len, {decoder.type_name()} * p_result, bool partial);" for decoder in entry_types])}
 
 #endif // {header_guard}
 """
 
 
 def main():
-    global my_types, entry_type_names, verbose_flag
+    global my_types, entry_type_names, verbose_flag, mode
 
     # Parse command line arguments.
     args = parse_args()
     entry_type_names = args.entry_types
     verbose_flag = args.verbose
+    mode = "decode" if args.decode else "encode"
+
+    if args.decode == args.encode:
+        args.error("Please specify exactly one of --decode or --encode.")
 
     # Read CDDL file. my_types will become a dict {name:str => definition:str}
     # for all types in the CDDL file.

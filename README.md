@@ -2,32 +2,31 @@ Generate code from CDDL description
 ===================================
 
 CDDL is a human-readable description language defined in [IETF RFC 8610](https://datatracker.ietf.org/doc/rfc8610/).
-By calling the Python script [cddl_gen.py](scripts/cddl_gen.py), you can generate C code that validates and decodes CBOR data against a CDDL schema.
+By calling the Python script [cddl_gen.py](scripts/cddl_gen.py), you can generate C code that validates/encodes/decodes CBOR data conforming to a CDDL schema.
 
-The generated code depends on a CBOR decoding library ([cbor_decode](include/cbor_decode.h)).
-There are tests for the code generation in [tests/](tests/cbor_decode/).
+The generated code depends on low-level CBOR ([libraries](include/src)).
+There are tests for the code generation in [tests/](tests/).
 For now the tests require [Zephyr](https://github.com/zephyrproject-rtos/zephyr) (if your shell is set up to build Zephyr samples, the tests should also build).
 
 Features
 ========
 
 The generated code consists of:
- - A header file containing typedefs for the types defined in the CDDL, as well as declarations for decoding functions for some types (those specified as entry types).
- - A C file containing all the decoding code.
-   The code is split across multiple functions, and each function contains a single `if` statement which "and"s and "or"s together calls into the cbor_decode library or to other generated decoding functions.
+ - A header file containing typedefs for the types defined in the CDDL, as well as declarations for decoding functions for some types (those specified as entry types). The typedefs are the same for both encoding and decoding.
+ - A C file containing all the encoding/decoding code.
+   The code is split across multiple functions, and each function contains a single `if` statement which "and"s and "or"s together calls into the cbor libraries or to other generated decoding functions.
 
 CDDL allows placing restrictions on the members of your data structure.
-Restictions can be on type, on content (e.g. values/sizes of ints or strings), and repetition (e.g. the number of members in a list).
-The generated code will validate the input, which means that it will check all the restriction set in the CDDL description, and fail if a restriction is broken.
+Restrictions can be on type, on content (e.g. values/sizes of ints or strings), and repetition (e.g. the number of members in a list).
+The generated code will validate the input (i.e. the structure if encoding, or the payload for decoding), which means that it will check all the restriction set in the CDDL description, and fail if a restriction is broken.
 
-The cbor_decode library does most of the actual extraction and validation of individual values.
-Currently, only decoding of CBOR is supported.
+The cbor librarie do most of the actual translation and moving of bytes, and the validation of values.
 
 Build system
 ------------
 
 There is some CMake code available which requires Zephyr to run.
-When you call the [`target_cddl_source()`](cmake/extensions.cmake) CMake function, it sets up build steps necessary to call the script on the provided CDDL file, and adds the generated file as well as the cbor_decode library to your project.
+When you call the [`target_cddl_source()`](cmake/extensions.cmake) CMake function, it sets up build steps necessary to call the script on the provided CDDL file, and adds the generated file as well as the cbor libraries to your project.
 As long as the `target_cddl_source()` function is called in your project, you should be able to #include the generated file and use it in your code.
 
 Introduction to CDDL
@@ -99,20 +98,21 @@ Pet = [
 Call the Python script
 
 ```sh
-python3 <ccdlgen base>/scripts/cddl_gen.py -i pet.cddl -t Pet
+python3 <ccdlgen base>/scripts/cddl_gen.py -i pet.cddl -d -t Pet
 ```
 
 Or add the following line to your CMake code:
 
 ```cmake
-target_cddl_source(app pet.cddl ENTRY_TYPES Pet)
+target_cddl_source(app pet.cddl DECODE ENTRY_TYPES Pet)
 ```
 
 And use the generated code with
 
 ```c
-#include <pet.h> /* The name of the header file is taken from the name of the
-                    cddl file. */
+#include <pet_decode.h> /* The name of the header file is taken from the name of
+                           the cddl file, but can also be specifiec when calling
+                           the script. */
 
 /* ... */
 
@@ -120,4 +120,23 @@ And use the generated code with
  * has been specified as an ENTRY_TYPE in the cmake call. */
 Pet_t pet;
 bool success = cbor_decode_Pet(input, sizeof(input), &pet);
+```
+
+The process is the same for encoding, except:
+ - Change `-d` to `-e` when calling the script
+ - Change `DECODE` to `ENCODE` in the Cmake call.
+ - Input parameters become output parameters and vice versa in the code:
+
+```c
+#include <pet_encode.h> /* The name of the header file is taken from the name of
+                           the cddl file, but can also be specifiec when calling
+                           the script. */
+
+/* ... */
+
+/* The following type and function refer to the Pet type in the CDDL, which
+ * has been specified as an ENTRY_TYPE in the cmake call. */
+Pet_t pet = { /* Initialize with desired data. */ };
+uint8_t output[100]; /* 100 is an example. Must be large enough for data to fit. */
+bool success = cbor_decode_Pet(output, sizeof(output), &pet);
 ```

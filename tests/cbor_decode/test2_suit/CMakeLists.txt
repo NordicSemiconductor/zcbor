@@ -14,6 +14,7 @@ target_cddl_source(app manifest2.cddl
   SUIT_Outer_Wrapper
   SUIT_Command_Sequence
   SUIT_Authentication_Wrapper
+  DECODE
   #VERBOSE
   )
 
