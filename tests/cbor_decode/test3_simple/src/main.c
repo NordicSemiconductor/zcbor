@@ -5,8 +5,8 @@
  */
 
 #include <ztest.h>
-#include "pet.h"
-#include "serial_recovery.h"
+#include "pet_decode.h"
+#include "serial_recovery_decode.h"
 
 uint8_t serial_rec_input1[] = {
 	/* "data" */
@@ -183,10 +183,10 @@ void test_serial2(void)
 
 void test_main(void)
 {
-	ztest_test_suite(cbor_cddl_test3,
+	ztest_test_suite(cbor_decode_test3,
 			 ztest_unit_test(test_pet),
 			 ztest_unit_test(test_serial1),
 			 ztest_unit_test(test_serial2)
 	);
-	ztest_run_test_suite(cbor_cddl_test3);
+	ztest_run_test_suite(cbor_decode_test3);
 }

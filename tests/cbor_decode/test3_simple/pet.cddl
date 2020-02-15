@@ -10,5 +10,5 @@ Timestamp = bstr .size 8
 Pet = [
     name: [ +tstr ],
     birthday: Timestamp,
-    species: (cat: 1) / (dog: 2) / (other: 3),
+    species: ((cat: 1) / (dog: 2) / (other: 3)),
 ]

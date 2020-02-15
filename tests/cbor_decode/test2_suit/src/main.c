@@ -5,7 +5,7 @@
  */
 
 #include <ztest.h>
-#include "manifest2.h"
+#include "manifest2_decode.h"
 
 
 /* draft-ietf-suit-manifest-02 Example 0 */
@@ -44,8 +44,8 @@ void test_5(void)
 	uint8_t expected_component1[] = {0x00, 0x34, 0x01};
 	bool res;
 
-	cbor_decode_print("test_vector at: 0x%x\r\n", (uint32_t)test_vector1);
-	cbor_decode_print("test_vector end at: 0x%x\r\n",
+	cbor_print("test_vector at: 0x%x\r\n", (uint32_t)test_vector1);
+	cbor_print("test_vector end at: 0x%x\r\n",
 				((uint32_t)test_vector1) + sizeof(test_vector1));
 	res = cbor_decode_SUIT_Outer_Wrapper(test_vector1,
 					sizeof(test_vector1), &outerwrapper1);
@@ -125,7 +125,7 @@ void test_5(void)
 			sizeof(expected_component1),
 			"component elem 1 doesn't match.");
 
-	cbor_decode_print("\r\n");
+	cbor_print("\r\n");
 	zassert_equal(1, manifest
 			->_SUIT_Manifest_suit_common
 			._SUIT_Manifest_suit_common_cbor
@@ -160,7 +160,7 @@ void test_5(void)
 			._SUIT_Command__SUIT_Directive
 			._SUIT_Directive___suit_directive_set_parameters_map__SUIT_Parameters_count,
 			"Should be two vars (parameters).");
-	cbor_decode_print("\r\n");
+	cbor_print("\r\n");
 
 	res =
 	cbor_decode_SUIT_Command_Sequence(
@@ -178,8 +178,8 @@ void test_5(void)
 
 void test_main(void)
 {
-	ztest_test_suite(cbor_cddl_test2,
+	ztest_test_suite(cbor_decode_test2,
 			 ztest_unit_test(test_5)
 	);
-	ztest_run_test_suite(cbor_cddl_test2);
+	ztest_run_test_suite(cbor_decode_test2);
 }
