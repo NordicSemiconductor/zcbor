@@ -107,6 +107,11 @@ def min_val_or_null(value):
     return val_or_null(value, "min_value")
 
 
+# Assign the min_value variable.
+def min_str_or_null(length, value):
+    return f"""&(cbor_string_type_t){{.value = {f'"{value}"' if value is not None else 'NULL'}, .len = {length}}}""" if length is not None else "NULL"
+
+
 # Assign the max_value variable.
 def max_val_or_null(value):
     return val_or_null(value, "max_value")
@@ -200,6 +205,10 @@ class CddlParser:
             reprstr += self.label + ':'
         if self.key:
             reprstr += repr(self.key) + " => "
+        if self.is_unambiguous():
+            reprstr += '/'
+        if self.is_unambiguous_repeated():
+            reprstr += '/'
         reprstr += self.type
         if self.size:
             reprstr += '(%d)' % self.size
@@ -690,10 +699,14 @@ class CodeGenerator(CddlParser):
     # "Path" to this element's variable.
     # If full is false, the path to the repeated part is returned.
     def var_access(self):
+        if self.is_unambiguous():
+            return "NULL"
         return self.access_append()
 
     # "Path" to access this element's actual value variable.
     def val_access(self):
+        if self.is_unambiguous_repeated():
+            return "NULL"
         if self.skip_condition():
             return self.var_access()
         return self.access_append(self.var_name())
@@ -839,6 +852,17 @@ class CodeGenerator(CddlParser):
     def multi_member(self):
         return self.multi_var_condition() or self.repeated_multi_var_condition()
 
+    def is_unambiguous_repeated(self):
+        return (self.type is "NIL"
+                or (self.type in ["INT", "NINT", "UINT", "FLOAT", "BSTR", "TSTR", "BOOL"] and self.value is not None)
+                or (self.type == "BSTR" and self.cbor is not None and self.cbor.is_unambiguous())
+                or (self.type == "OTHER" and my_types[self.value].is_unambiguous()))
+                # or (self.type in ["LIST", "GROUP", "MAP"] and all(((child.minQ == child.maxQ and child.is_unambiguous()) for child in self.value)))
+                # or (self.type is "UNION" and len(self.value) is 1 and self.value[0].is_unambiguous()))
+
+    def is_unambiguous(self):
+        return (self.is_unambiguous_repeated() and (self.minQ == self.maxQ) and (self.key is None or self.key.is_unambiguous_repeated()))
+
     # Take a multi member type name and create a variable declaration. Make it an array if the element is repeated.
     def add_var_name(self, var_type, full=False, anonymous=False):
         if var_type:
@@ -858,6 +882,9 @@ class CodeGenerator(CddlParser):
 
     # Declaration of the repeated part of this element.
     def repeated_declaration(self):
+        if self.is_unambiguous_repeated():
+            return []
+
         var_type = self.var_type()
         multi_var = False
 
@@ -901,9 +928,15 @@ class CodeGenerator(CddlParser):
     def full_declaration(self):
         multi_var = False
 
+        if self.is_unambiguous():
+            return []
+
         if self.multi_var_condition():
-            decl = self.add_var_name(
-                [self.repeated_type_name()] if self.repeated_type_name() is not None else [], full=True)
+            if self.is_unambiguous_repeated():
+                decl = []
+            else:
+                decl = self.add_var_name(
+                    [self.repeated_type_name()] if self.repeated_type_name() is not None else [], full=True)
         else:
             decl = self.repeated_declaration()
 
@@ -939,13 +972,13 @@ class CodeGenerator(CddlParser):
 
     # Whether this element should have a typedef in the code.
     def type_def_condition(self):
-        if self in my_types.values() and self.multi_member():
+        if self in my_types.values() and self.multi_member() and not self.is_unambiguous():
             return True
         return False
 
     # Whether this type needs a typedef for its repeated part.
     def repeated_type_def_condition(self):
-        if self.repeated_multi_var_condition() and self.multi_var_condition():
+        if self.repeated_multi_var_condition() and self.multi_var_condition() and not self.is_unambiguous_repeated():
             return True
         return False
 
@@ -974,7 +1007,7 @@ class CodeGenerator(CddlParser):
     # function is defined elsewhere ("OTHER"))
     def single_func_prim(self):
         vals = [self.val_access(), min_val_or_null(self.min_value), max_val_or_null(self.max_value)]
-        sizes = [self.val_access(), min_val_or_null(self.min_size), max_val_or_null(self.max_size)]
+        sizes = [self.val_access(), min_str_or_null(self.min_size, self.value), max_val_or_null(self.max_size)]
 
         if self.type in ["LIST", "MAP"]:
             assert len(self.value) == 0, f"List must be empty or have a single element, has {len(self.value)} children."
@@ -1070,13 +1103,7 @@ class CodeGenerator(CddlParser):
     # Return the full code needed to encode/decode a "BSTR" or "TSTR" element.
     def xcode_str(self):
         assert self.type in ["BSTR", "TSTR"], "Expected string type."
-        func = (self.xcode_single_func_prim(),)
-        memcmp = (("!memcmp(\"{0}\", {1}.value, {1}.len)".format(
-                self.value, self.val_access()),) if self.expected_string_condition() else tuple())
-        if mode == "decode":
-            return " && ".join(func + memcmp)
-        else:
-            return " && ".join(memcmp + func)
+        return self.xcode_single_func_prim()
 
     # Recursively sum the total minimum and maximum element count for this
     # element.
@@ -1395,7 +1422,7 @@ static bool {xcoder[1]}(
 	{"size_t elem_count_bak;" if "elem_count_bak" in body else ""}
 	{"uint32_t min_value;" if "min_value" in body else ""}
 	{"uint32_t max_value;" if "max_value" in body else ""}
-	{xcoder[2]}* p_type_result = ({xcoder[2]}*)p_result;
+	{f"{xcoder[2]}* p_type_result = ({xcoder[2]}*)p_result;" if "p_type_result" in body else ""}
 	{"bool int_res;" if "int_res" in body else ""}
 
 	bool result = ({ body });

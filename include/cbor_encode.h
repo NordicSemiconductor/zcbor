@@ -45,28 +45,28 @@ bool uintx32_encode(cbor_state_t * p_state, uint32_t *p_result, void *p_min_valu
  * @details See @ref intx32_encode for information about parameters and return
  *          values. For strings, the value refers to the length of the string.
  */
-bool bstrx_start_encode(cbor_state_t * p_state, cbor_string_type_t *p_result, size_t *p_min_len, size_t *p_max_len);
+bool bstrx_start_encode(cbor_state_t * p_state, cbor_string_type_t *p_result, cbor_string_type_t *p_min, size_t *p_max_len);
 
 /** Encode a TSTR, but leave pp_payload pointing at the payload.
  *
  * @details See @ref intx32_encode for information about parameters and return
  *          values. For strings, the value refers to the length of the string.
  */
-bool tstrx_start_encode(cbor_state_t * p_state, cbor_string_type_t *p_result, size_t *p_min_len, size_t *p_max_len);
+bool tstrx_start_encode(cbor_state_t * p_state, cbor_string_type_t *p_result, cbor_string_type_t *p_min, size_t *p_max_len);
 
 /** Encode a BSTR, and move pp_payload to after the payload.
  *
  * @details See @ref intx32_encode for information about parameters and return
  *          values. For strings, the value refers to the length of the string.
  */
-bool bstrx_encode(cbor_state_t * p_state, cbor_string_type_t *p_result, size_t *p_min_len, size_t *p_max_len);
+bool bstrx_encode(cbor_state_t * p_state, cbor_string_type_t *p_result, cbor_string_type_t *p_min, size_t *p_max_len);
 
 /** Encode a TSTR, and move pp_payload to after the payload.
  *
  * @details See @ref intx32_encode for information about parameters and return
  *          values. For strings, the value refers to the length of the string.
  */
-bool tstrx_encode(cbor_state_t * p_state, cbor_string_type_t *p_result, size_t *p_min_len, size_t *p_max_len);
+bool tstrx_encode(cbor_state_t * p_state, cbor_string_type_t *p_result, cbor_string_type_t *p_min, size_t *p_max_len);
 
 /** Encode a LIST, but leave pp_payload pointing at the payload.
  *

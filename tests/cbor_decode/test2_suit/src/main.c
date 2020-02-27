@@ -32,9 +32,8 @@ uint8_t test_vector1[] = {
 	0xf6
 };
 
-static SUIT_Outer_Wrapper_t outerwrapper1 = {0};
-static SUIT_Command_Sequence_t
-	sequence = {0};
+static SUIT_Outer_Wrapper_t outerwrapper1;
+static SUIT_Command_Sequence_t sequence;
 
 void test_5(void)
 {
@@ -47,6 +46,7 @@ void test_5(void)
 	cbor_print("test_vector at: 0x%x\r\n", (uint32_t)test_vector1);
 	cbor_print("test_vector end at: 0x%x\r\n",
 				((uint32_t)test_vector1) + sizeof(test_vector1));
+	memset(&outerwrapper1, 0, sizeof(outerwrapper1));
 	res = cbor_decode_SUIT_Outer_Wrapper(test_vector1,
 					sizeof(test_vector1), &outerwrapper1, false);
 	zassert_true(res, "top-level decoding failed.");
@@ -57,9 +57,6 @@ void test_5(void)
 	manifest = &outerwrapper1
 			._SUIT_Outer_Wrapper__SUIT_Manifest_Wrapped
 			._SUIT_Manifest_Wrapped_suit_manifest_cbor;
-	zassert_equal(1, manifest
-			->_SUIT_Manifest_suit_manifest_version,
-			"wrong manifest version");
 	zassert_equal(1, manifest
 			->_SUIT_Manifest_suit_manifest_sequence_number,
 			"wrong sequence number");
@@ -131,8 +128,8 @@ void test_5(void)
 			._SUIT_Manifest_suit_common_cbor
 			._SUIT_Common_suit_common_sequence_present,
 			"common sequence should be present.");
-	res =
-	cbor_decode_SUIT_Command_Sequence(
+	memset(&sequence, 0, sizeof(sequence));
+	res = cbor_decode_SUIT_Command_Sequence(
 			manifest
 			->_SUIT_Manifest_suit_common
 			._SUIT_Manifest_suit_common_cbor
@@ -162,8 +159,8 @@ void test_5(void)
 			"Should be two vars (parameters).");
 	cbor_print("\r\n");
 
-	res =
-	cbor_decode_SUIT_Command_Sequence(
+	memset(&sequence, 0, sizeof(sequence));
+	res = cbor_decode_SUIT_Command_Sequence(
 			manifest
 			->_SUIT_Manifest_suit_run
 			._SUIT_Manifest_suit_run
