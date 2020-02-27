@@ -110,6 +110,7 @@ static bool int32_decode(cbor_state_t * p_state,
 {
 	uint8_t major_type = MAJOR_TYPE(*p_state->p_payload);
 	uint32_t uint_result;
+	int32_t int_result;
 
 	if (!value_extract(p_state, &uint_result, 4)) {
 		FAIL();
@@ -123,14 +124,17 @@ static bool int32_decode(cbor_state_t * p_state,
 
 	if (major_type == CBOR_MAJOR_TYPE_NINT) {
 		// Convert from CBOR's representation.
-		*p_result = -1 - uint_result;
+		int_result = -1 - uint_result;
 	} else {
-		*p_result = uint_result;
+		int_result = uint_result;
 	}
 
-	cbor_print("val: %d\r\n", *p_result);
-	if (!PTR_VALUE_IN_RANGE(int32_t, p_result, p_min_value, p_max_value)) {
+	cbor_print("val: %d\r\n", int_result);
+	if (!PTR_VALUE_IN_RANGE(int32_t, &int_result, p_min_value, p_max_value)) {
 		FAIL();
+	}
+	if (p_result != NULL) {
+		*p_result = int_result;
 	}
 	return true;
 }
@@ -157,21 +161,26 @@ bool intx32_decode(cbor_state_t * p_state,
 
 
 static bool uint32_decode(cbor_state_t * p_state,
-		void *p_result, void *p_min_value, void *p_max_value)
+		uint32_t *p_result, uint32_t *p_min_value, uint32_t *p_max_value)
 {
-	if (!value_extract(p_state, p_result, 4)) {
+	uint32_t uint_result;
+
+	if (!value_extract(p_state, &uint_result, 4)) {
 		FAIL();
 	}
 
-	cbor_print("val: %u ", *(uint32_t *)p_result);
-	if (!PTR_VALUE_IN_RANGE(uint32_t, p_result, p_min_value, p_max_value)) {
+	cbor_print("val: %u ", uint_result);
+	if (!PTR_VALUE_IN_RANGE(uint32_t, &uint_result, p_min_value, p_max_value)) {
 		cbor_print("Failed: ");
-		if (p_min_value) cbor_print("min: %d ", *(uint32_t *)p_min_value);
-		if (p_max_value) cbor_print("max: %d", *(uint32_t *)p_max_value);
+		if (p_min_value) cbor_print("min: %d ", *p_min_value);
+		if (p_max_value) cbor_print("max: %d", *p_max_value);
 		cbor_print("\r\n");
 		FAIL();
 	}
 	cbor_print("\r\n");
+	if (p_result != NULL) {
+		*p_result = uint_result;
+	}
 	return true;
 }
 
@@ -237,27 +246,44 @@ bool tstrx_start_decode(cbor_state_t * p_state,
 			CBOR_MAJOR_TYPE_TSTR);
 }
 
-
-bool bstrx_decode(cbor_state_t * p_state,
-		cbor_string_type_t *p_result, void *p_min_len, void *p_max_len)
+bool strx_decode(cbor_state_t * p_state,
+		cbor_string_type_t *p_result, cbor_string_type_t *p_min,
+		size_t *p_max_len, cbor_major_type_t exp_major_type)
 {
-	if (!bstrx_start_decode(p_state, p_result,
-				p_min_len, p_max_len)) {
-		return false;
+	cbor_string_type_t result;
+	if (!strx_start_decode(p_state, &result,
+				p_min ? &p_min->len : NULL,
+				p_max_len,
+				exp_major_type)) {
+		FAIL();
 	}
-	(p_state->p_payload) += p_result->len;
+	if (p_min && p_min->value) {
+		if (memcmp(p_min->value, result.value, result.len)) {
+			FAIL();
+		}
+	}
+
+	(p_state->p_payload) += result.len;
+	if (p_result != NULL) {
+		memcpy(p_result, &result, sizeof(result));
+	}
 	return true;
 }
 
-bool tstrx_decode(cbor_state_t * p_state,
-		cbor_string_type_t *p_result, void *p_min_len, void *p_max_len)
+bool bstrx_decode(cbor_state_t * p_state,
+		cbor_string_type_t *p_result, cbor_string_type_t *p_min,
+		size_t *p_max_len)
 {
-	if (!tstrx_start_decode(p_state, p_result,
-				p_min_len, p_max_len)) {
-		return false;
-	}
-	(p_state->p_payload) += p_result->len;
-	return true;
+	return strx_decode(p_state, p_result, p_min, p_max_len,
+			CBOR_MAJOR_TYPE_BSTR);
+}
+
+bool tstrx_decode(cbor_state_t * p_state,
+		cbor_string_type_t *p_result, cbor_string_type_t *p_min,
+		size_t *p_max_len)
+{
+	return strx_decode(p_state, p_result, p_min, p_max_len,
+			CBOR_MAJOR_TYPE_TSTR);
 }
 
 
@@ -357,16 +383,19 @@ bool boolx_decode(cbor_state_t * p_state,
 {
 	uint32_t min_result = (*(uint8_t *)p_min_result) + BOOL_TO_PRIM;
 	uint32_t max_result = (*(uint8_t *)p_max_result) + BOOL_TO_PRIM;
+	uint8_t result;
 
 	cbor_print("min: %d, max: %d\r\n", min_result, max_result);
 
 	if (!primx_decode(p_state,
-			(uint8_t *)p_result, &min_result, &max_result)) {
+			&result, &min_result, &max_result)) {
 		FAIL();
 	}
-	cbor_print("val: %u\r\n", *p_result);
-	(*(uint8_t *)p_result) -= BOOL_TO_PRIM;
-	cbor_print("boolval: %u\r\n", *p_result);
+	cbor_print("val: %u\r\n", result);
+	if (p_result != NULL) {
+		(*p_result) = result - BOOL_TO_PRIM;
+	}
+	cbor_print("boolval: %u\r\n", result - BOOL_TO_PRIM);
 	return true;
 }
 

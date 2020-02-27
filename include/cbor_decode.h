@@ -125,14 +125,16 @@ bool tstrx_start_decode(cbor_state_t * p_state, cbor_string_type_t *p_result, vo
  * @details See @ref intx32_decode for information about parameters and return
  *          values. For strings, the value refers to the length of the string.
  */
-bool bstrx_decode(cbor_state_t * p_state, cbor_string_type_t *p_result, void *p_min_len, void *p_max_len);
+bool bstrx_decode(cbor_state_t * p_state, cbor_string_type_t *p_result,
+		cbor_string_type_t *p_min_len, size_t *p_max_len);
 
 /** Decode a TSTR, and move pp_payload to after the payload.
  *
  * @details See @ref intx32_decode for information about parameters and return
  *          values. For strings, the value refers to the length of the string.
  */
-bool tstrx_decode(cbor_state_t * p_state, cbor_string_type_t *p_result, void *p_min_len, void *p_max_len);
+bool tstrx_decode(cbor_state_t * p_state, cbor_string_type_t *p_result,
+		cbor_string_type_t *p_min_len, size_t *p_max_len);
 
 /** Decode a LIST, but leave pp_payload pointing at the payload.
  *
