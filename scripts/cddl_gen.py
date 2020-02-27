@@ -112,15 +112,15 @@ def max_val_or_null(value):
     return val_or_null(value, "max_value")
 
 
-# Return an argument list for a function call to a decoder function.
-def decode_args(res, min_val, max_val):
+# Return an argument list for a function call to a encoder/decoder function.
+def xcode_args(res, min_val, max_val):
     return "p_state, %s, %s, %s" % (
         "&(%s)" % res if res != "NULL" else res, min_val, max_val)
 
-# Return the code that calls a decoder function with a given set of
+# Return the code that calls a encoder/decoder function with a given set of
 # arguments.
-def decode_statement(func, *sargs, **kwargs):
-    return "(%s(%s))" % (func, decode_args(*sargs, **kwargs))
+def xcode_statement(func, *sargs, **kwargs):
+    return "(%s(%s))" % (func, xcode_args(*sargs, **kwargs))
 
 
 def add_semicolon(decl):
@@ -572,7 +572,7 @@ class CddlParser:
         return self.mrepr(False)
 
 
-# Class for generating C code that decodes CBOR and validates it according
+# Class for generating C code that encode/decodes CBOR and validates it according
 # to the CDDL.
 class CodeGenerator(CddlParser):
 
@@ -785,17 +785,17 @@ class CodeGenerator(CddlParser):
     def multi_var_condition(self):
         return self.present_var_condition() or self.count_var_condition()
 
-    # Whether this element must involve a call to multi_decode(), i.e. unless
+    # Whether this element must involve a call to multi_xcode(), i.e. unless
     # it's repeated exactly once.
-    def multi_decode_condition(self):
+    def multi_xcode_condition(self):
         return self.minQ != 1 or self.maxQ != 1
 
-    # Name of the decoder function for this element.
-    def decode_func_name(self):
+    # Name of the encoder/decoder function for this element.
+    def xcode_func_name(self):
         return f"{mode}{self.var_name()}"
 
-    # Name of the decoder function for the repeated part of this element.
-    def repeated_decode_func_name(self):
+    # Name of the encoder/decoder function for the repeated part of this element.
+    def repeated_xcode_func_name(self):
         return f"{mode}_repeated{self.var_name()}"
 
     # Declaration of the variables of all children.
@@ -969,9 +969,9 @@ class CodeGenerator(CddlParser):
             ret_val.extend([(self.single_var_type(), self.type_name())])
         return ret_val
 
-    # Return the function name and arguments to call to decode this element. Only used when this element DOESN'T define
-    # its own decoder function (when it's a primitive type, for which functions already exist, or when the function is
-    # defined elsewhere ("OTHER"))
+    # Return the function name and arguments to call to encode/decode this element. Only used when this element DOESN'T
+    # define its own encoder/decoder function (when it's a primitive type, for which functions already exist, or when the
+    # function is defined elsewhere ("OTHER"))
     def single_func_prim(self):
         vals = [self.val_access(), min_val_or_null(self.min_value), max_val_or_null(self.max_value)]
         sizes = [self.val_access(), min_val_or_null(self.min_size), max_val_or_null(self.max_size)]
@@ -996,30 +996,30 @@ class CodeGenerator(CddlParser):
         }[self.type]()
         return retval
 
-    # Return the function name and arguments to call to decode this element. Only used when this element has its own
-    # decode function
+    # Return the function name and arguments to call to encode/decode this element. Only used when this element has its
+    # own encode/decode function
     def single_func_impl(self, full=True):
-        return (self.decode_func_name() if full else self.repeated_decode_func_name(), self.var_access()
+        return (self.xcode_func_name() if full else self.repeated_xcode_func_name(), self.var_access()
                 if full else self.val_access(), "NULL", "NULL")
 
-    # Whether this element needs its own decoder function.
+    # Whether this element needs its own encoder/decoder function.
     def single_func_impl_condition(self):
         return (False or self.key or self.cbor_var_condition() or self.expected_string_condition() or
                 self.type_def_condition() or (self.type in ["LIST", "MAP"] and len(self.value) != 0)
                 )
 
-    # Whether this element needs its own decoder function.
+    # Whether this element needs its own encoder/decoder function.
     def repeated_single_func_impl_condition(self):
         return self.repeated_type_def_condition()
 
-    # Return the function name and arguments to call to decode this element.
+    # Return the function name and arguments to call to encode/decode this element.
     def single_func(self):
         if self.single_func_impl_condition():
             return self.single_func_impl()
         else:
             return self.single_func_prim()
 
-    # Return the function name and arguments to call to decode the repeated
+    # Return the function name and arguments to call to encode/decode the repeated
     # part of this element.
     def repeated_single_func(self):
         if self.repeated_single_func_impl_condition():
@@ -1064,13 +1064,13 @@ class CodeGenerator(CddlParser):
         return max(ret_vals)
 
     # Make a string from the list returned by single_func_prim()
-    def decode_single_func_prim(self):
-        return decode_statement(*self.single_func_prim())
+    def xcode_single_func_prim(self):
+        return xcode_statement(*self.single_func_prim())
 
-    # Return the full code needed to decode a "BSTR" or "TSTR" element.
-    def decode_str(self):
+    # Return the full code needed to encode/decode a "BSTR" or "TSTR" element.
+    def xcode_str(self):
         assert self.type in ["BSTR", "TSTR"], "Expected string type."
-        func = (self.decode_single_func_prim(),)
+        func = (self.xcode_single_func_prim(),)
         memcmp = (("!memcmp(\"{0}\", {1}.value, {1}.len)".format(
                 self.value, self.val_access()),) if self.expected_string_condition() else tuple())
         if mode == "decode":
@@ -1102,8 +1102,8 @@ class CodeGenerator(CddlParser):
             "OTHER": lambda: (q1 * q2 for q1, q2 in zip((self.minQ, self.maxQ), my_types[self.value].list_counts())),
         }[self.type]()
 
-    # Return the full code needed to decode a "LIST" or "MAP" element with children.
-    def decode_list(self):
+    # Return the full code needed to encode/decode a "LIST" or "MAP" element with children.
+    def xcode_list(self):
         start_func = f"{self.type.lower()}_start_{mode}"
         end_func = f"{self.type.lower()}_end_{mode}"
         assert start_func in ["list_start_decode", "list_start_encode", "map_start_decode", "map_start_encode"]
@@ -1112,25 +1112,25 @@ class CodeGenerator(CddlParser):
         min_counts, max_counts = zip(*(child.list_counts() for child in self.value)) if self.value else ((0,), (0,))
         return "(%s && (int_res = (%s), %s, int_res))" \
                     % (f"{start_func}(p_state, {str(sum(min_counts))}, {str(sum(max_counts))})",
-                       f"{self.newl_ind}&& ".join(child.full_decode() for child in self.value),
+                       f"{self.newl_ind}&& ".join(child.full_xcode() for child in self.value),
                        f"{end_func}(p_state, {str(sum(min_counts))}, {str(sum(max_counts))})")
 
-    # Return the full code needed to decode a "GROUP" element's children.
-    def decode_group(self):
+    # Return the full code needed to encode/decode a "GROUP" element's children.
+    def xcode_group(self):
         assert self.type in ["GROUP"], "Expected GROUP type."
         return "(%s)" % (self.newl_ind + "&& ").join(
-            (child.full_decode() for child in self.value))
+            (child.full_xcode() for child in self.value))
 
-    # Return the full code needed to decode a "UNION" element's children.
-    def decode_union(self):
+    # Return the full code needed to encode/decode a "UNION" element's children.
+    def xcode_union(self):
         assert self.type in ["UNION"], "Expected UNION type."
         if mode == "decode":
             child_values = ["(%s && ((%s = %s) || 1))" %
-                            (child.full_decode(), self.choice_var_access(), child.var_name())
+                            (child.full_xcode(), self.choice_var_access(), child.var_name())
                             for child in self.value]
         else:
             child_values = ["((%s == %s) && %s)" %
-                            (self.choice_var_access(), child.var_name(), child.full_decode())
+                            (self.choice_var_access(), child.var_name(), child.full_xcode())
                             for child in self.value]
 
         # Reset state for all but the first child.
@@ -1142,34 +1142,34 @@ class CodeGenerator(CddlParser):
                        f"{self.newl_ind}|| ".join(child_values),
                        "union_end_code(p_state)")
 
-    # Return the full code needed to decode this element, including children,
+    # Return the full code needed to encode/decode this element, including children,
     # key and cbor, excluding repetitions.
-    def repeated_decode(self):
-        decoder = {
-            "INT": self.decode_single_func_prim,
-            "UINT": self.decode_single_func_prim,
-            "NINT": self.decode_single_func_prim,
-            "FLOAT": self.decode_single_func_prim,
-            "BSTR": self.decode_str,
-            "TSTR": self.decode_str,
-            "BOOL": self.decode_single_func_prim,
-            "NIL": self.decode_single_func_prim,
-            "ANY": self.decode_single_func_prim,
-            "LIST": self.decode_list,
-            "MAP": self.decode_list,
-            "GROUP": self.decode_group,
-            "UNION": self.decode_union,
-            "OTHER": self.decode_single_func_prim,
+    def repeated_xcode(self):
+        xcoder = {
+            "INT": self.xcode_single_func_prim,
+            "UINT": self.xcode_single_func_prim,
+            "NINT": self.xcode_single_func_prim,
+            "FLOAT": self.xcode_single_func_prim,
+            "BSTR": self.xcode_str,
+            "TSTR": self.xcode_str,
+            "BOOL": self.xcode_single_func_prim,
+            "NIL": self.xcode_single_func_prim,
+            "ANY": self.xcode_single_func_prim,
+            "LIST": self.xcode_list,
+            "MAP": self.xcode_list,
+            "GROUP": self.xcode_group,
+            "UNION": self.xcode_union,
+            "OTHER": self.xcode_single_func_prim,
         }[self.type]()
         if self.key or self.cbor:
-            arguments = ([self.key.full_decode()] if self.key is not None else [])\
-                + ([decoder])\
-                + ([f"(new_backup(p_state, {self.cbor.maxQ}))", self.cbor.full_decode(),
+            arguments = ([self.key.full_xcode()] if self.key is not None else [])\
+                + ([xcoder])\
+                + ([f"(new_backup(p_state, {self.cbor.maxQ}))", self.cbor.full_xcode(),
                     "restore_backup(p_state, FLAG_RESTORE | FLAG_DISCARD | FLAG_TRANSFER_PAYLOAD, "
                      + f"{self.cbor.maxQ - self.cbor.minQ})"]
                    if self.cbor_var_condition() else [])
-            decoder = "(%s)" % ((self.newl_ind + "&& ").join(arguments),)
-        return decoder
+            xcoder = "(%s)" % ((self.newl_ind + "&& ").join(arguments),)
+        return xcoder
 
     # Code for the size of the repeated part of this element.
     def result_len(self):
@@ -1178,10 +1178,10 @@ class CodeGenerator(CddlParser):
         else:
             return "sizeof(%s)" % self.repeated_type_name()
 
-    # Return the full code needed to decode this element, including children,
+    # Return the full code needed to encode/decode this element, including children,
     # key, cbor, and repetitions.
-    def full_decode(self):
-        if self.multi_decode_condition():
+    def full_xcode(self):
+        if self.multi_xcode_condition():
             func, *arguments = self.repeated_single_func()
             return (
                 f"multi_{mode}(%s, %s, &%s, (void*)%s, %s, %s)" %
@@ -1189,38 +1189,38 @@ class CodeGenerator(CddlParser):
                  self.maxQ,
                  self.count_var_access() if self.count_var_condition() else self.present_var_access(),
                  func,
-                 decode_args(*arguments),
+                 xcode_args(*arguments),
                  self.result_len()))
         else:
-            return self.repeated_decode()
+            return self.repeated_xcode()
 
-    # Return the body of the decoder function for this element.
-    def decode(self):
-        return self.repeated_decode()
+    # Return the body of the encoder/decoder function for this element.
+    def xcode(self):
+        return self.repeated_xcode()
 
-    # Recursively return a list of the bodies of the decoder functions for
+    # Recursively return a list of the bodies of the encoder/decoder functions for
     # this element and its children + key + cbor.
 
-    def decoders(self):
+    def xcoders(self):
         if self.type in ["LIST", "MAP", "GROUP", "UNION"]:
             for child in self.value:
-                for decoder in child.decoders():
-                    yield decoder
+                for xcoder in child.xcoders():
+                    yield xcoder
         if self.cbor:
-            for decoder in self.cbor.decoders():
-                yield decoder
+            for xcoder in self.cbor.xcoders():
+                yield xcoder
         if self.key:
-            for decoder in self.key.decoders():
-                yield decoder
+            for xcoder in self.key.xcoders():
+                yield xcoder
         if self.type == "OTHER" and self.value not in entry_type_names:
-            for decoder in my_types[self.value].decoders():
-                yield decoder
+            for xcoder in my_types[self.value].xcoders():
+                yield xcoder
         if self.repeated_single_func_impl_condition():
-            yield (self.decode(), self.repeated_decode_func_name(), self.repeated_type_name())
+            yield (self.xcode(), self.repeated_xcode_func_name(), self.repeated_type_name())
         if ((self.type != "OTHER") or self.repeated_multi_var_condition()) and (
                 self.single_func_impl_condition()):
-            decode_body = self.decode()
-            yield (decode_body, self.decode_func_name(), self.type_name())
+            xcode_body = self.xcode()
+            yield (xcode_body, self.xcode_func_name(), self.type_name())
 
 # Consumes and parses a single CDDL type, returning a
 # CodeGenerator instance.
@@ -1280,34 +1280,34 @@ def unique_types(types):
     return out_types
 
 
-# Return a list of decoder functions for all defined types, with duplicate
+# Return a list of encoder/decoder functions for all defined types, with duplicate
 # functions removed.
 def unique_funcs(types):
     func_names = {}
     out_types = []
     for mtype in types:
-        decoders = list(mtype.decoders())
-        for funcType in decoders:
-            func_decode = funcType[0]
+        xcoders = list(mtype.xcoders())
+        for funcType in xcoders:
+            func_xcode = funcType[0]
             func_name = funcType[1]
             if func_name not in func_names.keys():
                 func_names[func_name] = funcType
                 out_types.append(funcType)
             elif func_name in func_names.keys():
-                assert func_names[func_name][0] == func_decode,\
+                assert func_names[func_name][0] == func_xcode,\
                     ("Two elements share the function name %s, but their implementations are not identical. "
                         + "Please change one or both names.\n\n%s\n\n%s") % \
-                    (func_name, func_names[func_name][0], func_decode)
+                    (func_name, func_names[func_name][0], func_xcode)
 
     return out_types
 
 
-# Return a list of decoder functions for all defined types, with unused
+# Return a list of encoder/decoder functions for all defined types, with unused
 # functions removed.
 def used_funcs(types, entry_types):
     entry_types = [
-        (func_type.decode(),
-         func_type.decode_func_name(),
+        (func_type.xcode(),
+         func_type.xcode_func_name(),
          func_type.type_name()) for func_type in entry_types]
     out_types = [func_type for func_type in entry_types]
     full_code = "".join([func_type[0] for func_type in entry_types])
@@ -1333,15 +1333,15 @@ def used_types(type_defs, entry_types):
 
 def parse_args():
     parser = ArgumentParser(
-        description='''Parse a CDDL file and produce C code that validates and decodes CBOR.
+        description='''Parse a CDDL file and produce C code that validates and xcodes CBOR.
 The output from this script is a C file and a header file. The header file
 contains typedefs for all the types specified in the cddl input file, as well
-as declarations to decode functions for the types designated as entry types when
+as declarations to xcode functions for the types designated as entry types when
 running the script. The c file contains all the code for decoding and validating
-the types in the CDDL input file. All types are validated as they are decoded.
+the types in the CDDL input file. All types are validated as they are xcoded.
 
 Where a `bstr .cbor <Type>` is specified in the CDDL, AND the Type is an entry
-type, the decoder will not decode the string, only provide a pointer into the
+type, the xcoder will not xcode the string, only provide a pointer into the
 payload buffer. This is useful to reduce the size of typedefs, or to break up
 decoding. Using this mechanism is necessary when the CDDL contains self-
 referencing types, since the C type cannot be self referencing.
@@ -1361,7 +1361,7 @@ This script requires 'regex' for lookaround functionality not present in 're'.''
         required=True,
         type=str,
         nargs="+",
-        help="Names of the types which should have their decode functions exposed.")
+        help="Names of the types which should have their xcode functions exposed.")
     parser.add_argument(
         "-v",
         "--verbose",
@@ -1380,14 +1380,14 @@ This script requires 'regex' for lookaround functionality not present in 're'.''
 
 
 # Render a single decoding function with signature and body.
-def render_function(decoder):
-    body = decoder[0]
+def render_function(xcoder):
+    body = xcoder[0]
     return f"""
-static bool {decoder[1]}(
+static bool {xcoder[1]}(
 		cbor_state_t *p_state, void * p_result, void * p_min_value,
 		void * p_max_value)
 {{
-	cbor_print("{ decoder[1] }\\n");
+	cbor_print("{ xcoder[1] }\\n");
 	{f"size_t temp_elem_counts[{body.count('p_temp_elem_count')}];" if "p_temp_elem_count" in body else ""}
 	{"size_t *p_temp_elem_count = temp_elem_counts;" if "p_temp_elem_count" in body else ""}
 	{"uint32_t current_list_num;" if "current_list_num" in body else ""}
@@ -1395,7 +1395,7 @@ static bool {decoder[1]}(
 	{"size_t elem_count_bak;" if "elem_count_bak" in body else ""}
 	{"uint32_t min_value;" if "min_value" in body else ""}
 	{"uint32_t max_value;" if "max_value" in body else ""}
-	{decoder[2]}* p_type_result = ({decoder[2]}*)p_result;
+	{xcoder[2]}* p_type_result = ({xcoder[2]}*)p_result;
 	{"bool int_res;" if "int_res" in body else ""}
 
 	bool result = ({ body });
@@ -1411,11 +1411,11 @@ static bool {decoder[1]}(
 
 
 # Render a single entry function (API function) with signature and body.
-def render_entry_function(decoder):
+def render_entry_function(xcoder):
     return f"""
-bool cbor_{decoder.xcode_func_name()}(
+bool cbor_{xcoder.xcode_func_name()}(
 		const uint8_t * p_payload, size_t payload_len,
-        {decoder.type_name()} * p_result, bool partial)
+        {xcoder.type_name()} * p_result, bool partial)
 {{
 	cbor_state_t state = {{
 		.p_payload = p_payload,
@@ -1423,17 +1423,17 @@ bool cbor_{decoder.xcode_func_name()}(
 		.elem_count = 1
 	}};
 
-	cbor_state_t state_backups[{decoder.num_backups()+1}];
+	cbor_state_t state_backups[{xcoder.num_backups()+1}];
 
 	cbor_state_backups_t backups = {{
 		.p_backup_list = state_backups,
 		.current_backup = 0,
-		.num_backups = {decoder.num_backups()+1},
+		.num_backups = {xcoder.num_backups()+1},
 	}};
 
 	state.p_backups = &backups;
 
-	bool result = {decoder.xcode_func_name()}(&state, p_result, NULL, NULL);
+	bool result = {xcoder.xcode_func_name()}(&state, p_result, NULL, NULL);
 	if (partial) {{
 		return result;
 	}}
@@ -1466,9 +1466,9 @@ def render_c_file(functions, header_file_name, entry_types, print_time):
 #include "cbor_{mode}.h"
 #include "{header_file_name}"
 
-{linesep.join([render_function(decoder) for decoder in functions])}
+{linesep.join([render_function(xcoder) for xcoder in functions])}
 
-{linesep.join([render_entry_function(decoder) for decoder in entry_types])}
+{linesep.join([render_entry_function(xcoder) for xcoder in entry_types])}
 """
 
 
@@ -1491,7 +1491,7 @@ def render_h_file(type_defs, header_guard, entry_types, print_time):
 
 {(linesep+linesep).join([f"typedef {linesep.join(typedef[0])} {typedef[1]};" for typedef in type_defs])}
 
-{(linesep+linesep).join([f"bool cbor_{decoder.decode_func_name()}(const uint8_t * p_payload, size_t payload_len, {decoder.type_name()} * p_result, bool partial);" for decoder in entry_types])}
+{(linesep+linesep).join([f"bool cbor_{xcoder.xcode_func_name()}(const uint8_t * p_payload, size_t payload_len, {xcoder.type_name()} * p_result, bool partial);" for xcoder in entry_types])}
 
 #endif // {header_guard}
 """
@@ -1536,7 +1536,7 @@ def main():
     verbose_print("Parsed CDDL types:")
     verbose_pprint(my_types)
 
-    # Prepare the list of types that will have exposed decoder functions.
+    # Prepare the list of types that will have exposed encoder/decoder functions.
     entry_types = [my_types[entry] for entry in entry_type_names]
 
     # Sort type definitions so the typedefs will come in the correct order in the header file and the function in the
