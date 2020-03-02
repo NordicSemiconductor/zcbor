@@ -106,7 +106,7 @@ static bool value_extract(cbor_state_t * p_state,
 
 
 static bool int32_decode(cbor_state_t * p_state,
-		int32_t *p_result, void *p_min_value, void *p_max_value)
+		int32_t *p_result, const int32_t *p_min_value, const int32_t *p_max_value)
 {
 	uint8_t major_type = MAJOR_TYPE(*p_state->p_payload);
 	uint32_t uint_result;
@@ -141,7 +141,7 @@ static bool int32_decode(cbor_state_t * p_state,
 
 
 bool intx32_decode(cbor_state_t * p_state,
-		int32_t *p_result, void *p_min_value, void *p_max_value)
+		int32_t *p_result, const int32_t *p_min_value, const int32_t *p_max_value)
 {
 	uint8_t major_type = MAJOR_TYPE(*p_state->p_payload);
 
@@ -161,7 +161,7 @@ bool intx32_decode(cbor_state_t * p_state,
 
 
 static bool uint32_decode(cbor_state_t * p_state,
-		uint32_t *p_result, uint32_t *p_min_value, uint32_t *p_max_value)
+		uint32_t *p_result, const uint32_t *p_min_value, const uint32_t *p_max_value)
 {
 	uint32_t uint_result;
 
@@ -186,7 +186,7 @@ static bool uint32_decode(cbor_state_t * p_state,
 
 
 bool uintx32_decode(cbor_state_t * p_state,
-		uint32_t *p_result, void *p_min_value, void *p_max_value)
+		uint32_t *p_result, const uint32_t *p_min_value, const uint32_t *p_max_value)
 {
 	uint8_t major_type = MAJOR_TYPE(*p_state->p_payload);
 
@@ -202,7 +202,7 @@ bool uintx32_decode(cbor_state_t * p_state,
 
 
 static bool size_decode(cbor_state_t * p_state,
-		size_t *p_result, size_t *p_min_value, size_t *p_max_value)
+		size_t *p_result, const size_t *p_min_value, const size_t *p_max_value)
 {
 	_Static_assert((sizeof(size_t) == sizeof(uint32_t)),
 			"This code needs size_t to be 4 bytes long.");
@@ -212,7 +212,7 @@ static bool size_decode(cbor_state_t * p_state,
 
 
 static bool strx_start_decode(cbor_state_t * p_state,
-		cbor_string_type_t *p_result, void *p_min_len, void *p_max_len,
+		cbor_string_type_t *p_result, const size_t *p_min_len, const size_t *p_max_len,
 		cbor_major_type_t exp_major_type)
 {
 	uint8_t major_type = MAJOR_TYPE(*p_state->p_payload);
@@ -223,8 +223,8 @@ static bool strx_start_decode(cbor_state_t * p_state,
 		FAIL();
 	}
 	if (!size_decode(p_state,
-			&p_str_result->len, (size_t *)p_min_len,
-			(size_t *)p_max_len)) {
+			&p_str_result->len, p_min_len,
+			p_max_len)) {
 		FAIL();
 	}
 	p_str_result->value = p_state->p_payload;
@@ -232,7 +232,7 @@ static bool strx_start_decode(cbor_state_t * p_state,
 }
 
 bool bstrx_start_decode(cbor_state_t * p_state,
-		cbor_string_type_t *p_result, void *p_min_len, void *p_max_len)
+		cbor_string_type_t *p_result, const size_t *p_min_len, const size_t *p_max_len)
 {
 	return strx_start_decode(p_state, p_result, p_min_len, p_max_len,
 			CBOR_MAJOR_TYPE_BSTR);
@@ -240,15 +240,15 @@ bool bstrx_start_decode(cbor_state_t * p_state,
 
 
 bool tstrx_start_decode(cbor_state_t * p_state,
-		cbor_string_type_t *p_result, void *p_min_len, void *p_max_len)
+		cbor_string_type_t *p_result, const size_t *p_min_len, const size_t *p_max_len)
 {
 	return strx_start_decode(p_state, p_result, p_min_len, p_max_len,
 			CBOR_MAJOR_TYPE_TSTR);
 }
 
 bool strx_decode(cbor_state_t * p_state,
-		cbor_string_type_t *p_result, cbor_string_type_t *p_min,
-		size_t *p_max_len, cbor_major_type_t exp_major_type)
+		cbor_string_type_t *p_result, const cbor_string_type_t *p_min,
+		const size_t *p_max_len, cbor_major_type_t exp_major_type)
 {
 	cbor_string_type_t result;
 	if (!strx_start_decode(p_state, &result,
@@ -271,16 +271,16 @@ bool strx_decode(cbor_state_t * p_state,
 }
 
 bool bstrx_decode(cbor_state_t * p_state,
-		cbor_string_type_t *p_result, cbor_string_type_t *p_min,
-		size_t *p_max_len)
+		cbor_string_type_t *p_result, const cbor_string_type_t *p_min,
+		const size_t *p_max_len)
 {
 	return strx_decode(p_state, p_result, p_min, p_max_len,
 			CBOR_MAJOR_TYPE_BSTR);
 }
 
 bool tstrx_decode(cbor_state_t * p_state,
-		cbor_string_type_t *p_result, cbor_string_type_t *p_min,
-		size_t *p_max_len)
+		cbor_string_type_t *p_result, const cbor_string_type_t *p_min,
+		const size_t *p_max_len)
 {
 	return strx_decode(p_state, p_result, p_min, p_max_len,
 			CBOR_MAJOR_TYPE_TSTR);
@@ -346,7 +346,7 @@ bool map_end_decode(cbor_state_t *p_state, size_t min_num, size_t max_num)
 
 
 static bool primx_decode(cbor_state_t * p_state,
-		uint8_t *p_result, uint32_t *p_min_result, uint32_t *p_max_result)
+		uint8_t *p_result, const uint32_t *p_min_result, const uint32_t *p_max_result)
 {
 	uint8_t major_type = MAJOR_TYPE(*p_state->p_payload);
 	uint32_t val;
@@ -379,7 +379,7 @@ bool nilx_decode(cbor_state_t *p_state,
 
 
 bool boolx_decode(cbor_state_t * p_state,
-		bool *p_result, uint32_t *p_min_result, uint32_t *p_max_result)
+		bool *p_result, const uint32_t *p_min_result, const uint32_t *p_max_result)
 {
 	uint32_t min_result = (*(uint8_t *)p_min_result) + BOOL_TO_PRIM;
 	uint32_t max_result = (*(uint8_t *)p_max_result) + BOOL_TO_PRIM;
@@ -401,7 +401,7 @@ bool boolx_decode(cbor_state_t * p_state,
 
 
 bool double_decode(cbor_state_t * p_state,
-		double *p_result, void *p_min_result, void *p_max_result)
+		double *p_result, const void *p_min_result, const void *p_max_result)
 {
 	uint8_t major_type = MAJOR_TYPE(*p_state->p_payload);
 
@@ -449,8 +449,8 @@ bool any_decode(cbor_state_t * p_state,
 		case CBOR_MAJOR_TYPE_LIST:
 			temp_elem_count = p_state->elem_count;
 			p_state->elem_count = value;
-			if (!multi_decode(value, value, &num_decode, any_decode,
-					p_state,
+			if (!multi_decode(value, value, &num_decode,
+					(void *)any_decode, p_state,
 					&p_null_result,	NULL, NULL, 0)) {
 				p_state->elem_count = temp_elem_count;
 				FAIL();
@@ -469,11 +469,11 @@ bool any_decode(cbor_state_t * p_state,
 bool multi_decode(size_t min_decode,
 		size_t max_decode,
 		size_t *p_num_decode,
-		processor_t decoder,
+		cbor_decoder_t decoder,
 		cbor_state_t * p_state,
 		void *p_result,
-		void *p_min_result,
-		void *p_max_result,
+		const void *p_min_result,
+		const void *p_max_result,
 		size_t result_len)
 {
 	for (size_t i = 0; i < max_decode; i++) {

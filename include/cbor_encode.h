@@ -31,42 +31,42 @@
  *                acceptable range, or the value was larger than can fit in the
  *                result variable.
  */
-bool intx32_encode(cbor_state_t * p_state, int32_t *p_result, void *p_min_value, void *p_max_value);
+bool intx32_encode(cbor_state_t * p_state, const int32_t *p_result, const int32_t *p_min_value, const int32_t *p_max_value);
 
 /** Encode a PINT into a uint32_t.
  *
  * @details See @ref intx32_encode for information about parameters and return
  *          values.
  */
-bool uintx32_encode(cbor_state_t * p_state, uint32_t *p_result, void *p_min_value, void *p_max_value);
+bool uintx32_encode(cbor_state_t * p_state, const uint32_t *p_result, const uint32_t *p_min_value, const uint32_t *p_max_value);
 
 /** Encode a BSTR, but leave pp_payload pointing at the payload.
  *
  * @details See @ref intx32_encode for information about parameters and return
  *          values. For strings, the value refers to the length of the string.
  */
-bool bstrx_start_encode(cbor_state_t * p_state, cbor_string_type_t *p_result, cbor_string_type_t *p_min, size_t *p_max_len);
+bool bstrx_start_encode(cbor_state_t * p_state, const cbor_string_type_t *p_result, const cbor_string_type_t *p_min, const size_t *p_max_len);
 
 /** Encode a TSTR, but leave pp_payload pointing at the payload.
  *
  * @details See @ref intx32_encode for information about parameters and return
  *          values. For strings, the value refers to the length of the string.
  */
-bool tstrx_start_encode(cbor_state_t * p_state, cbor_string_type_t *p_result, cbor_string_type_t *p_min, size_t *p_max_len);
+bool tstrx_start_encode(cbor_state_t * p_state, const cbor_string_type_t *p_result, const cbor_string_type_t *p_min, const size_t *p_max_len);
 
 /** Encode a BSTR, and move pp_payload to after the payload.
  *
  * @details See @ref intx32_encode for information about parameters and return
  *          values. For strings, the value refers to the length of the string.
  */
-bool bstrx_encode(cbor_state_t * p_state, cbor_string_type_t *p_result, cbor_string_type_t *p_min, size_t *p_max_len);
+bool bstrx_encode(cbor_state_t * p_state, const cbor_string_type_t *p_result, const cbor_string_type_t *p_min, const size_t *p_max_len);
 
 /** Encode a TSTR, and move pp_payload to after the payload.
  *
  * @details See @ref intx32_encode for information about parameters and return
  *          values. For strings, the value refers to the length of the string.
  */
-bool tstrx_encode(cbor_state_t * p_state, cbor_string_type_t *p_result, cbor_string_type_t *p_min, size_t *p_max_len);
+bool tstrx_encode(cbor_state_t * p_state, const cbor_string_type_t *p_result, const cbor_string_type_t *p_min, const size_t *p_max_len);
 
 /** Encode a LIST, but leave pp_payload pointing at the payload.
  *
@@ -106,7 +106,7 @@ bool map_end_encode(cbor_state_t * p_state, size_t min_num, size_t max_num);
  *
  * @details All arguments except p_state are ignored and can be NULL.
  */
-bool nilx_encode(cbor_state_t * p_state, uint8_t *p_result, void *p_min_result, void *p_max_result);
+bool nilx_encode(cbor_state_t * p_state, const uint8_t *p_result, void *p_min_result, void *p_max_result);
 
 /** Encode a boolean primitive value.
  *
@@ -114,7 +114,7 @@ bool nilx_encode(cbor_state_t * p_state, uint8_t *p_result, void *p_min_result, 
  *          values. The result is translated internally from the primitive
  *          values for true/false (20/21) to 0/1.
  */
-bool boolx_encode(cbor_state_t * p_state, bool *p_result, uint32_t *p_min_result, uint32_t *p_max_result);
+bool boolx_encode(cbor_state_t * p_state, bool *p_result, const uint32_t *p_min_result, const uint32_t *p_max_result);
 
 /** Encode a float
  *
@@ -123,7 +123,7 @@ bool boolx_encode(cbor_state_t * p_state, bool *p_result, uint32_t *p_min_result
  * @details See @ref intx32_encode for information about parameters and return
  *          values.
  */
-bool float_encode(cbor_state_t * p_state, double *p_result, void *p_min_result, void *p_max_result);
+bool float_encode(cbor_state_t * p_state, double *p_result, double *p_min_result, double *p_max_result);
 
 /** Encode 0 or more elements with the same type and constraints.
  *
@@ -174,8 +174,8 @@ bool float_encode(cbor_state_t * p_state, double *p_result, void *p_min_result, 
  * @retval false  If @p encoder failed before having encoded @p min_encode
  *                values.
  */
-bool multi_encode(size_t min_encode, size_t max_encode, size_t *p_num_encode,
-		processor_t encoder, cbor_state_t * p_state, void *p_result, void *p_min_result, void *p_max_result,
+bool multi_encode(size_t min_encode, size_t max_encode, const size_t *p_num_encode,
+		cbor_encoder_t encoder, cbor_state_t * p_state, const void *p_result, const void *p_min_result, const void *p_max_result,
 		size_t result_len);
 
 #endif /* CBOR_ENCODE_H__ */
