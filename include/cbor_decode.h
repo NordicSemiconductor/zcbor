@@ -97,28 +97,28 @@
  *                acceptable range, or the value was larger than can fit in the
  *                result variable.
  */
-bool intx32_decode(cbor_state_t * p_state, int32_t *p_result, void *p_min_value, void *p_max_value);
+bool intx32_decode(cbor_state_t * p_state, int32_t *p_result, const int32_t *p_min_value, const int32_t *p_max_value);
 
 /** Decode a PINT into a uint32_t.
  *
  * @details See @ref intx32_decode for information about parameters and return
  *          values.
  */
-bool uintx32_decode(cbor_state_t * p_state, uint32_t *p_result, void *p_min_value, void *p_max_value);
+bool uintx32_decode(cbor_state_t * p_state, uint32_t *p_result, const uint32_t *p_min_value, const uint32_t *p_max_value);
 
 /** Decode a BSTR, but leave pp_payload pointing at the payload.
  *
  * @details See @ref intx32_decode for information about parameters and return
  *          values. For strings, the value refers to the length of the string.
  */
-bool bstrx_start_decode(cbor_state_t * p_state, cbor_string_type_t *p_result, void *p_min_len, void *p_max_len);
+bool bstrx_start_decode(cbor_state_t * p_state, cbor_string_type_t *p_result, const size_t *p_min_len, const size_t *p_max_len);
 
 /** Decode a TSTR, but leave pp_payload pointing at the payload.
  *
  * @details See @ref intx32_decode for information about parameters and return
  *          values. For strings, the value refers to the length of the string.
  */
-bool tstrx_start_decode(cbor_state_t * p_state, cbor_string_type_t *p_result, void *p_min_len, void *p_max_len);
+bool tstrx_start_decode(cbor_state_t * p_state, cbor_string_type_t *p_result, const size_t *p_min_len, const size_t *p_max_len);
 
 /** Decode a BSTR, and move pp_payload to after the payload.
  *
@@ -126,7 +126,7 @@ bool tstrx_start_decode(cbor_state_t * p_state, cbor_string_type_t *p_result, vo
  *          values. For strings, the value refers to the length of the string.
  */
 bool bstrx_decode(cbor_state_t * p_state, cbor_string_type_t *p_result,
-		cbor_string_type_t *p_min_len, size_t *p_max_len);
+		const cbor_string_type_t *p_min_len, const size_t *p_max_len);
 
 /** Decode a TSTR, and move pp_payload to after the payload.
  *
@@ -134,7 +134,7 @@ bool bstrx_decode(cbor_state_t * p_state, cbor_string_type_t *p_result,
  *          values. For strings, the value refers to the length of the string.
  */
 bool tstrx_decode(cbor_state_t * p_state, cbor_string_type_t *p_result,
-		cbor_string_type_t *p_min_len, size_t *p_max_len);
+		const cbor_string_type_t *p_min_len, const size_t *p_max_len);
 
 /** Decode a LIST, but leave pp_payload pointing at the payload.
  *
@@ -182,7 +182,7 @@ bool nilx_decode(cbor_state_t * p_state, uint8_t *p_result, void *p_min_result, 
  *          values. The result is translated internally from the primitive
  *          values for true/false (20/21) to 0/1.
  */
-bool boolx_decode(cbor_state_t * p_state, bool *p_result, uint32_t *p_min_result, uint32_t *p_max_result);
+bool boolx_decode(cbor_state_t * p_state, bool *p_result, const uint32_t *p_min_result, const uint32_t *p_max_result);
 
 /** Decode a float
  *
@@ -191,7 +191,7 @@ bool boolx_decode(cbor_state_t * p_state, bool *p_result, uint32_t *p_min_result
  * @details See @ref intx32_decode for information about parameters and return
  *          values.
  */
-bool float_decode(cbor_state_t * p_state, double *p_result, void *p_min_result, void *p_max_result);
+bool float_decode(cbor_state_t * p_state, double *p_result, const void *p_min_result, const void *p_max_result);
 
 /** Skip a single element, regardless of type and value.
  *
@@ -251,7 +251,7 @@ bool any_decode(cbor_state_t * p_state, void *p_result, void *p_min_result, void
  *                values.
  */
 bool multi_decode(size_t min_decode, size_t max_decode, size_t *p_num_decode,
-		processor_t decoder, cbor_state_t * p_state, void *p_result, void *p_min_result, void *p_max_result,
+		cbor_decoder_t decoder, cbor_state_t * p_state, void *p_result, const void *p_min_result, const void *p_max_result,
 		size_t result_len);
 
 #endif /* CBOR_DECODE_H__ */
