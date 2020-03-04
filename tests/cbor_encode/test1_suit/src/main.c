@@ -8,12 +8,20 @@
 #include "manifest3_decode.h"
 
 
-bool cbor_encode_SUIT_Outer_Wrapper(const uint8_t * p_payload, size_t payload_len, SUIT_Outer_Wrapper_t * p_result, bool partial);
+bool cbor_encode_SUIT_Outer_Wrapper(
+		const uint8_t * p_payload, size_t payload_len,
+		SUIT_Outer_Wrapper_t * p_result,
+		size_t *p_payload_len_out);
 
-bool cbor_encode_SUIT_Command_Sequence(const uint8_t * p_payload, size_t payload_len, SUIT_Command_Sequence_t * p_result, bool partial);
+bool cbor_encode_SUIT_Command_Sequence(
+		const uint8_t * p_payload, size_t payload_len,
+		SUIT_Command_Sequence_t * p_result,
+		size_t *p_payload_len_out);
 
-bool cbor_encode_SUIT_Authentication_Wrapper(const uint8_t * p_payload, size_t payload_len, SUIT_Authentication_Wrapper_t * p_result, bool partial);
-
+bool cbor_encode_SUIT_Authentication_Wrapper(
+		const uint8_t * p_payload, size_t payload_len,
+		SUIT_Authentication_Wrapper_t * p_result,
+		size_t *p_payload_len_out);
 
 /* draft-ietf-suit-manifest-02 Example 0 */
 uint8_t test_vector0_02[] = {
@@ -244,6 +252,7 @@ void test_command_sequence(cbor_string_type_t *sequence_str,
 	bool try_each1_present;
 	cbor_string_type_t *try_each2;
 	bool try_each2_present;
+	size_t out_len;
 
 	if (!present) {
 		return;
@@ -260,8 +269,9 @@ void test_command_sequence(cbor_string_type_t *sequence_str,
 
 	res = cbor_encode_SUIT_Command_Sequence(output,
 		sizeof(output),
-		&sequence1, false);
+		&sequence1, &out_len);
 	zassert_true(res, NULL);
+	zassert_equal(sequence_str->len, out_len, "%d != %d\r\n", sequence_str->len, out_len);
 	zassert_mem_equal(sequence_str->value,
 		output,
 		sequence_str->len,
@@ -340,6 +350,7 @@ void test_manifest(const u8_t *input, size_t len)
 	cbor_string_type_t *run;
 	bool run_present;
 	bool res;
+	size_t out_len;
 
 	cbor_print("test_vector at: 0x%x\r\n", (uint32_t)input);
 	cbor_print("test_vector end at: 0x%x\r\n",
@@ -440,8 +451,9 @@ void test_manifest(const u8_t *input, size_t len)
 	test_command_sequence(run, run_present, "run");
 
 	res = cbor_encode_SUIT_Outer_Wrapper(output,
-					sizeof(output), &outerwrapper1, false);
+					sizeof(output), &outerwrapper1, &out_len);
 	zassert_true(res, "top-level encoding failed.");
+	zassert_equal(len, out_len, NULL);
 	zassert_mem_equal(input, output, len, NULL);
 }
 
