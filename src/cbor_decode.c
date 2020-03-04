@@ -178,6 +178,7 @@ static bool uint32_decode(cbor_state_t * p_state,
 		FAIL();
 	}
 	cbor_print("\r\n");
+
 	if (p_result != NULL) {
 		*p_result = uint_result;
 	}
@@ -201,50 +202,64 @@ bool uintx32_decode(cbor_state_t * p_state,
 }
 
 
-static bool size_decode(cbor_state_t * p_state,
-		size_t *p_result, const size_t *p_min_value, const size_t *p_max_value)
-{
-	_Static_assert((sizeof(size_t) == sizeof(uint32_t)),
-			"This code needs size_t to be 4 bytes long.");
-	return uint32_decode(p_state,
-			p_result, p_min_value, p_max_value);
-}
-
-
 static bool strx_start_decode(cbor_state_t * p_state,
 		cbor_string_type_t *p_result, const size_t *p_min_len, const size_t *p_max_len,
 		cbor_major_type_t exp_major_type)
 {
 	uint8_t major_type = MAJOR_TYPE(*p_state->p_payload);
-	cbor_string_type_t *p_str_result = (cbor_string_type_t *)p_result;
 
 	if (major_type != exp_major_type) {
 		/* Value to be read doesn't have the right type. */
 		FAIL();
 	}
-	if (!size_decode(p_state,
-			&p_str_result->len, p_min_len,
+
+	_Static_assert((sizeof(size_t) == sizeof(uint32_t)),
+			"This code needs size_t to be 4 bytes long.");
+	if (!uint32_decode(p_state,
+			&p_result->len, p_min_len,
 			p_max_len)) {
 		FAIL();
 	}
-	p_str_result->value = p_state->p_payload;
+
+	if ((p_state->p_payload + p_result->len) > p_state->p_payload_end) {
+		cbor_print("error: 0x%x > 0x%x\r\n",
+		(uint32_t)(p_state->p_payload + p_result->len),
+		(uint32_t)p_state->p_payload_end);
+		FAIL();
+	}
+
+	p_result->value = p_state->p_payload;
 	return true;
 }
 
-bool bstrx_start_decode(cbor_state_t * p_state,
-		cbor_string_type_t *p_result, const size_t *p_min_len, const size_t *p_max_len)
+bool bstrx_cbor_start_decode(cbor_state_t *p_state, size_t max_num)
 {
-	return strx_start_decode(p_state, p_result, p_min_len, p_max_len,
-			CBOR_MAJOR_TYPE_BSTR);
+	cbor_string_type_t value;
+
+	if(!strx_start_decode(p_state, &value, NULL, NULL,
+				CBOR_MAJOR_TYPE_BSTR)) {
+		FAIL();
+	}
+
+	if (!new_backup(p_state, max_num)) {
+		FAIL();
+	}
+
+	p_state->p_payload_end = value.value + value.len;
+	return true;
 }
 
-
-bool tstrx_start_decode(cbor_state_t * p_state,
-		cbor_string_type_t *p_result, const size_t *p_min_len, const size_t *p_max_len)
+bool bstrx_cbor_end_decode(cbor_state_t *p_state, size_t max_elem_count)
 {
-	return strx_start_decode(p_state, p_result, p_min_len, p_max_len,
-			CBOR_MAJOR_TYPE_TSTR);
+	if (!restore_backup(p_state,
+			FLAG_RESTORE | FLAG_DISCARD | FLAG_TRANSFER_PAYLOAD,
+			max_elem_count)) {
+		FAIL();
+	}
+
+	return true;
 }
+
 
 bool strx_decode(cbor_state_t * p_state,
 		cbor_string_type_t *p_result, const cbor_string_type_t *p_min,

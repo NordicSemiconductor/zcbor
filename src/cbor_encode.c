@@ -39,7 +39,7 @@ static bool encode_header_byte(cbor_state_t *p_state,
 
 	cbor_assert(additional < 32, NULL);
 
-	*(p_state->p_payload_mut++) = (major_type << 5) | (additional & 0x1F);
+	*(p_state->p_payload_mut) = (major_type << 5) | (additional & 0x1F);
 	return true;
 }
 
@@ -48,7 +48,6 @@ static bool encode_header_byte(cbor_state_t *p_state,
 static bool value_encode_len(cbor_state_t *p_state, cbor_major_type_t major_type,
 		const void * const p_result, size_t result_len)
 {
-	cbor_trace();
 
 	if (p_state->elem_count == 0) {
 		FAIL();
@@ -64,6 +63,8 @@ static bool value_encode_len(cbor_state_t *p_state, cbor_major_type_t major_type
 				get_additional(result_len, p_u8_result[0]))) {
 		FAIL();
 	}
+	cbor_trace();
+	p_state->p_payload_mut++;
 
 #ifdef CONFIG_BIG_ENDIAN
 	memcpy(p_state->p_payload_mut, p_u8_result, result_len);
@@ -111,16 +112,18 @@ bool intx32_encode(cbor_state_t *p_state,
 	cbor_major_type_t major_type;
 	uint32_t uint_result;
 
-	if (*p_result < 0) {
+	const int32_t *p_value = p_result ? p_result : p_min_value;
+
+	if (*p_value < 0) {
 		major_type = CBOR_MAJOR_TYPE_NINT;
 		// Convert from CBOR's representation.
-		uint_result = -1 - *p_result;
+		uint_result = -1 - *p_value;
 	} else {
 		major_type = CBOR_MAJOR_TYPE_PINT;
-		uint_result = *p_result;
+		uint_result = *p_value;
 	}
 
-	if (!PTR_VALUE_IN_RANGE(int32_t, p_result, p_min_value, p_max_value)) {
+	if (!PTR_VALUE_IN_RANGE(int32_t, p_value, p_min_value, p_max_value)) {
 		FAIL();
 	}
 
@@ -136,13 +139,16 @@ static bool uint32_encode(cbor_state_t *p_state, cbor_major_type_t major_type,
 		const uint32_t *p_result, const uint32_t *p_min_value, const uint32_t *p_max_value)
 {
 	const uint32_t *p_value = p_result ? p_result : p_min_value;
+
+	cbor_print("val: %u\r\n", *(const uint32_t *)p_value);
 	if (!PTR_VALUE_IN_RANGE(uint32_t, p_value, p_min_value, p_max_value)) {
+		cbor_print("Failed: ");
 		if (p_min_value) cbor_print("min: %d ", *(const uint32_t *)p_min_value);
 		if (p_max_value) cbor_print("max: %d", *(const uint32_t *)p_max_value);
 		cbor_print("\r\n");
 		FAIL();
 	}
-	cbor_print("val: %u\r\n", *(const uint32_t *)p_value);
+	cbor_print("\r\n");
 
 	if (!value_encode(p_state, major_type, p_value, 4)) {
 		FAIL();
@@ -166,7 +172,9 @@ static bool uint_encode(cbor_state_t *p_state, cbor_major_type_t major_type,
 bool uintx32_encode(cbor_state_t *p_state,
 		const uint32_t *p_result, const uint32_t *p_min_value, const uint32_t *p_max_value)
 {
-	if (!uint32_encode(p_state, CBOR_MAJOR_TYPE_PINT, p_result, p_min_value,
+	const uint32_t *p_value = p_result ? p_result : p_min_value;
+
+	if (!uint32_encode(p_state, CBOR_MAJOR_TYPE_PINT, p_value, p_min_value,
 			p_max_value)){
 		FAIL();
 	}
@@ -180,9 +188,9 @@ static bool strx_start_encode(cbor_state_t *p_state,
 {
 	const cbor_string_type_t *p_value = p_result ? p_result : p_min;
 
-	if ((get_result_len(&p_value->len, sizeof(p_value->len))
+	if (p_value->value && ((get_result_len(&p_value->len, sizeof(p_value->len))
 			+ 1 + p_value->len + (uint32_t)p_state->p_payload)
-			> (uint32_t)p_state->p_payload_end) {
+			> (uint32_t)p_state->p_payload_end)) {
 		FAIL();
 	}
 	_Static_assert((sizeof(size_t) == sizeof(uint32_t)),
@@ -196,12 +204,44 @@ static bool strx_start_encode(cbor_state_t *p_state,
 }
 
 
-bool bstrx_start_encode(cbor_state_t *p_state,
-		const cbor_string_type_t *p_result, const cbor_string_type_t *p_min,
-		const size_t *p_max_len)
+bool bstrx_cbor_start_encode(cbor_state_t *p_state, size_t max_num)
 {
-	return strx_start_encode(p_state, p_result, p_min, p_max_len,
+	if (!new_backup(p_state, 1 /* add 1 because of below encode */
+				 + max_num)) {
+		FAIL();
+	}
+	cbor_string_type_t value = {
+		.value = NULL,
+		.len = (size_t)p_state->p_payload_end - (size_t)p_state->p_payload,
+	};
+
+	return strx_start_encode(p_state, &value, &value, &value.len,
 				CBOR_MAJOR_TYPE_BSTR);
+}
+
+bool bstrx_cbor_end_encode(cbor_state_t *p_state, size_t max_elem_count)
+{
+	const uint8_t *p_payload = p_state->p_payload;
+
+	if (!restore_backup(p_state, FLAG_RESTORE | FLAG_DISCARD,
+			max_elem_count)) {
+		FAIL();
+	}
+
+	size_t encoded_size = (size_t)p_state->p_payload_end - (size_t)p_state->p_payload;
+	size_t result_len = get_result_len(&encoded_size, sizeof(size_t));
+	cbor_string_type_t value = {
+		.value = p_state->p_payload + result_len + 1,
+		.len = (size_t)p_payload - (size_t)p_state->p_payload
+			- result_len - 1,
+	};
+
+	/* Reencode header of list now that we know the number of elements. */
+	if (!bstrx_encode(p_state, &value, NULL, NULL)) {
+		FAIL();
+	}
+
+	return true;
 }
 
 
@@ -224,7 +264,9 @@ static bool strx_encode(cbor_state_t *p_state,
 				p_min, p_max_len, major_type)) {
 		FAIL();
 	}
-	memcpy(p_state->p_payload_mut, p_value->value, p_value->len);
+	if (p_state->p_payload_mut != p_value->value) {
+		memmove(p_state->p_payload_mut, p_value->value, p_value->len);
+	}
 	p_state->p_payload += p_value->len;
 	return true;
 }

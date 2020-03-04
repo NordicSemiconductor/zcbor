@@ -40,19 +40,18 @@ bool intx32_encode(cbor_state_t * p_state, const int32_t *p_result, const int32_
  */
 bool uintx32_encode(cbor_state_t * p_state, const uint32_t *p_result, const uint32_t *p_min_value, const uint32_t *p_max_value);
 
-/** Encode a BSTR, but leave pp_payload pointing at the payload.
+/** Encode a BSTR header, but leave p_payload ready to encode the string as CBOR.
  *
- * @details See @ref intx32_encode for information about parameters and return
- *          values. For strings, the value refers to the length of the string.
+ * @param[in]  max_num  The maximum number of expected elements in the encoded
+ *                      string.
  */
-bool bstrx_start_encode(cbor_state_t * p_state, const cbor_string_type_t *p_result, const cbor_string_type_t *p_min, const size_t *p_max_len);
+bool bstrx_cbor_start_decode(cbor_state_t *p_state, size_t max_num);
 
-/** Encode a TSTR, but leave pp_payload pointing at the payload.
+/** Finalize encoding a CBOR-encoded bstr.
  *
- * @details See @ref intx32_encode for information about parameters and return
- *          values. For strings, the value refers to the length of the string.
+ * @param[in]  max_num  The maximum number of elements left unencoded.
  */
-bool tstrx_start_encode(cbor_state_t * p_state, const cbor_string_type_t *p_result, const cbor_string_type_t *p_min, const size_t *p_max_len);
+bool bstrx_cbor_end_decode(cbor_state_t *p_state, size_t max_elem_count);
 
 /** Encode a BSTR, and move pp_payload to after the payload.
  *

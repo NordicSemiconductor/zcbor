@@ -185,8 +185,8 @@ void test_2(void)
 			outerwrapper
 			._OuterWrapper_textExt
 			._OuterWrapper_textExt_cbor[0]
-			._Text_tstr[0]
-			._Text_tstr
+			._Text_inttstr[0]
+			._Text_inttstr
 			.value,
 			sizeof(expected_updateDescription) - 1,
 			"Expected lorem ipsum text.");
