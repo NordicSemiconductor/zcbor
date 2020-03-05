@@ -21,5 +21,6 @@ target_cddl_source(app strange.cddl ENCODE ENTRY_TYPES
   Union
   Map
   Level1
+  Range
   #VERBOSE
   )

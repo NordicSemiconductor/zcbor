@@ -53,3 +53,10 @@ Level2 = [2**3Level3]
 Level3 = [4**5Level4]
 Level4 = [0]
 
+Range = [
+	?optMinus5to5: -5..5,
+	?optStr3to6: tstr .size 3..6,
+	+multi8: 8,
+	+multiHello: "hello",
+	+multi0to10: 0..10
+]

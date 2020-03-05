@@ -102,25 +102,35 @@ def val_or_null(value, var_name):
                                 var_name) if value is not None else "NULL"
 
 
-# Assign the min_value variable.
-def min_val_or_null(value):
-    return val_or_null(value, "min_value")
+# Assign the tmp_value variable.
+def tmp_val_or_null(value):
+    return val_or_null(value, "tmp_value")
+    # return f"""{f'&(uint32_t){{{value}}}' if value is not None else 'NULL'}"""
 
 
 # Assign the min_value variable.
-def min_str_or_null(length, value):
-    return f"""&(cbor_string_type_t){{.value = {f'"{value}"' if value is not None else 'NULL'}, .len = {length}}}""" if length is not None else "NULL"
+def tmp_str_or_null(value):
+    return f"""(tmp_str.value = {f'"{value}"' if value is not None else 'NULL'}, tmp_str.len = {len(value)}, &tmp_str)"""
+    # return f"""&(cbor_string_type_t){{.value = {f'"{value}"' if value is not None else 'NULL'}, .len = {len(value)}}}"""
 
 
 # Assign the max_value variable.
-def max_val_or_null(value):
-    return val_or_null(value, "max_value")
+def min_bool_or_null(value):
+    return f"(&(bool){{{int(value)}}})"
+
+
+def deref_if_not_null(access):
+    return access if access == "NULL" else "&"+access
 
 
 # Return an argument list for a function call to a encoder/decoder function.
-def xcode_args(res, min_val, max_val):
-    return "p_state, %s, %s, %s" % (
-        "&(%s)" % res if res != "NULL" else res, min_val, max_val)
+def xcode_args(res, *sargs):
+    if len(sargs) > 0:
+        return "p_state, %s, %s, %s" % (
+            "&(%s)" % res if res != "NULL" else res, sargs[0], sargs[1])
+    else:
+        return "p_state, %s" % (
+            "(%s)" % res if res != "NULL" else res)
 
 # Return the code that calls a encoder/decoder function with a given set of
 # arguments.
@@ -743,6 +753,11 @@ class CodeGenerator(CddlParser):
             return self.var_access()
         return self.access_append(self.var_name())
 
+    def repeated_val_access(self):
+        if self.is_unambiguous_repeated():
+            return "NULL"
+        return self.access_append(self.var_name())
+
     # Whether to include a "present" variable for this element.
     def present_var_condition(self):
         return self.minQ == 0 and self.maxQ <= 1
@@ -833,7 +848,7 @@ class CodeGenerator(CddlParser):
     # Whether this element must involve a call to multi_xcode(), i.e. unless
     # it's repeated exactly once.
     def multi_xcode_condition(self):
-        return self.minQ != 1 or self.maxQ != 1
+        return self.count_var_condition() or self.present_var_condition()
 
     # Name of the encoder/decoder function for this element.
     def xcode_func_name(self):
@@ -865,7 +880,10 @@ class CodeGenerator(CddlParser):
         return declaration
 
     def set_skipped(self, skipped):
-        self.skipped = skipped
+        if self.range_check_condition() and self.repeated_single_func_impl_condition():
+            self.skipped = True
+        else:
+            self.skipped = skipped
 
     # Recursively set the access prefix for this element and all its children.
     def set_access_prefix(self, prefix):
@@ -884,12 +902,15 @@ class CodeGenerator(CddlParser):
     def multi_member(self):
         return self.multi_var_condition() or self.repeated_multi_var_condition()
 
-    def is_unambiguous_repeated(self):
+    def is_unambiguous_value(self):
         return (self.type is "NIL"
                 or (self.type in ["INT", "NINT", "UINT", "FLOAT", "BSTR", "TSTR", "BOOL"] and self.value is not None)
                 or (self.type == "BSTR" and self.cbor is not None and self.cbor.is_unambiguous())
-                or (self.type == "OTHER" and my_types[self.value].is_unambiguous())) \
-               and (self.key is None or self.key.is_unambiguous_repeated())
+                or (self.type == "OTHER" and my_types[self.value].is_unambiguous()))
+
+    def is_unambiguous_repeated(self):
+        return self.is_unambiguous_value() and (self.key is None or self.key.is_unambiguous_repeated()) \
+                or (self.type in ["LIST", "GROUP", "MAP"] and len(self.value) == 0)
                 # or (self.type in ["LIST", "GROUP", "MAP"] and all(((child.minQ == child.maxQ and child.is_unambiguous()) for child in self.value)))
                 # or (self.type is "UNION" and len(self.value) is 1 and self.value[0].is_unambiguous()))
 
@@ -1000,8 +1021,17 @@ class CodeGenerator(CddlParser):
             return self.var_type()
 
     # Whether this element needs a check (memcmp) for a string value.
-    def expected_string_condition(self):
-        return self.type in ["BSTR", "TSTR"] and self.value is not None
+    def range_check_condition(self):
+        if self.type not in ["INT", "NINT", "UINT", "BSTR", "TSTR"]:
+            return False
+        if self.value is not None:
+            return False
+        if self.type in ["INT", "NINT", "UINT"] and (self.min_value is not None or self.max_value is not None):
+            return True
+        if self.type in ["BSTR", "TSTR"] and (self.min_size is not None or self.max_size is not None):
+            return True
+        return False
+
 
     # Whether this element should have a typedef in the code.
     def type_def_condition(self):
@@ -1034,42 +1064,65 @@ class CodeGenerator(CddlParser):
             ret_val.extend([(self.single_var_type(), self.type_name())])
         return ret_val
 
+    def single_func_prim_prefix(self):
+        if self.type == "OTHER":
+            return my_types[self.value].single_func_prim_prefix()
+        return {
+            "INT": f"intx32",
+            "UINT": f"uintx32",
+            "NINT": f"intx32",
+            "FLOAT": f"float",
+            "BSTR": f"bstrx",
+            "TSTR": f"tstrx",
+            "BOOL": f"boolx",
+            "NIL": f"nilx",
+            "ANY": f"any",
+        }[self.type]
+
     # Return the function name and arguments to call to encode/decode this element. Only used when this element DOESN'T
     # define its own encoder/decoder function (when it's a primitive type, for which functions already exist, or when the
     # function is defined elsewhere ("OTHER"))
-    def single_func_prim(self):
-        vals = [self.val_access(), min_val_or_null(self.min_value), max_val_or_null(self.max_value)]
-        sizes = [self.val_access(), min_str_or_null(self.min_size, self.value), max_val_or_null(self.max_size)]
-
+    def single_func_prim(self, access):
         assert self.type not in ["LIST", "MAP"], "Must have wrapper function for list or map."
         assert not self.cbor_var_condition(), "CBOR BSTR must have separate handling."
 
-        # Will fail runtime if we don't use lambda for single_func()
-        # pylint: disable=unnecessary-lambda
-        retval = {
-            "INT": lambda: [f"intx32_{mode}", *vals],
-            "UINT": lambda: [f"uintx32_{mode}", *vals],
-            "NINT": lambda: [f"intx32_{mode}", *vals],
-            "FLOAT": lambda: [f"float_{mode}", *vals],
-            "BSTR": lambda: [f"bstrx_{mode}", *sizes],
-            "TSTR": lambda: [f"tstrx_{mode}", *sizes],
-            "BOOL": lambda: [f"boolx_{mode}", self.val_access(), min_val_or_null(1 if self.value == True  else 0),
-                                                                max_val_or_null(0 if self.value == False else 1)],
-            "NIL": lambda: [f"nilx_{mode}", "NULL", "NULL", "NULL"],
-            "ANY": lambda: [f"any_{mode}" if mode == "decode" else f"nilx_{mode}", "NULL", "NULL", "NULL"],
-            "OTHER": lambda: list_replace_if_not_null(my_types[self.value].single_func(), 1, self.val_access()),
-        }[self.type]()
-        return retval
+        if self.type == "OTHER":
+            return my_types[self.value].single_func(access)
 
-    # Return the function name and arguments to call to encode/decode this element. Only used when this element has its
-    # own encode/decode function
-    def single_func_impl(self, full=True):
-        return (self.xcode_func_name() if full else self.repeated_xcode_func_name(), self.var_access()
-                if full else self.val_access(), "NULL", "NULL")
+        func_prefix = self.single_func_prim_prefix()
+        if mode == "decode":
+            if not self.is_unambiguous_value():
+                func = f"{func_prefix}_decode"
+            else:
+                func = f"{func_prefix}_expect"
+        else:
+            func = f"{func_prefix}_encode"
+        if self.type in ["NIL", "ANY"]:
+            arg = "NULL"
+        elif not self.is_unambiguous_value():
+            arg = deref_if_not_null(access)
+        elif self.type in ["BSTR", "TSTR"]:
+            arg = tmp_str_or_null(self.value)
+        elif self.type == "BOOL":
+            arg = min_bool_or_null(self.value)
+        else:
+            arg = tmp_val_or_null(self.value)
+        
+        min_val = None
+        max_val = None
+
+        if self.value is None:
+            if self.type in ["BSTR", "TSTR"]:
+                min_val = self.min_size
+                max_val = self.max_size
+            else:
+                min_val = self.min_value
+                max_val = self.max_value
+        return (func, arg)
 
     # Whether this element needs its own encoder/decoder function.
     def single_func_impl_condition(self):
-        return (False or self.key or self.cbor_var_condition() or self.expected_string_condition() or
+        return (False or self.key or self.cbor_var_condition() or
                 self.type_def_condition() or (self.type in ["LIST", "MAP"] and len(self.value) != 0)
                 )
 
@@ -1077,22 +1130,22 @@ class CodeGenerator(CddlParser):
     def repeated_single_func_impl_condition(self):
         return self.repeated_type_def_condition() \
                 or (self.type in ["LIST", "MAP"] and self.multi_member()) \
-                or (self.multi_xcode_condition() and self.self_repeated_multi_var_condition())
+                or (self.multi_xcode_condition() and (self.self_repeated_multi_var_condition() or self.range_check_condition()))
 
     # Return the function name and arguments to call to encode/decode this element.
-    def single_func(self):
+    def single_func(self, access=None):
         if self.single_func_impl_condition():
-            return self.single_func_impl()
+            return (self.xcode_func_name(), deref_if_not_null(access or self.var_access()))
         else:
-            return self.single_func_prim()
+            return self.single_func_prim(access or self.val_access())
 
     # Return the function name and arguments to call to encode/decode the repeated
     # part of this element.
     def repeated_single_func(self):
         if self.repeated_single_func_impl_condition():
-            return self.single_func_impl(full=False)
+            return (self.repeated_xcode_func_name(), deref_if_not_null(self.repeated_val_access()))
         else:
-            return self.single_func_prim()
+            return self.single_func_prim(self.repeated_val_access())
 
     def has_backup(self):
         return (self.cbor_var_condition() or self.type in ["LIST", "MAP", "UNION"])
@@ -1132,7 +1185,7 @@ class CodeGenerator(CddlParser):
 
     # Make a string from the list returned by single_func_prim()
     def xcode_single_func_prim(self):
-        return xcode_statement(*self.single_func_prim())
+        return xcode_statement(*self.single_func_prim(self.val_access()))
 
     # Recursively sum the total minimum and maximum element count for this
     # element.
@@ -1168,13 +1221,14 @@ class CodeGenerator(CddlParser):
         assert end_func in ["list_end_decode", "list_end_encode", "map_end_decode", "map_end_encode"]
         assert self.type in ["LIST", "MAP"], "Expected LIST or MAP type, was %s." % self.type
         min_counts, max_counts = zip(*(child.list_counts() for child in self.value)) if self.value else ((0,), (0,))
+        count_arg = f', {str(sum(max_counts))}' if mode == 'encode' else ''
         with_children = "(%s && (int_res = (%s), %s, int_res))" \
-                    % (f"{start_func}(p_state, {str(sum(min_counts))}, {str(sum(max_counts))})",
+                    % (f"{start_func}(p_state{count_arg})",
                        f"{self.newl_ind}&& ".join(child.full_xcode() for child in self.value),
-                       f"{end_func}(p_state, {str(sum(min_counts))}, {str(sum(max_counts))})")
+                       f"{end_func}(p_state{count_arg})")
         without_children = "(%s && %s)" \
-                    % (f"{start_func}(p_state, {str(sum(min_counts))}, {str(sum(max_counts))})",
-                       f"{end_func}(p_state, {str(sum(min_counts))}, {str(sum(max_counts))})")
+                    % (f"{start_func}(p_state{count_arg})",
+                       f"{end_func}(p_state{count_arg})")
         return with_children if len(self.value) > 0 else without_children
 
     # Return the full code needed to encode/decode a "GROUP" element's children.
@@ -1207,14 +1261,37 @@ class CodeGenerator(CddlParser):
     def xcode_bstr(self):
         if self.cbor_var_condition():
             return "(%s)" % ((self.newl_ind + "&& ").join(
-                   [f"(bstrx_cbor_start_{mode}(p_state, {self.cbor.maxQ}))",
-                    self.cbor.full_xcode(),
-                    f"(bstrx_cbor_end_{mode}(p_state, {self.cbor.maxQ - self.cbor.minQ}))"]))
+                   [f"(int_res = (bstrx_cbor_start_{mode}(p_state)",
+                    f"{self.cbor.full_xcode()})), bstrx_cbor_end_{mode}(p_state), int_res"]))
         return self.xcode_single_func_prim()
+
+    def range_checks(self, access):
+        if self.value is not None:
+            return []
+
+        # return []
+        range_checks = []
+
+        if self.type in ["INT", "UINT", "NINT", "FLOAT", "BOOL"]:
+            if self.min_value is not None:
+                range_checks.append(f"({access} >= {self.min_value})")
+            if self.max_value is not None:
+                range_checks.append(f"({access} <= {self.max_value})")
+        elif self.type in ["BSTR", "TSTR"]:
+            if self.min_size is not None:
+                range_checks.append(f"({access}.len >= {self.min_size})")
+            if self.max_size is not None:
+                range_checks.append(f"({access}.len <= {self.max_size})")
+        elif self.type == "OTHER":
+            range_checks.extend(my_types[self.value].range_checks(access))
+
+        return range_checks
+
 
     # Return the full code needed to encode/decode this element, including children,
     # key and cbor, excluding repetitions.
     def repeated_xcode(self):
+        range_checks = self.range_checks(self.val_access())
         xcoder = {
             "INT": self.xcode_single_func_prim,
             "UINT": self.xcode_single_func_prim,
@@ -1230,10 +1307,18 @@ class CodeGenerator(CddlParser):
             "GROUP": self.xcode_group,
             "UNION": self.xcode_union,
             "OTHER": self.xcode_single_func_prim,
-        }[self.type]()
+        }[self.type]
+        xcoders = []
         if self.key:
-            xcoder = "(%s)" % ((self.newl_ind + "&& ").join([self.key.full_xcode(), xcoder]),)
-        return xcoder
+            xcoders.append(self.key.full_xcode())
+        if mode == "decode":
+            xcoders.append(xcoder())
+            xcoders.extend(range_checks)
+        else:
+            xcoders.extend(range_checks)
+            xcoders.append(xcoder())
+
+        return "(%s)" % ((self.newl_ind + "&& ").join(xcoders),)
 
     # Code for the size of the repeated part of this element.
     def result_len(self):
@@ -1245,13 +1330,20 @@ class CodeGenerator(CddlParser):
     # Return the full code needed to encode/decode this element, including children,
     # key, cbor, and repetitions.
     def full_xcode(self):
-        if self.multi_xcode_condition():
+        if self.present_var_condition():
+            func, *arguments = self.repeated_single_func()
+            return (
+                f"present_{mode}(&(%s), (void*)%s, %s)" %
+                (self.present_var_access(),
+                 func,
+                 xcode_args(*arguments),))
+        elif self.count_var_condition():
             func, *arguments = self.repeated_single_func()
             return (
                 f"multi_{mode}(%s, %s, &%s, (void*)%s, %s, %s)" %
                 (self.minQ,
                  self.maxQ,
-                 self.count_var_access() if self.count_var_condition() else self.present_var_access(),
+                 self.count_var_access(),
                  func,
                  xcode_args(*arguments),
                  self.result_len()))
@@ -1456,8 +1548,7 @@ def render_function(xcoder):
     func_name = xcoder
     return f"""
 static bool {xcoder[1]}(
-		cbor_state_t *p_state, {"" if mode == "decode" else "const "}{xcoder[2] if struct_ptr_name() in body else "void"} * {struct_ptr_name()}, void * p_min_value,
-		void * p_max_value)
+		cbor_state_t *p_state, {"" if mode == "decode" else "const "}{xcoder[2] if struct_ptr_name() in body else "void"} * {struct_ptr_name()})
 {{
 	cbor_print("{ xcoder[1] }\\n");
 	{f"size_t temp_elem_counts[{body.count('p_temp_elem_count')}];" if "p_temp_elem_count" in body else ""}
@@ -1465,8 +1556,8 @@ static bool {xcoder[1]}(
 	{"uint32_t current_list_num;" if "current_list_num" in body else ""}
 	{"uint8_t const * p_payload_bak;" if "p_payload_bak" in body else ""}
 	{"size_t elem_count_bak;" if "elem_count_bak" in body else ""}
-	{"uint32_t min_value;" if "min_value" in body else ""}
-	{"uint32_t max_value;" if "max_value" in body else ""}
+	{"uint32_t tmp_value;" if "tmp_value" in body else ""}
+	{"cbor_string_type_t tmp_str;" if "tmp_str" in body else ""}
 	{"bool int_res;" if "int_res" in body else ""}
 
 	bool result = ({ body });
@@ -1502,7 +1593,7 @@ def render_entry_function(xcoder):
 
 	state.p_backups = &backups;
 
-	bool result = {xcoder.xcode_func_name()}(&state, {struct_ptr_name()}, NULL, NULL);
+	bool result = {xcoder.xcode_func_name()}(&state, {struct_ptr_name()});
 """ + (f"""
 	if (!complete) {{
 		return result;

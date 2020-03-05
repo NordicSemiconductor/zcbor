@@ -2,17 +2,17 @@
 [2/2] cd /home/oyro/git/ncs/cddl_gen/tests/cbor_decode/test4_serial_recovery/build/zephyr/cmake/reports && /usr/bin/python3 /home/oyro/git/ncs/zephyr/scripts/footprint/size_report -F --objdump /opt/gnuarmemb/gcc-arm-none-eabi-8-2019-q3-update/bin/arm-none-eabi-objdump --objcopy /opt/gnuarmemb/gcc-arm-none-eabi-8-2019-q3-update/bin/arm-none-eabi-objcopy --nm /opt/gnuarmemb/gcc-arm-none-eabi-8-2019-q3-update/bin/arm-none-eabi-nm -o /home/oyro/git/ncs/cddl_gen/tests/cbor_decode/test4_serial_recovery/build/zephyr
 Path                                                                                    Size       %   
 ==============================================================================================================
-                                                                                       25356
-    home                                                                               25356
-      oyro                                                                             25356
-        git                                                                            25356
-          ncs                                                                          25356
-            bootloader                                                                 10916
-              mcuboot                                                                  10916
-                boot                                                                   10916
-                  boot_serial                                                           2706
-                    src                                                                 2706
-                      boot_serial.c                                                     2706
+                                                                                       24316
+    home                                                                               24316
+      oyro                                                                             24316
+        git                                                                            24316
+          ncs                                                                          24316
+            bootloader                                                                 11640
+              mcuboot                                                                  11640
+                boot                                                                   11640
+                  boot_serial                                                           3430
+                    src                                                                 3430
+                      boot_serial.c                                                     2278
                         boot_serial_in_dec                                               110
                         boot_serial_input                                                160
                         boot_serial_output                                               344
@@ -22,9 +22,35 @@ Path                                                                            
                         bs_list                                                          284
                         bs_list_img_ver                                                   56
                         bs_reset                                                          20
-                        bs_upload                                                       1352
+                        bs_upload                                                        924
                         bs_writer                                                          8
                         u32toa                                                            84
+                      cbor_common.c                                                      170
+                        new_backup                                                        46
+                        restore_backup                                                    90
+                        union_elem_code                                                   12
+                        union_end_code                                                    12
+                        union_start_code                                                  10
+                      cbor_decode.c                                                      576
+                        additional_len                                                    24
+                        bstrx_decode                                                      10
+                        int32_decode                                                      54
+                        intx32_decode                                                     20
+                        list_map_end_decode                                               12
+                        list_map_start_decode                                             50
+                        map_end_decode                                                     8
+                        map_start_decode                                                  24
+                        multi_decode                                                      88
+                        strx_decode                                                       26
+                        strx_expect                                                       46
+                        strx_start_decode                                                 54
+                        tstrx_expect                                                      10
+                        uint32_decode                                                     10
+                        value_extract                                                    140
+                      serial_recovery_cbor.c                                             406
+                        cbor_decode_Upload                                                58
+                        decode_Member                                                    284
+                        decode_Upload                                                     64
                   bootutil                                                              6812
                     src                                                                 6812
                       bootutil_misc.c                                                   1080
@@ -138,7 +164,7 @@ Path                                                                            
                           generated                                                        2
                             configs.c                                                      2
                               _ConfigAbsSyms                                               2
-            modules                                                                    14164
+            modules                                                                    12400
               crypto                                                                   10260
                 mbedtls                                                                10260
                   library                                                              10232
@@ -262,18 +288,9 @@ Path                                                                            
                       system_nrf52840.c                                                  464
                         SystemCoreClockUpdate                                             16
                         SystemInit                                                       448
-              lib                                                                       2504
-                tinycbor                                                                2504
-                  src                                                                   2504
-                    cbor_buf_reader.c                                                    208
-                      cbor_buf_reader_cmp                                                 24
-                      cbor_buf_reader_cpy                                                 18
-                      cbor_buf_reader_get_string_chunk                                     6
-                      cbor_buf_reader_init                                                64
-                      cbuf_buf_reader_get16                                               32
-                      cbuf_buf_reader_get32                                               28
-                      cbuf_buf_reader_get64                                               30
-                      cbuf_buf_reader_get8                                                 6
+              lib                                                                        740
+                tinycbor                                                                 740
+                  src                                                                    740
                     cborencoder.c                                                        740
                       cbor_encode_int                                                    146
                       cbor_encode_text_string                                             16
@@ -284,25 +301,6 @@ Path                                                                            
                       cbor_encoder_cust_writer_init                                       10
                       create_container                                                   178
                       encode_string                                                      152
-                    cborparser.c                                                        1556
-                      _cbor_value_copy_string                                             76
-                      _cbor_value_decode_int64_internal                                   50
-                      _cbor_value_extract_number                                         170
-                      advance_internal                                                    46
-                      advance_recursive                                                  126
-                      cbor_parser_cust_reader_init                                        28
-                      cbor_value_advance                                                  20
-                      cbor_value_calculate_string_length                                  20
-                      cbor_value_enter_container                                         156
-                      cbor_value_leave_container                                          12
-                      extract_length                                                      52
-                      get_string_chunk                                                   188
-                      get_string_chunk_update                                             40
-                      is_fixed_type                                                       36
-                      iterate_noop                                                         4
-                      iterate_string_chunks                                              146
-                      preparse_next_value                                                 76
-                      preparse_value                                                     310
 :                                                                                        478
   SystemCoreClock                                                                          4
   _sw_isr_table                                                                          384
@@ -313,7 +311,7 @@ Path                                                                            
   delay_machine_code.9005                                                                  6
   mbedtls_exit                                                                             4
   mpu_config                                                                               8
-  off_last.10245                                                                           4
+  off_last.10393                                                                           4
   rtt_term_mutex                                                                          20
 arch                                                                                    1730
   arm                                                                                   1538
@@ -662,4 +660,4 @@ subsys                                                                          
         flash_map                                                                          4
         flash_map_entries                                                                  4
 ==============================================================================================================
-                                                                                       43148
+                                                                                       42112

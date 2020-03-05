@@ -75,8 +75,8 @@ struct cbor_state_backups_s{
  * This type is compatible with all decoding functions here and in the generated
  * code, except for multi_decode.
  */
-typedef bool(cbor_encoder_t)(cbor_state_t *, const void *, const void *, const void *);
-typedef bool(cbor_decoder_t)(cbor_state_t *, void *, const void *, const void *);
+typedef bool(cbor_encoder_t)(cbor_state_t *, const void *);
+typedef bool(cbor_decoder_t)(cbor_state_t *, void *);
 
 /** Enumeration representing the major types available in CBOR.
  *

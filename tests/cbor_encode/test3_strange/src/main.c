@@ -45,7 +45,7 @@ void test_numbers(void)
 	numbers._Numbers_fourtoten = 5; // Valid
 	zassert_true(cbor_encode_Numbers(output,
 		sizeof(output), &numbers, &out_len), NULL);
-	zassert_equal(sizeof(exp_payload_numbers1), out_len, NULL);
+	zassert_equal(sizeof(exp_payload_numbers1), out_len, "%d != %d\r\n", sizeof(exp_payload_numbers1), out_len);
 	zassert_mem_equal(exp_payload_numbers1, output, sizeof(exp_payload_numbers1), NULL);
 
 	numbers._Numbers_negint = 1; // Invalid
@@ -562,9 +562,81 @@ void test_nested_map_list_map(void)
 	zassert_mem_equal(exp_payload_nested_mlm5, output, sizeof(exp_payload_nested_mlm5), NULL);
 }
 
+void test_range(void)
+{
+	const uint8_t exp_payload_range1[] = {0x83,
+		0x08,
+		0x65, 0x68, 0x65, 0x6c, 0x6c, 0x6f, // "hello"
+		0x0
+	};
+
+	const uint8_t exp_payload_range2[] = {0x86,
+		0x05,
+		0x08, 0x08,
+		0x65, 0x68, 0x65, 0x6c, 0x6c, 0x6f, // "hello"
+		0x00, 0x0A
+	};
+
+	const uint8_t exp_payload_range3[] = {0x85,
+		0x65, 0x68, 0x65, 0x6c, 0x6c, 0x6f, // "hello"
+		0x08,
+		0x65, 0x68, 0x65, 0x6c, 0x6c, 0x6f, // "hello"
+		0x65, 0x68, 0x65, 0x6c, 0x6c, 0x6f, // "hello"
+		0x07
+	};
+
+	Range_t input1 = {
+		._Range_optMinus5to5_present = false,
+		._Range_optStr3to6_present = false,
+		._Range_multi8_count = 1,
+		._Range_multiHello_count = 1,
+		._Range_multi0to10_count = 1,
+		._Range_multi0to10 = {0},
+	};
+	Range_t input2 = {
+		._Range_optMinus5to5_present = true,
+		._Range_optMinus5to5 = 5,
+		._Range_optStr3to6_present = false,
+		._Range_multi8_count = 2,
+		._Range_multiHello_count = 1,
+		._Range_multi0to10_count = 2,
+		._Range_multi0to10 = {0, 10},
+	};
+	Range_t input3 = {
+		._Range_optMinus5to5_present = false,
+		._Range_optStr3to6_present = true,
+		._Range_optStr3to6 = {
+			.value = "hello",
+			.len = 5,
+		},
+		._Range_multi8_count = 1,
+		._Range_multiHello_count = 2,
+		._Range_multi0to10_count = 1,
+		._Range_multi0to10 = {7},
+	};
+
+	uint8_t output[25];
+	size_t out_len;
+
+	zassert_true(cbor_encode_Range(output, sizeof(output), &input1,
+				&out_len), NULL);
+	zassert_equal(sizeof(exp_payload_range1), out_len, NULL);
+	zassert_mem_equal(exp_payload_range1, output, sizeof(exp_payload_range1), NULL);
+
+	zassert_true(cbor_encode_Range(output, sizeof(output), &input2,
+				&out_len), NULL);
+	zassert_equal(sizeof(exp_payload_range2), out_len, NULL);
+	zassert_mem_equal(exp_payload_range2, output, sizeof(exp_payload_range2), NULL);
+
+	zassert_true(cbor_encode_Range(output, sizeof(output), &input3,
+				&out_len), NULL);
+	zassert_equal(sizeof(exp_payload_range3), out_len, NULL);
+	zassert_mem_equal(exp_payload_range3, output, sizeof(exp_payload_range3), NULL);
+}
+
 void test_main(void)
 {
-	ztest_test_suite(cbor_encode_test5,
+	ztest_test_suite(cbor_encode_test3,
 			 ztest_unit_test(test_numbers),
 			 ztest_unit_test(test_strings),
 			 ztest_unit_test(test_optional),
@@ -572,7 +644,8 @@ void test_main(void)
 			 ztest_unit_test(test_levels),
 			 ztest_unit_test(test_map),
 			 ztest_unit_test(test_nested_list_map),
-			 ztest_unit_test(test_nested_map_list_map)
+			 ztest_unit_test(test_nested_map_list_map),
+			 ztest_unit_test(test_range)
 	);
-	ztest_run_test_suite(cbor_encode_test5);
+	ztest_run_test_suite(cbor_encode_test3);
 }
