@@ -441,6 +441,115 @@ void test_nested_map_list_map(void)
 	zassert_equal(2, maplistmap._NestedMapListMap_key[2]._NestedMapListMap_key_map_count, NULL);
 }
 
+
+void test_range(void)
+{
+	const uint8_t payload_range1[] = {0x83,
+		0x08,
+		0x65, 0x68, 0x65, 0x6c, 0x6c, 0x6f, // "hello"
+		0x0
+	};
+
+	const uint8_t payload_range2[] = {0x86,
+		0x05,
+		0x08, 0x08,
+		0x65, 0x68, 0x65, 0x6c, 0x6c, 0x6f, // "hello"
+		0x00, 0x0A
+	};
+
+	const uint8_t payload_range3_inv[] = {0x84,
+		0x06, // outside range
+		0x08,
+		0x65, 0x68, 0x65, 0x6c, 0x6c, 0x6f, // "hello"
+		0x00
+	};
+
+	const uint8_t payload_range4_inv[] = {0x84,
+		0x00,
+		0x08,
+		0x65, 0x68, 0x65, 0x6c, 0x6c, 0x6f, // "hello"
+		0x0B //outside range
+	};
+
+	const uint8_t payload_range5[] = {0x85,
+		0x65, 0x68, 0x65, 0x6c, 0x6c, 0x6f, // "hello"
+		0x08,
+		0x65, 0x68, 0x65, 0x6c, 0x6c, 0x6f, // "hello"
+		0x65, 0x68, 0x65, 0x6c, 0x6c, 0x6f, // "hello"
+		0x07
+	};
+
+	const uint8_t payload_range6_inv[] = {0x84,
+		0x67, 0x68, 0x65, 0x6c, 0x6c, 0x6f, 0x6f, 0x6f, // "hellooo" -> too long
+		0x08,
+		0x65, 0x68, 0x65, 0x6c, 0x6c, 0x6f, // "hello"
+		0x07
+	};
+
+	const uint8_t payload_range7_inv[] = {0x85,
+		0x22,
+		0x62, 0x68, 0x65, // "he" -> too short
+		0x08,
+		0x65, 0x68, 0x65, 0x6c, 0x6c, 0x6f, // "hello"
+		0x07
+	};
+
+	const uint8_t payload_range8_inv[] = {0x85,
+		0x08,
+		0x65, 0x68, 0x65, 0x6c, 0x6c, 0x6f, // "hello"
+		0x07, 0x08, 0x18 // Last too large
+	};
+
+	Range_t output;
+
+	zassert_true(cbor_decode_Range(payload_range1, sizeof(payload_range1),
+				&output, true), NULL);
+	zassert_false(output._Range_optMinus5to5_present, NULL);
+	zassert_false(output._Range_optStr3to6_present, NULL);
+	zassert_equal(1, output._Range_multi8_count, NULL);
+	zassert_equal(1, output._Range_multiHello_count, NULL);
+	zassert_equal(1, output._Range_multi0to10_count, NULL);
+	zassert_equal(0, output._Range_multi0to10[0], NULL);
+
+	zassert_true(cbor_decode_Range(payload_range2, sizeof(payload_range2),
+				&output, true), NULL);
+	zassert_true(output._Range_optMinus5to5_present, NULL);
+	zassert_equal(5, output._Range_optMinus5to5, "was %d", output._Range_optMinus5to5);
+	zassert_false(output._Range_optStr3to6_present, NULL);
+	zassert_equal(2, output._Range_multi8_count, NULL);
+	zassert_equal(1, output._Range_multiHello_count, NULL);
+	zassert_equal(2, output._Range_multi0to10_count, NULL);
+	zassert_equal(0, output._Range_multi0to10[0], NULL);
+	zassert_equal(10, output._Range_multi0to10[1], NULL);
+
+	zassert_false(cbor_decode_Range(payload_range3_inv, sizeof(payload_range3_inv),
+				&output, true), NULL);
+
+	zassert_false(cbor_decode_Range(payload_range4_inv, sizeof(payload_range4_inv),
+				&output, true), NULL);
+
+	zassert_true(cbor_decode_Range(payload_range5, sizeof(payload_range5),
+				&output, true), NULL);
+	zassert_false(output._Range_optMinus5to5_present, NULL);
+	zassert_true(output._Range_optStr3to6_present, NULL);
+	zassert_equal(5, output._Range_optStr3to6.len, NULL);
+	zassert_mem_equal("hello", output._Range_optStr3to6.value, 5, NULL);
+	zassert_equal(1, output._Range_multi8_count, NULL);
+	zassert_equal(2, output._Range_multiHello_count, NULL);
+	zassert_equal(1, output._Range_multi0to10_count, NULL);
+	zassert_equal(7, output._Range_multi0to10[0], NULL);
+
+	zassert_false(cbor_decode_Range(payload_range6_inv, sizeof(payload_range6_inv),
+				&output, true), NULL);
+
+	zassert_false(cbor_decode_Range(payload_range7_inv, sizeof(payload_range7_inv),
+				&output, true), NULL);
+
+	zassert_false(cbor_decode_Range(payload_range8_inv, sizeof(payload_range8_inv),
+				&output, true), NULL);
+}
+
+
 void test_main(void)
 {
 	ztest_test_suite(cbor_decode_test5,
@@ -451,7 +560,8 @@ void test_main(void)
 			 ztest_unit_test(test_levels),
 			 ztest_unit_test(test_map),
 			 ztest_unit_test(test_nested_list_map),
-			 ztest_unit_test(test_nested_map_list_map)
+			 ztest_unit_test(test_nested_map_list_map),
+			 ztest_unit_test(test_range)
 	);
 	ztest_run_test_suite(cbor_decode_test5);
 }

@@ -16,113 +16,64 @@
  *
  * @param[inout] p_state        The current state of the decoding.
  * @param[out]   p_result       Where to place the encoded value.
- * @param[in]    p_min_value    The minimum acceptable value. This is checked
- *                              after decoding, and if the encoded value is
- *                              outside the range, the decoding will fail.
- *                              A NULL value here means there is no restriction.
- * @param[in]    p_max_value    The maximum acceptable value. This is checked
- *                              after decoding, and if the encoded value is
- *                              outside the range, the decoding will fail.
- *                              A NULL value here means there is no restriction.
  *
- * @retval true   If the value was encoded correctly.
- * @retval false  If the value has the wrong type, the payload overflowed, the
- *                element count was exhausted, the value was not within the
- *                acceptable range, or the value was larger than can fit in the
- *                result variable.
+ * @retval true   Everything is ok.
+ * @retval false  If the payload is exhausted.
  */
-bool intx32_encode(cbor_state_t * p_state, const int32_t *p_result, const int32_t *p_min_value, const int32_t *p_max_value);
+bool intx32_encode(cbor_state_t *p_state, const int32_t *p_input);
 
-/** Encode a PINT into a uint32_t.
- *
- * @details See @ref intx32_encode for information about parameters and return
- *          values.
- */
-bool uintx32_encode(cbor_state_t * p_state, const uint32_t *p_result, const uint32_t *p_min_value, const uint32_t *p_max_value);
+/** Encode a PINT into a uint32_t. */
+bool uintx32_encode(cbor_state_t * p_state, const uint32_t *p_result);
 
-/** Encode a BSTR header, but leave p_payload ready to encode the string as CBOR.
+/** Encode a BSTR header.
  *
- * @param[in]  max_num  The maximum number of expected elements in the encoded
- *                      string.
+ * The rest of the string can be encoded as CBOR.
+ * A state backup is created to keep track of the element count.
+ *
+ * @retval true   Header encoded correctly
+ * @retval false  Header encoded incorrectly, or backup failed.
  */
-bool bstrx_cbor_start_encode(cbor_state_t *p_state, size_t max_num);
+bool bstrx_cbor_start_encode(cbor_state_t *p_state);
 
-/** Finalize encoding a CBOR-encoded bstr.
+/** Finalize encoding a CBOR-encoded BSTR.
  *
- * @param[in]  max_num  The maximum number of elements left unencoded.
+ * Restore element count from backup.
  */
-bool bstrx_cbor_end_encode(cbor_state_t *p_state, size_t max_elem_count);
+bool bstrx_cbor_end_encode(cbor_state_t *p_state);
 
-/** Encode a BSTR, and move pp_payload to after the payload.
- *
- * @details See @ref intx32_encode for information about parameters and return
- *          values. For strings, the value refers to the length of the string.
- */
-bool bstrx_encode(cbor_state_t * p_state, const cbor_string_type_t *p_result, const cbor_string_type_t *p_min, const size_t *p_max_len);
+/** Encode a BSTR, */
+bool bstrx_encode(cbor_state_t * p_state, const cbor_string_type_t *p_result);
 
-/** Encode a TSTR, and move pp_payload to after the payload.
- *
- * @details See @ref intx32_encode for information about parameters and return
- *          values. For strings, the value refers to the length of the string.
- */
-bool tstrx_encode(cbor_state_t * p_state, const cbor_string_type_t *p_result, const cbor_string_type_t *p_min, const size_t *p_max_len);
+/** Encode a TSTR. */
+bool tstrx_encode(cbor_state_t * p_state, const cbor_string_type_t *p_result);
 
-/** Encode a LIST, but leave pp_payload pointing at the payload.
+/** Encode a LIST header.
  *
- * @details This allocates a "state backup".
- *          See @ref intx32_encode for information about parameters and return
- *          values. For lists and maps, the value refers to the number of
- *          elements.
+ * The contents of the list can be decoded via subsequent function calls.
+ * A state backup is created to keep track of the element count.
  */
-bool list_start_encode(cbor_state_t * p_state, size_t min_num, size_t max_num);
+bool list_start_encode(cbor_state_t * p_state, size_t max_num);
 
-/** Encode MAP, but leave pp_payload pointing at the payload.
- *
- * @details This allocates a "state backup".
- *          See @ref intx32_encode for information about parameters and return
- *          values. For lists and maps, the value refers to the number of
- *          elements.
- */
-bool map_start_encode(cbor_state_t * p_state, size_t min_num, size_t max_num);
+/** Encode a MAP header. */
+bool map_start_encode(cbor_state_t * p_state, size_t max_num);
 
-/** Encode end of a LIST. Do some checks and deallocate backup.
- *
- * @details See @ref intx32_encode for information about parameters and return
- *          values. For lists and maps, the value refers to the number of
- *          elements.
- */
-bool list_end_encode(cbor_state_t * p_state, size_t min_num, size_t max_num);
+/** Encode end of a LIST. Do some checks and deallocate backup. */
+bool list_end_encode(cbor_state_t * p_state, size_t max_num);
 
-/** Encode end of a MAP. Do some checks and deallocate backup.
- *
- * @details See @ref intx32_encode for information about parameters and return
- *          values. For lists and maps, the value refers to the number of
- *          elements.
- */
-bool map_end_encode(cbor_state_t * p_state, size_t min_num, size_t max_num);
+/** Encode end of a MAP. Do some checks and deallocate backup. */
+bool map_end_encode(cbor_state_t * p_state, size_t max_num);
 
-/** Encode a "nil" primitive value.
- *
- * @details All arguments except p_state are ignored and can be NULL.
- */
-bool nilx_encode(cbor_state_t * p_state, const uint8_t *p_result, void *p_min_result, void *p_max_result);
+/** Encode a "nil" primitive value. p_result should be NULL. */
+bool nilx_encode(cbor_state_t * p_state, const void *p_result);
 
-/** Encode a boolean primitive value.
- *
- * @details See @ref intx32_encode for information about parameters and return
- *          values. The result is translated internally from the primitive
- *          values for true/false (20/21) to 0/1.
- */
-bool boolx_encode(cbor_state_t * p_state, bool *p_result, const uint32_t *p_min_result, const uint32_t *p_max_result);
+/** Encode a boolean primitive value. */
+bool boolx_encode(cbor_state_t * p_state, const bool *p_result);
 
-/** Encode a float
- *
- * @warning This function has not been tested, and likely doesn't work.
- *
- * @details See @ref intx32_encode for information about parameters and return
- *          values.
- */
-bool float_encode(cbor_state_t * p_state, double *p_result, double *p_min_result, double *p_max_result);
+/** Encode a float */
+bool float_encode(cbor_state_t * p_state, double *p_result);
+
+/* Dummy encode "any": Encode a "nil". p_input should be NULL. */
+bool any_encode(cbor_state_t *p_state, void *p_input);
 
 /** Encode 0 or more elements with the same type and constraints.
  *
@@ -138,21 +89,17 @@ bool float_encode(cbor_state_t * p_state, double *p_result, double *p_min_result
  *              cbor_string_type_t bstrs[2] = <initialize here>;
  *              bool res;
  *
- *              res = list_start_encode(p_state, 3, 5);
+ *              res = list_start_encode(p_state, 5);
  *              // check res
  *              res = multi_encode(3, 3, &num_encode, uintx32_encode, p_state,
- *                           ints, &int_min, &int_max, 4);
+ *                           ints, 4);
  *              // check res
  *              res = multi_encode(0, 2, &num_encode, strx_encode, p_state,
- *                           bstrs, &bstr_size, &bstr_size,
- *                           sizeof(cbor_string_type_t));
+ *                           bstrs, sizeof(cbor_string_type_t));
  *              // check res
- *              res = list_end_encode(p_state, 3, 5);
+ *              res = list_end_encode(p_state, 5);
  *              // check res
  *          @endcode
- *
- *          See @ref intx32_encode for information about the undocumented
- *          parameters.
  *
  * @param[in]  min_encode    The minimum acceptable number of elements.
  * @param[in]  max_encode    The maximum acceptable number of elements.
@@ -164,17 +111,22 @@ bool float_encode(cbor_state_t * p_state, double *p_result, double *p_min_result
  *                           p_result is moved @p result_len bytes for each call
  *                           to @p encoder, i.e. @p p_result refers to an array
  *                           of result variables.
- * @param[in]  p_result      Source of the encoded values. Must be an array
+ * @param[in]  p_input       Source of the encoded values. Must be an array
  *                           of length at least @p max_encode.
  * @param[in]  result_len    The length of the result variables. Must be the
- *                           length expected by the @p encoder.
+ *                           length of the elements in p_result.
  *
  * @retval true   If at least @p min_encode variables were correctly encoded.
  * @retval false  If @p encoder failed before having encoded @p min_encode
  *                values.
  */
 bool multi_encode(size_t min_encode, size_t max_encode, const size_t *p_num_encode,
-		cbor_encoder_t encoder, cbor_state_t * p_state, const void *p_result, const void *p_min_result, const void *p_max_result,
+		cbor_encoder_t encoder, cbor_state_t * p_state, const void *p_input,
 		size_t result_len);
+
+bool present_encode(const size_t *p_present,
+		cbor_encoder_t encoder,
+		cbor_state_t * p_state,
+		const void *p_input);
 
 #endif /* CBOR_ENCODE_H__ */

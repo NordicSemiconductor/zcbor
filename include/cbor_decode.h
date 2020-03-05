@@ -24,16 +24,16 @@
  *    pointer and a length.
  *  - When a function returns false, it only means that decoding that particular
  *    value failed. If a value is allowed to take multiple different values,
- *    another decoding function can be called if the first fails. All functions
- *    are designed to reset pp_payload and p_elem_count to their original values
- *    if they return false.
+ *    another decoding function can be called if the first fails. Don't expect
+ *    p_state to be valid when a function fails.
  *  - There is some type casting going on under the hood to make the code
  *    generator friendly. See especially the processor_t type which is compatible
  *    with all functions except multi_decode, but the compiler doesn't "know"
  *    this because they are defined with different pointer types. It also means
  *    any usage of multi_decode must be made with care for function types.
  *  - This library has no function for semantic tags.
- *  - This library doesn't distinguish lists from maps.
+ *  - This library doesn't distinguish lists from maps other than multiplying
+ *    the element count of maps by 2.
  *
  *
  * CBOR's format is described well on Wikipedia
@@ -50,7 +50,11 @@
  *
  * The available major types can be seen in @ref cbor_major_type_t.
  *
- * PINT, NINT, TAG, and PRIM elements have no payload, only Value.
+ * For all types, Values 0-23 are encoded directly in the "Additional info",
+ * meaning that the "Value" field is 0 bytes long. If "Additional info" is 24,
+ * 25, 26, or 27, the "Value" field is 1, 2, 4, or 8 bytes long, respectively.
+ *
+ * Major types PINT, NINT, TAG, and PRIM elements have no payload, only Value.
  * PINT: Interpret the Value as a positive integer.
  * NINT: Interpret the Value as a positive integer, then multiply by -1 and
  *       subtract 1.
@@ -61,7 +65,7 @@
  *       21: "true"
  *       22: "null"
  *       23: "undefined"
- *       >256: Interpret as IEEE 754 float with given precision
+ *       >=0x10000: Interpret as IEEE 754 float with given precision
  *
  * For BSTR, TSTR, LIST, and MAP, the Value describes the length of the payload.
  * For BSTR and TSTR, the length is in bytes, for LIST, the length is in number
@@ -69,10 +73,6 @@
  *
  * For LIST and MAP, sub elements are regular CBOR elements with their own
  * Header, Value and Payload. LISTs and MAPs can be recursively encoded.
- *
- * For all types, Values 0-23 are encoded directly in the "Additional info",
- * meaning that the "Value" field is 0 bytes long. If "Additional info" is 24,
- * 25, 26, or 27, the "Value" field is 1, 2, 4, or 8 bytes long, respectively.
  *
  * The additional info means slightly different things for different major
  * types.
@@ -82,123 +82,92 @@
  *
  * @param[inout] p_state        The current state of the decoding.
  * @param[out]   p_result       Where to place the decoded value.
- * @param[in]    p_min_value    The minimum acceptable value. This is checked
- *                              after decoding, and if the decoded value is
- *                              outside the range, the decoding will fail.
- *                              A NULL value here means there is no restriction.
- * @param[in]    p_max_value    The maximum acceptable value. This is checked
- *                              after decoding, and if the decoded value is
- *                              outside the range, the decoding will fail.
- *                              A NULL value here means there is no restriction.
  *
  * @retval true   If the value was decoded correctly.
  * @retval false  If the value has the wrong type, the payload overflowed, the
- *                element count was exhausted, the value was not within the
- *                acceptable range, or the value was larger than can fit in the
- *                result variable.
+ *                element count was exhausted, or the value was larger than can
+ *                fit in the result variable.
  */
-bool intx32_decode(cbor_state_t * p_state, int32_t *p_result, const int32_t *p_min_value, const int32_t *p_max_value);
+bool intx32_decode(cbor_state_t * p_state, int32_t *p_result);
 
-/** Decode a PINT into a uint32_t.
+/** Expect a PINT/NINT with a certain value. Uses intx32_decode internally.
  *
- * @details See @ref intx32_decode for information about parameters and return
- *          values.
+ * @param[inout] p_state        The current state of the decoding.
+ * @param[in]    p_result       The expected value
+ *
+ * @retval true   If the result was decoded correctly and has the expected value.
+ * @retval false  If intx32_decode failed or the result doesn't have the
+ *                expected value.
  */
-bool uintx32_decode(cbor_state_t * p_state, uint32_t *p_result, const uint32_t *p_min_value, const uint32_t *p_max_value);
+bool intx32_expect(cbor_state_t * p_state, int32_t *p_result);
 
-/** Decode a BSTR header, but leave p_payload ready to decode the string as CBOR.
+/** Decode a PINT. */
+bool uintx32_decode(cbor_state_t * p_state, uint32_t *p_result);
+bool uintx32_expect(cbor_state_t * p_state, uint32_t *p_result);
+
+/** Decode and consume a BSTR header.
  *
- * @param[in]  max_num  The maximum number of expected elements in the encoded
- *                      string.
+ * The rest of the string can be decoded as CBOR.
+ * A state backup is created to keep track of the element count.
+ *
+ * @retval true   Header decoded correctly
+ * @retval false  Header decoded incorrectly, or backup failed.
  */
-bool bstrx_cbor_start_decode(cbor_state_t *p_state, size_t max_num);
+bool bstrx_cbor_start_decode(cbor_state_t *p_state);
 
 /** Finalize decoding a CBOR-encoded bstr.
  *
- * @param[in]  max_num  The maximum number of elements left undecoded.
+ * Restore element count from backup.
  */
-bool bstrx_cbor_end_decode(cbor_state_t *p_state, size_t max_elem_count);
+bool bstrx_cbor_end_decode(cbor_state_t *p_state);
 
-/** Decode a BSTR, and move pp_payload to after the payload.
- *
- * @details See @ref intx32_decode for information about parameters and return
- *          values. For strings, the value refers to the length of the string.
- */
-bool bstrx_decode(cbor_state_t * p_state, cbor_string_type_t *p_result,
-		const cbor_string_type_t *p_min_len, const size_t *p_max_len);
+/** Decode and consume a BSTR */
+bool bstrx_decode(cbor_state_t * p_state, cbor_string_type_t *p_result);
+bool bstrx_expect(cbor_state_t * p_state, cbor_string_type_t *p_result);
 
-/** Decode a TSTR, and move pp_payload to after the payload.
- *
- * @details See @ref intx32_decode for information about parameters and return
- *          values. For strings, the value refers to the length of the string.
- */
-bool tstrx_decode(cbor_state_t * p_state, cbor_string_type_t *p_result,
-		const cbor_string_type_t *p_min_len, const size_t *p_max_len);
+/** Decode and consume a TSTR */
+bool tstrx_decode(cbor_state_t * p_state, cbor_string_type_t *p_result);
+bool tstrx_expect(cbor_state_t * p_state, cbor_string_type_t *p_result);
 
-/** Decode a LIST, but leave pp_payload pointing at the payload.
+/** Decode and consume a LIST header.
  *
- * @details This allocates a "state backup".
- *          See @ref intx32_decode for information about parameters and return
- *          values. For lists and maps, the value refers to the number of
- *          elements.
+ * The contents of the list can be decoded via subsequent function calls.
+ * A state backup is created to keep track of the element count.
+ *
+ * @retval true   Header decoded correctly
+ * @retval false  Header decoded incorrectly, or backup failed.
  */
-bool list_start_decode(cbor_state_t * p_state, size_t min_num, size_t max_num);
+bool list_start_decode(cbor_state_t * p_state);
 
-/** Decode a MAP, but leave pp_payload pointing at the payload.
- *
- * @details This allocates a "state backup".
- *          See @ref intx32_decode for information about parameters and return
- *          values. For lists and maps, the value refers to the number of
- *          elements.
- */
-bool map_start_decode(cbor_state_t * p_state, size_t min_num, size_t max_num);
+/** Decode and consume a MAP header. */
+bool map_start_decode(cbor_state_t * p_state);
 
-/** Decode the end of a LIST, deallocating the backup.
+/** Finalize decoding a LIST
  *
- * @details See @ref intx32_decode for information about parameters and return
- *          values. For lists and maps, the value refers to the number of
- *          elements.
+ * Check that the list had the correct number of elements, and restore previous
+ * element count from backup.
+ *
+ * @retval true   Everything ok.
+ * @retval false  Element count not correct.
  */
-bool list_end_decode(cbor_state_t * p_state, size_t min_num, size_t max_num);
+bool list_end_decode(cbor_state_t * p_state);
 
-/** Decode the end of a MAP, deallocating the backup.
- *
- * @details See @ref intx32_decode for information about parameters and return
- *          values. For lists and maps, the value refers to the number of
- *          elements.
- */
-bool map_end_decode(cbor_state_t * p_state, size_t min_num, size_t max_num);
+/** Finalize decoding a MAP */
+bool map_end_decode(cbor_state_t * p_state);
 
-/** Decode a "nil" primitive value.
- *
- * @details All arguments except p_state are ignored and can be NULL.
- */
-bool nilx_decode(cbor_state_t * p_state, uint8_t *p_result, void *p_min_result, void *p_max_result);
+/** Decode a "nil" primitive value. */
+bool nilx_expect(cbor_state_t * p_state, void *p_result);
 
-/** Decode a boolean primitive value.
- *
- * @details See @ref intx32_decode for information about parameters and return
- *          values. The result is translated internally from the primitive
- *          values for true/false (20/21) to 0/1.
- */
-bool boolx_decode(cbor_state_t * p_state, bool *p_result, const uint32_t *p_min_result, const uint32_t *p_max_result);
+/** Decode a boolean primitive value. */
+bool boolx_decode(cbor_state_t * p_state, bool *p_result);
+bool boolx_expect(cbor_state_t * p_state, bool *p_result);
 
-/** Decode a float
- *
- * @warning This function has not been tested, and likely doesn't work.
- *
- * @details See @ref intx32_decode for information about parameters and return
- *          values.
- */
-bool float_decode(cbor_state_t * p_state, double *p_result, const void *p_min_result, const void *p_max_result);
+/** Decode a float */
+bool float_decode(cbor_state_t * p_state, double *p_result);
+bool float_expect(cbor_state_t * p_state, double *p_result);
 
-/** Skip a single element, regardless of type and value.
- *
- * @details See @ref intx32_decode for information about parameters and return
- *          values. @p p_result, @p p_min_result, and @p p_max_result must be
- *          NULL.
- */
-bool any_decode(cbor_state_t * p_state, void *p_result, void *p_min_result, void *p_max_result);
+/** Skip a single element, regardless of type and value. */
+bool any_decode(cbor_state_t * p_state, void *p_result);
 
 /** Decode 0 or more elements with the same type and constraints.
  *
@@ -227,9 +196,6 @@ bool any_decode(cbor_state_t * p_state, void *p_result, void *p_min_result, void
  *              // check res
  *          @endcode
  *
- *          See @ref intx32_decode for information about the undocumented
- *          parameters.
- *
  * @param[in]  min_decode    The minimum acceptable number of elements.
  * @param[in]  max_decode    The maximum acceptable number of elements.
  * @param[out] p_num_decode  The actual number of elements.
@@ -243,14 +209,19 @@ bool any_decode(cbor_state_t * p_state, void *p_result, void *p_min_result, void
  * @param[out] p_result      Where to place the decoded values. Must be an array
  *                           of length at least @p max_decode.
  * @param[in]  result_len    The length of the result variables. Must be the
- *                           length expected by the @p decoder.
+ *                           length matching the elements of @p p_result.
  *
  * @retval true   If at least @p min_decode variables were correctly decoded.
  * @retval false  If @p decoder failed before having decoded @p min_decode
  *                values.
  */
 bool multi_decode(size_t min_decode, size_t max_decode, size_t *p_num_decode,
-		cbor_decoder_t decoder, cbor_state_t * p_state, void *p_result, const void *p_min_result, const void *p_max_result,
+		cbor_decoder_t decoder, cbor_state_t * p_state, void *p_result,
 		size_t result_len);
+
+bool present_decode(size_t *p_present,
+		cbor_decoder_t decoder,
+		cbor_state_t * p_state,
+		void *p_result);
 
 #endif /* CBOR_DECODE_H__ */
