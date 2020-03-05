@@ -119,7 +119,7 @@ And use the generated code with
 /* The following type and function refer to the Pet type in the CDDL, which
  * has been specified as an ENTRY_TYPE in the cmake call. */
 Pet_t pet;
-bool success = cbor_decode_Pet(input, sizeof(input), &pet);
+bool success = cbor_decode_Pet(input, sizeof(input), &pet, true);
 ```
 
 The process is the same for encoding, except:
@@ -138,5 +138,27 @@ The process is the same for encoding, except:
  * has been specified as an ENTRY_TYPE in the cmake call. */
 Pet_t pet = { /* Initialize with desired data. */ };
 uint8_t output[100]; /* 100 is an example. Must be large enough for data to fit. */
-bool success = cbor_decode_Pet(output, sizeof(output), &pet);
+size_t out_len;
+bool success = cbor_encode_Pet(output, sizeof(output), &pet, &out_len);
 ```
+
+Running tests
+=============
+
+Run the tests the same way as Zephyr ztests, e.g.:
+
+```sh
+cd tests/cbor_encode/test1_suit
+mkdir build
+cd build
+cmake -GNinja -DBOARD=native-posix ..
+ninja run
+```
+
+There are also test.sh scripts to quickly run all tests.
+tests/test.sh runs all tests.
+tests/cbor_decode/test.sh runs all decoding tests.
+tests/cbor_encode/test.sh runs all encoding tests.
+Run these scripts with no arguments.
+
+To set up the environment to run tests, follow [Zephyr's Getting Started Guide](https://docs.zephyrproject.org/latest/getting_started/index.html)

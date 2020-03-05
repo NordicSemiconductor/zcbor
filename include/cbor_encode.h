@@ -45,13 +45,13 @@ bool uintx32_encode(cbor_state_t * p_state, const uint32_t *p_result, const uint
  * @param[in]  max_num  The maximum number of expected elements in the encoded
  *                      string.
  */
-bool bstrx_cbor_start_decode(cbor_state_t *p_state, size_t max_num);
+bool bstrx_cbor_start_encode(cbor_state_t *p_state, size_t max_num);
 
 /** Finalize encoding a CBOR-encoded bstr.
  *
  * @param[in]  max_num  The maximum number of elements left unencoded.
  */
-bool bstrx_cbor_end_decode(cbor_state_t *p_state, size_t max_elem_count);
+bool bstrx_cbor_end_encode(cbor_state_t *p_state, size_t max_elem_count);
 
 /** Encode a BSTR, and move pp_payload to after the payload.
  *

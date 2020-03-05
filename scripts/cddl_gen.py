@@ -133,6 +133,9 @@ def add_semicolon(decl):
         decl[-1] += ";"
     return decl
 
+def struct_ptr_name():
+    return "p_result" if mode == "decode" else "p_input"
+
 # Class for parsing CDDL. One instance represents one CBOR data item, with a few caveats:
 #  - For repeated data, one instance represents all repetitions.
 #  - For "OTHER" types, one instance points to another type definition.
@@ -1283,6 +1286,13 @@ class CodeGenerator(CddlParser):
             xcode_body = self.xcode()
             yield (xcode_body, self.xcode_func_name(), self.type_name())
 
+    def public_xcode_func_sig(self):
+        return f"""
+bool cbor_{self.xcode_func_name()}(
+		{"const " if mode == "decode" else ""}uint8_t * p_payload, size_t payload_len,
+		{"" if mode == "decode" else "const "}{self.type_name()} * {struct_ptr_name()},
+		{"bool complete" if mode == "decode" else "size_t *p_payload_len_out"})"""
+
 # Consumes and parses a single CDDL type, returning a
 # CodeGenerator instance.
 def parse_single(instr, base_name=None):
@@ -1443,9 +1453,10 @@ This script requires 'regex' for lookaround functionality not present in 're'.''
 # Render a single decoding function with signature and body.
 def render_function(xcoder):
     body = xcoder[0]
+    func_name = xcoder
     return f"""
 static bool {xcoder[1]}(
-		cbor_state_t *p_state, void * p_result, void * p_min_value,
+		cbor_state_t *p_state, {"" if mode == "decode" else "const "}{xcoder[2] if struct_ptr_name() in body else "void"} * {struct_ptr_name()}, void * p_min_value,
 		void * p_max_value)
 {{
 	cbor_print("{ xcoder[1] }\\n");
@@ -1456,7 +1467,6 @@ static bool {xcoder[1]}(
 	{"size_t elem_count_bak;" if "elem_count_bak" in body else ""}
 	{"uint32_t min_value;" if "min_value" in body else ""}
 	{"uint32_t max_value;" if "max_value" in body else ""}
-	{f"{xcoder[2]}* p_type_result = ({xcoder[2]}*)p_result;" if "p_type_result" in body else ""}
 	{"bool int_res;" if "int_res" in body else ""}
 
 	bool result = ({ body });
@@ -1474,10 +1484,7 @@ static bool {xcoder[1]}(
 # Render a single entry function (API function) with signature and body.
 def render_entry_function(xcoder):
     return f"""
-bool cbor_{xcoder.xcode_func_name()}(
-		const uint8_t * p_payload, size_t payload_len,
-		{xcoder.type_name()} * p_result,
-		{"bool partial" if mode == "decode" else "size_t *p_payload_len_out"})
+{xcoder.public_xcode_func_sig()}
 {{
 	cbor_state_t state = {{
 		.p_payload = p_payload,
@@ -1495,9 +1502,9 @@ bool cbor_{xcoder.xcode_func_name()}(
 
 	state.p_backups = &backups;
 
-	bool result = {xcoder.xcode_func_name()}(&state, p_result, NULL, NULL);
+	bool result = {xcoder.xcode_func_name()}(&state, {struct_ptr_name()}, NULL, NULL);
 """ + (f"""
-	if (partial) {{
+	if (!complete) {{
 		return result;
 	}}
 	if (result) {{
@@ -1556,7 +1563,8 @@ def render_h_file(type_defs, header_guard, entry_types, print_time):
 
 {(linesep+linesep).join([f"typedef {linesep.join(typedef[0])} {typedef[1]};" for typedef in type_defs])}
 
-{(linesep+linesep).join([f"bool cbor_{xcoder.xcode_func_name()}(const uint8_t * p_payload, size_t payload_len, {xcoder.type_name()} * p_result, {'bool partial' if mode == 'decode' else 'size_t *p_payload_len_out'});" for xcoder in entry_types])}
+{(linesep+linesep).join([f"{xcoder.public_xcode_func_sig()};" for xcoder in entry_types])}
+
 
 #endif // {header_guard}
 """
@@ -1591,7 +1599,7 @@ def main():
 
     # set access prefix (struct access paths) for all the definitions.
     for my_type in my_types:
-        my_types[my_type].set_access_prefix("(*p_type_result)")
+        my_types[my_type].set_access_prefix(f"(*{struct_ptr_name()})")
 
     # post_validate all the definitions.
     for my_type in my_types:

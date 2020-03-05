@@ -127,7 +127,7 @@ void test_pet(void)
 		0x83, 0x82, 0x63, 0x66, 0x6f, 0x6f, 0x63, 0x62, 0x61, 0x72,
 		0x48, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
 		0x02};
-	zassert_true(cbor_decode_Pet(input, sizeof(input), &pet, false), "");
+	zassert_true(cbor_decode_Pet(input, sizeof(input), &pet, true), "");
 
 	uint8_t exp_birthday[] = {1,2,3,4,5,6,7,8};
 
@@ -143,7 +143,7 @@ void test_serial1(void)
 {
 	Upload_t upload;
 	bool ret = cbor_decode_Upload(serial_rec_input1,
-			sizeof(serial_rec_input1), &upload, false);
+			sizeof(serial_rec_input1), &upload, true);
 	zassert_true(ret, "decoding failed.");
 
 	zassert_equal(5, upload._Upload_members_count,
@@ -164,7 +164,7 @@ void test_serial2(void)
 {
 	Upload_t upload;
 	bool ret = cbor_decode_Upload(serial_rec_input2,
-			sizeof(serial_rec_input2), &upload, false);
+			sizeof(serial_rec_input2), &upload, true);
 	zassert_true(ret, "decoding failed.");
 
 	zassert_equal(5, upload._Upload_members_count,
