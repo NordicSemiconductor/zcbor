@@ -109,7 +109,7 @@ void test_1(void)
 	};
 	zassert_true(cbor_decode_OuterWrapper(test_vector2,
 				sizeof(test_vector2),
-				&outerwrapper, false),
+				&outerwrapper, true),
 			"test_vector2 failed");
 	zassert_equal(2, outerwrapper
 			._OuterWrapper_manifest_cbor
@@ -155,7 +155,7 @@ void test_2(void)
 		"Suspendisse posuere sed.";
 	zassert_true(cbor_decode_OuterWrapper(test_vector3,
 				sizeof(test_vector3),
-				&outerwrapper, false),
+				&outerwrapper, true),
 			"test_vector3 failed");
 	zassert_equal(2, outerwrapper
 			._OuterWrapper_manifest_cbor
@@ -198,7 +198,7 @@ void test_3(void)
 	char expected_uri[] = "http://example.com/file.bin";
 	memset(&outerwrapper4, 0, sizeof(SUIT_Outer_Wrapper_t));
 	zassert_true(cbor_decode_SUIT_Outer_Wrapper(test_vector4,
-		sizeof(test_vector4), &outerwrapper4, false), "test_vector failed");
+		sizeof(test_vector4), &outerwrapper4, true), "test_vector failed");
 	zassert_equal(2,
 		      outerwrapper4
 		      ._SUIT_Outer_Wrapper_suit_manifest_cbor
