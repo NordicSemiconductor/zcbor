@@ -157,7 +157,7 @@ bool intx32_expect(cbor_state_t * p_state, int32_t *p_result)
 		FAIL();
 	}
 	if (value != *p_result) {
-		cbor_print("%d != %d\r\n", value, result);
+		cbor_print("%d != %d\r\n", value, *p_result);
 		FAIL();
 	}
 	return true;
@@ -195,7 +195,7 @@ bool uintx32_expect(cbor_state_t * p_state, uint32_t *p_result)
 		FAIL();
 	}
 	if (value != *p_result) {
-		cbor_print("%u != %u\r\n", value, result);
+		cbor_print("%u != %u\r\n", value, *p_result);
 		FAIL();
 	}
 	return true;
@@ -414,8 +414,6 @@ bool nilx_expect(cbor_state_t *p_state, void *p_result)
 bool boolx_decode(cbor_state_t * p_state, bool *p_result)
 {
 	uint32_t result;
-
-	cbor_print("min: %d, max: %d\r\n", min_result, max_result);
 
 	if (!primx_decode(p_state, &result)) {
 		FAIL();

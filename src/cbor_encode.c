@@ -39,7 +39,7 @@ static bool encode_header_byte(cbor_state_t *p_state,
 
 	cbor_assert(additional < 32, NULL);
 
-	*(p_state->p_payload_mut) = (major_type << 5) | (additional & 0x1F);
+	*(p_state->p_payload_mut++) = (major_type << 5) | (additional & 0x1F);
 	return true;
 }
 
@@ -58,6 +58,7 @@ static bool value_encode_len(cbor_state_t *p_state, cbor_major_type_t major_type
 				get_additional(result_len, p_u8_result[0]))) {
 		FAIL();
 	}
+	p_state->p_payload_mut--;
 	cbor_trace();
 	p_state->p_payload_mut++;
 
@@ -133,18 +134,6 @@ static bool uint32_encode(cbor_state_t *p_state, const uint32_t *p_input,
 }
 
 
-static bool uint_encode(cbor_state_t *p_state, cbor_major_type_t major_type,
-		void *p_input, size_t result_len)
-{
-	cbor_print("val: %u\r\n", *(const uint32_t *)p_input);
-
-	if (!value_encode_len(p_state, major_type, p_input, result_len)) {
-		FAIL();
-	}
-	return true;
-}
-
-
 bool uintx32_encode(cbor_state_t *p_state, const uint32_t *p_input)
 {
 	if (!uint32_encode(p_state, p_input, CBOR_MAJOR_TYPE_PINT)){
@@ -168,6 +157,15 @@ static bool strx_start_encode(cbor_state_t *p_state,
 		FAIL();
 	}
 
+	return true;
+}
+
+
+static bool primx_encode(cbor_state_t *p_state, uint32_t input)
+{
+	if (!uint32_encode(p_state, &input, CBOR_MAJOR_TYPE_PRIM)) {
+		FAIL();
+	}
 	return true;
 }
 
@@ -196,6 +194,7 @@ bool bstrx_cbor_start_encode(cbor_state_t *p_state)
 	return true;
 }
 
+
 bool bstrx_cbor_end_encode(cbor_state_t *p_state)
 {
 	const uint8_t *p_payload = p_state->p_payload;
@@ -212,7 +211,6 @@ bool bstrx_cbor_end_encode(cbor_state_t *p_state)
 	if (!bstrx_encode(p_state, &value)) {
 		FAIL();
 	}
-
 	return true;
 }
 
@@ -246,6 +244,7 @@ bool tstrx_encode(cbor_state_t *p_state, const cbor_string_type_t *p_input)
 static bool list_map_start_encode(cbor_state_t *p_state, size_t max_num,
 		cbor_major_type_t major_type)
 {
+#ifdef CDDL_CBOR_CANONICAL
 	if (!new_backup(p_state, 0)) {
 		FAIL();
 	}
@@ -255,6 +254,11 @@ static bool list_map_start_encode(cbor_state_t *p_state, size_t max_num,
 		FAIL();
 	}
 	p_state->elem_count--; /* Because of dummy header. */
+#else
+	if (!encode_header_byte(p_state, major_type, 31)) {
+		FAIL();
+	}
+#endif
 	return true;
 }
 
@@ -274,11 +278,14 @@ bool map_start_encode(cbor_state_t *p_state, size_t max_num)
 bool list_map_end_encode(cbor_state_t *p_state, size_t max_num,
 			cbor_major_type_t major_type)
 {
+#ifdef CDDL_CBOR_CANONICAL
 	size_t list_count = ((major_type == CBOR_MAJOR_TYPE_LIST) ?
 					p_state->elem_count
 					: (p_state->elem_count / 2));
 
 	const uint8_t *p_payload = p_state->p_payload;
+	size_t max_header_len = get_result_len(&max_num, 4);
+	size_t header_len = get_result_len(&list_count, 4);
 
 	if (!restore_backup(p_state, FLAG_RESTORE | FLAG_DISCARD, 0xFFFFFFFF)) {
 		FAIL();
@@ -287,14 +294,27 @@ bool list_map_end_encode(cbor_state_t *p_state, size_t max_num,
 	cbor_print("list_count: %d\r\n", list_count);
 
 	/* Reencode header of list now that we know the number of elements. */
-	if (!(uint_encode(p_state, major_type, &list_count,
-			get_result_len(&max_num, 4)))) {
+	if (!(uint32_encode(p_state, &list_count, major_type))) {
 		FAIL();
 	}
 
-	/* Reset payload pointer to end of list */
-	p_state->p_payload = p_payload;
-
+	if (max_header_len != header_len) {
+		const uint8_t *p_start = p_state->p_payload + max_header_len - header_len;
+		size_t body_size = p_payload - p_start;
+		memmove(p_state->p_payload_mut,
+			p_state->p_payload + max_header_len - header_len,
+			body_size);
+		/* Reset payload pointer to end of list */
+		p_state->p_payload += body_size;
+	} else {
+		/* Reset payload pointer to end of list */
+		p_state->p_payload = p_payload;
+	}
+#else
+	if (!encode_header_byte(p_state, CBOR_MAJOR_TYPE_PRIM, 31)) {
+		FAIL();
+	}
+#endif
 	return true;
 }
 
@@ -308,15 +328,6 @@ bool list_end_encode(cbor_state_t *p_state, size_t max_num)
 bool map_end_encode(cbor_state_t *p_state, size_t max_num)
 {
 	return list_map_end_encode(p_state, max_num, CBOR_MAJOR_TYPE_MAP);
-}
-
-
-static bool primx_encode(cbor_state_t *p_state, uint32_t input)
-{
-	if (!uint32_encode(p_state, &input, CBOR_MAJOR_TYPE_PRIM)) {
-		FAIL();
-	}
-	return true;
 }
 
 
@@ -365,12 +376,7 @@ bool multi_encode(size_t min_encode,
 		FAIL();
 	}
 	for (size_t i = 0; i < *p_num_encode; i++) {
-		uint8_t const *p_payload_bak = p_state->p_payload;
-		size_t elem_count_bak = p_state->elem_count;
-
 		if (!encoder(p_state, (const uint8_t *)p_input + i*result_len)) {
-			p_state->p_payload = p_payload_bak;
-			p_state->elem_count = elem_count_bak;
 			FAIL();
 		}
 	}

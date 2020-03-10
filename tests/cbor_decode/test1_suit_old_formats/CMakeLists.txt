@@ -13,12 +13,14 @@ project(NONE)
 target_cddl_source(app manifest-moran3.cddl
   ENTRY_TYPES OuterWrapper
   DECODE
-  #VERBOSE
+  ${VERBOSE}
+  ${CANONICAL}
   )
 target_cddl_source(app manifest-moran4.cddl
   ENTRY_TYPES SUIT_Outer_Wrapper
   DECODE
-  #VERBOSE
+  ${VERBOSE}
+  ${CANONICAL}
   )
 
 FILE(GLOB app_sources src/*.c)

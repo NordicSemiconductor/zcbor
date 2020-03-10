@@ -8,7 +8,7 @@
 #                    <cddl_file>
 #                    ENTRY_TYPES <entry_types>
 #                    DECODE|ENCODE
-#                    [VERBOSE])
+#                    [VERBOSE] [CANONICAL])
 #
 # Add generated code to the project for decoding CBOR.
 #
@@ -19,6 +19,9 @@
 #
 # Specify VERBOSE to print more information while parsing the CDDL, and add
 # printing to the generated code and decoding library.
+#
+# Specify CANONICAL to make the encoder generate canonical CBOR. This can make
+# code size slightly bigger. This option has no effect together with DECODE.
 #
 # The result of the function is that a library is added to the project which
 # contains the generated decoding code. The code is generated at build time
@@ -35,7 +38,7 @@ function(target_cddl_source target cddl_file)
     message(FATAL_ERROR "CDDL input file ${cddl_file} does not exist.")
   endif()
 
-  cmake_parse_arguments(CDDL "DECODE;ENCODE;VERBOSE" "" "ENTRY_TYPES" ${ARGN})
+  cmake_parse_arguments(CDDL "DECODE;ENCODE;VERBOSE;CANONICAL" "" "ENTRY_TYPES" ${ARGN})
 
   if (CDDL_ENCODE)
     set(code "encode")
@@ -88,5 +91,10 @@ function(target_cddl_source target cddl_file)
     target_compile_definitions(${cbor_lib} PRIVATE CDDL_CBOR_VERBOSE)
     target_compile_definitions(${target} PRIVATE CDDL_CBOR_VERBOSE)
     target_compile_definitions(cbor_common PRIVATE CDDL_CBOR_VERBOSE)
+  endif()
+  if (CDDL_CANONICAL)
+    target_compile_definitions(${cbor_lib} PRIVATE CDDL_CBOR_CANONICAL)
+    target_compile_definitions(${target} PRIVATE CDDL_CBOR_CANONICAL)
+    target_compile_definitions(cbor_common PRIVATE CDDL_CBOR_CANONICAL)
   endif()
 endfunction(target_cddl_source)
