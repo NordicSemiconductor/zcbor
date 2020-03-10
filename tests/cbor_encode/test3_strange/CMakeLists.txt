@@ -22,5 +22,6 @@ target_cddl_source(app strange.cddl ENCODE ENTRY_TYPES
   Map
   Level1
   Range
-  #VERBOSE
+  ${VERBOSE}
+  ${CANONICAL}
   )

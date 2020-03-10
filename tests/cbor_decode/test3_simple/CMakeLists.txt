@@ -15,9 +15,11 @@ target_sources(app PRIVATE
 
 target_cddl_source(app pet.cddl ENTRY_TYPES Pet
   DECODE
-  #VERBOSE
+  ${VERBOSE}
+  ${CANONICAL}
   )
 target_cddl_source(app serial_recovery.cddl ENTRY_TYPES Upload
   DECODE
-  #VERBOSE
+  ${VERBOSE}
+  ${CANONICAL}
   )

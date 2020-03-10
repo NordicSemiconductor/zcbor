@@ -15,7 +15,8 @@ target_cddl_source(app manifest2.cddl
   SUIT_Command_Sequence
   SUIT_Authentication_Wrapper
   DECODE
-  #VERBOSE
+  ${VERBOSE}
+  ${CANONICAL}
   )
 
 FILE(GLOB app_sources src/*.c)

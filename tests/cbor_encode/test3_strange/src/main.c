@@ -7,10 +7,42 @@
 #include <ztest.h>
 #include "strange_encode.h"
 
+#define CONCAT_BYTE(a,b) a ## b
+
+#ifndef CDDL_CBOR_CANONICAL
+#define LIST(num) 0x9F
+#define MAP(num) 0xBF
+#define END 0xFF,
+#else
+#define LIST(num) CONCAT_BYTE(0x8, num)
+#define MAP(num) CONCAT_BYTE(0xA, num)
+#define END
+#endif
+
+void print_compare_strings(uint8_t *str1, uint8_t *str2, size_t size)
+{
+	for (uint32_t i = 0; i <= size / 16; i++) {
+		for (uint32_t j = 0; j < 16 && (i*16+j) < size; j++) {
+			printk ("%x ", str1[i*16 + j]);
+		}
+		printk("\r\n");
+		for (uint32_t j = 0; j < 16 && (i*16+j) < size; j++) {
+			printk ("%x ", str2[i*16 + j]);
+		}
+		printk("\r\n");
+		for (uint32_t j = 0; j < 16 && (i*16+j) < size; j++) {
+			printk ("%x ", str1[i*16 + j] != str2[i*16 + j]);
+		}
+		printk("\r\n");
+		printk("\r\n");
+	}
+	printk("\r\n");
+}
+
 void test_numbers(void)
 {
 	const uint8_t exp_payload_numbers1[] = {
-		0x8A, // List start
+		LIST(A), // List start
 			0x01, // 1
 			0x21, // -2
 			0x05, // 5
@@ -20,7 +52,8 @@ void test_numbers(void)
 			0x1A, 0xEE, 0x6B, 0x28, 0x00, // 4000000000
 			0x3A, 0x7F, 0xFF, 0xFF, 0xFF, // -2^31
 			0x00, // 0
-			0x01 // 1
+			0x01, // 1
+		END
 	};
 
 	Numbers_t numbers = {0};
@@ -73,7 +106,7 @@ void test_numbers(void)
 void test_strings(void)
 {
 	const uint8_t exp_payload_strings1[] = {
-		0x86,
+		LIST(6),
 		0x65, 0x68, 0x65, 0x6c, 0x6c, 0x6f, // "hello"
 		0x59, 0x01, 0x2c, // 300 bytes
 		0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,
@@ -88,8 +121,12 @@ void test_strings(void)
 		0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,
 		0x78, 0x1E, // 30 bytes
 		0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,
+#ifndef CDDL_CBOR_CANONICAL
+		0x58, 27, // Numbers (len: 27)
+#else
 		0x58, 26, // Numbers (len: 26)
-			0x8A, // List start
+#endif
+			LIST(A), // List start
 				0x01, // 1
 				0x21, // -2
 				0x05, // 5
@@ -100,24 +137,36 @@ void test_strings(void)
 				0x3A, 0x7F, 0xFF, 0xFF, 0xFF, // -2^31
 				0x1A, 0xFF, 0xFF, 0xFF, 0xFF, // 0xFFFFFFFF
 				0x09, // 9
+				END
+#ifndef CDDL_CBOR_CANONICAL
+		0x52, // Primitives (len: 17)
+#else
 		0x4f, // Primitives (len: 15)
-			0x84, // List start
+#endif
+			LIST(4), // List start
 				0xF5, // True
 				0xF4, // False
 				0xF4, // False
 				0xF6, // Nil
-			0x84, // List start
+				END
+			LIST(4), // List start
 				0xF5, // True
 				0xF4, // False
 				0xF5, // True
 				0xF6, // Nil
-			0x84, // List start
+				END
+			LIST(4), // List start
 				0xF5, // True
 				0xF4, // False
 				0xF4, // False
 				0xF6, // Nil
+				END
+#ifndef CDDL_CBOR_CANONICAL
+		0x59, 0x01, 0x66, // Strings (len: 358)
+#else
 		0x59, 0x01, 0x63, // Strings (len: 355)
-			0x85,
+#endif
+			LIST(5),
 			0x65, 0x68, 0x65, 0x6c, 0x6c, 0x6f, // "hello"
 			0x59, 0x01, 0x2c, // 300 bytes
 			0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,
@@ -132,8 +181,12 @@ void test_strings(void)
 			0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,
 			0x6A, // 10 bytes
 			0,1,2,3,4,5,6,7,8,9,
+#ifndef CDDL_CBOR_CANONICAL
+			0x58, 27, // Numbers (len: 27)
+#else
 			0x58, 26, // Numbers (len: 26)
-				0x8A, // List start
+#endif
+				LIST(A), // List start
 					0x01, // 1
 					0x21, // -2
 					0x05, // 5
@@ -144,12 +197,20 @@ void test_strings(void)
 					0x3A, 0x7F, 0xFF, 0xFF, 0xFF, // -2^31
 					0x1A, 0xFF, 0xFF, 0xFF, 0xFF, // 0xFFFFFFFF
 					0x29, // -10
+					END
+#ifndef CDDL_CBOR_CANONICAL
+			0x46, // Primitives (len: 5)
+#else
 			0x45, // Primitives (len: 5)
-				0x84, // List start
+#endif
+				LIST(4), // List start
 					0xF5, // True
 					0xF4, // False
 					0xF4, // False
 					0xF6, // Nil
+					END
+			END
+		END
 	};
 
 	const uint8_t bytes300[] = {
@@ -222,19 +283,19 @@ void test_strings(void)
 void test_optional(void)
 {
 	const uint8_t exp_payload_optional1[] = {
-		0x83 /* List start */, 0xF4 /* False */, 0x02, 0x03,
+		LIST(3) /* List start */, 0xF4 /* False */, 0x02, 0x03, END
 	};
 	const uint8_t exp_payload_optional2[] = {
-		0x82 /* List start */, 0xF4 /* False */, 0x03,
+		LIST(2) /* List start */, 0xF4 /* False */, 0x03, END
 	};
 	const uint8_t exp_payload_optional3[] = {
-		0x83 /* List start */, 0xF4 /* False */, 0x02, 0x01,
+		LIST(3) /* List start */, 0xF4 /* False */, 0x02, 0x01, END
 	};
 	const uint8_t exp_payload_optional4[] = {
-		0x83 /* List start */, 0xF5 /* True */, 0x02, 0x02,
+		LIST(3) /* List start */, 0xF5 /* True */, 0x02, 0x02, END
 	};
 	const uint8_t exp_payload_optional5[] = {
-		0x84 /* List start */, 0xF5 /* True */, 0xF4 /* False */, 0x02, 0x02,
+		LIST(4) /* List start */, 0xF5 /* True */, 0xF4 /* False */, 0x02, 0x02, END
 	};
 
 	Optional_t optional1 = {._Optional_opttwo_present = true, ._Optional_manduint = 3};
@@ -321,29 +382,34 @@ void test_union(void)
 void test_levels(void)
 {
 	const uint8_t exp_payload_levels1[] = {
-		0x81, // Level1
-		0x82, // Level2
-		0x84, // Level3 no 1
-		0x81, 0x00, // Level4 no 1
-		0x81, 0x00, // Level4 no 2
-		0x81, 0x00, // Level4 no 3
-		0x81, 0x00, // Level4 no 4
-		0x84, // Level3 no 2
-		0x81, 0x00, // Level4 no 1
-		0x81, 0x00, // Level4 no 2
-		0x81, 0x00, // Level4 no 3
-		0x81, 0x00, // Level4 no 4
+		LIST(1), // Level1
+		LIST(2), // Level2
+		LIST(4), // Level3 no 1
+		LIST(1), 0x00, END // Level4 no 1
+		LIST(1), 0x00, END // Level4 no 2
+		LIST(1), 0x00, END // Level4 no 3
+		LIST(1), 0x00, END // Level4 no 4
+		END
+		LIST(4), // Level3 no 2
+		LIST(1), 0x00, END // Level4 no 1
+		LIST(1), 0x00, END // Level4 no 2
+		LIST(1), 0x00, END // Level4 no 3
+		LIST(1), 0x00, END // Level4 no 4
+		END END END
 	};
-	uint8_t output[20];
+	uint8_t output[32];
 	size_t out_len;
 
 	Level2_t level1 = {._Level2__Level3_count = 2, ._Level2__Level3 = {
 		{._Level3__Level4_count = 4}, {._Level3__Level4_count = 4}
 	}};
+	_Static_assert(sizeof(exp_payload_levels1) <= sizeof(output));
+	zassert_false(cbor_encode_Level1(output,
+		sizeof(exp_payload_levels1)-1, &level1, &out_len), NULL);
 	zassert_true(cbor_encode_Level1(output,
 		sizeof(output), &level1, &out_len), NULL);
-
-	zassert_equal(sizeof(exp_payload_levels1), out_len, NULL);
+	
+	zassert_equal(sizeof(exp_payload_levels1), out_len, "%d != %d", sizeof(exp_payload_levels1), out_len);
 	zassert_mem_equal(exp_payload_levels1, output, sizeof(exp_payload_levels1), NULL);
 }
 
@@ -351,23 +417,26 @@ void test_levels(void)
 void test_map(void)
 {
 	const uint8_t exp_payload_map1[] = {
-		0xa4, 0x82, 0x05, 0x06, 0xF4, // [5,6] => false
+		MAP(4), LIST(2), 0x05, 0x06, END 0xF4, // [5,6] => false
 		0x07, 0x01, // 7 => 1
 		0xf6, 0x45, 0x68, 0x65, 0x6c, 0x6c, 0x6f, // nil => "hello"
 		0xf6, 0x40, // nil => ""
+		END
 	};
 	const uint8_t exp_payload_map2[] = {
-		0xa5, 0x82, 0x05, 0x06, 0xF5, // [5,6] => true
+		MAP(5), LIST(2), 0x05, 0x06, END 0xF5, // [5,6] => true
 		0x07, 0x01, // 7 => 1
 		0xf6, 0x45, 0x68, 0x65, 0x6c, 0x6c, 0x6f, // nil => "hello"
 		0xf6, 0x40, // nil => ""
 		0xf6, 0x40, // nil => ""
+		END
 	};
 	const uint8_t exp_payload_map3[] = {
-		0xa4, 0x82, 0x05, 0x06, 0xF4, // [5,6] => false
+		MAP(4), LIST(2), 0x05, 0x06, END 0xF4, // [5,6] => false
 		0x27, 0x01, // -8 => 1
 		0xf6, 0x45, 0x68, 0x65, 0x6c, 0x6c, 0x6f, // nil => "hello"
-		0xf6, 0x40 // nil => ""
+		0xf6, 0x40, // nil => ""
+		END
 	};
 
 	Map_t map1 = {
@@ -421,11 +490,11 @@ void test_map(void)
 
 void test_nested_list_map(void)
 {
-	const uint8_t exp_payload_nested_lm1[] = {0x80};
-	const uint8_t exp_payload_nested_lm2[] = {0x81, 0xa0};
-	const uint8_t exp_payload_nested_lm3[] = {0x81, 0xa1, 0x01, 0x04};
-	const uint8_t exp_payload_nested_lm4[] = {0x82, 0xa0, 0xa1, 0x01, 0x04};
-	const uint8_t exp_payload_nested_lm5[] = {0x83, 0xa0, 0xa0, 0xa0};
+	const uint8_t exp_payload_nested_lm1[] = {LIST(0), END};
+	const uint8_t exp_payload_nested_lm2[] = {LIST(1), MAP(0), END END};
+	const uint8_t exp_payload_nested_lm3[] = {LIST(1), MAP(1), 0x01, 0x04, END END};
+	const uint8_t exp_payload_nested_lm4[] = {LIST(2), MAP(0), END MAP(1), 0x01, 0x04, END END};
+	const uint8_t exp_payload_nested_lm5[] = {LIST(3), MAP(0), END MAP(0), END MAP(0), END END};
 	NestedListMap_t listmap1 = {
 		._NestedListMap_map_count = 0,
 	};
@@ -456,7 +525,7 @@ void test_nested_list_map(void)
 			{._NestedListMap_map_uint4_present = false},
 		}
 	};
-	uint8_t output[25];
+	uint8_t output[40];
 	size_t out_len;
 
 	zassert_true(cbor_encode_NestedListMap(output,
@@ -486,17 +555,17 @@ void test_nested_list_map(void)
 	zassert_true(cbor_encode_NestedListMap(output,
 			sizeof(output), &listmap5, &out_len), NULL);
 
-	zassert_equal(sizeof(exp_payload_nested_lm5), out_len, NULL);
+	zassert_equal(sizeof(exp_payload_nested_lm5), out_len, "%d != %d", sizeof(exp_payload_nested_lm5), out_len);
 	zassert_mem_equal(exp_payload_nested_lm5, output, sizeof(exp_payload_nested_lm5), NULL);
 }
 
 void test_nested_map_list_map(void)
 {
-	const uint8_t exp_payload_nested_mlm1[] = {0xa1, 0x80, 0x80};
-	const uint8_t exp_payload_nested_mlm2[] = {0xa1, 0x80, 0x81, 0xa0};
-	const uint8_t exp_payload_nested_mlm3[] = {0xa1, 0x80, 0x82, 0xa0, 0xa0};
-	const uint8_t exp_payload_nested_mlm4[] = {0xa2, 0x80, 0x80, 0x80, 0x80};
-	const uint8_t exp_payload_nested_mlm5[] = {0xa3, 0x80, 0x80, 0x80, 0x80, 0x80, 0x82, 0xa0, 0xa0};
+	const uint8_t exp_payload_nested_mlm1[] = {MAP(1), LIST(0), END LIST(0), END END};
+	const uint8_t exp_payload_nested_mlm2[] = {MAP(1), LIST(0), END LIST(1), MAP(0), END END END};
+	const uint8_t exp_payload_nested_mlm3[] = {MAP(1), LIST(0), END LIST(2), MAP(0), END MAP(0), END END END};
+	const uint8_t exp_payload_nested_mlm4[] = {MAP(2), LIST(0), END LIST(0), END LIST(0), END LIST(0), END END};
+	const uint8_t exp_payload_nested_mlm5[] = {MAP(3), LIST(0), END LIST(0), END LIST(0), END LIST(0), END LIST(0), END LIST(2), MAP(0), END MAP(0), END END END};
 	NestedMapListMap_t maplistmap1 = {
 		._NestedMapListMap_key_count = 1,
 		._NestedMapListMap_key = {{0}}
@@ -528,7 +597,7 @@ void test_nested_map_list_map(void)
 			{._NestedMapListMap_key_map_count = 2},
 		}
 	};
-	uint8_t output[15];
+	uint8_t output[30];
 	size_t out_len;
 
 	zassert_true(cbor_encode_NestedMapListMap(output,
@@ -540,13 +609,13 @@ void test_nested_map_list_map(void)
 	zassert_true(cbor_encode_NestedMapListMap(output,
 			sizeof(output), &maplistmap2, &out_len), NULL);
 
-	zassert_equal(sizeof(exp_payload_nested_mlm2), out_len, NULL);
+	zassert_equal(sizeof(exp_payload_nested_mlm2), out_len, "%d != %d", sizeof(exp_payload_nested_mlm2), out_len);
 	zassert_mem_equal(exp_payload_nested_mlm2, output, sizeof(exp_payload_nested_mlm2), NULL);
 
 	zassert_true(cbor_encode_NestedMapListMap(output,
 			sizeof(output), &maplistmap3, &out_len), NULL);
 
-	zassert_equal(sizeof(exp_payload_nested_mlm3), out_len, NULL);
+	zassert_equal(sizeof(exp_payload_nested_mlm3), out_len, "%d != %d", sizeof(exp_payload_nested_mlm3), out_len);
 	zassert_mem_equal(exp_payload_nested_mlm3, output, sizeof(exp_payload_nested_mlm3), NULL);
 
 	zassert_true(cbor_encode_NestedMapListMap(output,
@@ -558,31 +627,35 @@ void test_nested_map_list_map(void)
 	zassert_true(cbor_encode_NestedMapListMap(output,
 			sizeof(output), &maplistmap5, &out_len), NULL);
 
-	zassert_equal(sizeof(exp_payload_nested_mlm5), out_len, NULL);
+	zassert_equal(sizeof(exp_payload_nested_mlm5), out_len, "%d != %d", sizeof(exp_payload_nested_mlm5), out_len);
 	zassert_mem_equal(exp_payload_nested_mlm5, output, sizeof(exp_payload_nested_mlm5), NULL);
 }
 
+
 void test_range(void)
 {
-	const uint8_t exp_payload_range1[] = {0x83,
+	const uint8_t exp_payload_range1[] = {LIST(3),
 		0x08,
 		0x65, 0x68, 0x65, 0x6c, 0x6c, 0x6f, // "hello"
-		0x0
+		0x0,
+		END
 	};
 
-	const uint8_t exp_payload_range2[] = {0x86,
+	const uint8_t exp_payload_range2[] = {LIST(6),
 		0x05,
 		0x08, 0x08,
 		0x65, 0x68, 0x65, 0x6c, 0x6c, 0x6f, // "hello"
-		0x00, 0x0A
+		0x00, 0x0A,
+		END
 	};
 
-	const uint8_t exp_payload_range3[] = {0x85,
+	const uint8_t exp_payload_range3[] = {LIST(5),
 		0x65, 0x68, 0x65, 0x6c, 0x6c, 0x6f, // "hello"
 		0x08,
 		0x65, 0x68, 0x65, 0x6c, 0x6c, 0x6f, // "hello"
 		0x65, 0x68, 0x65, 0x6c, 0x6c, 0x6f, // "hello"
-		0x07
+		0x07,
+		END
 	};
 
 	Range_t input1 = {

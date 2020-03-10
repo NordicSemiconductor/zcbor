@@ -17,6 +17,9 @@ my_types = {}
 entry_type_names = []
 mode = ""
 
+indentation = "\t"
+newl_ind = "\n" + indentation
+
 # Size of "additional" field if num is encoded as int
 def sizeof(num):
     if num <= 23:
@@ -145,6 +148,13 @@ def add_semicolon(decl):
 
 def struct_ptr_name():
     return "p_result" if mode == "decode" else "p_input"
+
+def ternary_if_chain(access, names, xcode_strings):
+    return "((%s == %s) ? %s%s: %s)" % (access,
+                                       names[0],
+                                       xcode_strings[0],
+                                       newl_ind,
+                                       ternary_if_chain(access, names[1:], xcode_strings[1:]) if len(names) > 1 else "false")
 
 # Class for parsing CDDL. One instance represents one CBOR data item, with a few caveats:
 #  - For repeated data, one instance represents all repetitions.
@@ -621,9 +631,6 @@ class CddlParser:
 # to the CDDL.
 class CodeGenerator(CddlParser):
 
-    indentation = "\t"
-    newl_ind = "\n" + indentation
-
     def __init__(self, base_name=None):
         super(CodeGenerator, self).__init__()
         # The prefix used for C code accessing this element, i.e. the struct
@@ -871,7 +878,7 @@ class CodeGenerator(CddlParser):
 
     # Enclose a list of declarations in a block (struct, union or enum).
     def enclose(self, ingress, declaration):
-        return [f"{ingress} {{"] + [self.indentation +
+        return [f"{ingress} {{"] + [indentation +
                                     line for line in declaration] + ["}"]
 
     # Type declaration for unions.
@@ -1107,7 +1114,7 @@ class CodeGenerator(CddlParser):
             arg = min_bool_or_null(self.value)
         else:
             arg = tmp_val_or_null(self.value)
-        
+
         min_val = None
         max_val = None
 
@@ -1222,9 +1229,9 @@ class CodeGenerator(CddlParser):
         assert self.type in ["LIST", "MAP"], "Expected LIST or MAP type, was %s." % self.type
         min_counts, max_counts = zip(*(child.list_counts() for child in self.value)) if self.value else ((0,), (0,))
         count_arg = f', {str(sum(max_counts))}' if mode == 'encode' else ''
-        with_children = "(%s && (int_res = (%s), %s, int_res))" \
+        with_children = "(%s && (int_res = (%s), ((%s) && int_res)))" \
                     % (f"{start_func}(p_state{count_arg})",
-                       f"{self.newl_ind}&& ".join(child.full_xcode() for child in self.value),
+                       f"{newl_ind}&& ".join(child.full_xcode() for child in self.value),
                        f"{end_func}(p_state{count_arg})")
         without_children = "(%s && %s)" \
                     % (f"{start_func}(p_state{count_arg})",
@@ -1234,7 +1241,7 @@ class CodeGenerator(CddlParser):
     # Return the full code needed to encode/decode a "GROUP" element's children.
     def xcode_group(self):
         assert self.type in ["GROUP"], "Expected GROUP type."
-        return "(%s)" % (self.newl_ind + "&& ").join(
+        return "(%s)" % (newl_ind + "&& ").join(
             (child.full_xcode() for child in self.value))
 
     # Return the full code needed to encode/decode a "UNION" element's children.
@@ -1244,23 +1251,23 @@ class CodeGenerator(CddlParser):
             child_values = ["(%s && ((%s = %s) || 1))" %
                             (child.full_xcode(), self.choice_var_access(), child.var_name())
                             for child in self.value]
+
+            # Reset state for all but the first child.
+            for i in range(1, len(child_values)):
+                child_values[i] = f"(union_elem_code(p_state) && {child_values[i]})"
+
+            return "(%s && (int_res = (%s), %s, int_res))" \
+                        % ("union_start_code(p_state)",
+                           f"{newl_ind}|| ".join(child_values),
+                           "union_end_code(p_state)")
         else:
-            child_values = ["((%s == %s) && %s)" %
-                            (self.choice_var_access(), child.var_name(), child.full_xcode())
-                            for child in self.value]
-
-        # Reset state for all but the first child.
-        for i in range(1, len(child_values)):
-            child_values[i] = f"(union_elem_code(p_state) && {child_values[i]})"
-
-        return "(%s && (int_res = (%s), %s, int_res))" \
-                    % ("union_start_code(p_state)",
-                       f"{self.newl_ind}|| ".join(child_values),
-                       "union_end_code(p_state)")
+            return ternary_if_chain(self.choice_var_access(),
+                                             [child.var_name() for child in self.value],
+                                             [child.full_xcode() for child in self.value])
 
     def xcode_bstr(self):
         if self.cbor_var_condition():
-            return "(%s)" % ((self.newl_ind + "&& ").join(
+            return "(%s)" % ((newl_ind + "&& ").join(
                    [f"(int_res = (bstrx_cbor_start_{mode}(p_state)",
                     f"{self.cbor.full_xcode()})), bstrx_cbor_end_{mode}(p_state), int_res"]))
         return self.xcode_single_func_prim()
@@ -1318,7 +1325,7 @@ class CodeGenerator(CddlParser):
             xcoders.extend(range_checks)
             xcoders.append(xcoder())
 
-        return "(%s)" % ((self.newl_ind + "&& ").join(xcoders),)
+        return "(%s)" % ((newl_ind + "&& ").join(xcoders),)
 
     # Code for the size of the repeated part of this element.
     def result_len(self):
