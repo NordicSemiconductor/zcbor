@@ -373,13 +373,13 @@ class CddlParser:
 
     # Set self.min_size, and self.minValue if type is UINT.
     def set_min_size(self, min_size):
-        if self.type is "UINT":
+        if self.type == "UINT":
             self.minValue = 256**min(0, abs(min_size-1)) if min_size else None
         self.min_size = min_size if min_size else None
 
     # Set self.max_size, and self.max_value if type is UINT.
     def set_max_size(self, max_size):
-        if self.type is "UINT" and max_size and self.max_value is None:
+        if self.type == "UINT" and max_size and self.max_value is None:
             if max_size > 8:
                 raise TypeError(
                     "Size too large for integer. size %d" %
@@ -910,7 +910,7 @@ class CodeGenerator(CddlParser):
         return self.multi_var_condition() or self.repeated_multi_var_condition()
 
     def is_unambiguous_value(self):
-        return (self.type is "NIL"
+        return (self.type == "NIL"
                 or (self.type in ["INT", "NINT", "UINT", "FLOAT", "BSTR", "TSTR", "BOOL"] and self.value is not None)
                 or (self.type == "BSTR" and self.cbor is not None and self.cbor.is_unambiguous())
                 or (self.type == "OTHER" and my_types[self.value].is_unambiguous()))
