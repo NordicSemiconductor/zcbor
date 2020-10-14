@@ -72,7 +72,7 @@ bool boolx_encode(cbor_state_t * p_state, const bool *p_result);
 /** Encode a float */
 bool float_encode(cbor_state_t * p_state, double *p_result);
 
-/* Dummy encode "any": Encode a "nil". p_input should be NULL. */
+/** Dummy encode "any": Encode a "nil". p_input should be NULL. */
 bool any_encode(cbor_state_t *p_state, void *p_input);
 
 /** Encode 0 or more elements with the same type and constraints.
