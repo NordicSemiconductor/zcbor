@@ -75,6 +75,9 @@ bool float_encode(cbor_state_t * p_state, double *p_result);
 /** Dummy encode "any": Encode a "nil". p_input should be NULL. */
 bool any_encode(cbor_state_t *p_state, void *p_input);
 
+/** Encode a tag. */
+bool tag_encode(cbor_state_t * p_state, uint32_t tag);
+
 /** Encode 0 or more elements with the same type and constraints.
  *
  * @details This must not necessarily encode all elements in a list. E.g. if

@@ -91,6 +91,7 @@ def do_flatten(to_flatten, allow_multi=False):
             to_flatten.value[0].label = to_flatten.label
         if not to_flatten.value[0].key:
             to_flatten.value[0].key = to_flatten.key
+        to_flatten.value[0].tags.extend(to_flatten.tags)
         return to_flatten.value
     elif allow_multi and to_flatten.type in ["GROUP"] and to_flatten.minQ == 1 and to_flatten.maxQ == 1:
         return to_flatten.value
@@ -188,6 +189,8 @@ class CddlParser:
         # The element specified via.cbor or.cborseq(only for byte
         # strings).self.cbor is of the same class as self.
         self.cbor = None
+        # Any tags (type 6) to precede the element.
+        self.tags = []
         # The CDDL string used to determine the minQ and maxQ. Not used after
         # minQ and maxQ are determined.
         self.quantifier = None
@@ -226,6 +229,8 @@ class CddlParser:
             reprstr += self.quantifier
         if self.label:
             reprstr += self.label + ':'
+        for tag in self.tags:
+            reprstr += f"#6.{tag}"
         if self.key:
             reprstr += repr(self.key) + " => "
         if self.is_unambiguous():
@@ -419,6 +424,9 @@ class CddlParser:
                 self.set_label(key_or_label.value)
             self.set_key(key_or_label)
 
+    def add_tag(self, tag):
+        self.tags.append(int(tag))
+
     # Append to the self.value of this element. Used with the "UNION" type, which has
     # a python list as self.value. The list represents the "children" of the
     # type. For use during CDDL parsing.
@@ -530,6 +538,8 @@ class CddlParser:
              lambda _: self.type_and_value("NIL", lambda: None)),
             (r'any(?!\w)',
              lambda _: self.type_and_value("ANY", lambda: None)),
+            (r'#6\.(?P<item>\d+)',
+             self.add_tag),
             (r'(\$?\$?[\w-]+)',
              lambda other_str: self.type_and_value("OTHER", lambda: other_str.strip("$"))),
             (r'\.size \(?(?P<item>\d+\.\.\d+)\)?',
@@ -731,6 +741,8 @@ class CodeGenerator(CddlParser):
             return True
         if self.type in ["LIST", "MAP", "GROUP"]:
             return not self.multi_val_condition()
+        if self.type ==  "OTHER":
+            return (not self.repeated_multi_var_condition()) and self.single_func_impl_condition()
         return False
 
     # Create an access prefix based on an existing prefix, delimiter and a
@@ -1133,7 +1145,7 @@ class CodeGenerator(CddlParser):
 
     # Whether this element needs its own encoder/decoder function.
     def single_func_impl_condition(self):
-        return (False or self.key or self.cbor_var_condition() or
+        return (False or self.key or self.cbor_var_condition() or self.tags or
                 self.type_def_condition() or (self.type in ["LIST", "MAP"] and len(self.value) != 0)
                 )
 
@@ -1290,6 +1302,9 @@ class CodeGenerator(CddlParser):
                     f"{self.cbor.full_xcode()})), bstrx_cbor_end_{mode}(p_state), int_res"]))
         return self.xcode_single_func_prim()
 
+    def xcode_tags(self):
+        return [f"tag_{mode if (mode == 'encode') else 'expect'}(p_state, {tag})" for tag in self.tags]
+
     def range_checks(self, access):
         if self.value is not None:
             return []
@@ -1336,6 +1351,8 @@ class CodeGenerator(CddlParser):
         xcoders = []
         if self.key:
             xcoders.append(self.key.full_xcode(union_uint))
+        if self.tags:
+            xcoders.extend(self.xcode_tags())
         if mode == "decode":
             xcoders.append(xcoder())
             xcoders.extend(range_checks)
@@ -1398,8 +1415,7 @@ class CodeGenerator(CddlParser):
                 yield xcoder
         if self.repeated_single_func_impl_condition():
             yield (self.repeated_xcode(), self.repeated_xcode_func_name(), self.repeated_type_name())
-        if ((self.type != "OTHER") or self.repeated_multi_var_condition()) and (
-                self.single_func_impl_condition()):
+        if (self.single_func_impl_condition()):
             xcode_body = self.xcode()
             yield (xcode_body, self.xcode_func_name(), self.type_name())
 

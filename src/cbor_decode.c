@@ -517,6 +517,36 @@ bool any_decode(cbor_state_t * p_state, void *p_result)
 }
 
 
+bool tag_decode(cbor_state_t * p_state, uint32_t *p_result)
+{
+	uint8_t major_type = MAJOR_TYPE(*p_state->p_payload);
+
+	if (major_type != CBOR_MAJOR_TYPE_TAG) {
+		/* Value to be read doesn't have the right type. */
+		FAIL();
+	}
+	if (!uint32_decode(p_state, p_result)) {
+		FAIL();
+	}
+	p_state->elem_count++;
+	return true;
+}
+
+
+bool tag_expect(cbor_state_t * p_state, uint32_t result)
+{
+	uint32_t tag_val;
+
+	if (!tag_decode(p_state, &tag_val)) {
+		FAIL();
+	}
+	if (tag_val != result) {
+		FAIL();
+	}
+	return true;
+}
+
+
 bool multi_decode(size_t min_decode,
 		size_t max_decode,
 		size_t *p_num_decode,
