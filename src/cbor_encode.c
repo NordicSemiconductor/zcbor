@@ -364,6 +364,17 @@ bool any_encode(cbor_state_t *p_state, void *p_input)
 }
 
 
+bool tag_encode(cbor_state_t * p_state, uint32_t tag)
+{
+	if (!value_encode(p_state, CBOR_MAJOR_TYPE_TAG, &tag, sizeof(tag))) {
+		FAIL();
+	}
+	p_state->elem_count--;
+
+	return true;
+}
+
+
 bool multi_encode(size_t min_encode,
 		size_t max_encode,
 		const size_t *p_num_encode,

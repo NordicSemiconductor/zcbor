@@ -170,6 +170,10 @@ bool float_expect(cbor_state_t * p_state, double *p_result);
 /** Skip a single element, regardless of type and value. */
 bool any_decode(cbor_state_t * p_state, void *p_result);
 
+/** Decode a tag. */
+bool tag_decode(cbor_state_t * p_state, uint32_t *p_result);
+bool tag_expect(cbor_state_t * p_state, uint32_t result);
+
 /** Decode 0 or more elements with the same type and constraints.
  *
  * @details This must not necessarily decode all elements in a list. E.g. if
