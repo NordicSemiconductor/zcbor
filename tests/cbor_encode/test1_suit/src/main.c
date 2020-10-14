@@ -219,7 +219,7 @@ uint8_t test_vector4[] = {
 	0x84, 0x0c, 0x01, 0x17, 0xf6
 };
 
-const u8_t *test_vector[] = {
+const uint8_t *test_vector[] = {
 	test_vector0_02,
 	// test_vector0,
 	// test_vector1,
@@ -228,7 +228,7 @@ const u8_t *test_vector[] = {
 	// test_vector4,
 };
 
-u32_t test_vector_len[] = {
+uint32_t test_vector_len[] = {
 	sizeof(test_vector0_02),
 	// sizeof(test_vector0),
 	// sizeof(test_vector1),
@@ -237,7 +237,7 @@ u32_t test_vector_len[] = {
 	// sizeof(test_vector4),
 };
 
-u32_t num_test_vectors = sizeof(test_vector)/sizeof(u8_t*);
+uint32_t num_test_vectors = sizeof(test_vector)/sizeof(uint8_t*);
 
 
 static uint8_t output[2000];
@@ -277,7 +277,7 @@ void test_command_sequence(cbor_string_type_t *sequence_str,
 		sequence_str->len,
 		NULL);
 
-	for (u32_t i = 0; i < sequence1._SUIT_Command_Sequence_union_count; i++) {
+	for (uint32_t i = 0; i < sequence1._SUIT_Command_Sequence_union_count; i++) {
 		_SUIT_Directive_t *directive;
 		bool directive_present;
 		directive = &sequence1
@@ -296,7 +296,7 @@ void test_command_sequence(cbor_string_type_t *sequence_str,
 			== _SUIT_Directive___suit_directive_run_sequence;
 		test_command_sequence(run_seq, run_seq_present, "run_seq");
 
-		for (u32_t j = 0; j < directive
+		for (uint32_t j = 0; j < directive
 			->_SUIT_Directive___suit_directive_try_each__SUIT_Directive_Try_Each_Argument
 			._SUIT_Directive_Try_Each_Argument_SUIT_Command_Sequence_count; j++) {
 
@@ -324,7 +324,7 @@ void test_command_sequence(cbor_string_type_t *sequence_str,
 	}
 }
 
-void test_manifest(const u8_t *input, size_t len)
+void test_manifest(const uint8_t *input, size_t len)
 {
 	SUIT_Outer_Wrapper_t outerwrapper1 = {0};
 	SUIT_Manifest_t *manifest;
@@ -459,7 +459,7 @@ void test_manifest(const u8_t *input, size_t len)
 
 void test_suit(void)
 {
-	for(u32_t i = 0; i < num_test_vectors; i++) {
+	for(uint32_t i = 0; i < num_test_vectors; i++) {
 		test_manifest(test_vector[i], test_vector_len[i]);
 	}
 }
