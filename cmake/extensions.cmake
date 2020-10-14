@@ -8,7 +8,8 @@
 #                    <cddl_file>
 #                    ENTRY_TYPES <entry_types>
 #                    DECODE|ENCODE
-#                    [VERBOSE] [CANONICAL])
+#                    [VERBOSE] [CANONICAL]
+#                    [TYPE_FILE_NAME <filename>])
 #
 # Add generated code to the project for decoding CBOR.
 #
@@ -22,6 +23,9 @@
 #
 # Specify CANONICAL to make the encoder generate canonical CBOR. This can make
 # code size slightly bigger. This option has no effect together with DECODE.
+#
+# If provided, TYPE_FILE_NAME can be used to specify what the file containing
+# typedefs should be called.
 #
 # The result of the function is that a library is added to the project which
 # contains the generated decoding code. The code is generated at build time
@@ -38,7 +42,7 @@ function(target_cddl_source target cddl_file)
     message(FATAL_ERROR "CDDL input file ${cddl_file} does not exist.")
   endif()
 
-  cmake_parse_arguments(CDDL "DECODE;ENCODE;VERBOSE;CANONICAL" "" "ENTRY_TYPES" ${ARGN})
+  cmake_parse_arguments(CDDL "DECODE;ENCODE;VERBOSE;CANONICAL" "TYPE_FILE_NAME" "ENTRY_TYPES" ${ARGN})
 
   if (CDDL_ENCODE)
     set(code "encode")
@@ -50,6 +54,10 @@ function(target_cddl_source target cddl_file)
   set(c_file ${CMAKE_CURRENT_BINARY_DIR}/${name}_${code}.c)
   set(h_file_dir ${CMAKE_CURRENT_BINARY_DIR}/zephyr/include/generated)
   set(h_file ${h_file_dir}/${name}_${code}.h)
+
+  if (DEFINED CDDL_TYPE_FILE_NAME)
+    set(type_file_arg --oht ${h_file_dir}/${CDDL_TYPE_FILE_NAME})
+  endif()
 
   if ("${CDDL_DECODE}" STREQUAL "${CDDL_ENCODE}")
     message(FATAL_ERROR "Please specify exactly one of DECODE or ENCODE")
@@ -64,6 +72,7 @@ function(target_cddl_source target cddl_file)
     -i ${cddl_path}
     --oc ${c_file}
     --oh ${h_file}
+    ${type_file_arg}
     -t ${CDDL_ENTRY_TYPES}
     $<$<BOOL:${CDDL_DECODE}>:-d>
     $<$<BOOL:${CDDL_ENCODE}>:-e>
