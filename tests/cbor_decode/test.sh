@@ -1,6 +1,6 @@
 #!/bin/bash
 
-for dir in 'test1_suit_old_formats/' 'test2_suit/' 'test3_simple/' 'test5_strange/' ;
+for dir in 'test1_suit_old_formats/' 'test2_suit/' 'test3_simple/' 'test5_strange/' 'test7_suit9_simple' ;
 do
         pushd "$dir"
 
