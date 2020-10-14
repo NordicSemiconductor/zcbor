@@ -1112,6 +1112,8 @@ class CodeGenerator(CddlParser):
             arg = tmp_str_or_null(self.value)
         elif self.type == "BOOL":
             arg = min_bool_or_null(self.value)
+        elif self.type in ["UINT", "INT", "NINT", "FLOAT"] and mode == "decode":
+            arg = str(self.value)
         else:
             arg = tmp_val_or_null(self.value)
 
