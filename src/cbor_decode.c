@@ -201,6 +201,12 @@ bool uintx32_expect(cbor_state_t * p_state, uint32_t result)
 	return true;
 }
 
+bool uintx32_expect_union(cbor_state_t * p_state, uint32_t result)
+{
+	union_elem_code(p_state);
+	return uintx32_expect(p_state, result);
+}
+
 
 static bool strx_start_decode(cbor_state_t * p_state,
 		cbor_string_type_t *p_result, cbor_major_type_t exp_major_type)
