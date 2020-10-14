@@ -99,11 +99,11 @@ bool intx32_decode(cbor_state_t * p_state, int32_t *p_result);
  * @retval false  If intx32_decode failed or the result doesn't have the
  *                expected value.
  */
-bool intx32_expect(cbor_state_t * p_state, int32_t *p_result);
+bool intx32_expect(cbor_state_t * p_state, int32_t result);
 
 /** Decode a PINT. */
 bool uintx32_decode(cbor_state_t * p_state, uint32_t *p_result);
-bool uintx32_expect(cbor_state_t * p_state, uint32_t *p_result);
+bool uintx32_expect(cbor_state_t * p_state, uint32_t result);
 
 /** Decode and consume a BSTR header.
  *

@@ -150,14 +150,14 @@ bool intx32_decode(cbor_state_t * p_state, int32_t *p_result)
 	return true;
 }
 
-bool intx32_expect(cbor_state_t * p_state, int32_t *p_result)
+bool intx32_expect(cbor_state_t * p_state, int32_t result)
 {
 	int32_t value;
 	if (!intx32_decode(p_state, &value)) {
 		FAIL();
 	}
-	if (value != *p_result) {
-		cbor_print("%d != %d\r\n", value, *p_result);
+	if (value != result) {
+		cbor_print("%d != %d\r\n", value, result);
 		FAIL();
 	}
 	return true;
@@ -188,14 +188,14 @@ bool uintx32_decode(cbor_state_t * p_state, uint32_t *p_result)
 	return true;
 }
 
-bool uintx32_expect(cbor_state_t * p_state, uint32_t *p_result)
+bool uintx32_expect(cbor_state_t * p_state, uint32_t result)
 {
 	uint32_t value;
 	if (!uintx32_decode(p_state, &value)) {
 		FAIL();
 	}
-	if (value != *p_result) {
-		cbor_print("%u != %u\r\n", value, *p_result);
+	if (value != result) {
+		cbor_print("%u != %u\r\n", value, result);
 		FAIL();
 	}
 	return true;
