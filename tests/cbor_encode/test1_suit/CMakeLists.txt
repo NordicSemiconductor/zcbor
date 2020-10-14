@@ -17,6 +17,7 @@ target_cddl_source(app manifest3.cddl
   ENCODE
   ${VERBOSE}
   ${CANONICAL}
+  TYPE_FILE_NAME manifest3_types.h
   )
 
 target_cddl_source(app manifest3.cddl
@@ -27,6 +28,7 @@ target_cddl_source(app manifest3.cddl
   DECODE
   ${VERBOSE}
   ${CANONICAL}
+  TYPE_FILE_NAME manifest3_types.h
   )
 
 FILE(GLOB app_sources src/*.c)

@@ -1525,6 +1525,8 @@ This script requires 'regex' for lookaround functionality not present in 're'.''
                         help="Path to output C file.")
     parser.add_argument("--output-h", "--oh", required=True, type=str,
                         help="Path to output header file.")
+    parser.add_argument("--output-h-types", "--oht", required=False, type=str,
+                        help="Path to output header file with typedefs (shared between decode and encode).")
     parser.add_argument(
         "-t",
         "--entry-types",
@@ -1643,7 +1645,30 @@ def render_c_file(functions, header_file_name, entry_types, print_time):
 
 
 # Render the entire generated header file contents.
-def render_h_file(type_defs, header_guard, entry_types, print_time):
+def render_h_file(type_def_file, header_guard, entry_types, print_time):
+    return \
+        f"""/* Generated with cddl_gen.py (https://github.com/oyvindronningstad/cddl_gen){'''
+ * at: ''' + datetime.now().strftime('%Y-%m-%d %H:%M:%S') if print_time else ''}
+ */
+
+#ifndef {header_guard}
+#define {header_guard}
+
+#include <stdint.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <string.h>
+#include "cbor_{mode}.h"
+#include "{type_def_file}"
+
+
+{(linesep+linesep).join([f"{xcoder.public_xcode_func_sig()};" for xcoder in entry_types])}
+
+
+#endif // {header_guard}
+"""
+
+def render_type_file(type_defs, header_guard, print_time):
     return \
         f"""/* Generated with cddl_gen.py (https://github.com/oyvindronningstad/cddl_gen){'''
  * at: ''' + datetime.now().strftime('%Y-%m-%d %H:%M:%S') if print_time else ''}
@@ -1660,8 +1685,6 @@ def render_h_file(type_defs, header_guard, entry_types, print_time):
 
 
 {(linesep+linesep).join([f"typedef {linesep.join(typedef[0])} {typedef[1]};" for typedef in type_defs])}
-
-{(linesep+linesep).join([f"{xcoder.public_xcode_func_sig()};" for xcoder in entry_types])}
 
 
 #endif // {header_guard}
@@ -1725,12 +1748,21 @@ def main():
         f.write(render_c_file(functions=u_funcs, header_file_name=path.basename(args.output_h),
                               entry_types=entry_types, print_time=args.time_header))
     makedirs("./" + path.dirname(args.output_h), exist_ok=True)
+    type_file_path = args.output_h_types or path.join(path.split(args.output_h)[0], f"types_{path.split(args.output_h)[1]}")
+    type_file_name = path.basename(type_file_path)
     with open(args.output_h, 'w') as f:
         print("Writing to " + args.output_h)
-        f.write(render_h_file(type_defs=u_types,
+        f.write(render_h_file(type_def_file=type_file_name,
                               header_guard=path.basename(args.output_h).replace(".", "_").replace("-", "_").upper()
                                            + "__",
                               entry_types=entry_types, print_time=args.time_header))
+
+    with open(type_file_path, 'w') as f:
+        print("Writing to " + type_file_name)
+        f.write(render_type_file(type_defs=u_types,
+                              header_guard=path.basename(type_file_name).replace(".", "_").replace("-", "_").upper()
+                                           + "__",
+                              print_time=args.time_header))
 
 
 if __name__ == "__main__":

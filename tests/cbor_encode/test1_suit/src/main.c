@@ -6,22 +6,7 @@
 
 #include <ztest.h>
 #include "manifest3_decode.h"
-
-
-bool cbor_encode_SUIT_Outer_Wrapper(
-		const uint8_t * p_payload, size_t payload_len,
-		SUIT_Outer_Wrapper_t * p_result,
-		size_t *p_payload_len_out);
-
-bool cbor_encode_SUIT_Command_Sequence(
-		const uint8_t * p_payload, size_t payload_len,
-		SUIT_Command_Sequence_t * p_result,
-		size_t *p_payload_len_out);
-
-bool cbor_encode_SUIT_Authentication_Wrapper(
-		const uint8_t * p_payload, size_t payload_len,
-		SUIT_Authentication_Wrapper_t * p_result,
-		size_t *p_payload_len_out);
+#include "manifest3_encode.h"
 
 /* draft-ietf-suit-manifest-02 Example 0 */
 uint8_t test_vector0_02[] = {
