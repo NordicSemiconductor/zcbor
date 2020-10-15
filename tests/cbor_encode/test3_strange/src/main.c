@@ -33,7 +33,7 @@ void test_numbers(void)
 			0x1A, 0xEE, 0x6B, 0x28, 0x00, // 4000000000
 			0x3A, 0x7F, 0xFF, 0xFF, 0xFF, // -2^31
 			0x00, // 0
-			0x01, // 1
+			0xD9, 0xFF, 0xFF, 0x01, // 1
 		END
 	};
 
@@ -100,12 +100,12 @@ void test_strings(void)
 		0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,
 		0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,
 		0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,
-		0x78, 0x1E, // 30 bytes
+		0xC0, 0x78, 0x1E, // 30 bytes
 		0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,
 #ifndef CDDL_CBOR_CANONICAL
-		0x58, 27, // Numbers (len: 27)
+		0x58, 30, // Numbers (len: 30)
 #else
-		0x58, 26, // Numbers (len: 26)
+		0x58, 29, // Numbers (len: 29)
 #endif
 			LIST(A), // List start
 				0x01, // 1
@@ -117,7 +117,7 @@ void test_strings(void)
 				0x1A, 0xEE, 0x6B, 0x28, 0x00, // 4000000000
 				0x3A, 0x7F, 0xFF, 0xFF, 0xFF, // -2^31
 				0x1A, 0xFF, 0xFF, 0xFF, 0xFF, // 0xFFFFFFFF
-				0x09, // 9
+				0xD9, 0xFF, 0xFF, 9, // 9
 				END
 #ifndef CDDL_CBOR_CANONICAL
 		0x52, // Primitives (len: 17)
@@ -143,9 +143,9 @@ void test_strings(void)
 				0xF6, // Nil
 				END
 #ifndef CDDL_CBOR_CANONICAL
-		0x59, 0x01, 0x66, // Strings (len: 358)
+		0x59, 0x01, 0x6A, // Strings (len: 362)
 #else
-		0x59, 0x01, 0x63, // Strings (len: 355)
+		0x59, 0x01, 0x67, // Strings (len: 359)
 #endif
 			LIST(5),
 			0x65, 0x68, 0x65, 0x6c, 0x6c, 0x6f, // "hello"
@@ -160,12 +160,12 @@ void test_strings(void)
 			0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,
 			0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,
 			0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,
-			0x6A, // 10 bytes
+			0xC0, 0x6A, // 10 bytes
 			0,1,2,3,4,5,6,7,8,9,
 #ifndef CDDL_CBOR_CANONICAL
-			0x58, 27, // Numbers (len: 27)
+			0x58, 30, // Numbers (len: 30)
 #else
-			0x58, 26, // Numbers (len: 26)
+			0x58, 29, // Numbers (len: 29)
 #endif
 				LIST(A), // List start
 					0x01, // 1
@@ -177,7 +177,7 @@ void test_strings(void)
 					0x1A, 0xEE, 0x6B, 0x28, 0x00, // 4000000000
 					0x3A, 0x7F, 0xFF, 0xFF, 0xFF, // -2^31
 					0x1A, 0xFF, 0xFF, 0xFF, 0xFF, // 0xFFFFFFFF
-					0x29, // -10
+					0xD9, 0xFF, 0xFF, 0x29, // -10
 					END
 #ifndef CDDL_CBOR_CANONICAL
 			0x46, // Primitives (len: 5)
@@ -264,19 +264,19 @@ void test_strings(void)
 void test_optional(void)
 {
 	const uint8_t exp_payload_optional1[] = {
-		LIST(3) /* List start */, 0xF4 /* False */, 0x02, 0x03, END
+		LIST(3) /* List start */, 0xCA /* tag */, 0xF4 /* False */, 0x02, 0x03, END
 	};
 	const uint8_t exp_payload_optional2[] = {
-		LIST(2) /* List start */, 0xF4 /* False */, 0x03, END
+		LIST(2) /* List start */, 0xCA /* tag */, 0xF4 /* False */, 0x03, END
 	};
 	const uint8_t exp_payload_optional3[] = {
-		LIST(3) /* List start */, 0xF4 /* False */, 0x02, 0x01, END
+		LIST(3) /* List start */, 0xCA /* tag */, 0xF4 /* False */, 0x02, 0x01, END
 	};
 	const uint8_t exp_payload_optional4[] = {
-		LIST(3) /* List start */, 0xF5 /* True */, 0x02, 0x02, END
+		LIST(3) /* List start */, 0xCA /* tag */, 0xF5 /* True */, 0x02, 0x02, END
 	};
 	const uint8_t exp_payload_optional5[] = {
-		LIST(4) /* List start */, 0xF5 /* True */, 0xF4 /* False */, 0x02, 0x02, END
+		LIST(4) /* List start */, 0xCA /* tag */, 0xF5 /* True */, 0xF4 /* False */, 0x02, 0x02, END
 	};
 
 	Optional_t optional1 = {._Optional_opttwo_present = true, ._Optional_manduint = 3};
