@@ -100,12 +100,12 @@ void test_suit9_simple2(void)
 				((uint32_t)test_vector2) + sizeof(test_vector2));
 	memset(&envelope1, 0, sizeof(envelope1));
 	res = cbor_decode_SUIT_Envelope(test_vector2,
-					sizeof(test_vector2), &envelope1, true);
+					sizeof(test_vector2), &envelope1, NULL);
 	zassert_true(res, "top-level decoding failed.");
 
 	res = cbor_decode_SUIT_Manifest(
 		envelope1._SUIT_Envelope_suit_manifest.value,
-		envelope1._SUIT_Envelope_suit_manifest.len, &manifest, true);
+		envelope1._SUIT_Envelope_suit_manifest.len, &manifest, NULL);
 
 	zassert_true(res, "manifest decoding failed.");
 }
@@ -120,12 +120,12 @@ void test_suit9_simple5(void)
 				((uint32_t)test_vector5) + sizeof(test_vector5));
 	memset(&envelope1, 0, sizeof(envelope1));
 	res = cbor_decode_SUIT_Envelope(test_vector5,
-					sizeof(test_vector5), &envelope1, true);
+					sizeof(test_vector5), &envelope1, NULL);
 	zassert_true(res, "top-level decoding failed.");
 
 	res = cbor_decode_SUIT_Manifest(
 		envelope1._SUIT_Envelope_suit_manifest.value,
-		envelope1._SUIT_Envelope_suit_manifest.len, &manifest, true);
+		envelope1._SUIT_Envelope_suit_manifest.len, &manifest, NULL);
 
 	zassert_true(res, "manifest decoding failed.");
 }

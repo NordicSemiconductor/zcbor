@@ -38,6 +38,7 @@ static SUIT_Command_Sequence_t sequence;
 void test_5(void)
 {
 	SUIT_Manifest_t *manifest;
+	size_t decode_len;
 	SUIT_Component_Identifier_t *component;
 	uint8_t expected_component0[] = {0x46, 0x6c, 0x61, 0x73, 0x68};
 	uint8_t expected_component1[] = {0x00, 0x34, 0x01};
@@ -47,9 +48,10 @@ void test_5(void)
 	cbor_print("test_vector end at: 0x%x\r\n",
 				((uint32_t)test_vector1) + sizeof(test_vector1));
 	memset(&outerwrapper1, 0, sizeof(outerwrapper1));
-	res = cbor_decode_SUIT_Outer_Wrapper(test_vector1,
-					sizeof(test_vector1), &outerwrapper1, true);
+	res = cbor_decode_SUIT_Outer_Wrapper(test_vector1, sizeof(test_vector1),
+						&outerwrapper1, &decode_len);
 	zassert_true(res, "top-level decoding failed.");
+	zassert_equal(sizeof(test_vector1), decode_len, NULL);
 	zassert_equal(_SUIT_Manifest_Wrapped_suit_manifest, outerwrapper1
 			._SUIT_Outer_Wrapper__SUIT_Manifest_Wrapped
 			._SUIT_Manifest_Wrapped_choice,
@@ -142,8 +144,14 @@ void test_5(void)
 			._SUIT_Common_suit_common_sequence
 			._SUIT_Common_suit_common_sequence
 			.len,
-			&sequence, true);
+			&sequence, &decode_len);
 	zassert_true(res, "Parsing common sequence failed.");
+	zassert_equal(manifest
+			->_SUIT_Manifest_suit_common
+			._SUIT_Manifest_suit_common_cbor
+			._SUIT_Common_suit_common_sequence
+			._SUIT_Common_suit_common_sequence
+			.len, decode_len, NULL);
 	zassert_equal(1, sequence
 			._SUIT_Command_Sequence__SUIT_Command_count,
 			"Should be one command (was %d).", sequence
@@ -169,8 +177,12 @@ void test_5(void)
 			->_SUIT_Manifest_suit_run
 			._SUIT_Manifest_suit_run
 			.len,
-			&sequence, true);
+			&sequence, &decode_len);
 	zassert_true(res, "Parsing run command sequence failed.");
+	zassert_equal(manifest
+			->_SUIT_Manifest_suit_run
+			._SUIT_Manifest_suit_run
+			.len, decode_len, NULL);
 }
 
 void test_main(void)

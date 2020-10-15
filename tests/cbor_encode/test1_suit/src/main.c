@@ -248,7 +248,7 @@ void test_command_sequence(cbor_string_type_t *sequence_str,
 	memset(&sequence1, 0, sizeof(sequence1));
 	bool res = cbor_decode_SUIT_Command_Sequence(sequence_str->value,
 		sequence_str->len,
-		&sequence1, false);
+		&sequence1, NULL);
 	zassert_true(res, NULL);
 
 
@@ -340,7 +340,7 @@ void test_manifest(const uint8_t *input, size_t len)
 	cbor_print("test_vector at: 0x%x\r\n", (uint32_t)input);
 	cbor_print("test_vector end at: 0x%x\r\n",
 				((uint32_t)input) + len);
-	res = cbor_decode_SUIT_Outer_Wrapper(input, len, &outerwrapper1, false);
+	res = cbor_decode_SUIT_Outer_Wrapper(input, len, &outerwrapper1, NULL);
 	zassert_true(res, "top-level decoding failed.");
 
 	dependency1 = &outerwrapper1

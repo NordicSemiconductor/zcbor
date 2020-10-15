@@ -101,6 +101,7 @@ static SUIT_Outer_Wrapper_t outerwrapper4 = {0};
 // Example 9.1 from draft-moran-suit-manifest-03
 void test_1(void)
 {
+	size_t decode_len;
 	uint8_t expected_tag[] = {
 		0x8c, 0xaf, 0x92, 0x83, 0xb1, 0x36, 0x66, 0xca,
 		0x4e, 0x50, 0xf7, 0xa1, 0xee, 0xe8, 0x6b, 0xa4,
@@ -109,8 +110,9 @@ void test_1(void)
 	};
 	zassert_true(cbor_decode_OuterWrapper(test_vector2,
 				sizeof(test_vector2),
-				&outerwrapper, true),
+				&outerwrapper, &decode_len),
 			"test_vector2 failed");
+	zassert_equal(sizeof(test_vector2), decode_len, NULL);
 	zassert_equal(2, outerwrapper
 			._OuterWrapper_manifest_cbor
 			._Manifest_sequence,
@@ -147,6 +149,7 @@ void test_1(void)
 // Example 9.3 from draft-moran-suit-manifest-03
 void test_2(void)
 {
+	size_t decode_len;
 	memset(&outerwrapper, 0, sizeof(OuterWrapper_t));
 	char expected_updateDescription[] =
 		"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc "
@@ -155,8 +158,9 @@ void test_2(void)
 		"Suspendisse posuere sed.";
 	zassert_true(cbor_decode_OuterWrapper(test_vector3,
 				sizeof(test_vector3),
-				&outerwrapper, true),
+				&outerwrapper, &decode_len),
 			"test_vector3 failed");
+	zassert_equal(sizeof(test_vector3), decode_len, NULL);
 	zassert_equal(2, outerwrapper
 			._OuterWrapper_manifest_cbor
 			._Manifest_sequence,
@@ -195,10 +199,12 @@ void test_2(void)
 // Example 1 from draft-moran-suit-manifest-04
 void test_3(void)
 {
+	size_t decode_len;
 	char expected_uri[] = "http://example.com/file.bin";
 	memset(&outerwrapper4, 0, sizeof(SUIT_Outer_Wrapper_t));
 	zassert_true(cbor_decode_SUIT_Outer_Wrapper(test_vector4,
-		sizeof(test_vector4), &outerwrapper4, true), "test_vector failed");
+		sizeof(test_vector4), &outerwrapper4, &decode_len), "test_vector failed");
+	zassert_equal(sizeof(test_vector4), decode_len, NULL);
 	zassert_equal(2,
 		      outerwrapper4
 		      ._SUIT_Outer_Wrapper_suit_manifest_cbor
