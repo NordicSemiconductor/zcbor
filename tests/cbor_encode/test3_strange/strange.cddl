@@ -9,13 +9,13 @@ Numbers = [
 	fourbillion: 0xEE6B2800,
 	negint: nint,
 	posint: uint,
-	integer: int,
+	integer: #6.65535(int),
 ]
 
 Strings = [
 	hello: "hello",
 	threehundrebytebstr: bstr .size 300,
-	tentothirtybytetstr: tstr .size 10..30,
+	#6.0(tentothirtybytetstr: tstr .size 10..30),
 	cborNumbers: bstr .cbor Numbers,
 	cborseqPrimitives: bstr .cborseq Primitives,
 	?optCborStrings: bstr .cbor Strings,
@@ -29,7 +29,7 @@ Primitives = [
 ]
 
 Optional = [
-	boolval: bool,
+	#6.10(boolval: bool),
 	?optbool: bool,
 	?opttwo: 2,
 	manduint: uint,

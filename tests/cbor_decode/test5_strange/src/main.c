@@ -20,7 +20,7 @@ void test_numbers(void)
 			0x1A, 0xEE, 0x6B, 0x28, 0x00, // 4000000000
 			0x3A, 0x7F, 0xFF, 0xFF, 0xFF, // -2^31
 			0x00, // 0
-			0x01 // 1
+			0xD9, 0xFF, 0xFF, 0x01 // 1 tagged (0xFFFF)
 	};
 
 	Numbers_t numbers;
@@ -55,9 +55,9 @@ void test_strings(void)
 		0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,
 		0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,
 		0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,
-		0x78, 0x1E, // 30 bytes
+		0xC0, 0x78, 0x1E, // 30 bytes
 		0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,
-		0x58, 26, // Numbers (len: 26)
+		0x58, 29, // Numbers (len: 29)
 			0x8A, // List start
 				0x01, // 1
 				0x21, // -2
@@ -68,7 +68,7 @@ void test_strings(void)
 				0x1A, 0xEE, 0x6B, 0x28, 0x00, // 4000000000
 				0x3A, 0x7F, 0xFF, 0xFF, 0xFF, // -2^31
 				0x1A, 0xFF, 0xFF, 0xFF, 0xFF, // 0xFFFFFFFF
-				0x09, // 9
+				0xD9, 0xFF, 0xFF, 0x09, // 9, tagged (0xFFFF)
 		0x4F, // Primitives (len: 15)
 			0x84, // List start
 				0xF5, // True
@@ -85,7 +85,7 @@ void test_strings(void)
 				0xF4, // False
 				0xF4, // False
 				0xF6, // Nil
-		0x59, 0x01, 0x63, // Strings (len: 355)
+		0x59, 0x01, 0x67, // Strings (len: 359)
 			0x85,
 			0x65, 0x68, 0x65, 0x6c, 0x6c, 0x6f, // "hello"
 			0x59, 0x01, 0x2c, // 300 bytes
@@ -99,9 +99,9 @@ void test_strings(void)
 			0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,
 			0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,
 			0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,
-			0x6A, // 10 bytes
+			0xC0, 0x6A, // 10 bytes
 			0,1,2,3,4,5,6,7,8,9,
-			0x58, 26, // Numbers (len: 26)
+			0x58, 29, // Numbers (len: 29)
 				0x8A, // List start
 					0x01, // 1
 					0x21, // -2
@@ -112,7 +112,7 @@ void test_strings(void)
 					0x1A, 0xEE, 0x6B, 0x28, 0x00, // 4000000000
 					0x3A, 0x7F, 0xFF, 0xFF, 0xFF, // -2^31
 					0x1A, 0xFF, 0xFF, 0xFF, 0xFF, // 0xFFFFFFFF
-					0x29, // -10
+					0xD9, 0xFF, 0xFF, 0x29, // -10, tagged (0xFFFF)
 			0x45, // Primitives (len: 5)
 				0x84, // List start
 					0xF5, // True
@@ -139,7 +139,7 @@ void test_strings(void)
 	zassert_equal(0, strings1._Strings_threehundrebytebstr.value[0], NULL);
 	zassert_equal(9, strings1._Strings_threehundrebytebstr.value[299], NULL);
 	zassert_equal(30, strings1._Strings_tentothirtybytetstr.len, NULL);
-	zassert_equal(26, strings1._Strings_cborNumbers.len, NULL);
+	zassert_equal(29, strings1._Strings_cborNumbers.len, NULL);
 	zassert_equal(3, strings1._Strings_cborseqPrimitives_cbor_count, NULL);
 	zassert_false(strings1._Strings_cborseqPrimitives_cbor[0]._Primitives_boolval, NULL);
 	zassert_true(strings1._Strings_cborseqPrimitives_cbor[1]._Primitives_boolval, NULL);
@@ -161,22 +161,28 @@ void test_strings(void)
 void test_optional(void)
 {
 	const uint8_t payload_optional1[] = {
-		0x83 /* List start */, 0xF4 /* False */, 0x02, 0x03,
+		0x83 /* List start */, 0xCA /* tag */, 0xF4 /* False */, 0x02, 0x03,
 	};
 	const uint8_t payload_optional2[] = {
-		0x82 /* List start */, 0xF4 /* False */, 0x03,
+		0x82 /* List start */, 0xCA /* tag */, 0xF4 /* False */, 0x03,
 	};
 	const uint8_t payload_optional3_inv[] = {
-		0x82 /* List start */, 0xF4 /* False */, 0x02,
+		0x82 /* List start */, 0xCA /* tag */, 0xF4 /* False */, 0x02,
 	};
 	const uint8_t payload_optional4[] = {
-		0x83 /* List start */, 0xF4 /* False */, 0x02, 0x01,
+		0x83 /* List start */, 0xCA /* tag */, 0xF4 /* False */, 0x02, 0x01,
 	};
 	const uint8_t payload_optional5[] = {
-		0x83 /* List start */, 0xF5 /* True */, 0x02, 0x02,
+		0x83 /* List start */, 0xCA /* tag */, 0xF5 /* True */, 0x02, 0x02,
 	};
 	const uint8_t payload_optional6[] = {
-		0x84 /* List start */, 0xF5 /* True */, 0xF4 /* False */, 0x02, 0x02,
+		0x84 /* List start */, 0xCA /* tag */, 0xF5 /* True */, 0xF4 /* False */, 0x02, 0x02,
+	};
+	const uint8_t payload_optional7_inv[] = {
+		0x82 /* List start */, 0xCB /* wrong tag */, 0xF4 /* False */, 0x03,
+	};
+	const uint8_t payload_optional8_inv[] = {
+		0x82 /* List start */, 0xF4 /* False (no tag first) */, 0x03,
 	};
 
 	Optional_t optional;
@@ -218,6 +224,12 @@ void test_optional(void)
 	zassert_false(optional._Optional_optbool, NULL);
 	zassert_true(optional._Optional_opttwo_present, NULL);
 	zassert_equal(2, optional._Optional_manduint, NULL);
+
+	zassert_false(cbor_decode_Optional(payload_optional7_inv,
+			sizeof(payload_optional7_inv), &optional, true), NULL);
+
+	zassert_false(cbor_decode_Optional(payload_optional8_inv,
+			sizeof(payload_optional8_inv), &optional, true), NULL);
 }
 
 void test_union(void)
