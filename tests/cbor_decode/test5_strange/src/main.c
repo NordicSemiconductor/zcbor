@@ -32,7 +32,7 @@ void test_numbers(void)
 	zassert_equal(5, numbers._Numbers_fourtoten, NULL);
 	zassert_equal(256, numbers._Numbers_twobytes, NULL);
 	zassert_equal(0x01020304, numbers._Numbers_onetofourbytes, NULL);
-	zassert_equal(-5000, numbers._Numbers_minusfivektoplustwohunred, "%d", numbers._Numbers_minusfivektoplustwohunred);
+	zassert_equal(-5000, numbers._Numbers_minusfivektoplustwohundred, "%d", numbers._Numbers_minusfivektoplustwohundred);
 	zassert_equal(-2147483648, numbers._Numbers_negint, NULL);
 	zassert_equal(0, numbers._Numbers_posint, NULL);
 	zassert_equal(1, numbers._Numbers_integer, NULL);
@@ -150,7 +150,7 @@ void test_strings(void)
 	zassert_equal(5, numbers2._Numbers_fourtoten, NULL);
 	zassert_equal(0xFFFF, numbers2._Numbers_twobytes, NULL);
 	zassert_equal(24, numbers2._Numbers_onetofourbytes, NULL);
-	zassert_equal(0, numbers2._Numbers_minusfivektoplustwohunred, NULL);
+	zassert_equal(0, numbers2._Numbers_minusfivektoplustwohundred, NULL);
 	zassert_equal(-2147483648, numbers2._Numbers_negint, NULL);
 	zassert_equal(0xFFFFFFFF, numbers2._Numbers_posint, NULL);
 	zassert_equal(-10, numbers2._Numbers_integer, NULL);
