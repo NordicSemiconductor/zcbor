@@ -42,6 +42,11 @@ do { \
 #define cbor_print(...)
 #endif
 
+#ifndef MIN
+#define MIN(a, b) (((a) < (b)) ? (a) : (b))
+#endif
+
+
 struct cbor_state_backups_s;
 
 typedef struct cbor_state_backups_s cbor_state_backups_t;

@@ -1452,7 +1452,7 @@ class CodeGenerator(CddlParser):
 bool cbor_{self.xcode_func_name()}(
 		{"const " if mode == "decode" else ""}uint8_t * p_payload, size_t payload_len,
 		{"" if mode == "decode" else "const "}{self.type_name()} * {struct_ptr_name()},
-		{"bool complete" if mode == "decode" else "size_t *p_payload_len_out"})"""
+		{"size_t *p_payload_len_out"})"""
 
 # Consumes and parses a single CDDL type, returning a
 # CodeGenerator instance.
@@ -1665,26 +1665,13 @@ def render_entry_function(xcoder):
 	state.p_backups = &backups;
 
 	bool result = {xcoder.xcode_func_name()}(&state, {struct_ptr_name()});
-""" + (f"""
-	if (!complete) {{
-		return result;
-	}}
-	if (result) {{
-		if (state.p_payload == state.p_payload_end) {{
-			return true;
-		}} else {{
-			cbor_state_t *p_state = &state; // for printing.
-			cbor_print(\"p_payload_end: 0x%x\\r\\n\", (uint32_t)state.p_payload_end);
-			cbor_trace();
-		}}
-	}}
-	return false;
-}}""" if mode == "decode" else f"""
-	if (p_payload_len_out != NULL) {{
-		*p_payload_len_out = ((size_t)state.p_payload - (size_t)p_payload);
+
+	if (result && (p_payload_len_out != NULL)) {{
+		*p_payload_len_out = MIN(payload_len,
+				(size_t)state.p_payload - (size_t)p_payload);
 	}}
 	return result;
-}}""")
+}}"""
 
 
 # Render the entire generated C file contents.
