@@ -408,7 +408,7 @@ void test_levels(void)
 		sizeof(exp_payload_levels1)-1, &level1, &out_len), NULL);
 	zassert_true(cbor_encode_Level1(output,
 		sizeof(output), &level1, &out_len), NULL);
-	
+
 	zassert_equal(sizeof(exp_payload_levels1), out_len, "%d != %d", sizeof(exp_payload_levels1), out_len);
 	zassert_mem_equal(exp_payload_levels1, output, sizeof(exp_payload_levels1), NULL);
 }
