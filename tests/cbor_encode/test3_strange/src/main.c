@@ -19,25 +19,6 @@
 #define END
 #endif
 
-void print_compare_strings(uint8_t *str1, uint8_t *str2, size_t size)
-{
-	for (uint32_t i = 0; i <= size / 16; i++) {
-		for (uint32_t j = 0; j < 16 && (i*16+j) < size; j++) {
-			printk ("%x ", str1[i*16 + j]);
-		}
-		printk("\r\n");
-		for (uint32_t j = 0; j < 16 && (i*16+j) < size; j++) {
-			printk ("%x ", str2[i*16 + j]);
-		}
-		printk("\r\n");
-		for (uint32_t j = 0; j < 16 && (i*16+j) < size; j++) {
-			printk ("%x ", str1[i*16 + j] != str2[i*16 + j]);
-		}
-		printk("\r\n");
-		printk("\r\n");
-	}
-	printk("\r\n");
-}
 
 void test_numbers(void)
 {
