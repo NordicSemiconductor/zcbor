@@ -63,7 +63,7 @@ void test_numbers(void)
 	numbers._Numbers_fourtoten = 3; // Invalid
 	numbers._Numbers_twobytes = 256;
 	numbers._Numbers_onetofourbytes = 0x01020304;
-	numbers._Numbers_minusfivektoplustwohunred = -5000;
+	numbers._Numbers_minusfivektoplustwohundred = -5000;
 	numbers._Numbers_negint = -2147483648;
 	numbers._Numbers_posint = 0;
 	numbers._Numbers_integer = 1;
@@ -89,15 +89,15 @@ void test_numbers(void)
 	zassert_true(cbor_encode_Numbers(output,
 		sizeof(output), &numbers, &out_len), NULL);
 
-	numbers._Numbers_minusfivektoplustwohunred = -5001; // Invalid
+	numbers._Numbers_minusfivektoplustwohundred = -5001; // Invalid
 	zassert_false(cbor_encode_Numbers(output,
 		sizeof(output), &numbers, &out_len), NULL);
 
-	numbers._Numbers_minusfivektoplustwohunred = 201; // Invalid
+	numbers._Numbers_minusfivektoplustwohundred = 201; // Invalid
 	zassert_false(cbor_encode_Numbers(output,
 		sizeof(output), &numbers, &out_len), NULL);
 
-	numbers._Numbers_minusfivektoplustwohunred = 200; // Valid
+	numbers._Numbers_minusfivektoplustwohundred = 200; // Valid
 	zassert_true(cbor_encode_Numbers(output,
 		sizeof(output), &numbers, &out_len), NULL);
 }
@@ -238,7 +238,7 @@ void test_strings(void)
 	numbers1._Numbers_fourtoten = 5;
 	numbers1._Numbers_twobytes = 0xFFFF;
 	numbers1._Numbers_onetofourbytes = 24;
-	numbers1._Numbers_minusfivektoplustwohunred = 0;
+	numbers1._Numbers_minusfivektoplustwohundred = 0;
 	numbers1._Numbers_negint = -2147483648;
 	numbers1._Numbers_posint = 0xFFFFFFFF;
 	numbers1._Numbers_integer = 9;

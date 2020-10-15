@@ -5,7 +5,7 @@ Numbers = [
 	fourtoten: 4..10,
 	twobytes: uint .size 2,
 	onetofourbytes: uint .size 1..4,
-	minusfivektoplustwohunred: -5000..200,
+	minusfivektoplustwohundred: -5000..200,
 	fourbillion: 0xEE6B2800,
 	negint: nint,
 	posint: uint,
