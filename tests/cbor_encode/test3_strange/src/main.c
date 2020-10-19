@@ -384,7 +384,8 @@ void test_levels(void)
 	Level2_t level1 = {._Level2__Level3_count = 2, ._Level2__Level3 = {
 		{._Level3__Level4_count = 4}, {._Level3__Level4_count = 4}
 	}};
-	_Static_assert(sizeof(exp_payload_levels1) <= sizeof(output));
+	_Static_assert(sizeof(exp_payload_levels1) <= sizeof(output),
+		"Payload is larger than output");
 	zassert_false(cbor_encode_Level1(output,
 		sizeof(exp_payload_levels1)-1, &level1, &out_len), NULL);
 	zassert_true(cbor_encode_Level1(output,
