@@ -1,0 +1,53 @@
+name: Run tests
+
+on: [pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    name: Run tests
+
+    steps:
+    - name: Checkout the code
+      uses: actions/checkout@v2
+
+    - name: Install packages
+      run: |
+        sudo apt-get install -y ninja-build gcc-multilib
+
+    - name: Install west and dependencies
+      run: |
+        pip3 install -U pip
+        pip3 install -U setuptools
+        pip3 install -U west
+        pip3 install -U regex
+        pip3 install pyelftools==0.26
+
+    - name: Clone zephyr
+      working-directory: tests
+      run: |
+        git clone --depth 1 https://github.com/zephyrproject-rtos/zephyr
+
+    - name: West init
+      working-directory: tests
+      run: |
+        export ZEPHYR_BASE=$(pwd)/zephyr
+        export ZEPHYR_TOOLCHAIN_VARIANT=host
+        export PATH="$HOME/.local/bin:$PATH"
+        west init -l zephyr
+
+    - name: Run cbor_decode tests
+      working-directory: tests
+      run: |
+        export ZEPHYR_BASE=$(pwd)/zephyr
+        export ZEPHYR_TOOLCHAIN_VARIANT=host
+        cd cbor_decode
+        ./test.sh
+
+    - name: Run cbor_encode tests
+      working-directory: tests
+      run: |
+        export ZEPHYR_BASE=$(pwd)/zephyr
+        export ZEPHYR_TOOLCHAIN_VARIANT=host
+        cd cbor_encode
+        ./test.sh
