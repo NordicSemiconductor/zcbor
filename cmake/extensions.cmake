@@ -13,10 +13,15 @@
 #
 # Add generated code to the project for decoding CBOR.
 #
+# REQUIRED arguments:
 # <cddl_file> is a file with CDDL data describing the expected CBOR data.
 #
 # <entry_types> is a list of the types defined in the CDDL file for which there
 #               should be an exposed decoding function.
+#
+# OPTIONAL arguments:
+# Specify either DECODE or ENCODE, to generate code for decoding or encoding,
+# respectively. If neither is provided, default to DECODE.
 #
 # Specify VERBOSE to print more information while parsing the CDDL, and add
 # printing to the generated code and decoding library.
@@ -43,6 +48,10 @@ function(target_cddl_source target cddl_file)
   endif()
 
   cmake_parse_arguments(CDDL "DECODE;ENCODE;VERBOSE;CANONICAL" "TYPE_FILE_NAME" "ENTRY_TYPES" ${ARGN})
+
+  if ((NOT CDDL_ENTRY_TYPES) OR (CDDL_ENCODE AND CDDL_DECODE))
+    message(FATAL_ERROR "Missing arguments or illegal combination of arguments.")
+  endif()
 
   if (CDDL_ENCODE)
     set(code "encode")
