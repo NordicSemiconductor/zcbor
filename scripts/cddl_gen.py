@@ -139,6 +139,8 @@ def xcode_args(res, *sargs):
 # Return the code that calls a encoder/decoder function with a given set of
 # arguments.
 def xcode_statement(func, *sargs, **kwargs):
+    if func == None:
+        return "1"
     return "(%s(%s))" % (func, xcode_args(*sargs, **kwargs))
 
 
@@ -826,9 +828,17 @@ class CodeGenerator(CddlParser):
     def choice_var_name(self):
         return self.var_name() + "_choice"
 
+    # Name of the enum entry for this element.
+    def enum_var_name(self, uint_val=False):
+        if not uint_val:
+            return self.var_name()
+        else:
+            return f"{self.var_name()} = {self.uint_val()}"
+
     # Declaration of the "choice" variable for this element.
     def choice_var(self):
-        var = self.enclose("enum", [val.var_name() + "," for val in self.value])
+        var = self.enclose("enum",
+            [val.enum_var_name(self.all_children_uint_disambiguated()) + "," for val in self.value])
         var[-1] += f" {self.choice_var_name()};"
         return var
 
@@ -1101,7 +1111,7 @@ class CodeGenerator(CddlParser):
     # Return the function name and arguments to call to encode/decode this element. Only used when this element DOESN'T
     # define its own encoder/decoder function (when it's a primitive type, for which functions already exist, or when the
     # function is defined elsewhere ("OTHER"))
-    def single_func_prim(self, access, union_uint=False):
+    def single_func_prim(self, access, union_uint=None):
         assert self.type not in ["LIST", "MAP"], "Must have wrapper function for list or map."
         assert not self.cbor_var_condition(), "CBOR BSTR must have separate handling."
 
@@ -1114,8 +1124,10 @@ class CodeGenerator(CddlParser):
                 func = f"{func_prefix}_decode"
             elif not union_uint:
                 func = f"{func_prefix}_expect"
-            else:
+            elif union_uint == "EXPECT":
                 func = f"{func_prefix}_expect_union"
+            elif union_uint == "DROP":
+                return (None, None)
         else:
             func = f"{func_prefix}_encode"
         if self.type in ["NIL", "ANY"]:
@@ -1156,7 +1168,7 @@ class CodeGenerator(CddlParser):
                 or (self.multi_xcode_condition() and (self.self_repeated_multi_var_condition() or self.range_check_condition()))
 
     # Return the function name and arguments to call to encode/decode this element.
-    def single_func(self, access=None, union_uint=False):
+    def single_func(self, access=None, union_uint=None):
         if self.single_func_impl_condition():
             return (self.xcode_func_name(), deref_if_not_null(access or self.var_access()))
         else:
@@ -1207,7 +1219,7 @@ class CodeGenerator(CddlParser):
         return max(ret_vals)
 
     # Make a string from the list returned by single_func_prim()
-    def xcode_single_func_prim(self, union_uint=False):
+    def xcode_single_func_prim(self, union_uint=None):
         return xcode_statement(*self.single_func_prim(self.val_access(), union_uint))
 
     # Recursively sum the total minimum and maximum element count for this
@@ -1255,29 +1267,45 @@ class CodeGenerator(CddlParser):
         return with_children if len(self.value) > 0 else without_children
 
     # Return the full code needed to encode/decode a "GROUP" element's children.
-    def xcode_group(self, union_uint=False):
+    def xcode_group(self, union_uint=None):
         assert self.type in ["GROUP"], "Expected GROUP type."
         return "(%s)" % (newl_ind + "&& ").join(
             [self.value[0].full_xcode(union_uint)]
                 +[child.full_xcode() for child in self.value[1:]])
 
-    def is_uint_disambiguated(self):
+    def uint_val(self):
         if self.key:
-            return self.key.is_uint_disambiguated()
+            return self.key.uint_val()
         elif self.type == "UINT" and self.is_unambiguous():
-            return True
+            return self.value
         elif self.type == "GROUP" and not self.count_var_condition():
-            return self.value[0].is_uint_disambiguated()
+            return self.value[0].uint_val()
         elif self.type == "OTHER" and not self.count_var_condition() and not self.single_func_impl_condition():
-            return my_types[self.value].is_uint_disambiguated()
-        return False
+            return my_types[self.value].uint_val()
+        return None
+
+    def is_uint_disambiguated(self):
+        return self.uint_val() != None
+
+    def all_children_uint_disambiguated(self):
+        values = set(child.uint_val() for child in self.value)
+        return (len(values) == len(self.value)) and None not in values
 
     # Return the full code needed to encode/decode a "UNION" element's children.
     def xcode_union(self):
         assert self.type in ["UNION"], "Expected UNION type."
         if mode == "decode":
+            if self.all_children_uint_disambiguated():
+                lines = []
+                lines.extend(["((%s == %s) && (%s))" %
+                            (self.choice_var_access(), child.var_name(),
+                                child.full_xcode(union_uint="DROP"))
+                            for child in self.value])
+                return "((%s) && (%s))" % (
+                    f"(uintx32_decode(p_state, &{self.choice_var_access()}))",
+                    f"{newl_ind}|| ".join(lines), )
             child_values = ["(%s && ((%s = %s) || 1))" %
-                            (child.full_xcode(child.is_uint_disambiguated()),
+                            (child.full_xcode(union_uint="EXPECT" if child.is_uint_disambiguated() else None),
                                 self.choice_var_access(), child.var_name())
                             for child in self.value]
 
@@ -1330,7 +1358,7 @@ class CodeGenerator(CddlParser):
 
     # Return the full code needed to encode/decode this element, including children,
     # key and cbor, excluding repetitions.
-    def repeated_xcode(self, union_uint=False):
+    def repeated_xcode(self, union_uint=None):
         range_checks = self.range_checks(self.val_access())
         xcoder = {
             "INT": self.xcode_single_func_prim,
@@ -1371,7 +1399,7 @@ class CodeGenerator(CddlParser):
 
     # Return the full code needed to encode/decode this element, including children,
     # key, cbor, and repetitions.
-    def full_xcode(self, union_uint=False):
+    def full_xcode(self, union_uint=None):
         if self.present_var_condition():
             func, *arguments = self.repeated_single_func()
             return (
