@@ -98,7 +98,7 @@ Pet = [
 Call the Python script
 
 ```sh
-python3 <ccdlgen base>/scripts/cddl_gen.py -i pet.cddl -d -t Pet
+python3 <ccdlgen base>/scripts/cddl_gen.py -i pet.cddl -d -t Pet --oc pet_decode.c --oh pet_decode.h
 ```
 
 Or add the following line to your CMake code:
