@@ -9,7 +9,7 @@ from regex import match, search, sub, findall, S, M
 from pprint import pformat, pprint
 from os import path, linesep, makedirs
 from collections import defaultdict
-from argparse import ArgumentParser, RawDescriptionHelpFormatter
+from argparse import ArgumentParser, RawDescriptionHelpFormatter, FileType
 from datetime import datetime
 from copy import copy
 
@@ -1537,13 +1537,13 @@ referencing types, since the C type cannot be self referencing.
 This script requires 'regex' for lookaround functionality not present in 're'.''',
         formatter_class=RawDescriptionHelpFormatter)
 
-    parser.add_argument("-i", "--input", required=True, type=str,
+    parser.add_argument("-i", "--input", required=True, type=FileType('r'),
                         help="Path to input CDDL file.")
-    parser.add_argument("--output-c", "--oc", required=True, type=str,
+    parser.add_argument("--output-c", "--oc", required=True, type=FileType('w'),
                         help="Path to output C file.")
-    parser.add_argument("--output-h", "--oh", required=True, type=str,
+    parser.add_argument("--output-h", "--oh", required=True, type=FileType('w'),
                         help="Path to output header file.")
-    parser.add_argument("--output-h-types", "--oht", required=False, type=str,
+    parser.add_argument("--output-h-types", "--oht", required=False, type=FileType('w'),
                         help="Path to output header file with typedefs (shared between decode and encode).")
     parser.add_argument(
         "-t",
@@ -1723,9 +1723,8 @@ def main():
 
     # Read CDDL file. my_types will become a dict {name:str => definition:str}
     # for all types in the CDDL file.
-    print ("Parsing " + args.input)
-    with open(args.input, 'r') as f:
-        my_types = get_types(strip_comments(f.read()))
+    print ("Parsing " + args.input.name)
+    my_types = get_types(strip_comments(args.input.read()))
 
     # Parse the definitions, replacing the each string with a
     # CodeGenerator instance.
@@ -1760,27 +1759,27 @@ def main():
     u_types = unique_types(sorted_types)
 
     # Create and populate the generated c and h file.
-    makedirs("./" + path.dirname(args.output_c), exist_ok=True)
-    with open(args.output_c, 'w') as f:
-        print ("Writing to " + args.output_c)
-        f.write(render_c_file(functions=u_funcs, header_file_name=path.basename(args.output_h),
-                              entry_types=entry_types, print_time=args.time_header))
-    makedirs("./" + path.dirname(args.output_h), exist_ok=True)
-    type_file_path = args.output_h_types or path.join(path.split(args.output_h)[0], f"types_{path.split(args.output_h)[1]}")
-    type_file_name = path.basename(type_file_path)
-    with open(args.output_h, 'w') as f:
-        print("Writing to " + args.output_h)
-        f.write(render_h_file(type_def_file=type_file_name,
-                              header_guard=path.basename(args.output_h).replace(".", "_").replace("-", "_").upper()
-                                           + "__",
-                              entry_types=entry_types, print_time=args.time_header))
+    makedirs("./" + path.dirname(args.output_c.name), exist_ok=True)
 
-    with open(type_file_path, 'w') as f:
-        print("Writing to " + type_file_name)
-        f.write(render_type_file(type_defs=u_types,
-                              header_guard=path.basename(type_file_name).replace(".", "_").replace("-", "_").upper()
-                                           + "__",
-                              print_time=args.time_header))
+    print ("Writing to " + args.output_c.name)
+    args.output_c.write(render_c_file(functions=u_funcs, header_file_name=path.basename(args.output_h.name),
+                            entry_types=entry_types, print_time=args.time_header))
+
+    makedirs("./" + path.dirname(args.output_h.name), exist_ok=True)
+    type_file = args.output_h_types or open(path.join(path.split(args.output_h.name)[0], f"types_{path.split(args.output_h.name)[1]}"), 'w')
+    type_file_name = path.basename(type_file.name)
+
+    print("Writing to " + args.output_h.name)
+    args.output_h.write(render_h_file(type_def_file=type_file_name,
+                            header_guard=path.basename(args.output_h.name).replace(".", "_").replace("-", "_").upper()
+                                        + "__",
+                            entry_types=entry_types, print_time=args.time_header))
+
+    print("Writing to " + type_file_name)
+    type_file.write(render_type_file(type_defs=u_types,
+                            header_guard=path.basename(type_file_name).replace(".", "_").replace("-", "_").upper()
+                                        + "__",
+                            print_time=args.time_header))
 
 
 if __name__ == "__main__":
