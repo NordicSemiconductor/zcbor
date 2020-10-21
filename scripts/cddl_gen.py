@@ -20,6 +20,9 @@ mode = ""
 indentation = "\t"
 newl_ind = "\n" + indentation
 
+# The default maximum number of repeated elements.
+default_maxq = None
+
 # Size of "additional" field if num is encoded as int
 def sizeof(num):
     if num <= 23:
@@ -164,9 +167,6 @@ def ternary_if_chain(access, names, xcode_strings):
 #  - For "OTHER" types, one instance points to another type definition.
 #  - For "GROUP" and "UNION" types, there is no separate data item for the instance.
 class CddlParser:
-
-    # The default maximum number of repeated elements.
-    DEFAULT_MAXQ = 3
 
     def __init__(self):
         self.id_prefix = "temp_" + str(counter())
@@ -350,7 +350,7 @@ class CddlParser:
             if match_obj:
                 (self.minQ, self.maxQ) = handler(match_obj)
                 if self.maxQ is None:
-                    self.maxQ = self.DEFAULT_MAXQ
+                    self.maxQ = default_maxq
                 return
         raise ValueError("invalid quantifier: %s" % quantifier)
 
@@ -402,7 +402,7 @@ class CddlParser:
                 (".cborseq" if cborseq else ".cbor",))
         self.cbor = cbor
         if cborseq:
-            self.cbor.maxQ = self.DEFAULT_MAXQ
+            self.cbor.maxQ = default_maxq
         self.cbor.set_base_name("cbor")
 
     # Set the self.key of this element. For use during CDDL parsing.
@@ -1614,6 +1614,9 @@ This script requires 'regex' for lookaround functionality not present in 're'.''
                         default = False, help="Generate decoding code.")
     parser.add_argument("-e", "--encode", required = False, action="store_true",
                         default = False, help="Generate encoding code.")
+    parser.add_argument("--default-maxq", required = False, type=int,
+                        default = 3, help="""Default maximum number of repetitions when no maximum
+is specified. This is needed to construct complete C types.""")
 
     return parser.parse_args()
 
@@ -1679,8 +1682,10 @@ def render_entry_function(xcoder):
 
 # Render the entire generated C file contents.
 def render_c_file(functions, header_file_name, entry_types, print_time):
-    return f"""/* Generated with cddl_gen.py (https://github.com/oyvindronningstad/cddl_gen){'''
+    return f"""/*
+ * Generated with cddl_gen.py (https://github.com/oyvindronningstad/cddl_gen){'''
  * at: ''' + datetime.now().strftime('%Y-%m-%d %H:%M:%S') if print_time else ''}
+ * Generated with a default_maxq of {default_maxq}
  */
 
 #include <stdint.h>
@@ -1689,6 +1694,10 @@ def render_c_file(functions, header_file_name, entry_types, print_time):
 #include <string.h>
 #include "cbor_{mode}.h"
 #include "{header_file_name}"
+
+#if DEFAULT_MAXQ != {default_maxq}
+#error "The type file was generated with a different default_maxq than this file"
+#endif
 
 {linesep.join([render_function(xcoder) for xcoder in functions])}
 
@@ -1699,8 +1708,10 @@ def render_c_file(functions, header_file_name, entry_types, print_time):
 # Render the entire generated header file contents.
 def render_h_file(type_def_file, header_guard, entry_types, print_time):
     return \
-        f"""/* Generated with cddl_gen.py (https://github.com/oyvindronningstad/cddl_gen){'''
+        f"""/*
+ * Generated with cddl_gen.py (https://github.com/oyvindronningstad/cddl_gen){'''
  * at: ''' + datetime.now().strftime('%Y-%m-%d %H:%M:%S') if print_time else ''}
+ * Generated with a default_maxq of {default_maxq}
  */
 
 #ifndef {header_guard}
@@ -1713,6 +1724,9 @@ def render_h_file(type_def_file, header_guard, entry_types, print_time):
 #include "cbor_{mode}.h"
 #include "{type_def_file}"
 
+#if DEFAULT_MAXQ != {default_maxq}
+#error "The type file was generated with a different default_maxq than this file"
+#endif
 
 {(linesep+linesep).join([f"{xcoder.public_xcode_func_sig()};" for xcoder in entry_types])}
 
@@ -1722,8 +1736,10 @@ def render_h_file(type_def_file, header_guard, entry_types, print_time):
 
 def render_type_file(type_defs, header_guard, print_time):
     return \
-        f"""/* Generated with cddl_gen.py (https://github.com/oyvindronningstad/cddl_gen){'''
+        f"""/*
+ * Generated with cddl_gen.py (https://github.com/oyvindronningstad/cddl_gen){'''
  * at: ''' + datetime.now().strftime('%Y-%m-%d %H:%M:%S') if print_time else ''}
+ * Generated with a default_maxq of {default_maxq}
  */
 
 #ifndef {header_guard}
@@ -1735,6 +1751,7 @@ def render_type_file(type_defs, header_guard, print_time):
 #include <string.h>
 #include "cbor_{mode}.h"
 
+#define DEFAULT_MAXQ {default_maxq}
 
 {(linesep+linesep).join([f"typedef {linesep.join(typedef[0])} {typedef[1]};" for typedef in type_defs])}
 
@@ -1744,13 +1761,14 @@ def render_type_file(type_defs, header_guard, print_time):
 
 
 def main():
-    global my_types, entry_type_names, verbose_flag, mode
+    global my_types, entry_type_names, verbose_flag, mode, default_maxq
 
     # Parse command line arguments.
     args = parse_args()
     entry_type_names = args.entry_types
     verbose_flag = args.verbose
     mode = "decode" if args.decode else "encode"
+    default_maxq = args.default_maxq
 
     if args.decode == args.encode:
         args.error("Please specify exactly one of --decode or --encode.")
