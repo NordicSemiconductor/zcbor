@@ -243,10 +243,16 @@ void test_union(void)
 	const uint8_t payload_union4[] = {
 		0x65, 0x68, 0x65, 0x6c, 0x6c, 0x6f // "hello"
 	};
-	const uint8_t payload_union6[] = {0x03, 0x23, 0x03, 0x23, 0x03, 0x23};
+	const uint8_t payload_union6[] = {
+		0x03, 0x23, 0x03, 0x23, 0x03, 0x23,
+		0x03, 0x23, 0x03, 0x23, 0x03, 0x23
+	};
 	const uint8_t payload_union7_long[] = {0x03, 0x23, 0x03, 0x04};
 	const uint8_t payload_union8_long[] = {0x03, 0x23, 0x03};
 	const uint8_t payload_union9_long[] = {0x03, 0x04, 0x03, 0x04};
+	const uint8_t payload_union10_inv[] = {
+		0x03, 0x23, 0x03, 0x23, 0x03, 0x23, 0x03, 0x23,
+		0x03, 0x23, 0x03, 0x23, 0x03, 0x23}; /* Too many */
 	size_t decode_len;
 
 	_Union_t _union;
@@ -268,9 +274,10 @@ void test_union(void)
 	zassert_equal(_Union_hello_tstr, _union._Union_choice, NULL);
 
 	zassert_true(cbor_decode_Union(payload_union6, sizeof(payload_union6),
-				&_union, NULL), NULL);
+				&_union, &decode_len), NULL);
 	zassert_equal(_Union__MultiGroup, _union._Union_choice, NULL);
-	zassert_equal(3, _union._Union__MultiGroup._MultiGroup_count, NULL);
+	zassert_equal(6, _union._Union__MultiGroup._MultiGroup_count, NULL);
+	zassert_equal(12, decode_len, NULL);
 
 	zassert_true(cbor_decode_Union(payload_union7_long, sizeof(payload_union7_long),
 				&_union, &decode_len), NULL);
@@ -281,6 +288,11 @@ void test_union(void)
 	zassert_true(cbor_decode_Union(payload_union9_long, sizeof(payload_union9_long),
 				&_union, &decode_len), NULL);
 	zassert_equal(2, decode_len, NULL);
+	
+	zassert_true(cbor_decode_Union(payload_union10_inv, sizeof(payload_union10_inv),
+				&_union, &decode_len), NULL);
+	zassert_equal(6, _union._Union__MultiGroup._MultiGroup_count, NULL);
+	zassert_equal(12, decode_len, NULL);
 }
 
 void test_levels(void)

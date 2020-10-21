@@ -323,15 +323,19 @@ void test_union(void)
 	const uint8_t exp_payload_union4[] = {
 		0x65, 0x68, 0x65, 0x6c, 0x6c, 0x6f // "hello"
 	};
-	const uint8_t exp_payload_union5[] = {0x03, 0x23, 0x03, 0x23, 0x03, 0x23};
+	const uint8_t exp_payload_union5[] = {
+		0x03, 0x23, 0x03, 0x23, 0x03, 0x23,
+		0x03, 0x23, 0x03, 0x23, 0x03, 0x23
+	};
 
 	_Union_t _union1 = {._Union_choice = _Union__Group};
 	_Union_t _union2 = {._Union_choice = _Union__MultiGroup, ._Union__MultiGroup._MultiGroup_count = 1};
 	_Union_t _union3 = {._Union_choice = _Union__uint3};
 	_Union_t _union4 = {._Union_choice = _Union_hello_tstr};
-	_Union_t _union5 = {._Union_choice = _Union__MultiGroup, ._Union__MultiGroup._MultiGroup_count = 3};
+	_Union_t _union5 = {._Union_choice = _Union__MultiGroup, ._Union__MultiGroup._MultiGroup_count = 6};
+	_Union_t _union6_inv = {._Union_choice = _Union__MultiGroup, ._Union__MultiGroup._MultiGroup_count = 7};
 
-	uint8_t output[10];
+	uint8_t output[15];
 	size_t out_len;
 
 	zassert_true(cbor_encode_Union(output, sizeof(output),
@@ -358,6 +362,9 @@ void test_union(void)
 				&_union5, &out_len), NULL);
 	zassert_equal(sizeof(exp_payload_union5), out_len, NULL);
 	zassert_mem_equal(exp_payload_union5, output, sizeof(exp_payload_union5), NULL);
+
+	zassert_false(cbor_encode_Union(output, sizeof(output),
+				&_union6_inv, &out_len), NULL);
 }
 
 void test_levels(void)

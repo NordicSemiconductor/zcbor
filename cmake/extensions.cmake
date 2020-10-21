@@ -10,7 +10,8 @@
 #               H_FILE <h_file_path>
 #               DECODE|ENCODE
 #               [VERBOSE]
-#               [TYPE_FILE <type_file_path>])
+#               [TYPE_FILE <type_file_path>]
+#               [DEFAULT_MAXQ <default_maxq>])
 #
 # Generate code with cddl_gen.
 #
@@ -33,6 +34,9 @@
 #
 # If provided, <type_file_path> overrides the default typedef file path.
 #
+# <default_maxq> is the maximum number of elements when no maximum is given.
+# This is used when constructing the C types from types containing '+' and '*'.
+#
 # The result of the function is that code is generated at build time
 # using a script, generating a c file and an h file (and a typedef file) with
 # names derived from the name of the <cddl_file>.
@@ -49,7 +53,7 @@ function(generate_cddl cddl_file)
 
   cmake_parse_arguments(CDDL
     "DECODE;ENCODE;VERBOSE"
-    "C_FILE;H_FILE;TYPE_FILE"
+    "C_FILE;H_FILE;TYPE_FILE;DEFAULT_MAXQ"
     "ENTRY_TYPES"
     ${ARGN}
     )
@@ -76,6 +80,10 @@ function(generate_cddl cddl_file)
     set(verbose_arg -v)
   endif()
 
+  if (CDDL_DEFAULT_MAXQ)
+    set(default_maxq_arg --default-maxq ${CDDL_DEFAULT_MAXQ})
+  endif()
+
   execute_process(
     #OUTPUT
     #${CDDL_C_FILE}
@@ -90,6 +98,7 @@ function(generate_cddl cddl_file)
     ${type_file_arg}
     -t ${CDDL_ENTRY_TYPES}
     ${code_arg}
+    ${default_maxq_arg}
     ${verbose_arg}
 
     #DEPENDS
@@ -106,7 +115,8 @@ endfunction()
 #                    ENTRY_TYPES <entry_types>
 #                    DECODE|ENCODE
 #                    [VERBOSE] [CANONICAL]
-#                    [TYPE_FILE_NAME <filename>])
+#                    [TYPE_FILE_NAME <filename>]
+#                    [DEFAULT_MAXQ <default_maxq>])
 #
 # Add generated code to the project for decoding CBOR.
 #
@@ -129,6 +139,8 @@ endfunction()
 # If provided, TYPE_FILE_NAME can be used to specify what the file containing
 # typedefs should be called.
 #
+# <default_maxq> is passed to the generate_cddl function.
+#
 # The result of the function is that a library is added to the project which
 # contains the generated decoding code. The code is generated at build time
 # using a script, and generates a c file and an h file (and typedef file) with
@@ -142,7 +154,7 @@ function(target_cddl_source target cddl_file)
 
   cmake_parse_arguments(CDDL
     "DECODE;ENCODE;VERBOSE;CANONICAL"
-    "TYPE_FILE_NAME"
+    "TYPE_FILE_NAME;DEFAULT_MAXQ"
     "ENTRY_TYPES"
     ${ARGN}
     )
@@ -175,6 +187,7 @@ function(target_cddl_source target cddl_file)
   generate_cddl(${cddl_file} ${CODE} ${CDDL_VERBOSE} ${CDDL_CANONICAL}
     ENTRY_TYPES ${CDDL_ENTRY_TYPES}
     C_FILE ${c_file} H_FILE ${h_file} TYPE_FILE ${type_file_path}
+    DEFAULT_MAXQ ${CDDL_DEFAULT_MAXQ}
     )
 
   # Add to provided target
