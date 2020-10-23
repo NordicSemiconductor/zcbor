@@ -1111,7 +1111,7 @@ class CodeGenerator(CddlParser):
     # Return the function name and arguments to call to encode/decode this element. Only used when this element DOESN'T
     # define its own encoder/decoder function (when it's a primitive type, for which functions already exist, or when the
     # function is defined elsewhere ("OTHER"))
-    def single_func_prim(self, access, union_uint=None):
+    def single_func_prim(self, access, union_uint=None, ptr_result=False):
         assert self.type not in ["LIST", "MAP"], "Must have wrapper function for list or map."
         assert not self.cbor_var_condition(), "CBOR BSTR must have separate handling."
 
@@ -1139,7 +1139,7 @@ class CodeGenerator(CddlParser):
         elif self.type == "BOOL":
             arg = min_bool_or_null(self.value)
         elif self.type in ["UINT", "INT", "NINT", "FLOAT"] and mode == "decode":
-            arg = str(self.value)
+            arg = ("(void *) " if ptr_result else "") + str(self.value)
         else:
             arg = tmp_val_or_null(self.value)
 
@@ -1176,11 +1176,11 @@ class CodeGenerator(CddlParser):
 
     # Return the function name and arguments to call to encode/decode the repeated
     # part of this element.
-    def repeated_single_func(self):
+    def repeated_single_func(self, ptr_result = False):
         if self.repeated_single_func_impl_condition():
             return (self.repeated_xcode_func_name(), deref_if_not_null(self.repeated_val_access()))
         else:
-            return self.single_func_prim(self.repeated_val_access())
+            return self.single_func_prim(self.repeated_val_access(), ptr_result = ptr_result)
 
     def has_backup(self):
         return (self.cbor_var_condition() or self.type in ["LIST", "MAP", "UNION"])
@@ -1401,14 +1401,14 @@ class CodeGenerator(CddlParser):
     # key, cbor, and repetitions.
     def full_xcode(self, union_uint=None):
         if self.present_var_condition():
-            func, *arguments = self.repeated_single_func()
+            func, *arguments = self.repeated_single_func(ptr_result = True)
             return (
                 f"present_{mode}(&(%s), (void*)%s, %s)" %
                 (self.present_var_access(),
                  func,
                  xcode_args(*arguments),))
         elif self.count_var_condition():
-            func, *arguments = self.repeated_single_func()
+            func, *arguments = self.repeated_single_func(ptr_result = True)
             return (
                 f"multi_{mode}(%s, %s, &%s, (void*)%s, %s, %s)" %
                 (self.minQ,
