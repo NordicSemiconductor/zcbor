@@ -41,14 +41,18 @@ static void print_compare_strings(const uint8_t *str1, const uint8_t *str2, size
 
 static void print_compare_strings_diff(const uint8_t *str1, const uint8_t *str2, size_t size)
 {
+	bool printed = false;
 	for (uint32_t i = 0; i <= size / 16; i++) {
 		if (memcmp(&str1[i*16], &str2[i*16], min(16, (size - i*16)) != 0)) {
 			printk("line %d (char %d)\r\n", i, i*16);
 			print_compare_lines(&str1[i*16], &str2[i*16],
 				min(16, (size - i*16)));
+			printed = true;
 		}
 	}
-	printk("\r\n");
+	if (printed) {
+		printk("\r\n");
+	}
 }
 
 #endif /* CBOR_DEBUG_H__ */
