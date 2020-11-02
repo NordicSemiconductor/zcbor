@@ -12,7 +12,7 @@
 #               [VERBOSE]
 #               [TYPE_FILE <type_file_path>])
 #
-# Add generated code to the project for decoding CBOR.
+# Generate code with cddl_gen.
 #
 # REQUIRED arguments:
 # <cddl_file> is a file with CDDL data describing the expected CBOR data.
@@ -66,10 +66,21 @@ function(generate_cddl cddl_file)
     message(FATAL_ERROR "Please specify exactly one of DECODE or ENCODE")
   endif()
 
-  add_custom_command(
-    OUTPUT
-    ${CDDL_C_FILE}
-    ${CDDL_H_FILE}
+  if (CDDL_ENCODE)
+    set(code_arg -e)
+  else ()
+    set(code_arg -d)
+  endif()
+
+  if (CDDL_VERBOSE)
+    set(verbose_arg -v)
+  endif()
+
+  execute_process(
+    #OUTPUT
+    #${CDDL_C_FILE}
+    #${CDDL_H_FILE}
+
     COMMAND
     ${PYTHON_EXECUTABLE}
     ${CDDL_GEN_BASE}/scripts/cddl_gen.py
@@ -78,12 +89,12 @@ function(generate_cddl cddl_file)
     --oh ${CDDL_H_FILE}
     ${type_file_arg}
     -t ${CDDL_ENTRY_TYPES}
-    $<$<BOOL:${CDDL_DECODE}>:-d>
-    $<$<BOOL:${CDDL_ENCODE}>:-e>
-    $<$<BOOL:${CDDL_VERBOSE}>:-v>
-    DEPENDS
-    ${cddl_path}
-    ${CDDL_GEN_BASE}/scripts/cddl_gen.py
+    ${code_arg}
+    ${verbose_arg}
+
+    #DEPENDS
+    #${cddl_path}
+    #${CDDL_GEN_BASE}/scripts/cddl_gen.py
   )
 endfunction()
 
