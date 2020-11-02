@@ -33,7 +33,7 @@ bool uintx32_encode(cbor_state_t * p_state, const uint32_t *p_result);
  * @retval true   Header encoded correctly
  * @retval false  Header encoded incorrectly, or backup failed.
  */
-bool bstrx_cbor_start_encode(cbor_state_t *p_state);
+bool bstrx_cbor_start_encode(cbor_state_t *p_state, const cbor_string_type_t *p_result);
 
 /** Finalize encoding a CBOR-encoded BSTR.
  *

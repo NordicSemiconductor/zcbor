@@ -114,7 +114,7 @@ bool uintx32_expect_union(cbor_state_t * p_state, uint32_t result);
  * @retval true   Header decoded correctly
  * @retval false  Header decoded incorrectly, or backup failed.
  */
-bool bstrx_cbor_start_decode(cbor_state_t *p_state);
+bool bstrx_cbor_start_decode(cbor_state_t *p_state, cbor_string_type_t *p_result);
 
 /** Finalize decoding a CBOR-encoded bstr.
  *
