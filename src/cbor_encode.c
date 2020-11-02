@@ -178,7 +178,7 @@ static size_t remaining_str_len(cbor_state_t *p_state)
 }
 
 
-bool bstrx_cbor_start_encode(cbor_state_t *p_state)
+bool bstrx_cbor_start_encode(cbor_state_t *p_state, const cbor_string_type_t *p_result)
 {
 	if (!new_backup(p_state, 0)) {
 		FAIL();

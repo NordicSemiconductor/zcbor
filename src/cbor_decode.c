@@ -234,11 +234,9 @@ static bool strx_start_decode(cbor_state_t * p_state,
 	return true;
 }
 
-bool bstrx_cbor_start_decode(cbor_state_t *p_state)
+bool bstrx_cbor_start_decode(cbor_state_t *p_state, cbor_string_type_t *p_result)
 {
-	cbor_string_type_t value;
-
-	if(!strx_start_decode(p_state, &value, CBOR_MAJOR_TYPE_BSTR)) {
+	if(!strx_start_decode(p_state, p_result, CBOR_MAJOR_TYPE_BSTR)) {
 		FAIL();
 	}
 
@@ -246,7 +244,7 @@ bool bstrx_cbor_start_decode(cbor_state_t *p_state)
 		FAIL();
 	}
 
-	p_state->p_payload_end = value.value + value.len;
+	p_state->p_payload_end = p_result->value + p_result->len;
 	return true;
 }
 

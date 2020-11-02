@@ -1113,7 +1113,6 @@ class CodeGenerator(CddlParser):
     # function is defined elsewhere ("OTHER"))
     def single_func_prim(self, access, union_uint=None, ptr_result=False):
         assert self.type not in ["LIST", "MAP"], "Must have wrapper function for list or map."
-        assert not self.cbor_var_condition(), "CBOR BSTR must have separate handling."
 
         if self.type == "OTHER":
             return my_types[self.value].single_func(access, union_uint)
@@ -1325,9 +1324,13 @@ class CodeGenerator(CddlParser):
 
     def xcode_bstr(self):
         if self.cbor_var_condition():
-            return "(%s)" % ((newl_ind + "&& ").join(
-                   [f"(int_res = (bstrx_cbor_start_{mode}(p_state)",
+            xcode_cbor = "(%s)" % ((newl_ind + "&& ").join(
+                   [f"(int_res = (bstrx_cbor_start_{mode}(p_state, &{self.val_access()})",
                     f"{self.cbor.full_xcode()})), bstrx_cbor_end_{mode}(p_state), int_res"]))
+            if mode == "decode":
+                return xcode_cbor
+            else:
+                return f"({self.val_access()}.value ? ({self.xcode_single_func_prim()}) : ({xcode_cbor}))"
         return self.xcode_single_func_prim()
 
     def xcode_tags(self):
