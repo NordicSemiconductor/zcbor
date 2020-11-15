@@ -88,7 +88,7 @@
  *                element count was exhausted, or the value was larger than can
  *                fit in the result variable.
  */
-bool intx32_decode(cbor_state_t * p_state, int32_t *p_result);
+bool intx32_decode(cbor_state_t *p_state, int32_t *p_result);
 
 /** Expect a PINT/NINT with a certain value. Uses intx32_decode internally.
  *
@@ -99,12 +99,12 @@ bool intx32_decode(cbor_state_t * p_state, int32_t *p_result);
  * @retval false  If intx32_decode failed or the result doesn't have the
  *                expected value.
  */
-bool intx32_expect(cbor_state_t * p_state, int32_t result);
+bool intx32_expect(cbor_state_t *p_state, int32_t result);
 
 /** Decode a PINT. */
-bool uintx32_decode(cbor_state_t * p_state, uint32_t *p_result);
-bool uintx32_expect(cbor_state_t * p_state, uint32_t result);
-bool uintx32_expect_union(cbor_state_t * p_state, uint32_t result);
+bool uintx32_decode(cbor_state_t *p_state, uint32_t *p_result);
+bool uintx32_expect(cbor_state_t *p_state, uint32_t result);
+bool uintx32_expect_union(cbor_state_t *p_state, uint32_t result);
 
 /** Decode and consume a BSTR header.
  *
@@ -123,12 +123,12 @@ bool bstrx_cbor_start_decode(cbor_state_t *p_state, cbor_string_type_t *p_result
 bool bstrx_cbor_end_decode(cbor_state_t *p_state);
 
 /** Decode and consume a BSTR */
-bool bstrx_decode(cbor_state_t * p_state, cbor_string_type_t *p_result);
-bool bstrx_expect(cbor_state_t * p_state, cbor_string_type_t *p_result);
+bool bstrx_decode(cbor_state_t *p_state, cbor_string_type_t *p_result);
+bool bstrx_expect(cbor_state_t *p_state, cbor_string_type_t *p_result);
 
 /** Decode and consume a TSTR */
-bool tstrx_decode(cbor_state_t * p_state, cbor_string_type_t *p_result);
-bool tstrx_expect(cbor_state_t * p_state, cbor_string_type_t *p_result);
+bool tstrx_decode(cbor_state_t *p_state, cbor_string_type_t *p_result);
+bool tstrx_expect(cbor_state_t *p_state, cbor_string_type_t *p_result);
 
 /** Decode and consume a LIST header.
  *
@@ -138,10 +138,10 @@ bool tstrx_expect(cbor_state_t * p_state, cbor_string_type_t *p_result);
  * @retval true   Header decoded correctly
  * @retval false  Header decoded incorrectly, or backup failed.
  */
-bool list_start_decode(cbor_state_t * p_state);
+bool list_start_decode(cbor_state_t *p_state);
 
 /** Decode and consume a MAP header. */
-bool map_start_decode(cbor_state_t * p_state);
+bool map_start_decode(cbor_state_t *p_state);
 
 /** Finalize decoding a LIST
  *
@@ -151,28 +151,28 @@ bool map_start_decode(cbor_state_t * p_state);
  * @retval true   Everything ok.
  * @retval false  Element count not correct.
  */
-bool list_end_decode(cbor_state_t * p_state);
+bool list_end_decode(cbor_state_t *p_state);
 
 /** Finalize decoding a MAP */
-bool map_end_decode(cbor_state_t * p_state);
+bool map_end_decode(cbor_state_t *p_state);
 
 /** Decode a "nil" primitive value. */
-bool nilx_expect(cbor_state_t * p_state, void *p_result);
+bool nilx_expect(cbor_state_t *p_state, void *p_result);
 
 /** Decode a boolean primitive value. */
-bool boolx_decode(cbor_state_t * p_state, bool *p_result);
-bool boolx_expect(cbor_state_t * p_state, bool *p_result);
+bool boolx_decode(cbor_state_t *p_state, bool *p_result);
+bool boolx_expect(cbor_state_t *p_state, bool *p_result);
 
 /** Decode a float */
-bool float_decode(cbor_state_t * p_state, double *p_result);
-bool float_expect(cbor_state_t * p_state, double *p_result);
+bool float_decode(cbor_state_t *p_state, double *p_result);
+bool float_expect(cbor_state_t *p_state, double *p_result);
 
 /** Skip a single element, regardless of type and value. */
-bool any_decode(cbor_state_t * p_state, void *p_result);
+bool any_decode(cbor_state_t *p_state, void *p_result);
 
 /** Decode a tag. */
-bool tag_decode(cbor_state_t * p_state, uint32_t *p_result);
-bool tag_expect(cbor_state_t * p_state, uint32_t result);
+bool tag_decode(cbor_state_t *p_state, uint32_t *p_result);
+bool tag_expect(cbor_state_t *p_state, uint32_t result);
 
 /** Decode 0 or more elements with the same type and constraints.
  *
@@ -221,12 +221,12 @@ bool tag_expect(cbor_state_t * p_state, uint32_t result);
  *                values.
  */
 bool multi_decode(size_t min_decode, size_t max_decode, size_t *p_num_decode,
-		cbor_decoder_t decoder, cbor_state_t * p_state, void *p_result,
+		cbor_decoder_t decoder, cbor_state_t *p_state, void *p_result,
 		size_t result_len);
 
 bool present_decode(size_t *p_present,
 		cbor_decoder_t decoder,
-		cbor_state_t * p_state,
+		cbor_state_t *p_state,
 		void *p_result);
 
 #endif /* CBOR_DECODE_H__ */

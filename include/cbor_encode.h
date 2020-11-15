@@ -23,7 +23,7 @@
 bool intx32_encode(cbor_state_t *p_state, const int32_t *p_input);
 
 /** Encode a PINT into a uint32_t. */
-bool uintx32_encode(cbor_state_t * p_state, const uint32_t *p_result);
+bool uintx32_encode(cbor_state_t *p_state, const uint32_t *p_result);
 
 /** Encode a BSTR header.
  *
@@ -42,41 +42,41 @@ bool bstrx_cbor_start_encode(cbor_state_t *p_state, const cbor_string_type_t *p_
 bool bstrx_cbor_end_encode(cbor_state_t *p_state);
 
 /** Encode a BSTR, */
-bool bstrx_encode(cbor_state_t * p_state, const cbor_string_type_t *p_result);
+bool bstrx_encode(cbor_state_t *p_state, const cbor_string_type_t *p_result);
 
 /** Encode a TSTR. */
-bool tstrx_encode(cbor_state_t * p_state, const cbor_string_type_t *p_result);
+bool tstrx_encode(cbor_state_t *p_state, const cbor_string_type_t *p_result);
 
 /** Encode a LIST header.
  *
  * The contents of the list can be decoded via subsequent function calls.
  * A state backup is created to keep track of the element count.
  */
-bool list_start_encode(cbor_state_t * p_state, size_t max_num);
+bool list_start_encode(cbor_state_t *p_state, size_t max_num);
 
 /** Encode a MAP header. */
-bool map_start_encode(cbor_state_t * p_state, size_t max_num);
+bool map_start_encode(cbor_state_t *p_state, size_t max_num);
 
 /** Encode end of a LIST. Do some checks and deallocate backup. */
-bool list_end_encode(cbor_state_t * p_state, size_t max_num);
+bool list_end_encode(cbor_state_t *p_state, size_t max_num);
 
 /** Encode end of a MAP. Do some checks and deallocate backup. */
-bool map_end_encode(cbor_state_t * p_state, size_t max_num);
+bool map_end_encode(cbor_state_t *p_state, size_t max_num);
 
 /** Encode a "nil" primitive value. p_result should be NULL. */
-bool nilx_encode(cbor_state_t * p_state, const void *p_result);
+bool nilx_encode(cbor_state_t *p_state, const void *p_result);
 
 /** Encode a boolean primitive value. */
-bool boolx_encode(cbor_state_t * p_state, const bool *p_result);
+bool boolx_encode(cbor_state_t *p_state, const bool *p_result);
 
 /** Encode a float */
-bool float_encode(cbor_state_t * p_state, double *p_result);
+bool float_encode(cbor_state_t *p_state, double *p_result);
 
 /** Dummy encode "any": Encode a "nil". p_input should be NULL. */
 bool any_encode(cbor_state_t *p_state, void *p_input);
 
 /** Encode a tag. */
-bool tag_encode(cbor_state_t * p_state, uint32_t tag);
+bool tag_encode(cbor_state_t *p_state, uint32_t tag);
 
 /** Encode 0 or more elements with the same type and constraints.
  *
@@ -124,12 +124,12 @@ bool tag_encode(cbor_state_t * p_state, uint32_t tag);
  *                values.
  */
 bool multi_encode(size_t min_encode, size_t max_encode, const size_t *p_num_encode,
-		cbor_encoder_t encoder, cbor_state_t * p_state, const void *p_input,
+		cbor_encoder_t encoder, cbor_state_t *p_state, const void *p_input,
 		size_t result_len);
 
 bool present_encode(const size_t *p_present,
 		cbor_encoder_t encoder,
-		cbor_state_t * p_state,
+		cbor_state_t *p_state,
 		const void *p_input);
 
 #endif /* CBOR_ENCODE_H__ */

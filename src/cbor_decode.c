@@ -60,8 +60,8 @@ do {\
  *          CBOR values are always big-endian, so this function converts from
  *          big to little-endian if necessary (@ref CONFIG_BIG_ENDIAN).
  */
-static bool value_extract(cbor_state_t * p_state,
-		void * const p_result, size_t result_len)
+static bool value_extract(cbor_state_t *p_state,
+		void *const p_result, size_t result_len)
 {
 	cbor_trace();
 	cbor_assert(result_len != 0, "0-length result not supported.\n");
@@ -105,7 +105,7 @@ static bool value_extract(cbor_state_t * p_state,
 }
 
 
-static bool int32_decode(cbor_state_t * p_state, int32_t *p_result)
+static bool int32_decode(cbor_state_t *p_state, int32_t *p_result)
 {
 	uint8_t major_type = MAJOR_TYPE(*p_state->p_payload);
 	uint32_t uint_result;
@@ -134,7 +134,7 @@ static bool int32_decode(cbor_state_t * p_state, int32_t *p_result)
 }
 
 
-bool intx32_decode(cbor_state_t * p_state, int32_t *p_result)
+bool intx32_decode(cbor_state_t *p_state, int32_t *p_result)
 {
 	uint8_t major_type = MAJOR_TYPE(*p_state->p_payload);
 
@@ -144,13 +144,13 @@ bool intx32_decode(cbor_state_t * p_state, int32_t *p_result)
 		FAIL();
 	}
 
-	if (!int32_decode(p_state, p_result)){
+	if (!int32_decode(p_state, p_result)) {
 		FAIL();
 	}
 	return true;
 }
 
-bool intx32_expect(cbor_state_t * p_state, int32_t result)
+bool intx32_expect(cbor_state_t *p_state, int32_t result)
 {
 	int32_t value;
 	if (!intx32_decode(p_state, &value)) {
@@ -164,7 +164,7 @@ bool intx32_expect(cbor_state_t * p_state, int32_t result)
 }
 
 
-static bool uint32_decode(cbor_state_t * p_state, uint32_t *p_result)
+static bool uint32_decode(cbor_state_t *p_state, uint32_t *p_result)
 {
 	if (!value_extract(p_state, p_result, 4)) {
 		FAIL();
@@ -174,7 +174,7 @@ static bool uint32_decode(cbor_state_t * p_state, uint32_t *p_result)
 }
 
 
-bool uintx32_decode(cbor_state_t * p_state, uint32_t *p_result)
+bool uintx32_decode(cbor_state_t *p_state, uint32_t *p_result)
 {
 	uint8_t major_type = MAJOR_TYPE(*p_state->p_payload);
 
@@ -182,13 +182,13 @@ bool uintx32_decode(cbor_state_t * p_state, uint32_t *p_result)
 		/* Value to be read doesn't have the right type. */
 		FAIL();
 	}
-	if (!uint32_decode(p_state, p_result)){
+	if (!uint32_decode(p_state, p_result)) {
 		FAIL();
 	}
 	return true;
 }
 
-bool uintx32_expect(cbor_state_t * p_state, uint32_t result)
+bool uintx32_expect(cbor_state_t *p_state, uint32_t result)
 {
 	uint32_t value;
 	if (!uintx32_decode(p_state, &value)) {
@@ -201,14 +201,14 @@ bool uintx32_expect(cbor_state_t * p_state, uint32_t result)
 	return true;
 }
 
-bool uintx32_expect_union(cbor_state_t * p_state, uint32_t result)
+bool uintx32_expect_union(cbor_state_t *p_state, uint32_t result)
 {
 	union_elem_code(p_state);
 	return uintx32_expect(p_state, result);
 }
 
 
-static bool strx_start_decode(cbor_state_t * p_state,
+static bool strx_start_decode(cbor_state_t *p_state,
 		cbor_string_type_t *p_result, cbor_major_type_t exp_major_type)
 {
 	uint8_t major_type = MAJOR_TYPE(*p_state->p_payload);
@@ -263,7 +263,7 @@ bool bstrx_cbor_end_decode(cbor_state_t *p_state)
 }
 
 
-bool strx_decode(cbor_state_t * p_state, cbor_string_type_t *p_result,
+bool strx_decode(cbor_state_t *p_state, cbor_string_type_t *p_result,
 		cbor_major_type_t exp_major_type)
 {
 	if (!strx_start_decode(p_state, p_result, exp_major_type)) {
@@ -290,25 +290,25 @@ bool strx_expect(cbor_state_t *p_state, cbor_string_type_t *p_result,
 }
 
 
-bool bstrx_decode(cbor_state_t * p_state, cbor_string_type_t *p_result)
+bool bstrx_decode(cbor_state_t *p_state, cbor_string_type_t *p_result)
 {
 	return strx_decode(p_state, p_result, CBOR_MAJOR_TYPE_BSTR);
 }
 
 
-bool bstrx_expect(cbor_state_t * p_state, cbor_string_type_t *p_result)
+bool bstrx_expect(cbor_state_t *p_state, cbor_string_type_t *p_result)
 {
 	return strx_expect(p_state, p_result, CBOR_MAJOR_TYPE_BSTR);
 }
 
 
-bool tstrx_decode(cbor_state_t * p_state, cbor_string_type_t *p_result)
+bool tstrx_decode(cbor_state_t *p_state, cbor_string_type_t *p_result)
 {
 	return strx_decode(p_state, p_result, CBOR_MAJOR_TYPE_TSTR);
 }
 
 
-bool tstrx_expect(cbor_state_t * p_state, cbor_string_type_t *p_result)
+bool tstrx_expect(cbor_state_t *p_state, cbor_string_type_t *p_result)
 {
 	return strx_expect(p_state, p_result, CBOR_MAJOR_TYPE_TSTR);
 }
@@ -376,7 +376,7 @@ bool map_end_decode(cbor_state_t *p_state)
 }
 
 
-static bool primx_decode(cbor_state_t * p_state, uint32_t *p_result)
+static bool primx_decode(cbor_state_t *p_state, uint32_t *p_result)
 {
 	uint8_t major_type = MAJOR_TYPE(*p_state->p_payload);
 
@@ -393,10 +393,10 @@ static bool primx_decode(cbor_state_t * p_state, uint32_t *p_result)
 	return true;
 }
 
-static bool primx_expect(cbor_state_t * p_state, uint32_t result)
+static bool primx_expect(cbor_state_t *p_state, uint32_t result)
 {
 	uint32_t value;
-	if (!primx_decode(p_state, &value)){
+	if (!primx_decode(p_state, &value)) {
 		FAIL();
 	}
 	if (value != result) {
@@ -415,7 +415,7 @@ bool nilx_expect(cbor_state_t *p_state, void *p_result)
 }
 
 
-bool boolx_decode(cbor_state_t * p_state, bool *p_result)
+bool boolx_decode(cbor_state_t *p_state, bool *p_result)
 {
 	uint32_t result;
 
@@ -429,7 +429,7 @@ bool boolx_decode(cbor_state_t * p_state, bool *p_result)
 }
 
 
-bool boolx_expect(cbor_state_t * p_state, bool *p_result)
+bool boolx_expect(cbor_state_t *p_state, bool *p_result)
 {
 	bool value;
 	if (!boolx_decode(p_state, &value)) {
@@ -442,7 +442,7 @@ bool boolx_expect(cbor_state_t * p_state, bool *p_result)
 }
 
 
-bool double_decode(cbor_state_t * p_state, double *p_result)
+bool double_decode(cbor_state_t *p_state, double *p_result)
 {
 	uint8_t major_type = MAJOR_TYPE(*p_state->p_payload);
 
@@ -458,7 +458,7 @@ bool double_decode(cbor_state_t * p_state, double *p_result)
 }
 
 
-bool double_expect(cbor_state_t * p_state, double *p_result)
+bool double_expect(cbor_state_t *p_state, double *p_result)
 {
 	double value;
 	if (!double_decode(p_state, &value)) {
@@ -471,7 +471,7 @@ bool double_expect(cbor_state_t * p_state, double *p_result)
 }
 
 
-bool any_decode(cbor_state_t * p_state, void *p_result)
+bool any_decode(cbor_state_t *p_state, void *p_result)
 {
 	cbor_assert(p_result == NULL,
 			"'any' type cannot be returned, only skipped.\n");
@@ -515,7 +515,7 @@ bool any_decode(cbor_state_t * p_state, void *p_result)
 }
 
 
-bool tag_decode(cbor_state_t * p_state, uint32_t *p_result)
+bool tag_decode(cbor_state_t *p_state, uint32_t *p_result)
 {
 	uint8_t major_type = MAJOR_TYPE(*p_state->p_payload);
 
@@ -531,7 +531,7 @@ bool tag_decode(cbor_state_t * p_state, uint32_t *p_result)
 }
 
 
-bool tag_expect(cbor_state_t * p_state, uint32_t result)
+bool tag_expect(cbor_state_t *p_state, uint32_t result)
 {
 	uint32_t tag_val;
 
@@ -549,7 +549,7 @@ bool multi_decode(size_t min_decode,
 		size_t max_decode,
 		size_t *p_num_decode,
 		cbor_decoder_t decoder,
-		cbor_state_t * p_state,
+		cbor_state_t *p_state,
 		void *p_result,
 		size_t result_len)
 {
@@ -578,7 +578,7 @@ bool multi_decode(size_t min_decode,
 
 bool present_decode(size_t *p_present,
 		cbor_decoder_t decoder,
-		cbor_state_t * p_state,
+		cbor_state_t *p_state,
 		void *p_result)
 {
 	size_t num_decode;
