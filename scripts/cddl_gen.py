@@ -102,7 +102,7 @@ def do_flatten(to_flatten, allow_multi=False):
 # Return a code snippet that assigns the value to a variable var_name and
 # returns pointer to the variable, or returns NULL if the value is None.
 def val_or_null(value, var_name):
-    return "(%s=%d, &%s)" % (var_name, value,
+    return "(%s = %d, &%s)" % (var_name, value,
                                 var_name) if value is not None else "NULL"
 
 
@@ -1408,14 +1408,14 @@ class CodeGenerator(CddlParser):
         if self.present_var_condition():
             func, *arguments = self.repeated_single_func(ptr_result = True)
             return (
-                f"present_{mode}(&(%s), (void*)%s, %s)" %
+                f"present_{mode}(&(%s), (void *)%s, %s)" %
                 (self.present_var_access(),
                  func,
                  xcode_args(*arguments),))
         elif self.count_var_condition():
             func, *arguments = self.repeated_single_func(ptr_result = True)
             return (
-                f"multi_{mode}(%s, %s, &%s, (void*)%s, %s, %s)" %
+                f"multi_{mode}(%s, %s, &%s, (void *)%s, %s, %s)" %
                 (self.minQ,
                  self.maxQ,
                  self.count_var_access(),
@@ -1455,8 +1455,8 @@ class CodeGenerator(CddlParser):
     def public_xcode_func_sig(self):
         return f"""
 bool cbor_{self.xcode_func_name()}(
-		{"const " if mode == "decode" else ""}uint8_t * p_payload, size_t payload_len,
-		{"" if mode == "decode" else "const "}{self.type_name()} * {struct_ptr_name()},
+		{"const " if mode == "decode" else ""}uint8_t *p_payload, size_t payload_len,
+		{"" if mode == "decode" else "const "}{self.type_name()} *{struct_ptr_name()},
 		{"size_t *p_payload_len_out"})"""
 
 # Consumes and parses a single CDDL type, returning a
@@ -1624,13 +1624,13 @@ def render_function(xcoder):
     func_name = xcoder
     return f"""
 static bool {xcoder[1]}(
-		cbor_state_t *p_state, {"" if mode == "decode" else "const "}{xcoder[2] if struct_ptr_name() in body else "void"} * {struct_ptr_name()})
+		cbor_state_t *p_state, {"" if mode == "decode" else "const "}{xcoder[2] if struct_ptr_name() in body else "void"} *{struct_ptr_name()})
 {{
-	cbor_print("{ xcoder[1] }\\n");
+	cbor_print(__func__ "\\n");
 	{f"size_t temp_elem_counts[{body.count('p_temp_elem_count')}];" if "p_temp_elem_count" in body else ""}
 	{"size_t *p_temp_elem_count = temp_elem_counts;" if "p_temp_elem_count" in body else ""}
 	{"uint32_t current_list_num;" if "current_list_num" in body else ""}
-	{"uint8_t const * p_payload_bak;" if "p_payload_bak" in body else ""}
+	{"uint8_t const *p_payload_bak;" if "p_payload_bak" in body else ""}
 	{"size_t elem_count_bak;" if "elem_count_bak" in body else ""}
 	{"uint32_t tmp_value;" if "tmp_value" in body else ""}
 	{"cbor_string_type_t tmp_str;" if "tmp_str" in body else ""}
@@ -1639,9 +1639,7 @@ static bool {xcoder[1]}(
 	bool result = ({ body });
 
 	if (!result)
-	{{
 		cbor_trace();
-	}}
 
 	{"p_state->elem_count = temp_elem_counts[0];" if "p_temp_elem_count" in body else ""}
 	return result;

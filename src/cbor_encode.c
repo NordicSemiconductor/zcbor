@@ -46,7 +46,7 @@ static bool encode_header_byte(cbor_state_t *p_state,
 /** Encode a single value.
  */
 static bool value_encode_len(cbor_state_t *p_state, cbor_major_type_t major_type,
-		const void * const p_input, size_t result_len)
+		const void *const p_input, size_t result_len)
 {
 	uint8_t *p_u8_result  = (uint8_t *)p_input;
 
@@ -76,7 +76,7 @@ static bool value_encode_len(cbor_state_t *p_state, cbor_major_type_t major_type
 }
 
 
-static size_t get_result_len(const void * const p_input, size_t max_result_len)
+static size_t get_result_len(const void *const p_input, size_t max_result_len)
 {
 	uint8_t *p_u8_result  = (uint8_t *)p_input;
 
@@ -94,7 +94,7 @@ static size_t get_result_len(const void * const p_input, size_t max_result_len)
 
 
 static bool value_encode(cbor_state_t *p_state, cbor_major_type_t major_type,
-		const void * const p_input, size_t max_result_len)
+		const void *const p_input, size_t max_result_len)
 {
 	cbor_assert(max_result_len != 0, "0-length result not supported.\n");
 	return value_encode_len(p_state, major_type, p_input,
@@ -136,7 +136,7 @@ static bool uint32_encode(cbor_state_t *p_state, const uint32_t *p_input,
 
 bool uintx32_encode(cbor_state_t *p_state, const uint32_t *p_input)
 {
-	if (!uint32_encode(p_state, p_input, CBOR_MAJOR_TYPE_PINT)){
+	if (!uint32_encode(p_state, p_input, CBOR_MAJOR_TYPE_PINT)) {
 		FAIL();
 	}
 	return true;
@@ -364,7 +364,7 @@ bool any_encode(cbor_state_t *p_state, void *p_input)
 }
 
 
-bool tag_encode(cbor_state_t * p_state, uint32_t tag)
+bool tag_encode(cbor_state_t *p_state, uint32_t tag)
 {
 	if (!value_encode(p_state, CBOR_MAJOR_TYPE_TAG, &tag, sizeof(tag))) {
 		FAIL();
@@ -398,7 +398,7 @@ bool multi_encode(size_t min_encode,
 
 bool present_encode(const size_t *p_present,
 		cbor_encoder_t encoder,
-		cbor_state_t * p_state,
+		cbor_state_t *p_state,
 		const void *p_input)
 {
 	size_t num_encode = *p_present;
