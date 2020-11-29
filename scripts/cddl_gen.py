@@ -1626,7 +1626,7 @@ def render_function(xcoder):
 static bool {xcoder[1]}(
 		cbor_state_t *p_state, {"" if mode == "decode" else "const "}{xcoder[2] if struct_ptr_name() in body else "void"} *{struct_ptr_name()})
 {{
-	cbor_print(__func__ "\\n");
+	cbor_print("%s\\n", __func__);
 	{f"size_t temp_elem_counts[{body.count('p_temp_elem_count')}];" if "p_temp_elem_count" in body else ""}
 	{"size_t *p_temp_elem_count = temp_elem_counts;" if "p_temp_elem_count" in body else ""}
 	{"uint32_t current_list_num;" if "current_list_num" in body else ""}
