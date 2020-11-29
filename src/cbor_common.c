@@ -80,3 +80,32 @@ bool union_end_code(cbor_state_t *p_state)
 	}
 	return true;
 }
+
+bool entry_function(const uint8_t *p_payload, size_t payload_len,
+		const void *p_struct, size_t *p_payload_len_out,
+		cbor_encoder_t func, size_t elem_count, size_t num_backups)
+{
+	cbor_state_t state = {
+		.p_payload = p_payload,
+		.p_payload_end = p_payload + payload_len,
+		.elem_count = elem_count,
+	};
+
+	cbor_state_t state_backups[num_backups + 1];
+
+	cbor_state_backups_t backups = {
+		.p_backup_list = state_backups,
+		.current_backup = 0,
+		.num_backups = num_backups + 1,
+	};
+
+	state.p_backups = &backups;
+
+	bool result = func(&state, p_struct);
+
+	if (result && (p_payload_len_out != NULL)) {
+		*p_payload_len_out = MIN(payload_len,
+				(size_t)state.p_payload - (size_t)p_payload);
+	}
+	return result;
+}

@@ -132,4 +132,8 @@ bool union_elem_code(cbor_state_t *p_state);
 
 bool union_end_code(cbor_state_t *p_state);
 
+bool entry_function(const uint8_t *p_payload, size_t payload_len,
+		const void *p_struct, size_t *p_payload_len_out,
+		cbor_encoder_t func, size_t elem_count, size_t num_backups);
+
 #endif /* CBOR_COMMON_H__ */
