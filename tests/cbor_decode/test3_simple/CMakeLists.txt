@@ -23,3 +23,5 @@ target_cddl_source(app serial_recovery.cddl ENTRY_TYPES Upload
   ${VERBOSE}
   ${CANONICAL}
   )
+
+zephyr_compile_options(-Werror)

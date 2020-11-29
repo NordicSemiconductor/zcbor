@@ -21,3 +21,5 @@ target_cddl_source(app pet.cddl ENTRY_TYPES Pet ENCODE
  # ${VERBOSE}
  # ${CANONICAL}
  # )
+
+zephyr_compile_options(-Werror)

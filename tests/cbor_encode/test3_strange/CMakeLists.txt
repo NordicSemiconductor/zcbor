@@ -25,3 +25,5 @@ target_cddl_source(app strange.cddl ENCODE ENTRY_TYPES
   ${VERBOSE}
   ${CANONICAL}
   )
+
+zephyr_compile_options(-Werror)
