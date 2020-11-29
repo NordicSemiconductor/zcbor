@@ -1459,6 +1459,11 @@ bool cbor_{self.xcode_func_name()}(
 		{"" if mode == "decode" else "const "}{self.type_name()} *{struct_ptr_name()},
 		{"size_t *p_payload_len_out"})"""
 
+    def type_test_xcode_func_sig(self):
+        return f"""
+__attribute__((unused)) static bool type_test_{self.xcode_func_name()}(
+		{"" if mode == "decode" else "const "}{self.type_name()} *{struct_ptr_name()})"""
+
 # Consumes and parses a single CDDL type, returning a
 # CodeGenerator instance.
 def parse_single(instr, base_name=None):
@@ -1652,31 +1657,20 @@ static bool {xcoder[1]}(
 # Render a single entry function (API function) with signature and body.
 def render_entry_function(xcoder):
     return f"""
+{xcoder.type_test_xcode_func_sig()}
+{{
+	/* This function should not be called, it is present only to test that the
+	 * types of the function and struct match, since this information is lost
+	 * with the casts in the entry funciton.
+	 */
+	return {xcoder.xcode_func_name()}(NULL, {struct_ptr_name()});
+}}
+
 {xcoder.public_xcode_func_sig()}
 {{
-	cbor_state_t state = {{
-		.p_payload = p_payload,
-		.p_payload_end = p_payload + payload_len,
-		.elem_count = {xcoder.list_counts()[1]}
-	}};
-
-	cbor_state_t state_backups[{xcoder.num_backups()+1}];
-
-	cbor_state_backups_t backups = {{
-		.p_backup_list = state_backups,
-		.current_backup = 0,
-		.num_backups = {xcoder.num_backups()+1},
-	}};
-
-	state.p_backups = &backups;
-
-	bool result = {xcoder.xcode_func_name()}(&state, {struct_ptr_name()});
-
-	if (result && (p_payload_len_out != NULL)) {{
-		*p_payload_len_out = MIN(payload_len,
-				(size_t)state.p_payload - (size_t)p_payload);
-	}}
-	return result;
+	return entry_function(p_payload, payload_len, (const void *){struct_ptr_name()},
+		p_payload_len_out, (void *){xcoder.xcode_func_name()},
+		{xcoder.list_counts()[1]}, {xcoder.num_backups()});
 }}"""
 
 
