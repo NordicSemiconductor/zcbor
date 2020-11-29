@@ -26,3 +26,5 @@ target_cddl_source(app manifest-moran4.cddl
 FILE(GLOB app_sources src/*.c)
 target_sources(app PRIVATE
   ${app_sources})
+
+zephyr_compile_options(-Werror)
