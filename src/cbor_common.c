@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2020 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include <stddef.h>
 #include <stdbool.h>
 #include <stdint.h>
