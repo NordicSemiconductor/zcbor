@@ -1,4 +1,9 @@
 #!/bin/bash
+#
+# Copyright (c) 2020 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
 
 do_test() {
         pushd "$1"
