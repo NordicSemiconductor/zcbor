@@ -25,7 +25,7 @@
  *  - When a function returns false, it only means that decoding that particular
  *    value failed. If a value is allowed to take multiple different values,
  *    another decoding function can be called if the first fails. Don't expect
- *    p_state to be valid when a function fails.
+ *    state to be valid when a function fails.
  *  - There is some type casting going on under the hood to make the code
  *    generator friendly. See especially the processor_t type which is compatible
  *    with all functions except multi_decode, but the compiler doesn't "know"
@@ -80,31 +80,31 @@
 
 /** Decode a PINT/NINT into a int32_t.
  *
- * @param[inout] p_state        The current state of the decoding.
- * @param[out]   p_result       Where to place the decoded value.
+ * @param[inout] state        The current state of the decoding.
+ * @param[out]   result       Where to place the decoded value.
  *
  * @retval true   If the value was decoded correctly.
  * @retval false  If the value has the wrong type, the payload overflowed, the
  *                element count was exhausted, or the value was larger than can
  *                fit in the result variable.
  */
-bool intx32_decode(cbor_state_t *p_state, int32_t *p_result);
+bool intx32_decode(cbor_state_t *state, int32_t *result);
 
 /** Expect a PINT/NINT with a certain value. Uses intx32_decode internally.
  *
- * @param[inout] p_state        The current state of the decoding.
- * @param[in]    p_result       The expected value
+ * @param[inout] state        The current state of the decoding.
+ * @param[in]    result       The expected value
  *
  * @retval true   If the result was decoded correctly and has the expected value.
  * @retval false  If intx32_decode failed or the result doesn't have the
  *                expected value.
  */
-bool intx32_expect(cbor_state_t *p_state, int32_t result);
+bool intx32_expect(cbor_state_t *state, int32_t result);
 
 /** Decode a PINT. */
-bool uintx32_decode(cbor_state_t *p_state, uint32_t *p_result);
-bool uintx32_expect(cbor_state_t *p_state, uint32_t result);
-bool uintx32_expect_union(cbor_state_t *p_state, uint32_t result);
+bool uintx32_decode(cbor_state_t *state, uint32_t *result);
+bool uintx32_expect(cbor_state_t *state, uint32_t result);
+bool uintx32_expect_union(cbor_state_t *state, uint32_t result);
 
 /** Decode and consume a BSTR header.
  *
@@ -114,21 +114,21 @@ bool uintx32_expect_union(cbor_state_t *p_state, uint32_t result);
  * @retval true   Header decoded correctly
  * @retval false  Header decoded incorrectly, or backup failed.
  */
-bool bstrx_cbor_start_decode(cbor_state_t *p_state, cbor_string_type_t *p_result);
+bool bstrx_cbor_start_decode(cbor_state_t *state, cbor_string_type_t *result);
 
 /** Finalize decoding a CBOR-encoded bstr.
  *
  * Restore element count from backup.
  */
-bool bstrx_cbor_end_decode(cbor_state_t *p_state);
+bool bstrx_cbor_end_decode(cbor_state_t *state);
 
 /** Decode and consume a BSTR */
-bool bstrx_decode(cbor_state_t *p_state, cbor_string_type_t *p_result);
-bool bstrx_expect(cbor_state_t *p_state, cbor_string_type_t *p_result);
+bool bstrx_decode(cbor_state_t *state, cbor_string_type_t *result);
+bool bstrx_expect(cbor_state_t *state, cbor_string_type_t *result);
 
 /** Decode and consume a TSTR */
-bool tstrx_decode(cbor_state_t *p_state, cbor_string_type_t *p_result);
-bool tstrx_expect(cbor_state_t *p_state, cbor_string_type_t *p_result);
+bool tstrx_decode(cbor_state_t *state, cbor_string_type_t *result);
+bool tstrx_expect(cbor_state_t *state, cbor_string_type_t *result);
 
 /** Decode and consume a LIST header.
  *
@@ -138,10 +138,10 @@ bool tstrx_expect(cbor_state_t *p_state, cbor_string_type_t *p_result);
  * @retval true   Header decoded correctly
  * @retval false  Header decoded incorrectly, or backup failed.
  */
-bool list_start_decode(cbor_state_t *p_state);
+bool list_start_decode(cbor_state_t *state);
 
 /** Decode and consume a MAP header. */
-bool map_start_decode(cbor_state_t *p_state);
+bool map_start_decode(cbor_state_t *state);
 
 /** Finalize decoding a LIST
  *
@@ -151,28 +151,28 @@ bool map_start_decode(cbor_state_t *p_state);
  * @retval true   Everything ok.
  * @retval false  Element count not correct.
  */
-bool list_end_decode(cbor_state_t *p_state);
+bool list_end_decode(cbor_state_t *state);
 
 /** Finalize decoding a MAP */
-bool map_end_decode(cbor_state_t *p_state);
+bool map_end_decode(cbor_state_t *state);
 
 /** Decode a "nil" primitive value. */
-bool nilx_expect(cbor_state_t *p_state, void *p_result);
+bool nilx_expect(cbor_state_t *state, void *result);
 
 /** Decode a boolean primitive value. */
-bool boolx_decode(cbor_state_t *p_state, bool *p_result);
-bool boolx_expect(cbor_state_t *p_state, bool *p_result);
+bool boolx_decode(cbor_state_t *state, bool *result);
+bool boolx_expect(cbor_state_t *state, bool *result);
 
 /** Decode a float */
-bool float_decode(cbor_state_t *p_state, double *p_result);
-bool float_expect(cbor_state_t *p_state, double *p_result);
+bool float_decode(cbor_state_t *state, double *result);
+bool float_expect(cbor_state_t *state, double *result);
 
 /** Skip a single element, regardless of type and value. */
-bool any_decode(cbor_state_t *p_state, void *p_result);
+bool any_decode(cbor_state_t *state, void *result);
 
 /** Decode a tag. */
-bool tag_decode(cbor_state_t *p_state, uint32_t *p_result);
-bool tag_expect(cbor_state_t *p_state, uint32_t result);
+bool tag_decode(cbor_state_t *state, uint32_t *result);
+bool tag_expect(cbor_state_t *state, uint32_t result);
 
 /** Decode 0 or more elements with the same type and constraints.
  *
@@ -188,45 +188,45 @@ bool tag_expect(cbor_state_t *p_state, uint32_t result);
  *              cbor_string_type_t bstrs[2];
  *              bool res;
  *
- *              res = list_start_encode(p_state, 3, 5);
+ *              res = list_start_encode(state, 3, 5);
  *              // check res
- *              res = multi_encode(3, 3, &num_encode, uintx32_encode, p_state,
+ *              res = multi_encode(3, 3, &num_encode, uintx32_encode, state,
  *                           ints, &int_min, &int_max, 4);
  *              // check res
- *              res = multi_encode(0, 2, &num_encode, strx_encode, p_state,
+ *              res = multi_encode(0, 2, &num_encode, strx_encode, state,
  *                           bstrs, &bstr_size, &bstr_size,
  *                           sizeof(cbor_string_type_t));
  *              // check res
- *              res = list_end_encode(p_state, 3, 5);
+ *              res = list_end_encode(state, 3, 5);
  *              // check res
  *          @endcode
  *
  * @param[in]  min_decode    The minimum acceptable number of elements.
  * @param[in]  max_decode    The maximum acceptable number of elements.
- * @param[out] p_num_decode  The actual number of elements.
+ * @param[out] num_decode    The actual number of elements.
  * @param[in]  decoder       The decoder function to call under the hood. This
  *                           function will be called with the provided arguments
  *                           repeatedly until the function fails (returns false)
  *                           or until it has been called @p max_decode times.
- *                           p_result is moved @p result_len bytes for each call
- *                           to @p decoder, i.e. @p p_result refers to an array
+ *                           result is moved @p result_len bytes for each call
+ *                           to @p decoder, i.e. @p result refers to an array
  *                           of result variables.
- * @param[out] p_result      Where to place the decoded values. Must be an array
+ * @param[out] result      Where to place the decoded values. Must be an array
  *                           of length at least @p max_decode.
  * @param[in]  result_len    The length of the result variables. Must be the
- *                           length matching the elements of @p p_result.
+ *                           length matching the elements of @p result.
  *
  * @retval true   If at least @p min_decode variables were correctly decoded.
  * @retval false  If @p decoder failed before having decoded @p min_decode
  *                values.
  */
-bool multi_decode(size_t min_decode, size_t max_decode, size_t *p_num_decode,
-		cbor_decoder_t decoder, cbor_state_t *p_state, void *p_result,
+bool multi_decode(size_t min_decode, size_t max_decode, size_t *num_decode,
+		cbor_decoder_t decoder, cbor_state_t *state, void *result,
 		size_t result_len);
 
-bool present_decode(size_t *p_present,
+bool present_decode(size_t *present,
 		cbor_decoder_t decoder,
-		cbor_state_t *p_state,
-		void *p_result);
+		cbor_state_t *state,
+		void *result);
 
 #endif /* CBOR_DECODE_H__ */

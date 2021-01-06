@@ -23,7 +23,7 @@ typedef struct
 #ifdef CDDL_CBOR_VERBOSE
 #include <sys/printk.h>
 #define cbor_trace() (printk("bytes left: %d, byte: 0x%x, elem_count: 0x%zx, %s:%d\n",\
-	(uint32_t)p_state->p_payload_end - (uint32_t)p_state->p_payload, *p_state->p_payload, p_state->elem_count,\
+	(uint32_t)state->payload_end - (uint32_t)state->payload, *state->payload, state->elem_count,\
 	__FILE__, __LINE__))
 #define cbor_assert(expr, ...) \
 do { \
@@ -37,7 +37,7 @@ do { \
 } while(0)
 #define cbor_print(...) printk(__VA_ARGS__)
 #else
-#define cbor_trace() ((void)p_state)
+#define cbor_trace() ((void)state)
 #define cbor_assert(...)
 #define cbor_print(...)
 #endif
@@ -53,8 +53,8 @@ typedef struct cbor_state_backups_s cbor_state_backups_t;
 
 typedef struct{
 union {
-	uint8_t *p_payload_mut;
-	uint8_t const *p_payload; /**< The current place in the payload. Will be
+	uint8_t *payload_mut;
+	uint8_t const *payload; /**< The current place in the payload. Will be
 	                               updated when an element is correctly
 	                               processed. */
 };
@@ -63,14 +63,14 @@ union {
 	                        expected. This will be checked before processing
 	                        and decremented if the element is correctly
 	                        processed. */
-	uint8_t const *p_payload_end; /**< The end of the payload. This will be
-	                                   checked against p_payload before
-	                                   processing each element. */
-	cbor_state_backups_t *p_backups;
+	uint8_t const *payload_end; /**< The end of the payload. This will be
+	                                 checked against payload before
+	                                 processing each element. */
+	cbor_state_backups_t *backups;
 } cbor_state_t;
 
 struct cbor_state_backups_s{
-	cbor_state_t *p_backup_list;
+	cbor_state_t *backup_list;
 	size_t current_backup;
 	size_t num_backups;
 };
@@ -101,9 +101,9 @@ typedef enum
 
 /** Shorthand macro to check if a result is within min/max constraints.
  */
-#define PTR_VALUE_IN_RANGE(type, p_res, p_min, p_max) \
-		(((p_min == NULL) || (*(type *)p_res >= *(type *)p_min)) \
-		&& ((p_max == NULL) || (*(type *)p_res <= *(type *)p_max)))
+#define PTR_VALUE_IN_RANGE(type, res, min, max) \
+		(((min == NULL) || (*(type *)res >= *(type *)min)) \
+		&& ((max == NULL) || (*(type *)res <= *(type *)max)))
 
 #define FAIL() \
 do {\
@@ -121,19 +121,19 @@ do {\
 #define FLAG_DISCARD 2UL
 #define FLAG_TRANSFER_PAYLOAD 4UL
 
-bool new_backup(cbor_state_t *p_state, size_t new_elem_count);
+bool new_backup(cbor_state_t *state, size_t new_elem_count);
 
-bool restore_backup(cbor_state_t *p_state, uint32_t flags,
+bool restore_backup(cbor_state_t *state, uint32_t flags,
 		size_t max_elem_count);
 
-bool union_start_code(cbor_state_t *p_state);
+bool union_start_code(cbor_state_t *state);
 
-bool union_elem_code(cbor_state_t *p_state);
+bool union_elem_code(cbor_state_t *state);
 
-bool union_end_code(cbor_state_t *p_state);
+bool union_end_code(cbor_state_t *state);
 
-bool entry_function(const uint8_t *p_payload, size_t payload_len,
-		const void *p_struct, size_t *p_payload_len_out,
+bool entry_function(const uint8_t *payload, size_t payload_len,
+		const void *struct_ptr, size_t *payload_len_out,
 		cbor_encoder_t func, size_t elem_count, size_t num_backups);
 
 #endif /* CBOR_COMMON_H__ */

@@ -14,16 +14,16 @@
 
 /** Encode a PINT/NINT into a int32_t.
  *
- * @param[inout] p_state        The current state of the decoding.
- * @param[out]   p_result       Where to place the encoded value.
+ * @param[inout] state        The current state of the decoding.
+ * @param[out]   result       Where to place the encoded value.
  *
  * @retval true   Everything is ok.
  * @retval false  If the payload is exhausted.
  */
-bool intx32_encode(cbor_state_t *p_state, const int32_t *p_input);
+bool intx32_encode(cbor_state_t *state, const int32_t *input);
 
 /** Encode a PINT into a uint32_t. */
-bool uintx32_encode(cbor_state_t *p_state, const uint32_t *p_result);
+bool uintx32_encode(cbor_state_t *state, const uint32_t *result);
 
 /** Encode a BSTR header.
  *
@@ -33,50 +33,50 @@ bool uintx32_encode(cbor_state_t *p_state, const uint32_t *p_result);
  * @retval true   Header encoded correctly
  * @retval false  Header encoded incorrectly, or backup failed.
  */
-bool bstrx_cbor_start_encode(cbor_state_t *p_state, const cbor_string_type_t *p_result);
+bool bstrx_cbor_start_encode(cbor_state_t *state, const cbor_string_type_t *result);
 
 /** Finalize encoding a CBOR-encoded BSTR.
  *
  * Restore element count from backup.
  */
-bool bstrx_cbor_end_encode(cbor_state_t *p_state);
+bool bstrx_cbor_end_encode(cbor_state_t *state);
 
 /** Encode a BSTR, */
-bool bstrx_encode(cbor_state_t *p_state, const cbor_string_type_t *p_result);
+bool bstrx_encode(cbor_state_t *state, const cbor_string_type_t *result);
 
 /** Encode a TSTR. */
-bool tstrx_encode(cbor_state_t *p_state, const cbor_string_type_t *p_result);
+bool tstrx_encode(cbor_state_t *state, const cbor_string_type_t *result);
 
 /** Encode a LIST header.
  *
  * The contents of the list can be decoded via subsequent function calls.
  * A state backup is created to keep track of the element count.
  */
-bool list_start_encode(cbor_state_t *p_state, size_t max_num);
+bool list_start_encode(cbor_state_t *state, size_t max_num);
 
 /** Encode a MAP header. */
-bool map_start_encode(cbor_state_t *p_state, size_t max_num);
+bool map_start_encode(cbor_state_t *state, size_t max_num);
 
 /** Encode end of a LIST. Do some checks and deallocate backup. */
-bool list_end_encode(cbor_state_t *p_state, size_t max_num);
+bool list_end_encode(cbor_state_t *state, size_t max_num);
 
 /** Encode end of a MAP. Do some checks and deallocate backup. */
-bool map_end_encode(cbor_state_t *p_state, size_t max_num);
+bool map_end_encode(cbor_state_t *state, size_t max_num);
 
-/** Encode a "nil" primitive value. p_result should be NULL. */
-bool nilx_encode(cbor_state_t *p_state, const void *p_result);
+/** Encode a "nil" primitive value. result should be NULL. */
+bool nilx_encode(cbor_state_t *state, const void *result);
 
 /** Encode a boolean primitive value. */
-bool boolx_encode(cbor_state_t *p_state, const bool *p_result);
+bool boolx_encode(cbor_state_t *state, const bool *result);
 
 /** Encode a float */
-bool float_encode(cbor_state_t *p_state, double *p_result);
+bool float_encode(cbor_state_t *state, double *result);
 
-/** Dummy encode "any": Encode a "nil". p_input should be NULL. */
-bool any_encode(cbor_state_t *p_state, void *p_input);
+/** Dummy encode "any": Encode a "nil". input should be NULL. */
+bool any_encode(cbor_state_t *state, void *input);
 
 /** Encode a tag. */
-bool tag_encode(cbor_state_t *p_state, uint32_t tag);
+bool tag_encode(cbor_state_t *state, uint32_t tag);
 
 /** Encode 0 or more elements with the same type and constraints.
  *
@@ -92,44 +92,44 @@ bool tag_encode(cbor_state_t *p_state, uint32_t tag);
  *              cbor_string_type_t bstrs[2] = <initialize here>;
  *              bool res;
  *
- *              res = list_start_encode(p_state, 5);
+ *              res = list_start_encode(state, 5);
  *              // check res
- *              res = multi_encode(3, 3, &num_encode, uintx32_encode, p_state,
+ *              res = multi_encode(3, 3, &num_encode, uintx32_encode, state,
  *                           ints, 4);
  *              // check res
- *              res = multi_encode(0, 2, &num_encode, strx_encode, p_state,
+ *              res = multi_encode(0, 2, &num_encode, strx_encode, state,
  *                           bstrs, sizeof(cbor_string_type_t));
  *              // check res
- *              res = list_end_encode(p_state, 5);
+ *              res = list_end_encode(state, 5);
  *              // check res
  *          @endcode
  *
  * @param[in]  min_encode    The minimum acceptable number of elements.
  * @param[in]  max_encode    The maximum acceptable number of elements.
- * @param[in]  p_num_encode  The actual number of elements.
+ * @param[in]  num_encode    The actual number of elements.
  * @param[in]  encoder       The encoder function to call under the hood. This
  *                           function will be called with the provided arguments
  *                           repeatedly until the function fails (returns false)
  *                           or until it has been called @p max_encode times.
- *                           p_result is moved @p result_len bytes for each call
- *                           to @p encoder, i.e. @p p_result refers to an array
+ *                           result is moved @p result_len bytes for each call
+ *                           to @p encoder, i.e. @p result refers to an array
  *                           of result variables.
- * @param[in]  p_input       Source of the encoded values. Must be an array
+ * @param[in]  input         Source of the encoded values. Must be an array
  *                           of length at least @p max_encode.
  * @param[in]  result_len    The length of the result variables. Must be the
- *                           length of the elements in p_result.
+ *                           length of the elements in result.
  *
  * @retval true   If at least @p min_encode variables were correctly encoded.
  * @retval false  If @p encoder failed before having encoded @p min_encode
  *                values.
  */
-bool multi_encode(size_t min_encode, size_t max_encode, const size_t *p_num_encode,
-		cbor_encoder_t encoder, cbor_state_t *p_state, const void *p_input,
+bool multi_encode(size_t min_encode, size_t max_encode, const size_t *num_encode,
+		cbor_encoder_t encoder, cbor_state_t *state, const void *input,
 		size_t result_len);
 
-bool present_encode(const size_t *p_present,
+bool present_encode(const size_t *present,
 		cbor_encoder_t encoder,
-		cbor_state_t *p_state,
-		const void *p_input);
+		cbor_state_t *state,
+		const void *input);
 
 #endif /* CBOR_ENCODE_H__ */
