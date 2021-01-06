@@ -133,10 +133,10 @@ def deref_if_not_null(access):
 # Return an argument list for a function call to a encoder/decoder function.
 def xcode_args(res, *sargs):
     if len(sargs) > 0:
-        return "p_state, %s, %s, %s" % (
+        return "state, %s, %s, %s" % (
             "&(%s)" % res if res != "NULL" else res, sargs[0], sargs[1])
     else:
-        return "p_state, %s" % (
+        return "state, %s" % (
             "(%s)" % res if res != "NULL" else res)
 
 # Return the code that calls a encoder/decoder function with a given set of
@@ -153,7 +153,7 @@ def add_semicolon(decl):
     return decl
 
 def struct_ptr_name():
-    return "p_result" if mode == "decode" else "p_input"
+    return "result" if mode == "decode" else "input"
 
 def ternary_if_chain(access, names, xcode_strings):
     return "((%s == %s) ? %s%s: %s)" % (access,
@@ -1259,12 +1259,12 @@ class CodeGenerator(CddlParser):
         min_counts, max_counts = zip(*(child.list_counts() for child in self.value)) if self.value else ((0,), (0,))
         count_arg = f', {str(sum(max_counts))}' if mode == 'encode' else ''
         with_children = "(%s && (int_res = (%s), ((%s) && int_res)))" \
-                    % (f"{start_func}(p_state{count_arg})",
+                    % (f"{start_func}(state{count_arg})",
                        f"{newl_ind}&& ".join(child.full_xcode() for child in self.value),
-                       f"{end_func}(p_state{count_arg})")
+                       f"{end_func}(state{count_arg})")
         without_children = "(%s && %s)" \
-                    % (f"{start_func}(p_state{count_arg})",
-                       f"{end_func}(p_state{count_arg})")
+                    % (f"{start_func}(state{count_arg})",
+                       f"{end_func}(state{count_arg})")
         return with_children if len(self.value) > 0 else without_children
 
     # Return the full code needed to encode/decode a "GROUP" element's children.
@@ -1303,7 +1303,7 @@ class CodeGenerator(CddlParser):
                                 child.full_xcode(union_uint="DROP"))
                             for child in self.value])
                 return "((%s) && (%s))" % (
-                    f"(uintx32_decode(p_state, &{self.choice_var_access()}))",
+                    f"(uintx32_decode(state, &{self.choice_var_access()}))",
                     f"{newl_ind}|| ".join(lines), )
             child_values = ["(%s && ((%s = %s) || 1))" %
                             (child.full_xcode(union_uint="EXPECT" if child.is_uint_disambiguated() else None),
@@ -1313,12 +1313,12 @@ class CodeGenerator(CddlParser):
             # Reset state for all but the first child.
             for i in range(1, len(child_values)):
                 if not self.value[i].is_uint_disambiguated():
-                    child_values[i] = f"(union_elem_code(p_state) && {child_values[i]})"
+                    child_values[i] = f"(union_elem_code(state) && {child_values[i]})"
 
             return "(%s && (int_res = (%s), %s, int_res))" \
-                        % ("union_start_code(p_state)",
+                        % ("union_start_code(state)",
                            f"{newl_ind}|| ".join(child_values),
-                           "union_end_code(p_state)")
+                           "union_end_code(state)")
         else:
             return ternary_if_chain(self.choice_var_access(),
                                              [child.var_name() for child in self.value],
@@ -1327,8 +1327,8 @@ class CodeGenerator(CddlParser):
     def xcode_bstr(self):
         if self.cbor_var_condition():
             xcode_cbor = "(%s)" % ((newl_ind + "&& ").join(
-                   [f"(int_res = (bstrx_cbor_start_{mode}(p_state, &{self.val_access()})",
-                    f"{self.cbor.full_xcode()})), bstrx_cbor_end_{mode}(p_state), int_res"]))
+                   [f"(int_res = (bstrx_cbor_start_{mode}(state, &{self.val_access()})",
+                    f"{self.cbor.full_xcode()})), bstrx_cbor_end_{mode}(state), int_res"]))
             if mode == "decode":
                 return xcode_cbor
             else:
@@ -1336,7 +1336,7 @@ class CodeGenerator(CddlParser):
         return self.xcode_single_func_prim()
 
     def xcode_tags(self):
-        return [f"tag_{mode if (mode == 'encode') else 'expect'}(p_state, {tag})" for tag in self.tags]
+        return [f"tag_{mode if (mode == 'encode') else 'expect'}(state, {tag})" for tag in self.tags]
 
     def range_checks(self, access):
         if self.value is not None:
@@ -1455,9 +1455,9 @@ class CodeGenerator(CddlParser):
     def public_xcode_func_sig(self):
         return f"""
 bool cbor_{self.xcode_func_name()}(
-		{"const " if mode == "decode" else ""}uint8_t *p_payload, size_t payload_len,
+		{"const " if mode == "decode" else ""}uint8_t *payload, size_t payload_len,
 		{"" if mode == "decode" else "const "}{self.type_name()} *{struct_ptr_name()},
-		{"size_t *p_payload_len_out"})"""
+		{"size_t *payload_len_out"})"""
 
     def type_test_xcode_func_sig(self):
         return f"""
@@ -1632,25 +1632,25 @@ def render_function(xcoder):
     func_name = xcoder
     return f"""
 static bool {xcoder[1]}(
-		cbor_state_t *p_state, {"" if mode == "decode" else "const "}{xcoder[2] if struct_ptr_name() in body else "void"} *{struct_ptr_name()})
+		cbor_state_t *state, {"" if mode == "decode" else "const "}{xcoder[2] if struct_ptr_name() in body else "void"} *{struct_ptr_name()})
 {{
 	cbor_print("%s\\n", __func__);
-	{f"size_t temp_elem_counts[{body.count('p_temp_elem_count')}];" if "p_temp_elem_count" in body else ""}
-	{"size_t *p_temp_elem_count = temp_elem_counts;" if "p_temp_elem_count" in body else ""}
+	{f"size_t temp_elem_counts[{body.count('temp_elem_count')}];" if "temp_elem_count" in body else ""}
+	{"size_t *temp_elem_count = temp_elem_counts;" if "temp_elem_count" in body else ""}
 	{"uint32_t current_list_num;" if "current_list_num" in body else ""}
-	{"uint8_t const *p_payload_bak;" if "p_payload_bak" in body else ""}
+	{"uint8_t const *payload_bak;" if "payload_bak" in body else ""}
 	{"size_t elem_count_bak;" if "elem_count_bak" in body else ""}
 	{"uint32_t tmp_value;" if "tmp_value" in body else ""}
 	{"cbor_string_type_t tmp_str;" if "tmp_str" in body else ""}
 	{"bool int_res;" if "int_res" in body else ""}
 
-	bool result = ({ body });
+	bool tmp_result = ({ body });
 
-	if (!result)
+	if (!tmp_result)
 		cbor_trace();
 
-	{"p_state->elem_count = temp_elem_counts[0];" if "p_temp_elem_count" in body else ""}
-	return result;
+	{"state->elem_count = temp_elem_counts[0];" if "temp_elem_count" in body else ""}
+	return tmp_result;
 }}""".replace("	\n", "")  # call replace() to remove empty lines.
 
 
@@ -1668,8 +1668,8 @@ def render_entry_function(xcoder):
 
 {xcoder.public_xcode_func_sig()}
 {{
-	return entry_function(p_payload, payload_len, (const void *){struct_ptr_name()},
-		p_payload_len_out, (void *){xcoder.xcode_func_name()},
+	return entry_function(payload, payload_len, (const void *){struct_ptr_name()},
+		payload_len_out, (void *){xcoder.xcode_func_name()},
 		{xcoder.list_counts()[1]}, {xcoder.num_backups()});
 }}"""
 
@@ -1725,7 +1725,7 @@ def render_h_file(type_def_file, header_guard, entry_types, print_time):
 {(linesep+linesep).join([f"{xcoder.public_xcode_func_sig()};" for xcoder in entry_types])}
 
 
-#endif // {header_guard}
+#endif /* {header_guard} */
 """
 
 def render_type_file(type_defs, header_guard, print_time):
@@ -1750,7 +1750,7 @@ def render_type_file(type_defs, header_guard, print_time):
 {(linesep+linesep).join([f"typedef {linesep.join(typedef[0])} {typedef[1]};" for typedef in type_defs])}
 
 
-#endif // {header_guard}
+#endif /* {header_guard} */
 """
 
 

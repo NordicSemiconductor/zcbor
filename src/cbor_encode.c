@@ -30,62 +30,62 @@ uint8_t get_additional(size_t len, uint8_t value0)
 	return 0;
 }
 
-static bool encode_header_byte(cbor_state_t *p_state,
+static bool encode_header_byte(cbor_state_t *state,
 	cbor_major_type_t major_type, uint8_t additional)
 {
-	if ((p_state->p_payload + 1) > p_state->p_payload_end) {
+	if ((state->payload + 1) > state->payload_end) {
 		FAIL();
 	}
 
 	cbor_assert(additional < 32, NULL);
 
-	*(p_state->p_payload_mut++) = (major_type << 5) | (additional & 0x1F);
+	*(state->payload_mut++) = (major_type << 5) | (additional & 0x1F);
 	return true;
 }
 
 /** Encode a single value.
  */
-static bool value_encode_len(cbor_state_t *p_state, cbor_major_type_t major_type,
-		const void *const p_input, size_t result_len)
+static bool value_encode_len(cbor_state_t *state, cbor_major_type_t major_type,
+		const void *const input, size_t result_len)
 {
-	uint8_t *p_u8_result  = (uint8_t *)p_input;
+	uint8_t *u8_result  = (uint8_t *)input;
 
-	if ((p_state->p_payload + 1 + result_len) > p_state->p_payload_end) {
+	if ((state->payload + 1 + result_len) > state->payload_end) {
 		FAIL();
 	}
 
-	if (!encode_header_byte(p_state, major_type,
-				get_additional(result_len, p_u8_result[0]))) {
+	if (!encode_header_byte(state, major_type,
+				get_additional(result_len, u8_result[0]))) {
 		FAIL();
 	}
-	p_state->p_payload_mut--;
+	state->payload_mut--;
 	cbor_trace();
-	p_state->p_payload_mut++;
+	state->payload_mut++;
 
 #ifdef CONFIG_BIG_ENDIAN
-	memcpy(p_state->p_payload_mut, p_u8_result, result_len);
-	p_state->p_payload_mut += result_len;
+	memcpy(state->payload_mut, u8_result, result_len);
+	state->payload_mut += result_len;
 #else
 	for (; result_len > 0; result_len--) {
-		*(p_state->p_payload_mut++) = p_u8_result[result_len - 1];
+		*(state->payload_mut++) = u8_result[result_len - 1];
 	}
 #endif
 
-	p_state->elem_count++;
+	state->elem_count++;
 	return true;
 }
 
 
-static size_t get_result_len(const void *const p_input, size_t max_result_len)
+static size_t get_result_len(const void *const input, size_t max_result_len)
 {
-	uint8_t *p_u8_result  = (uint8_t *)p_input;
+	uint8_t *u8_result  = (uint8_t *)input;
 
 	for (; max_result_len > 0; max_result_len--) {
-		if (p_u8_result[max_result_len - 1] != 0) {
+		if (u8_result[max_result_len - 1] != 0) {
 			break;
 		}
 	}
-	if ((max_result_len == 1) && (p_u8_result[0] <= VALUE_IN_HEADER)) {
+	if ((max_result_len == 1) && (u8_result[0] <= VALUE_IN_HEADER)) {
 		max_result_len = 0;
 	}
 
@@ -93,30 +93,30 @@ static size_t get_result_len(const void *const p_input, size_t max_result_len)
 }
 
 
-static bool value_encode(cbor_state_t *p_state, cbor_major_type_t major_type,
-		const void *const p_input, size_t max_result_len)
+static bool value_encode(cbor_state_t *state, cbor_major_type_t major_type,
+		const void *const input, size_t max_result_len)
 {
 	cbor_assert(max_result_len != 0, "0-length result not supported.\n");
-	return value_encode_len(p_state, major_type, p_input,
-				get_result_len(p_input, max_result_len));
+	return value_encode_len(state, major_type, input,
+				get_result_len(input, max_result_len));
 }
 
 
-bool intx32_encode(cbor_state_t *p_state, const int32_t *p_input)
+bool intx32_encode(cbor_state_t *state, const int32_t *input)
 {
 	cbor_major_type_t major_type;
 	uint32_t uint_input;
 
-	if (*p_input < 0) {
+	if (*input < 0) {
 		major_type = CBOR_MAJOR_TYPE_NINT;
-		// Convert from CBOR's representation.
-		uint_input = -1 - *p_input;
+		/* Convert from CBOR's representation. */
+		uint_input = -1 - *input;
 	} else {
 		major_type = CBOR_MAJOR_TYPE_PINT;
-		uint_input = *p_input;
+		uint_input = *input;
 	}
 
-	if (!value_encode(p_state, major_type, &uint_input, 4)) {
+	if (!value_encode(state, major_type, &uint_input, 4)) {
 		FAIL();
 	}
 
@@ -124,36 +124,36 @@ bool intx32_encode(cbor_state_t *p_state, const int32_t *p_input)
 }
 
 
-static bool uint32_encode(cbor_state_t *p_state, const uint32_t *p_input,
+static bool uint32_encode(cbor_state_t *state, const uint32_t *input,
 		cbor_major_type_t major_type)
 {
-	if (!value_encode(p_state, major_type, p_input, 4)) {
+	if (!value_encode(state, major_type, input, 4)) {
 		FAIL();
 	}
 	return true;
 }
 
 
-bool uintx32_encode(cbor_state_t *p_state, const uint32_t *p_input)
+bool uintx32_encode(cbor_state_t *state, const uint32_t *input)
 {
-	if (!uint32_encode(p_state, p_input, CBOR_MAJOR_TYPE_PINT)) {
+	if (!uint32_encode(state, input, CBOR_MAJOR_TYPE_PINT)) {
 		FAIL();
 	}
 	return true;
 }
 
 
-static bool strx_start_encode(cbor_state_t *p_state,
-		const cbor_string_type_t *p_input, cbor_major_type_t major_type)
+static bool strx_start_encode(cbor_state_t *state,
+		const cbor_string_type_t *input, cbor_major_type_t major_type)
 {
-	if (p_input->value && ((get_result_len(&p_input->len, sizeof(p_input->len))
-			+ 1 + p_input->len + (uint32_t)p_state->p_payload)
-			> (uint32_t)p_state->p_payload_end)) {
+	if (input->value && ((get_result_len(&input->len, sizeof(input->len))
+			+ 1 + input->len + (uint32_t)state->payload)
+			> (uint32_t)state->payload_end)) {
 		FAIL();
 	}
 	_Static_assert((sizeof(size_t) == sizeof(uint32_t)),
 			"This code needs size_t to be 4 bytes long.");
-	if (!uint32_encode(p_state, &p_input->len, major_type)) {
+	if (!uint32_encode(state, &input->len, major_type)) {
 		FAIL();
 	}
 
@@ -161,33 +161,33 @@ static bool strx_start_encode(cbor_state_t *p_state,
 }
 
 
-static bool primx_encode(cbor_state_t *p_state, uint32_t input)
+static bool primx_encode(cbor_state_t *state, uint32_t input)
 {
-	if (!uint32_encode(p_state, &input, CBOR_MAJOR_TYPE_PRIM)) {
+	if (!uint32_encode(state, &input, CBOR_MAJOR_TYPE_PRIM)) {
 		FAIL();
 	}
 	return true;
 }
 
 
-static size_t remaining_str_len(cbor_state_t *p_state)
+static size_t remaining_str_len(cbor_state_t *state)
 {
-	size_t max_len = (size_t)p_state->p_payload_end - (size_t)p_state->p_payload;
+	size_t max_len = (size_t)state->payload_end - (size_t)state->payload;
 	size_t result_len = get_result_len(&max_len, sizeof(size_t));
 	return max_len - result_len - 1;
 }
 
 
-bool bstrx_cbor_start_encode(cbor_state_t *p_state, const cbor_string_type_t *p_result)
+bool bstrx_cbor_start_encode(cbor_state_t *state, const cbor_string_type_t *result)
 {
-	if (!new_backup(p_state, 0)) {
+	if (!new_backup(state, 0)) {
 		FAIL();
 	}
 
-	size_t max_len = remaining_str_len(p_state);
+	size_t max_len = remaining_str_len(state);
 
 	/* Encode a dummy header */
-	if (!uint32_encode(p_state, &max_len,
+	if (!uint32_encode(state, &max_len,
 			CBOR_MAJOR_TYPE_BSTR)) {
 		FAIL();
 	}
@@ -195,67 +195,67 @@ bool bstrx_cbor_start_encode(cbor_state_t *p_state, const cbor_string_type_t *p_
 }
 
 
-bool bstrx_cbor_end_encode(cbor_state_t *p_state)
+bool bstrx_cbor_end_encode(cbor_state_t *state)
 {
-	const uint8_t *p_payload = p_state->p_payload;
+	const uint8_t *payload = state->payload;
 
-	if (!restore_backup(p_state, FLAG_RESTORE | FLAG_DISCARD, 0xFFFFFFFF)) {
+	if (!restore_backup(state, FLAG_RESTORE | FLAG_DISCARD, 0xFFFFFFFF)) {
 		FAIL();
 	}
 	cbor_string_type_t value;
 
-	value.value = p_state->p_payload_end - remaining_str_len(p_state);
-	value.len = (size_t)p_payload - (size_t)value.value;
+	value.value = state->payload_end - remaining_str_len(state);
+	value.len = (size_t)payload - (size_t)value.value;
 
 	/* Reencode header of list now that we know the number of elements. */
-	if (!bstrx_encode(p_state, &value)) {
+	if (!bstrx_encode(state, &value)) {
 		FAIL();
 	}
 	return true;
 }
 
 
-static bool strx_encode(cbor_state_t *p_state,
-		const cbor_string_type_t *p_input, cbor_major_type_t major_type)
+static bool strx_encode(cbor_state_t *state,
+		const cbor_string_type_t *input, cbor_major_type_t major_type)
 {
-	if (!strx_start_encode(p_state, p_input, major_type)) {
+	if (!strx_start_encode(state, input, major_type)) {
 		FAIL();
 	}
-	if (p_state->p_payload_mut != p_input->value) {
-		memmove(p_state->p_payload_mut, p_input->value, p_input->len);
+	if (state->payload_mut != input->value) {
+		memmove(state->payload_mut, input->value, input->len);
 	}
-	p_state->p_payload += p_input->len;
+	state->payload += input->len;
 	return true;
 }
 
 
-bool bstrx_encode(cbor_state_t *p_state, const cbor_string_type_t *p_input)
+bool bstrx_encode(cbor_state_t *state, const cbor_string_type_t *input)
 {
-	return strx_encode(p_state, p_input, CBOR_MAJOR_TYPE_BSTR);
+	return strx_encode(state, input, CBOR_MAJOR_TYPE_BSTR);
 }
 
 
-bool tstrx_encode(cbor_state_t *p_state, const cbor_string_type_t *p_input)
+bool tstrx_encode(cbor_state_t *state, const cbor_string_type_t *input)
 {
-	return strx_encode(p_state, p_input, CBOR_MAJOR_TYPE_TSTR);
+	return strx_encode(state, input, CBOR_MAJOR_TYPE_TSTR);
 }
 
 
-static bool list_map_start_encode(cbor_state_t *p_state, size_t max_num,
+static bool list_map_start_encode(cbor_state_t *state, size_t max_num,
 		cbor_major_type_t major_type)
 {
 #ifdef CDDL_CBOR_CANONICAL
-	if (!new_backup(p_state, 0)) {
+	if (!new_backup(state, 0)) {
 		FAIL();
 	}
 
 	/* Encode dummy header with max number of elements. */
-	if (!uint32_encode(p_state, &max_num, major_type)) {
+	if (!uint32_encode(state, &max_num, major_type)) {
 		FAIL();
 	}
-	p_state->elem_count--; /* Because of dummy header. */
+	state->elem_count--; /* Because of dummy header. */
 #else
-	if (!encode_header_byte(p_state, major_type, 31)) {
+	if (!encode_header_byte(state, major_type, 31)) {
 		FAIL();
 	}
 #endif
@@ -263,55 +263,55 @@ static bool list_map_start_encode(cbor_state_t *p_state, size_t max_num,
 }
 
 
-bool list_start_encode(cbor_state_t *p_state, size_t max_num)
+bool list_start_encode(cbor_state_t *state, size_t max_num)
 {
-	return list_map_start_encode(p_state, max_num, CBOR_MAJOR_TYPE_LIST);
+	return list_map_start_encode(state, max_num, CBOR_MAJOR_TYPE_LIST);
 }
 
 
-bool map_start_encode(cbor_state_t *p_state, size_t max_num)
+bool map_start_encode(cbor_state_t *state, size_t max_num)
 {
-	return list_map_start_encode(p_state, max_num, CBOR_MAJOR_TYPE_MAP);
+	return list_map_start_encode(state, max_num, CBOR_MAJOR_TYPE_MAP);
 }
 
 
-bool list_map_end_encode(cbor_state_t *p_state, size_t max_num,
+bool list_map_end_encode(cbor_state_t *state, size_t max_num,
 			cbor_major_type_t major_type)
 {
 #ifdef CDDL_CBOR_CANONICAL
 	size_t list_count = ((major_type == CBOR_MAJOR_TYPE_LIST) ?
-					p_state->elem_count
-					: (p_state->elem_count / 2));
+					state->elem_count
+					: (state->elem_count / 2));
 
-	const uint8_t *p_payload = p_state->p_payload;
+	const uint8_t *payload = state->payload;
 	size_t max_header_len = get_result_len(&max_num, 4);
 	size_t header_len = get_result_len(&list_count, 4);
 
-	if (!restore_backup(p_state, FLAG_RESTORE | FLAG_DISCARD, 0xFFFFFFFF)) {
+	if (!restore_backup(state, FLAG_RESTORE | FLAG_DISCARD, 0xFFFFFFFF)) {
 		FAIL();
 	}
 
 	cbor_print("list_count: %d\r\n", list_count);
 
 	/* Reencode header of list now that we know the number of elements. */
-	if (!(uint32_encode(p_state, &list_count, major_type))) {
+	if (!(uint32_encode(state, &list_count, major_type))) {
 		FAIL();
 	}
 
 	if (max_header_len != header_len) {
-		const uint8_t *p_start = p_state->p_payload + max_header_len - header_len;
-		size_t body_size = p_payload - p_start;
-		memmove(p_state->p_payload_mut,
-			p_state->p_payload + max_header_len - header_len,
+		const uint8_t *start = state->payload + max_header_len - header_len;
+		size_t body_size = payload - start;
+		memmove(state->payload_mut,
+			state->payload + max_header_len - header_len,
 			body_size);
 		/* Reset payload pointer to end of list */
-		p_state->p_payload += body_size;
+		state->payload += body_size;
 	} else {
 		/* Reset payload pointer to end of list */
-		p_state->p_payload = p_payload;
+		state->payload = payload;
 	}
 #else
-	if (!encode_header_byte(p_state, CBOR_MAJOR_TYPE_PRIM, 31)) {
+	if (!encode_header_byte(state, CBOR_MAJOR_TYPE_PRIM, 31)) {
 		FAIL();
 	}
 #endif
@@ -319,38 +319,38 @@ bool list_map_end_encode(cbor_state_t *p_state, size_t max_num,
 }
 
 
-bool list_end_encode(cbor_state_t *p_state, size_t max_num)
+bool list_end_encode(cbor_state_t *state, size_t max_num)
 {
-	return list_map_end_encode(p_state, max_num, CBOR_MAJOR_TYPE_LIST);
+	return list_map_end_encode(state, max_num, CBOR_MAJOR_TYPE_LIST);
 }
 
 
-bool map_end_encode(cbor_state_t *p_state, size_t max_num)
+bool map_end_encode(cbor_state_t *state, size_t max_num)
 {
-	return list_map_end_encode(p_state, max_num, CBOR_MAJOR_TYPE_MAP);
+	return list_map_end_encode(state, max_num, CBOR_MAJOR_TYPE_MAP);
 }
 
 
-bool nilx_encode(cbor_state_t *p_state, const void *p_input)
+bool nilx_encode(cbor_state_t *state, const void *input)
 {
-	(void)p_input;
-	return primx_encode(p_state, 22);
+	(void)input;
+	return primx_encode(state, 22);
 }
 
 
-bool boolx_encode(cbor_state_t *p_state, const bool *p_input)
+bool boolx_encode(cbor_state_t *state, const bool *input)
 {
-	if (!primx_encode(p_state, *p_input + BOOL_TO_PRIM)) {
+	if (!primx_encode(state, *input + BOOL_TO_PRIM)) {
 		FAIL();
 	}
 	return true;
 }
 
 
-bool double_encode(cbor_state_t *p_state, double *p_input)
+bool double_encode(cbor_state_t *state, double *input)
 {
-	if (!value_encode(p_state, CBOR_MAJOR_TYPE_PRIM, p_input,
-			sizeof(*p_input))) {
+	if (!value_encode(state, CBOR_MAJOR_TYPE_PRIM, input,
+			sizeof(*input))) {
 		FAIL();
 	}
 
@@ -358,18 +358,18 @@ bool double_encode(cbor_state_t *p_state, double *p_input)
 }
 
 
-bool any_encode(cbor_state_t *p_state, void *p_input)
+bool any_encode(cbor_state_t *state, void *input)
 {
-	return nilx_encode(p_state, p_input);
+	return nilx_encode(state, input);
 }
 
 
-bool tag_encode(cbor_state_t *p_state, uint32_t tag)
+bool tag_encode(cbor_state_t *state, uint32_t tag)
 {
-	if (!value_encode(p_state, CBOR_MAJOR_TYPE_TAG, &tag, sizeof(tag))) {
+	if (!value_encode(state, CBOR_MAJOR_TYPE_TAG, &tag, sizeof(tag))) {
 		FAIL();
 	}
-	p_state->elem_count--;
+	state->elem_count--;
 
 	return true;
 }
@@ -377,31 +377,31 @@ bool tag_encode(cbor_state_t *p_state, uint32_t tag)
 
 bool multi_encode(size_t min_encode,
 		size_t max_encode,
-		const size_t *p_num_encode,
+		const size_t *num_encode,
 		cbor_encoder_t encoder,
-		cbor_state_t *p_state,
-		const void *p_input,
+		cbor_state_t *state,
+		const void *input,
 		size_t result_len)
 {
-	if (!PTR_VALUE_IN_RANGE(size_t, p_num_encode, NULL, &max_encode)) {
+	if (!PTR_VALUE_IN_RANGE(size_t, num_encode, NULL, &max_encode)) {
 		FAIL();
 	}
-	for (size_t i = 0; i < *p_num_encode; i++) {
-		if (!encoder(p_state, (const uint8_t *)p_input + i*result_len)) {
+	for (size_t i = 0; i < *num_encode; i++) {
+		if (!encoder(state, (const uint8_t *)input + i*result_len)) {
 			FAIL();
 		}
 	}
-	cbor_print("Found %zu elements.\n", *p_num_encode);
+	cbor_print("Found %zu elements.\n", *num_encode);
 	return true;
 }
 
 
-bool present_encode(const size_t *p_present,
+bool present_encode(const size_t *present,
 		cbor_encoder_t encoder,
-		cbor_state_t *p_state,
-		const void *p_input)
+		cbor_state_t *state,
+		const void *input)
 {
-	size_t num_encode = *p_present;
-	bool retval = multi_encode(0, 1, &num_encode, encoder, p_state, p_input, 0);
+	size_t num_encode = *present;
+	bool retval = multi_encode(0, 1, &num_encode, encoder, state, input, 0);
 	return retval;
 }
