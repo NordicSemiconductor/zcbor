@@ -13,6 +13,7 @@ jobs:
 
     - name: Install packages
       run: |
+        sudo apt update
         sudo apt install -y ninja-build gcc-multilib
 
     - name: Install west and dependencies
