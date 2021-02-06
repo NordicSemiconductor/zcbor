@@ -1659,9 +1659,9 @@ def render_entry_function(xcoder):
     return f"""
 {xcoder.type_test_xcode_func_sig()}
 {{
-	/* This function should not be called, it is present only to test that the
-	 * types of the function and struct match, since this information is lost
-	 * with the casts in the entry funciton.
+	/* This function should not be called, it is present only to test that
+	 * the types of the function and struct match, since this information
+	 * is lost with the casts in the entry funciton.
 	 */
 	return {xcoder.xcode_func_name()}(NULL, {struct_ptr_name()});
 }}
