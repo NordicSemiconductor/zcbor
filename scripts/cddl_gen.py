@@ -483,13 +483,13 @@ class CddlParser:
         # regexes (with a '|' between each element).
         types = [
             (r'\[(?P<item>(?>[^[\]]+|(?R))*)\]',
-             lambda list_str: self.type_and_value("LIST", lambda: parse(list_str))),
+             lambda list_str: self.type_and_value("LIST", lambda: self.parse(list_str))),
             (r'\((?P<item>(?>[^\(\)]+|(?R))*)\)',
-             lambda group_str: self.type_and_value("GROUP", lambda: parse(group_str))),
+             lambda group_str: self.type_and_value("GROUP", lambda:self. parse(group_str))),
             (r'{(?P<item>(?>[^{}]+|(?R))*)}',
-             lambda map_str: self.type_and_value("MAP", lambda: parse(map_str))),
+             lambda map_str: self.type_and_value("MAP", lambda: self.parse(map_str))),
             (r'\/\/\s*(?P<item>.+?)(?=\/\/|\Z)',
-             lambda union_str: self.union_add_value(parse("(%s)" % union_str if ',' in union_str else union_str)[0], doubleslash=True)),
+             lambda union_str: self.union_add_value(self.parse("(%s)" % union_str if ',' in union_str else union_str)[0], doubleslash=True)),
             (r'(\=\>)',
              lambda _: self.convert_to_key()),
             (r'([+*?])',
@@ -551,19 +551,19 @@ class CddlParser:
             (r'\.size \(?(?P<item>\d+)\)?',
              lambda size: self.set_size(int(size))),
             (r'\.cbor (?P<item>[\w-]+)',
-             lambda type_str: self.set_cbor(parse(type_str)[0], False)),
+             lambda type_str: self.set_cbor(self.parse(type_str)[0], False)),
             (r'\.cborseq (?P<item>[\w-]+)',
-             lambda type_str: self.set_cbor(parse(type_str)[0], True))
+             lambda type_str: self.set_cbor(self.parse(type_str)[0], True))
         ]
         all_type_regex = '|'.join([regex for (regex, _) in (types[:3] + types[5:])])
         for i in range(0, all_type_regex.count("item")):
             all_type_regex = all_type_regex.replace("item", "it%dem" % i, 1)
         types.insert(5, (r'(?P<item>'+all_type_regex+r')\s*\:',
-                         lambda key_str: self.set_key_or_label(parse(key_str)[0])))
+                         lambda key_str: self.set_key_or_label(self.parse(key_str)[0])))
         types.insert(6, (r'(?P<item>'+all_type_regex+r')\s*\=\>',
-                         lambda key_str: self.set_key(parse(key_str)[0])))
+                         lambda key_str: self.set_key(self.parse(key_str)[0])))
         types.insert(7, (r'\/\s*(?P<item>(('+all_type_regex+r')\s*)+?)(?=\/|\,|\Z)',
-                         lambda union_str: self.union_add_value(parse(union_str)[0])))
+                         lambda union_str: self.union_add_value(self.parse(union_str)[0])))
 
         # Keep parsing until a comma, or to the end of the string.
         while instr != '' and instr[0] != ',':
@@ -594,7 +594,7 @@ class CddlParser:
             raise ValueError("No proper value while parsing: %s" % instr)
 
         # Return the unparsed part of the string.
-        return instr
+        return instr.strip()
 
     # For checking whether this element has a key (i.e. to check that it is a valid "MAP" child).
     # This must have some recursion since CDDL allows the key to be hidden
@@ -636,6 +636,16 @@ class CddlParser:
             self.key.post_validate()
         if self.cbor:
             self.cbor.post_validate()
+
+    # Parses entire instr and returns a list of instances.
+    def parse(self, instr):
+        instr = instr.strip()
+        values = []
+        while instr != '':
+            value = type(self)()
+            instr = value.get_value(instr)
+            values.append(value)
+        return values
 
     def __repr__(self):
         return self.mrepr(False)
@@ -1464,24 +1474,6 @@ bool cbor_{self.xcode_func_name()}(
 __attribute__((unused)) static bool type_test_{self.xcode_func_name()}(
 		{"" if mode == "decode" else "const "}{self.type_name()} *{struct_ptr_name()})"""
 
-# Consumes and parses a single CDDL type, returning a
-# CodeGenerator instance.
-def parse_single(instr, base_name=None):
-    value = CodeGenerator(base_name=base_name)
-    instr = value.get_value(instr).strip()
-    return value, instr
-
-
-# Parses entire instr and returns a list of CodeGenerator
-# instances.
-def parse(instr):
-    instr = instr.strip()
-    values = []
-    while instr != '':
-        (value, instr) = parse_single(instr)
-        values.append(value)
-    return values
-
 
 # Returns a dict containing multiple typename=>string
 def get_types(instr):
@@ -1775,7 +1767,8 @@ def main():
     # Parse the definitions, replacing the each string with a
     # CodeGenerator instance.
     for my_type in my_types:
-        (parsed, _) = parse_single(my_types[my_type].replace("\n", " "), base_name=my_type)
+        parsed = CodeGenerator(base_name=my_type)
+        parsed.get_value(my_types[my_type].replace("\n", " "))
         my_types[my_type] = do_flatten(parsed)[0]
         my_types[my_type].set_id_prefix("")
 
