@@ -685,7 +685,7 @@ class CodeGenerator(CddlParser):
 
     # Base name if this element needs to declare a type.
     def raw_type_name(self):
-        return "%s_t" % self.id()
+        return "struct %s" % self.id()
 
     # Name of the type of this element's actual value variable.
     def val_type_name(self):
@@ -718,7 +718,7 @@ class CodeGenerator(CddlParser):
         if self.self_repeated_multi_var_condition():
             name = self.raw_type_name()
             if self.val_type_name() == name:
-                name = "_" + name
+                name = name + "_"
         else:
             name = self.val_type_name()
         return name
@@ -728,9 +728,9 @@ class CodeGenerator(CddlParser):
         if self.multi_var_condition():
             name = self.raw_type_name()
             if self.val_type_name() == name:
-                name = "_" + name
+                name = name + "_"
             if self.repeated_type_name() == name:
-                name = "_" + name
+                name = name + "_"
         else:
             name = self.repeated_type_name()
         return name
@@ -1747,7 +1747,7 @@ def render_type_file(type_defs, header_guard, print_time):
 
 #define DEFAULT_MAXQ {default_maxq}
 
-{(linesep+linesep).join([f"typedef {linesep.join(typedef[0])} {typedef[1]};" for typedef in type_defs])}
+{(linesep+linesep).join([f"{typedef[1]} {{{linesep} {linesep.join(typedef[0][1:])};" for typedef in type_defs])}
 
 
 #endif /* {header_guard} */

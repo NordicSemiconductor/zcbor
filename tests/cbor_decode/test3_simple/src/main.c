@@ -122,7 +122,7 @@ uint8_t serial_rec_input2[] = {
 
 void test_pet(void)
 {
-	Pet_t pet;
+	struct Pet pet;
 	size_t decode_len;
 	uint8_t input[] = {
 		0x83, 0x82, 0x63, 0x66, 0x6f, 0x6f, 0x63, 0x62, 0x61, 0x72,
@@ -143,7 +143,7 @@ void test_pet(void)
 
 void test_serial1(void)
 {
-	Upload_t upload;
+	struct Upload upload;
 	size_t decode_len;
 	bool ret = cbor_decode_Upload(serial_rec_input1,
 			sizeof(serial_rec_input1), &upload, &decode_len);
@@ -166,7 +166,7 @@ void test_serial1(void)
 
 void test_serial2(void)
 {
-	Upload_t upload;
+	struct Upload upload;
 	size_t decode_len;
 	bool ret = cbor_decode_Upload(serial_rec_input2,
 			sizeof(serial_rec_input2), &upload, &decode_len);

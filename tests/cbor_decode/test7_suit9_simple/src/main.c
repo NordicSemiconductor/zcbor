@@ -88,8 +88,8 @@ uint8_t test_vector5[] = {
    0x02, 0x17, 0x02
 };
 
-static SUIT_Envelope_t envelope1;
-static SUIT_Manifest_t manifest;
+static struct SUIT_Envelope envelope1;
+static struct SUIT_Manifest manifest;
 
 void test_suit9_simple2(void)
 {

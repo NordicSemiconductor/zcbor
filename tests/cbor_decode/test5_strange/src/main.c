@@ -24,7 +24,7 @@ void test_numbers(void)
 			0xD9, 0xFF, 0xFF, 0x01 // 1 tagged (0xFFFF)
 	};
 
-	Numbers_t numbers;
+	struct Numbers numbers;
 	zassert_false(cbor_decode_Numbers(payload_numbers1,
 		sizeof(payload_numbers1) - 1, &numbers, &decode_len), NULL); // Payload too small.
 	zassert_equal(0xFFFFFFFF, decode_len, NULL); // Should be untouched
@@ -124,10 +124,10 @@ void test_strings(void)
 					0xF6, // Nil
 	};
 
-	Strings_t strings1;
-	Strings_t strings2;
-	Numbers_t numbers1;
-	Numbers_t numbers2;
+	struct Strings strings1;
+	struct Strings strings2;
+	struct Numbers numbers1;
+	struct Numbers numbers2;
 	zassert_true(cbor_decode_Strings(payload_strings1,
 		sizeof(payload_strings1), &strings1, NULL), NULL);
 	zassert_true(strings1._Strings_optCborStrings_present, NULL);
@@ -188,7 +188,7 @@ void test_optional(void)
 		0x82 /* List start */, 0xF4 /* False (no tag first) */, 0x03,
 	};
 
-	Optional_t optional;
+	struct Optional optional;
 	zassert_true(cbor_decode_Optional(payload_optional1,
 			sizeof(payload_optional1), &optional, NULL), NULL);
 	zassert_false(optional._Optional_boolval, NULL);
@@ -255,7 +255,7 @@ void test_union(void)
 		0x03, 0x23, 0x03, 0x23, 0x03, 0x23}; /* Too many */
 	size_t decode_len;
 
-	_Union_t _union;
+	struct Union_ _union;
 	zassert_true(cbor_decode_Union(payload_union1, sizeof(payload_union1),
 				&_union, NULL), NULL);
 	zassert_equal(_Union__Group, _union._Union_choice, NULL);
@@ -312,7 +312,7 @@ void test_levels(void)
 		0x81, 0x00, // Level4 no 4
 	};
 
-	Level2_t level1;
+	struct Level2 level1;
 	zassert_true(cbor_decode_Level1(payload_levels1,
 		sizeof(payload_levels1), &level1, NULL), NULL);
 
@@ -356,7 +356,7 @@ void test_map(void)
 		0xf6, 0x40 // nil => ""
 	};
 
-	Map_t map;
+	struct Map map;
 
 	zassert_true(cbor_decode_Map(payload_map1, sizeof(payload_map1),
 			&map, NULL), NULL);
@@ -404,7 +404,7 @@ void test_nested_list_map(void)
 	const uint8_t payload_nested_lm5[] = {0x82, 0xa0, 0xa1, 0x01, 0x04};
 	const uint8_t payload_nested_lm6_inv[] = {0x82, 0xa0, 0xa1, 0x04};
 	const uint8_t payload_nested_lm7[] = {0x83, 0xa0, 0xa0, 0xa0};
-	NestedListMap_t listmap;
+	struct NestedListMap listmap;
 
 	zassert_true(cbor_decode_NestedListMap(payload_nested_lm1,
 			sizeof(payload_nested_lm1), &listmap, NULL), NULL);
@@ -443,7 +443,7 @@ void test_nested_map_list_map(void)
 	const uint8_t payload_nested_mlm4_inv[] = {0xa1, 0x80, 0x81, 0xa1, 0xa0};
 	const uint8_t payload_nested_mlm5[] = {0xa2, 0x80, 0x80, 0x80, 0x80};
 	const uint8_t payload_nested_mlm6[] = {0xa3, 0x80, 0x80, 0x80, 0x80, 0x80, 0x82, 0xa0, 0xa0};
-	NestedMapListMap_t maplistmap;
+	struct NestedMapListMap maplistmap;
 
 	zassert_true(cbor_decode_NestedMapListMap(payload_nested_mlm1,
 			sizeof(payload_nested_mlm1), &maplistmap, NULL), NULL);
@@ -531,7 +531,7 @@ void test_range(void)
 		0x07, 0x08, 0x18 // Last too large
 	};
 
-	Range_t output;
+	struct Range output;
 
 	zassert_true(cbor_decode_Range(payload_range1, sizeof(payload_range1),
 				&output, NULL), NULL);

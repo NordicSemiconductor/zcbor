@@ -95,8 +95,8 @@ uint8_t test_vector4[] = {
 	0xa1, 0x14, 0xf6
 };
 
-static OuterWrapper_t outerwrapper = {0};
-static SUIT_Outer_Wrapper_t outerwrapper4 = {0};
+static struct OuterWrapper outerwrapper = {0};
+static struct SUIT_Outer_Wrapper outerwrapper4 = {0};
 
 // Example 9.1 from draft-moran-suit-manifest-03
 void test_1(void)
@@ -150,7 +150,7 @@ void test_1(void)
 void test_2(void)
 {
 	size_t decode_len;
-	memset(&outerwrapper, 0, sizeof(OuterWrapper_t));
+	memset(&outerwrapper, 0, sizeof(struct OuterWrapper));
 	char expected_updateDescription[] =
 		"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc "
 		"sed tincidunt ante, a sodales ligula. Phasellus ullamcorper "
@@ -201,7 +201,7 @@ void test_3(void)
 {
 	size_t decode_len;
 	char expected_uri[] = "http://example.com/file.bin";
-	memset(&outerwrapper4, 0, sizeof(SUIT_Outer_Wrapper_t));
+	memset(&outerwrapper4, 0, sizeof(struct SUIT_Outer_Wrapper));
 	zassert_true(cbor_decode_SUIT_Outer_Wrapper(test_vector4,
 		sizeof(test_vector4), &outerwrapper4, &decode_len), "test_vector failed");
 	zassert_equal(sizeof(test_vector4), decode_len, NULL);

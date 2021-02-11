@@ -32,14 +32,14 @@ uint8_t test_vector1[] = {
 	0xf6
 };
 
-static SUIT_Outer_Wrapper_t outerwrapper1;
-static SUIT_Command_Sequence_t sequence;
+static struct SUIT_Outer_Wrapper outerwrapper1;
+static struct SUIT_Command_Sequence sequence;
 
 void test_5(void)
 {
-	SUIT_Manifest_t *manifest;
+	struct SUIT_Manifest *manifest;
 	size_t decode_len;
-	SUIT_Component_Identifier_t *component;
+	struct SUIT_Component_Identifier *component;
 	uint8_t expected_component0[] = {0x46, 0x6c, 0x61, 0x73, 0x68};
 	uint8_t expected_component1[] = {0x00, 0x34, 0x01};
 	bool res;
