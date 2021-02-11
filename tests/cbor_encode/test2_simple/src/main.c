@@ -122,7 +122,7 @@ uint8_t serial_rec_input2[] = {
 
 void test_pet(void)
 {
-	Pet_t pet = {
+	struct Pet pet = {
 		._Pet_name_tstr = {{.value = "foo", .len = 3}, {.value = "bar", .len = 3}},
 		._Pet_name_tstr_count = 2,
 		._Pet_birthday = {.value = (uint8_t[]){1,2,3,4,5,6,7,8}, .len = 8},
@@ -156,7 +156,7 @@ void test_pet(void)
 
 // void test_serial1(void)
 // {
-// 	Upload_t upload;
+// 	struct Upload upload;
 // 	bool ret = cbor_decode_Upload(serial_rec_input1,
 // 			sizeof(serial_rec_input1), &upload);
 // 	zassert_true(ret, "decoding failed.");
@@ -177,7 +177,7 @@ void test_pet(void)
 
 // void test_serial2(void)
 // {
-// 	Upload_t upload;
+// 	struct Upload upload;
 // 	bool ret = cbor_decode_Upload(serial_rec_input2,
 // 			sizeof(serial_rec_input2), &upload);
 // 	zassert_true(ret, "decoding failed.");

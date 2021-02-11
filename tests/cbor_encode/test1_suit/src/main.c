@@ -230,7 +230,7 @@ static uint8_t output[2000];
 void test_command_sequence(cbor_string_type_t *sequence_str,
 			bool present, char *name)
 {
-	SUIT_Command_Sequence_t sequence1;
+	struct SUIT_Command_Sequence sequence1;
 	cbor_string_type_t *run_seq;
 	bool run_seq_present;
 	cbor_string_type_t *try_each1;
@@ -263,7 +263,7 @@ void test_command_sequence(cbor_string_type_t *sequence_str,
 		NULL);
 
 	for (uint32_t i = 0; i < sequence1._SUIT_Command_Sequence_union_count; i++) {
-		_SUIT_Directive_t *directive;
+		struct SUIT_Directive_ *directive;
 		bool directive_present;
 		directive = &sequence1
 			._SUIT_Command_Sequence_union[i]
@@ -311,9 +311,9 @@ void test_command_sequence(cbor_string_type_t *sequence_str,
 
 void test_manifest(const uint8_t *input, size_t len)
 {
-	SUIT_Outer_Wrapper_t outerwrapper1 = {0};
-	SUIT_Manifest_t *manifest;
-	// SUIT_Component_Identifier_t *component;
+	struct SUIT_Outer_Wrapper outerwrapper1 = {0};
+	struct SUIT_Manifest *manifest;
+	// struct SUIT_Component_Identifier *component;
 	cbor_string_type_t *dependency1;
 	bool dependency1_present;
 	cbor_string_type_t *fetch1;

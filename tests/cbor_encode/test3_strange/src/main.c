@@ -37,7 +37,7 @@ void test_numbers(void)
 		END
 	};
 
-	Numbers_t numbers = {0};
+	struct Numbers numbers = {0};
 	uint8_t output[100];
 	size_t out_len;
 
@@ -207,9 +207,9 @@ void test_strings(void)
 		0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,
 	};
 
-	Strings_t strings1 = {0};
-	Strings_t strings2 = {0};
-	Numbers_t numbers1 = {0};
+	struct Strings strings1 = {0};
+	struct Strings strings2 = {0};
+	struct Numbers numbers1 = {0};
 	uint8_t output1[100];
 	uint8_t output2[100];
 	uint8_t output3[400];
@@ -279,12 +279,12 @@ void test_optional(void)
 		LIST(4) /* List start */, 0xCA /* tag */, 0xF5 /* True */, 0xF4 /* False */, 0x02, 0x02, END
 	};
 
-	Optional_t optional1 = {._Optional_opttwo_present = true, ._Optional_manduint = 3};
-	Optional_t optional2 = {._Optional_manduint = 3};
-	Optional_t optional3 = {._Optional_opttwo_present = true, ._Optional_manduint = 1};
-	Optional_t optional4 = {._Optional_boolval = true, ._Optional_opttwo_present = true,
+	struct Optional optional1 = {._Optional_opttwo_present = true, ._Optional_manduint = 3};
+	struct Optional optional2 = {._Optional_manduint = 3};
+	struct Optional optional3 = {._Optional_opttwo_present = true, ._Optional_manduint = 1};
+	struct Optional optional4 = {._Optional_boolval = true, ._Optional_opttwo_present = true,
 				._Optional_manduint = 2};
-	Optional_t optional5 = {._Optional_boolval = true, ._Optional_optbool_present = true,
+	struct Optional optional5 = {._Optional_boolval = true, ._Optional_optbool_present = true,
 				._Optional_opttwo_present = true, ._Optional_manduint = 2};
 	uint8_t output[10];
 	size_t out_len;
@@ -328,12 +328,12 @@ void test_union(void)
 		0x03, 0x23, 0x03, 0x23, 0x03, 0x23
 	};
 
-	_Union_t _union1 = {._Union_choice = _Union__Group};
-	_Union_t _union2 = {._Union_choice = _Union__MultiGroup, ._Union__MultiGroup._MultiGroup_count = 1};
-	_Union_t _union3 = {._Union_choice = _Union__uint3};
-	_Union_t _union4 = {._Union_choice = _Union_hello_tstr};
-	_Union_t _union5 = {._Union_choice = _Union__MultiGroup, ._Union__MultiGroup._MultiGroup_count = 6};
-	_Union_t _union6_inv = {._Union_choice = _Union__MultiGroup, ._Union__MultiGroup._MultiGroup_count = 7};
+	struct Union_ _union1 = {._Union_choice = _Union__Group};
+	struct Union_ _union2 = {._Union_choice = _Union__MultiGroup, ._Union__MultiGroup._MultiGroup_count = 1};
+	struct Union_ _union3 = {._Union_choice = _Union__uint3};
+	struct Union_ _union4 = {._Union_choice = _Union_hello_tstr};
+	struct Union_ _union5 = {._Union_choice = _Union__MultiGroup, ._Union__MultiGroup._MultiGroup_count = 6};
+	struct Union_ _union6_inv = {._Union_choice = _Union__MultiGroup, ._Union__MultiGroup._MultiGroup_count = 7};
 
 	uint8_t output[15];
 	size_t out_len;
@@ -388,7 +388,7 @@ void test_levels(void)
 	uint8_t output[32];
 	size_t out_len;
 
-	Level2_t level1 = {._Level2__Level3_count = 2, ._Level2__Level3 = {
+	struct Level2 level1 = {._Level2__Level3_count = 2, ._Level2__Level3 = {
 		{._Level3__Level4_count = 4}, {._Level3__Level4_count = 4}
 	}};
 	_Static_assert(sizeof(exp_payload_levels1) <= sizeof(output),
@@ -428,7 +428,7 @@ void test_map(void)
 		END
 	};
 
-	Map_t map1 = {
+	struct Map map1 = {
 		._Map_union_choice = _Map_union_uint7uint,
 		._Map_union_uint7uint = 1,
 		._Map_twotothree_count = 2,
@@ -437,7 +437,7 @@ void test_map(void)
 			{._Map_twotothree = {.len = 0}},
 		}
 	};
-	Map_t map2 = {
+	struct Map map2 = {
 		._Map_key = true,
 		._Map_union_choice = _Map_union_uint7uint,
 		._Map_union_uint7uint = 1,
@@ -448,7 +448,7 @@ void test_map(void)
 			{._Map_twotothree = {.len = 0}},
 		}
 	};
-	Map_t map3 = {
+	struct Map map3 = {
 		._Map_union_choice = _Map_union_nintuint,
 		._Map_union_nintuint = 1,
 		._Map_twotothree_count = 2,
@@ -484,29 +484,29 @@ void test_nested_list_map(void)
 	const uint8_t exp_payload_nested_lm3[] = {LIST(1), MAP(1), 0x01, 0x04, END END};
 	const uint8_t exp_payload_nested_lm4[] = {LIST(2), MAP(0), END MAP(1), 0x01, 0x04, END END};
 	const uint8_t exp_payload_nested_lm5[] = {LIST(3), MAP(0), END MAP(0), END MAP(0), END END};
-	NestedListMap_t listmap1 = {
+	struct NestedListMap listmap1 = {
 		._NestedListMap_map_count = 0,
 	};
-	NestedListMap_t listmap2 = {
+	struct NestedListMap listmap2 = {
 		._NestedListMap_map_count = 1,
 		._NestedListMap_map = {
 			{._NestedListMap_map_uint4_present = false},
 		}
 	};
-	NestedListMap_t listmap3 = {
+	struct NestedListMap listmap3 = {
 		._NestedListMap_map_count = 1,
 		._NestedListMap_map = {
 			{._NestedListMap_map_uint4_present = true},
 		}
 	};
-	NestedListMap_t listmap4 = {
+	struct NestedListMap listmap4 = {
 		._NestedListMap_map_count = 2,
 		._NestedListMap_map = {
 			{._NestedListMap_map_uint4_present = false},
 			{._NestedListMap_map_uint4_present = true},
 		}
 	};
-	NestedListMap_t listmap5 = {
+	struct NestedListMap listmap5 = {
 		._NestedListMap_map_count = 3,
 		._NestedListMap_map = {
 			{._NestedListMap_map_uint4_present = false},
@@ -555,30 +555,30 @@ void test_nested_map_list_map(void)
 	const uint8_t exp_payload_nested_mlm3[] = {MAP(1), LIST(0), END LIST(2), MAP(0), END MAP(0), END END END};
 	const uint8_t exp_payload_nested_mlm4[] = {MAP(2), LIST(0), END LIST(0), END LIST(0), END LIST(0), END END};
 	const uint8_t exp_payload_nested_mlm5[] = {MAP(3), LIST(0), END LIST(0), END LIST(0), END LIST(0), END LIST(0), END LIST(2), MAP(0), END MAP(0), END END END};
-	NestedMapListMap_t maplistmap1 = {
+	struct NestedMapListMap maplistmap1 = {
 		._NestedMapListMap_key_count = 1,
 		._NestedMapListMap_key = {{0}}
 	};
-	NestedMapListMap_t maplistmap2 = {
+	struct NestedMapListMap maplistmap2 = {
 		._NestedMapListMap_key_count = 1,
 		._NestedMapListMap_key = {
 			{._NestedMapListMap_key_map_count = 1}
 		}
 	};
-	NestedMapListMap_t maplistmap3 = {
+	struct NestedMapListMap maplistmap3 = {
 		._NestedMapListMap_key_count = 1,
 		._NestedMapListMap_key = {
 			{._NestedMapListMap_key_map_count = 2}
 		}
 	};
-	NestedMapListMap_t maplistmap4 = {
+	struct NestedMapListMap maplistmap4 = {
 		._NestedMapListMap_key_count = 2,
 		._NestedMapListMap_key = {
 			{._NestedMapListMap_key_map_count = 0},
 			{._NestedMapListMap_key_map_count = 0},
 		}
 	};
-	NestedMapListMap_t maplistmap5 = {
+	struct NestedMapListMap maplistmap5 = {
 		._NestedMapListMap_key_count = 3,
 		._NestedMapListMap_key = {
 			{._NestedMapListMap_key_map_count = 0},
@@ -647,7 +647,7 @@ void test_range(void)
 		END
 	};
 
-	Range_t input1 = {
+	struct Range input1 = {
 		._Range_optMinus5to5_present = false,
 		._Range_optStr3to6_present = false,
 		._Range_multi8_count = 1,
@@ -655,7 +655,7 @@ void test_range(void)
 		._Range_multi0to10_count = 1,
 		._Range_multi0to10 = {0},
 	};
-	Range_t input2 = {
+	struct Range input2 = {
 		._Range_optMinus5to5_present = true,
 		._Range_optMinus5to5 = 5,
 		._Range_optStr3to6_present = false,
@@ -664,7 +664,7 @@ void test_range(void)
 		._Range_multi0to10_count = 2,
 		._Range_multi0to10 = {0, 10},
 	};
-	Range_t input3 = {
+	struct Range input3 = {
 		._Range_optMinus5to5_present = false,
 		._Range_optStr3to6_present = true,
 		._Range_optStr3to6 = {
