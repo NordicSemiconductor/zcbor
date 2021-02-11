@@ -13,15 +13,8 @@ from argparse import ArgumentParser, RawDescriptionHelpFormatter, FileType
 from datetime import datetime
 from copy import copy
 
-my_types = {}
-entry_type_names = []
-mode = ""
-
 indentation = "\t"
 newl_ind = "\n" + indentation
-
-# The default maximum number of repeated elements.
-default_maxq = None
 
 # Size of "additional" field if num is encoded as int
 def sizeof(num):
@@ -38,19 +31,14 @@ def sizeof(num):
     else:
         raise ValueError("Number too large (more than 64 bits).")
 
-
-# Global verbose flag
-verbose_flag = False
-
-
 # Print only if verbose
-def verbose_print(*things):
+def verbose_print(verbose_flag, *things):
     if verbose_flag:
         print(*things)
 
 
 # Pretty print only if verbose
-def verbose_pprint(*things):
+def verbose_pprint(verbose_flag, *things):
     if verbose_flag:
         pprint(*things)
 
@@ -152,7 +140,7 @@ def add_semicolon(decl):
         decl[-1] += ";"
     return decl
 
-def struct_ptr_name():
+def struct_ptr_name(mode):
     return "result" if mode == "decode" else "input"
 
 def ternary_if_chain(access, names, xcode_strings):
@@ -167,8 +155,7 @@ def ternary_if_chain(access, names, xcode_strings):
 #  - For "OTHER" types, one instance points to another type definition.
 #  - For "GROUP" and "UNION" types, there is no separate data item for the instance.
 class CddlParser:
-
-    def __init__(self):
+    def __init__(self, entry_type_names, verbose_flag, mode, default_maxq, my_types):
         self.id_prefix = "temp_" + str(counter())
         self.id_num = None  # Unique ID number. Only populated if needed.
         # The value of the data item. Has different meaning for different
@@ -201,6 +188,18 @@ class CddlParser:
         # "MAP","GROUP", "UNION" and "OTHER". "OTHER" represents a CDDL type defined with '='.
         self.type = None
         self.match_str = ""
+
+        self.my_types = my_types
+        self.entry_type_names = entry_type_names # args.entry_types
+        self.verbose_flag = verbose_flag # args.verbose
+        self.mode = mode # "decode" if args.decode else "encode"
+        self.default_maxq = default_maxq # args.default_maxq
+
+    def init_args(self):
+        return (self.entry_type_names, self.verbose_flag, self.mode, self.default_maxq)
+
+    def init_kwargs(self):
+        return {"my_types":self.my_types}
 
     def set_id_prefix(self, id_prefix):
         self.id_prefix = id_prefix
@@ -350,7 +349,7 @@ class CddlParser:
             if match_obj:
                 (self.minQ, self.maxQ) = handler(match_obj)
                 if self.maxQ is None:
-                    self.maxQ = default_maxq
+                    self.maxQ = self.default_maxq
                 return
         raise ValueError("invalid quantifier: %s" % quantifier)
 
@@ -402,7 +401,7 @@ class CddlParser:
                 (".cborseq" if cborseq else ".cbor",))
         self.cbor = cbor
         if cborseq:
-            self.cbor.maxQ = default_maxq
+            self.cbor.maxQ = self.default_maxq
         self.cbor.set_base_name("cbor")
 
     # Set the self.key of this element. For use during CDDL parsing.
@@ -419,7 +418,7 @@ class CddlParser:
     # key. If the string is recognized as a type, it is treated as a key. For
     # use during CDDL parsing.
     def set_key_or_label(self, key_or_label):
-        if key_or_label.type == "OTHER" and key_or_label.value not in my_types:
+        if key_or_label.type == "OTHER" and key_or_label.value not in self.my_types:
             self.set_label(key_or_label.value)
         else:
             if key_or_label.type == "OTHER" and self.label is None:
@@ -435,7 +434,7 @@ class CddlParser:
     def union_add_value(self, value, doubleslash=False):
         if self.type != "UNION":
             convert_val = copy(self)
-            self.__init__()
+            self.__init__(*self.init_args(), **self.init_kwargs())
             self.type_and_value("UNION", lambda: [convert_val])
 
             if not doubleslash:
@@ -456,7 +455,7 @@ class CddlParser:
 
     def convert_to_key(self):
         convert_val = copy(self)
-        self.__init__()
+        self.__init__(*self.init_args(), **self.init_kwargs())
         self.set_key(convert_val)
 
         self.label = convert_val.label
@@ -601,7 +600,7 @@ class CddlParser:
     # behind layers of indirection.
     def elem_has_key(self):
         return self.key is not None\
-            or (self.type == "OTHER" and my_types[self.value].elem_has_key())\
+            or (self.type == "OTHER" and self.my_types[self.value].elem_has_key())\
             or (self.type in ["GROUP", "UNION"] and all(child.elem_has_key() for child in self.value))
 
     # Function for performing validations that must be done after all parsing is complete. This is recursive, so
@@ -611,10 +610,10 @@ class CddlParser:
         if self.type == "MAP":
             none_keys = [child for child in self.value if not child.elem_has_key()]
             if none_keys:
-                raise TypeError("Map entry must have key: " + str(none_keys) + " pointing to " + str([my_types[elem.value] for elem in none_keys if elem.type == "OTHER"]))
+                raise TypeError("Map entry must have key: " + str(none_keys) + " pointing to " + str([self.my_types[elem.value] for elem in none_keys if elem.type == "OTHER"]))
         if self.type == "OTHER":
-            if self.value not in my_types.keys() or not isinstance(
-                    my_types[self.value], type(self)):
+            if self.value not in self.my_types.keys() or not isinstance(
+                    self.my_types[self.value], type(self)):
                 raise TypeError("%s has not been parsed." % self.value)
         if self.type == "LIST":
             for child in self.value[:-1]:
@@ -642,7 +641,7 @@ class CddlParser:
         instr = instr.strip()
         values = []
         while instr != '':
-            value = type(self)()
+            value = type(self)(*self.init_args(), **self.init_kwargs())
             instr = value.get_value(instr)
             values.append(value)
         return values
@@ -655,8 +654,8 @@ class CddlParser:
 # to the CDDL.
 class CodeGenerator(CddlParser):
 
-    def __init__(self, base_name=None):
-        super(CodeGenerator, self).__init__()
+    def __init__(self, *args, base_name=None, **kwargs):
+        super(CodeGenerator, self).__init__(*args, **kwargs)
         # The prefix used for C code accessing this element, i.e. the struct
         # hierarchy leading up to this element.
         self.accessPrefix = None
@@ -671,7 +670,7 @@ class CodeGenerator(CddlParser):
                  or (self.key.value if self.key and self.key.type in ["TSTR", "OTHER"] else None)
                  or (f"{self.value}_{self.type.lower()}" if self.type == "TSTR" and self.value is not None else None)
                  or (f"{self.type.lower()}{self.value}" if self.type in ["INT", "UINT"] and self.value is not None else None)
-                 or (next((key for key, value in my_types.items() if value == self), None))
+                 or (next((key for key, value in self.my_types.items() if value == self), None))
                  or ("_"+self.value if self.type == "OTHER" else None)
                  or ("_"+self.value[0].get_base_name()
                      if self.type in ["LIST", "GROUP"] and self.value is not None else None)
@@ -718,7 +717,7 @@ class CodeGenerator(CddlParser):
             "MAP": lambda: self.value[0].type_name() if len(self.value) >= 1 else None,
             "GROUP": lambda: self.value[0].type_name() if len(self.value) >= 1 else None,
             "UNION": lambda: self.union_type(),
-            "OTHER": lambda: my_types[self.value].type_name(),
+            "OTHER": lambda: self.my_types[self.value].type_name(),
         }[self.type]()
 
         return name
@@ -826,7 +825,7 @@ class CodeGenerator(CddlParser):
     # Whether to include a "cbor" variable for this element.
     def is_cbor(self):
         return (self.type_name() is not None) and ((self.type != "OTHER") or (
-                (self.value not in entry_type_names) and my_types[self.value].is_cbor()))
+                (self.value not in self.entry_type_names) and self.my_types[self.value].is_cbor()))
 
     # Whether to include a "cbor" variable for this element.
     def cbor_var_condition(self):
@@ -893,11 +892,11 @@ class CodeGenerator(CddlParser):
 
     # Name of the encoder/decoder function for this element.
     def xcode_func_name(self):
-        return f"{mode}{self.var_name()}"
+        return f"{self.mode}{self.var_name()}"
 
     # Name of the encoder/decoder function for the repeated part of this element.
     def repeated_xcode_func_name(self):
-        return f"{mode}_repeated{self.var_name()}"
+        return f"{self.mode}_repeated{self.var_name()}"
 
     # Declaration of the variables of all children.
     def child_declarations(self):
@@ -947,7 +946,7 @@ class CodeGenerator(CddlParser):
         return (self.type == "NIL"
                 or (self.type in ["INT", "NINT", "UINT", "FLOAT", "BSTR", "TSTR", "BOOL"] and self.value is not None)
                 or (self.type == "BSTR" and self.cbor is not None and self.cbor.is_unambiguous())
-                or (self.type == "OTHER" and my_types[self.value].is_unambiguous()))
+                or (self.type == "OTHER" and self.my_types[self.value].is_unambiguous()))
 
     def is_unambiguous_repeated(self):
         return self.is_unambiguous_value() and (self.key is None or self.key.is_unambiguous_repeated()) \
@@ -1076,7 +1075,7 @@ class CodeGenerator(CddlParser):
 
     # Whether this element should have a typedef in the code.
     def type_def_condition(self):
-        if self in my_types.values() and self.multi_member() and not self.is_unambiguous():
+        if self in self.my_types.values() and self.multi_member() and not self.is_unambiguous():
             return True
         return False
 
@@ -1097,7 +1096,7 @@ class CodeGenerator(CddlParser):
         if self.key_var_condition():
             ret_val.extend(self.key.type_def())
         if self.type == "OTHER":
-            ret_val.extend(my_types[self.value].type_def())
+            ret_val.extend(self.my_types[self.value].type_def())
         if self.repeated_type_def_condition():
             ret_val.extend(
                 [(self.single_var_type(full=False), self.repeated_type_name())])
@@ -1107,7 +1106,7 @@ class CodeGenerator(CddlParser):
 
     def single_func_prim_prefix(self):
         if self.type == "OTHER":
-            return my_types[self.value].single_func_prim_prefix()
+            return self.my_types[self.value].single_func_prim_prefix()
         return {
             "INT": f"intx32",
             "UINT": f"uintx32",
@@ -1127,10 +1126,10 @@ class CodeGenerator(CddlParser):
         assert self.type not in ["LIST", "MAP"], "Must have wrapper function for list or map."
 
         if self.type == "OTHER":
-            return my_types[self.value].single_func(access, union_uint)
+            return self.my_types[self.value].single_func(access, union_uint)
 
         func_prefix = self.single_func_prim_prefix()
-        if mode == "decode":
+        if self.mode == "decode":
             if not self.is_unambiguous_value():
                 func = f"{func_prefix}_decode"
             elif not union_uint:
@@ -1149,7 +1148,7 @@ class CodeGenerator(CddlParser):
             arg = tmp_str_or_null(self.value)
         elif self.type == "BOOL":
             arg = min_bool_or_null(self.value)
-        elif self.type in ["UINT", "INT", "NINT", "FLOAT"] and mode == "decode":
+        elif self.type in ["UINT", "INT", "NINT", "FLOAT"] and self.mode == "decode":
             arg = ("(void *) " if ptr_result else "") + str(self.value)
         else:
             arg = tmp_val_or_null(self.value)
@@ -1205,7 +1204,7 @@ class CodeGenerator(CddlParser):
         if self.type in ["LIST", "MAP", "GROUP", "UNION"]:
             total += max([child.num_backups() for child in self.value] + [0])
         if self.type == "OTHER":
-            total += my_types[self.value].num_backups()
+            total += self.my_types[self.value].num_backups()
         if self.has_backup():
             total += 1
         return total
@@ -1222,7 +1221,7 @@ class CodeGenerator(CddlParser):
             if self.key:
                 ret_vals.append(self.key.depends_on())
             if self.type == "OTHER":
-                ret_vals.append(1 + my_types[self.value].depends_on())
+                ret_vals.append(1 + self.my_types[self.value].depends_on())
             if self.type in ["LIST", "MAP", "GROUP", "UNION"]:
                 ret_vals.extend(child.depends_on() for child in self.value)
             self.dependsOnCall = False
@@ -1254,20 +1253,20 @@ class CodeGenerator(CddlParser):
                               self.maxQ * sum((child.list_counts()[1] for child in self.value))),
             "UNION": lambda: (self.minQ * min((child.list_counts()[0] for child in self.value)),
                               self.maxQ * max((child.list_counts()[1] for child in self.value))),
-            "OTHER": lambda: (self.minQ * my_types[self.value].list_counts()[0],
-                              self.maxQ * my_types[self.value].list_counts()[1]),
+            "OTHER": lambda: (self.minQ * self.my_types[self.value].list_counts()[0],
+                              self.maxQ * self.my_types[self.value].list_counts()[1]),
         }[self.type]()
         return retval
 
     # Return the full code needed to encode/decode a "LIST" or "MAP" element with children.
     def xcode_list(self):
-        start_func = f"{self.type.lower()}_start_{mode}"
-        end_func = f"{self.type.lower()}_end_{mode}"
+        start_func = f"{self.type.lower()}_start_{self.mode}"
+        end_func = f"{self.type.lower()}_end_{self.mode}"
         assert start_func in ["list_start_decode", "list_start_encode", "map_start_decode", "map_start_encode"]
         assert end_func in ["list_end_decode", "list_end_encode", "map_end_decode", "map_end_encode"]
         assert self.type in ["LIST", "MAP"], "Expected LIST or MAP type, was %s." % self.type
         min_counts, max_counts = zip(*(child.list_counts() for child in self.value)) if self.value else ((0,), (0,))
-        count_arg = f', {str(sum(max_counts))}' if mode == 'encode' else ''
+        count_arg = f', {str(sum(max_counts))}' if self.mode == 'encode' else ''
         with_children = "(%s && (int_res = (%s), ((%s) && int_res)))" \
                     % (f"{start_func}(state{count_arg})",
                        f"{newl_ind}&& ".join(child.full_xcode() for child in self.value),
@@ -1292,7 +1291,7 @@ class CodeGenerator(CddlParser):
         elif self.type == "GROUP" and not self.count_var_condition():
             return self.value[0].uint_val()
         elif self.type == "OTHER" and not self.count_var_condition() and not self.single_func_impl_condition():
-            return my_types[self.value].uint_val()
+            return self.my_types[self.value].uint_val()
         return None
 
     def is_uint_disambiguated(self):
@@ -1305,7 +1304,7 @@ class CodeGenerator(CddlParser):
     # Return the full code needed to encode/decode a "UNION" element's children.
     def xcode_union(self):
         assert self.type in ["UNION"], "Expected UNION type."
-        if mode == "decode":
+        if self.mode == "decode":
             if self.all_children_uint_disambiguated():
                 lines = []
                 lines.extend(["((%s == %s) && (%s))" %
@@ -1337,16 +1336,16 @@ class CodeGenerator(CddlParser):
     def xcode_bstr(self):
         if self.cbor_var_condition():
             xcode_cbor = "(%s)" % ((newl_ind + "&& ").join(
-                   [f"(int_res = (bstrx_cbor_start_{mode}(state, &{self.val_access()})",
-                    f"{self.cbor.full_xcode()})), bstrx_cbor_end_{mode}(state), int_res"]))
-            if mode == "decode":
+                   [f"(int_res = (bstrx_cbor_start_{self.mode}(state, &{self.val_access()})",
+                    f"{self.cbor.full_xcode()})), bstrx_cbor_end_{self.mode}(state), int_res"]))
+            if self.mode == "decode":
                 return xcode_cbor
             else:
                 return f"({self.val_access()}.value ? ({self.xcode_single_func_prim()}) : ({xcode_cbor}))"
         return self.xcode_single_func_prim()
 
     def xcode_tags(self):
-        return [f"tag_{mode if (mode == 'encode') else 'expect'}(state, {tag})" for tag in self.tags]
+        return [f"tag_{self.mode if (self.mode == 'encode') else 'expect'}(state, {tag})" for tag in self.tags]
 
     def range_checks(self, access):
         if self.value is not None:
@@ -1366,7 +1365,7 @@ class CodeGenerator(CddlParser):
             if self.max_size is not None:
                 range_checks.append(f"({access}.len <= {self.max_size})")
         elif self.type == "OTHER":
-            range_checks.extend(my_types[self.value].range_checks(access))
+            range_checks.extend(self.my_types[self.value].range_checks(access))
 
         return range_checks
 
@@ -1396,7 +1395,7 @@ class CodeGenerator(CddlParser):
             xcoders.append(self.key.full_xcode(union_uint))
         if self.tags:
             xcoders.extend(self.xcode_tags())
-        if mode == "decode":
+        if self.mode == "decode":
             xcoders.append(xcoder())
             xcoders.extend(range_checks)
         else:
@@ -1418,14 +1417,14 @@ class CodeGenerator(CddlParser):
         if self.present_var_condition():
             func, *arguments = self.repeated_single_func(ptr_result = True)
             return (
-                f"present_{mode}(&(%s), (void *)%s, %s)" %
+                f"present_{self.mode}(&(%s), (void *)%s, %s)" %
                 (self.present_var_access(),
                  func,
                  xcode_args(*arguments),))
         elif self.count_var_condition():
             func, *arguments = self.repeated_single_func(ptr_result = True)
             return (
-                f"multi_{mode}(%s, %s, &%s, (void *)%s, %s, %s)" %
+                f"multi_{self.mode}(%s, %s, &%s, (void *)%s, %s, %s)" %
                 (self.minQ,
                  self.maxQ,
                  self.count_var_access(),
@@ -1453,8 +1452,8 @@ class CodeGenerator(CddlParser):
         if self.key:
             for xcoder in self.key.xcoders():
                 yield xcoder
-        if self.type == "OTHER" and self.value not in entry_type_names:
-            for xcoder in my_types[self.value].xcoders():
+        if self.type == "OTHER" and self.value not in self.entry_type_names:
+            for xcoder in self.my_types[self.value].xcoders():
                 yield xcoder
         if self.repeated_single_func_impl_condition():
             yield (self.repeated_xcode(), self.repeated_xcode_func_name(), self.repeated_type_name())
@@ -1465,14 +1464,14 @@ class CodeGenerator(CddlParser):
     def public_xcode_func_sig(self):
         return f"""
 bool cbor_{self.xcode_func_name()}(
-		{"const " if mode == "decode" else ""}uint8_t *payload, size_t payload_len,
-		{"" if mode == "decode" else "const "}{self.type_name()} *{struct_ptr_name()},
+		{"const " if self.mode == "decode" else ""}uint8_t *payload, size_t payload_len,
+		{"" if self.mode == "decode" else "const "}{self.type_name()} *{struct_ptr_name(self.mode)},
 		{"size_t *payload_len_out"})"""
 
     def type_test_xcode_func_sig(self):
         return f"""
 __attribute__((unused)) static bool type_test_{self.xcode_func_name()}(
-		{"" if mode == "decode" else "const "}{self.type_name()} *{struct_ptr_name()})"""
+		{"" if self.mode == "decode" else "const "}{self.type_name()} *{struct_ptr_name(self.mode)})"""
 
 
 # Returns a dict containing multiple typename=>string
@@ -1619,12 +1618,12 @@ is specified. This is needed to construct complete C types.""")
 
 
 # Render a single decoding function with signature and body.
-def render_function(xcoder):
+def render_function(xcoder, mode):
     body = xcoder[0]
     func_name = xcoder
     return f"""
 static bool {xcoder[1]}(
-		cbor_state_t *state, {"" if mode == "decode" else "const "}{xcoder[2] if struct_ptr_name() in body else "void"} *{struct_ptr_name()})
+		cbor_state_t *state, {"" if mode == "decode" else "const "}{xcoder[2] if struct_ptr_name(mode) in body else "void"} *{struct_ptr_name(mode)})
 {{
 	cbor_print("%s\\n", __func__);
 	{f"size_t temp_elem_counts[{body.count('temp_elem_count')}];" if "temp_elem_count" in body else ""}
@@ -1647,7 +1646,7 @@ static bool {xcoder[1]}(
 
 
 # Render a single entry function (API function) with signature and body.
-def render_entry_function(xcoder):
+def render_entry_function(xcoder, mode):
     return f"""
 {xcoder.type_test_xcode_func_sig()}
 {{
@@ -1655,19 +1654,19 @@ def render_entry_function(xcoder):
 	 * the types of the function and struct match, since this information
 	 * is lost with the casts in the entry funciton.
 	 */
-	return {xcoder.xcode_func_name()}(NULL, {struct_ptr_name()});
+	return {xcoder.xcode_func_name()}(NULL, {struct_ptr_name(mode)});
 }}
 
 {xcoder.public_xcode_func_sig()}
 {{
-	return entry_function(payload, payload_len, (const void *){struct_ptr_name()},
+	return entry_function(payload, payload_len, (const void *){struct_ptr_name(mode)},
 		payload_len_out, (void *){xcoder.xcode_func_name()},
 		{xcoder.list_counts()[1]}, {xcoder.num_backups()});
 }}"""
 
 
 # Render the entire generated C file contents.
-def render_c_file(functions, header_file_name, entry_types, print_time):
+def render_c_file(functions, header_file_name, entry_types, print_time, default_maxq, mode):
     return f"""/*
  * Generated with cddl_gen.py (https://github.com/oyvindronningstad/cddl_gen){'''
  * at: ''' + datetime.now().strftime('%Y-%m-%d %H:%M:%S') if print_time else ''}
@@ -1685,14 +1684,14 @@ def render_c_file(functions, header_file_name, entry_types, print_time):
 #error "The type file was generated with a different default_maxq than this file"
 #endif
 
-{linesep.join([render_function(xcoder) for xcoder in functions])}
+{linesep.join([render_function(xcoder, mode) for xcoder in functions])}
 
-{linesep.join([render_entry_function(xcoder) for xcoder in entry_types])}
+{linesep.join([render_entry_function(xcoder, mode) for xcoder in entry_types])}
 """
 
 
 # Render the entire generated header file contents.
-def render_h_file(type_def_file, header_guard, entry_types, print_time):
+def render_h_file(type_def_file, header_guard, entry_types, print_time, default_maxq, mode):
     return \
         f"""/*
  * Generated with cddl_gen.py (https://github.com/oyvindronningstad/cddl_gen){'''
@@ -1720,7 +1719,7 @@ def render_h_file(type_def_file, header_guard, entry_types, print_time):
 #endif /* {header_guard} */
 """
 
-def render_type_file(type_defs, header_guard, print_time):
+def render_type_file(type_defs, header_guard, print_time, default_maxq, mode):
     return \
         f"""/*
  * Generated with cddl_gen.py (https://github.com/oyvindronningstad/cddl_gen){'''
@@ -1747,19 +1746,15 @@ def render_type_file(type_defs, header_guard, print_time):
 
 
 def main():
-    global my_types, entry_type_names, verbose_flag, mode, default_maxq
-
     # Parse command line arguments.
     args = parse_args()
-    entry_type_names = args.entry_types
-    verbose_flag = args.verbose
+
     mode = "decode" if args.decode else "encode"
-    default_maxq = args.default_maxq
 
     if args.decode == args.encode:
         args.error("Please specify exactly one of --decode or --encode.")
 
-    # Read CDDL file. my_types will become a dict {name:str => definition:str}
+    # Read CDDL file. self.my_types will become a dict {name:str => definition:str}
     # for all types in the CDDL file.
     print ("Parsing " + args.input.name)
     my_types = get_types(strip_comments(args.input.read()))
@@ -1767,27 +1762,28 @@ def main():
     # Parse the definitions, replacing the each string with a
     # CodeGenerator instance.
     for my_type in my_types:
-        parsed = CodeGenerator(base_name=my_type)
+        parsed = CodeGenerator(args.entry_types, args.verbose, mode,
+                               args.default_maxq, my_types, base_name=my_type)
         parsed.get_value(my_types[my_type].replace("\n", " "))
-        my_types[my_type] = do_flatten(parsed)[0]
-        my_types[my_type].set_id_prefix("")
+        parsed.my_types[my_type] = do_flatten(parsed)[0]
+        parsed.my_types[my_type].set_id_prefix("")
 
         counter(True)
 
     # set access prefix (struct access paths) for all the definitions.
     for my_type in my_types:
-        my_types[my_type].set_access_prefix(f"(*{struct_ptr_name()})")
+        my_types[my_type].set_access_prefix(f"(*{struct_ptr_name(mode)})")
 
     # post_validate all the definitions.
     for my_type in my_types:
         my_types[my_type].post_validate()
 
     # Parsing is done, pretty print the result.
-    verbose_print("Parsed CDDL types:")
-    verbose_pprint(my_types)
+    verbose_print(args.verbose, "Parsed CDDL types:")
+    verbose_pprint(args.verbose, my_types)
 
     # Prepare the list of types that will have exposed encoder/decoder functions.
-    entry_types = [my_types[entry] for entry in entry_type_names]
+    entry_types = [my_types[entry] for entry in args.entry_types]
 
     # Sort type definitions so the typedefs will come in the correct order in the header file and the function in the
     # correct order in the c file.
@@ -1802,7 +1798,8 @@ def main():
 
     print ("Writing to " + args.output_c.name)
     args.output_c.write(render_c_file(functions=u_funcs, header_file_name=path.basename(args.output_h.name),
-                            entry_types=entry_types, print_time=args.time_header))
+                            entry_types=entry_types, print_time=args.time_header,
+                            default_maxq=args.default_maxq, mode=mode))
 
     makedirs("./" + path.dirname(args.output_h.name), exist_ok=True)
     type_file = args.output_h_types or open(path.join(path.split(args.output_h.name)[0], f"types_{path.split(args.output_h.name)[1]}"), 'w')
@@ -1812,13 +1809,15 @@ def main():
     args.output_h.write(render_h_file(type_def_file=type_file_name,
                             header_guard=path.basename(args.output_h.name).replace(".", "_").replace("-", "_").upper()
                                         + "__",
-                            entry_types=entry_types, print_time=args.time_header))
+                            entry_types=entry_types, print_time=args.time_header,
+                            default_maxq=args.default_maxq, mode=mode))
 
     print("Writing to " + type_file_name)
     type_file.write(render_type_file(type_defs=u_types,
                             header_guard=path.basename(type_file_name).replace(".", "_").replace("-", "_").upper()
                                         + "__",
-                            print_time=args.time_header))
+                            print_time=args.time_header, default_maxq=args.default_maxq,
+                            mode=mode))
 
 
 if __name__ == "__main__":
