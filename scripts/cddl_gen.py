@@ -1495,82 +1495,97 @@ def strip_comments(instr):
     return sub(comment_regex, '', instr)
 
 
-# Return a list of typedefs for all defined types, with duplicate typedefs
-# removed.
-def unique_types(types):
-    type_names = {}
-    out_types = []
-    for mtype in types:
-        for type_def in mtype.type_def():
-            type_name = type_def[1]
-            if type_name not in type_names.keys():
-                type_names[type_name] = type_def[0]
-                out_types.append(type_def)
-            else:
-                assert (''.join(type_names[type_name]) == ''.join(type_def[0])),\
-                       ("Two elements share the type name %s, but their implementations are not identical. "
-                        + "Please change one or both names. One of them is %s") % (type_name, pformat(mtype.type_def()))
-    return out_types
+class CodeRenderer():
+    def __init__(self, entry_types, mode, print_time, default_maxq):
+        self.entry_types = entry_types
+        self.mode = mode
+        self.print_time = print_time
+        self.default_maxq = default_maxq
+
+        # Sort type definitions so the typedefs will come in the correct order in the header file and the function in the
+        # correct order in the c file.
+        self.sorted_types = list(sorted(self.entry_types, key=lambda _type: _type.depends_on(), reverse=False))
+
+        self.functions = self.unique_funcs()
+        self.functions = self.used_funcs()
+        self.type_defs = self.unique_types()
+
+    # Return a list of typedefs for all defined types, with duplicate typedefs
+    # removed.
+    def unique_types(self):
+        type_names = {}
+        out_types = []
+        for mtype in self.sorted_types:
+            for type_def in mtype.type_def():
+                type_name = type_def[1]
+                if type_name not in type_names.keys():
+                    type_names[type_name] = type_def[0]
+                    out_types.append(type_def)
+                else:
+                    assert (''.join(type_names[type_name]) == ''.join(type_def[0])),\
+                        ("Two elements share the type name %s, but their implementations are not identical. "
+                            + "Please change one or both names. One of them is %s") % (type_name, pformat(mtype.type_def()))
+        return out_types
 
 
-# Return a list of encoder/decoder functions for all defined types, with duplicate
-# functions removed.
-def unique_funcs(types):
-    func_names = {}
-    out_types = []
-    for mtype in types:
-        xcoders = list(mtype.xcoders())
-        for funcType in xcoders:
-            func_xcode = funcType[0]
-            func_name = funcType[1]
-            if func_name not in func_names.keys():
-                func_names[func_name] = funcType
-                out_types.append(funcType)
-            elif func_name in func_names.keys():
-                assert func_names[func_name][0] == func_xcode,\
-                    ("Two elements share the function name %s, but their implementations are not identical. "
-                        + "Please change one or both names.\n\n%s\n\n%s") % \
-                    (func_name, func_names[func_name][0], func_xcode)
+    # Return a list of encoder/decoder functions for all defined types, with duplicate
+    # functions removed.
+    def unique_funcs(self):
+        func_names = {}
+        out_types = []
+        for mtype in self.sorted_types:
+            xcoders = list(mtype.xcoders())
+            for funcType in xcoders:
+                func_xcode = funcType[0]
+                func_name = funcType[1]
+                if func_name not in func_names.keys():
+                    func_names[func_name] = funcType
+                    out_types.append(funcType)
+                elif func_name in func_names.keys():
+                    assert func_names[func_name][0] == func_xcode,\
+                        ("Two elements share the function name %s, but their implementations are not identical. "
+                            + "Please change one or both names.\n\n%s\n\n%s") % \
+                        (func_name, func_names[func_name][0], func_xcode)
 
-    return out_types
-
-
-# Return a list of encoder/decoder functions for all defined types, with unused
-# functions removed.
-def used_funcs(types, entry_types):
-    entry_types = [
-        (func_type.xcode(),
-         func_type.xcode_func_name(),
-         func_type.type_name()) for func_type in entry_types]
-    out_types = [func_type for func_type in entry_types]
-    full_code = "".join([func_type[0] for func_type in entry_types])
-    for func_type in reversed(types):
-        func_name = func_type[1]
-        if func_type not in entry_types and search(r"%s\W" % func_name, full_code):
-            full_code += func_type[0]
-            out_types.append(func_type)
-    return list(reversed(out_types))
+        return out_types
 
 
-# Return a list of typedefs for all defined types, with unused types removed.
-def used_types(type_defs, entry_types):
-    out_types = [typeDef for typeDef in entry_types]
-    full_code = "".join(["".join(typeDef[0]) for typeDef in entry_types])
-    for typeDef in reversed(type_defs):
-        type_name = typeDef[1]
-        if typeDef not in entry_types and search(r"%s\W" % type_name, full_code):
-            full_code += "".join(typeDef[0])
-            out_types.append(typeDef)
-    return list(reversed(out_types))
+    # Return a list of encoder/decoder functions for all defined types, with unused
+    # functions removed.
+    def used_funcs(self):
+        mod_entry_types = [
+            (func_type.xcode(),
+            func_type.xcode_func_name(),
+            func_type.type_name()) for func_type in self.entry_types]
+        out_types = [func_type for func_type in mod_entry_types]
+        full_code = "".join([func_type[0] for func_type in mod_entry_types])
+        for func_type in reversed(self.functions):
+            func_name = func_type[1]
+            if func_type not in mod_entry_types and search(r"%s\W" % func_name, full_code):
+                full_code += func_type[0]
+                out_types.append(func_type)
+        return list(reversed(out_types))
 
 
-# Render a single decoding function with signature and body.
-def render_function(xcoder, mode):
-    body = xcoder[0]
-    func_name = xcoder
-    return f"""
+    # Return a list of typedefs for all defined types, with unused types removed.
+    def used_types(self, type_defs, entry_types):
+        out_types = [typeDef for typeDef in entry_types]
+        full_code = "".join(["".join(typeDef[0]) for typeDef in entry_types])
+        for typeDef in reversed(type_defs):
+            type_name = typeDef[1]
+            if typeDef not in entry_types and search(r"%s\W" % type_name, full_code):
+                full_code += "".join(typeDef[0])
+                out_types.append(typeDef)
+        return list(reversed(out_types))
+
+
+    # Render a single decoding function with signature and body.
+    def render_function(self, xcoder):
+        body = xcoder[0]
+        func_name = xcoder
+        return f"""
 static bool {xcoder[1]}(
-		cbor_state_t *state, {"" if mode == "decode" else "const "}{xcoder[2] if struct_ptr_name(mode) in body else "void"} *{struct_ptr_name(mode)})
+		cbor_state_t *state, {"" if self.mode == "decode" else "const "}{xcoder[2] if struct_ptr_name(self.mode) in body else "void"} *{struct_ptr_name(self.mode)})
 {{
 	cbor_print("%s\\n", __func__);
 	{f"size_t temp_elem_counts[{body.count('temp_elem_count')}];" if "temp_elem_count" in body else ""}
@@ -1592,58 +1607,58 @@ static bool {xcoder[1]}(
 }}""".replace("	\n", "")  # call replace() to remove empty lines.
 
 
-# Render a single entry function (API function) with signature and body.
-def render_entry_function(xcoder, mode):
-    return f"""
+    # Render a single entry function (API function) with signature and body.
+    def render_entry_function(self, xcoder):
+        return f"""
 {xcoder.type_test_xcode_func_sig()}
 {{
 	/* This function should not be called, it is present only to test that
 	 * the types of the function and struct match, since this information
-	 * is lost with the casts in the entry funciton.
+	 * is lost with the casts in the entry function.
 	 */
-	return {xcoder.xcode_func_name()}(NULL, {struct_ptr_name(mode)});
+	return {xcoder.xcode_func_name()}(NULL, {struct_ptr_name(self.mode)});
 }}
 
 {xcoder.public_xcode_func_sig()}
 {{
-	return entry_function(payload, payload_len, (const void *){struct_ptr_name(mode)},
+	return entry_function(payload, payload_len, (const void *){struct_ptr_name(self.mode)},
 		payload_len_out, (void *){xcoder.xcode_func_name()},
 		{xcoder.list_counts()[1]}, {xcoder.num_backups()});
 }}"""
 
 
-# Render the entire generated C file contents.
-def render_c_file(functions, header_file_name, entry_types, print_time, default_maxq, mode):
-    return f"""/*
+    # Render the entire generated C file contents.
+    def render_c_file(self, header_file_name):
+        return f"""/*
  * Generated with cddl_gen.py (https://github.com/oyvindronningstad/cddl_gen){'''
- * at: ''' + datetime.now().strftime('%Y-%m-%d %H:%M:%S') if print_time else ''}
- * Generated with a default_maxq of {default_maxq}
+ * at: ''' + datetime.now().strftime('%Y-%m-%d %H:%M:%S') if self.print_time else ''}
+ * Generated with a default_maxq of {self.default_maxq}
  */
 
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <string.h>
-#include "cbor_{mode}.h"
+#include "cbor_{self.mode}.h"
 #include "{header_file_name}"
 
-#if DEFAULT_MAXQ != {default_maxq}
+#if DEFAULT_MAXQ != {self.default_maxq}
 #error "The type file was generated with a different default_maxq than this file"
 #endif
 
-{linesep.join([render_function(xcoder, mode) for xcoder in functions])}
+{linesep.join([self.render_function(xcoder) for xcoder in self.functions])}
 
-{linesep.join([render_entry_function(xcoder, mode) for xcoder in entry_types])}
+{linesep.join([self.render_entry_function(xcoder) for xcoder in self.entry_types])}
 """
 
 
-# Render the entire generated header file contents.
-def render_h_file(type_def_file, header_guard, entry_types, print_time, default_maxq, mode):
-    return \
-        f"""/*
+    # Render the entire generated header file contents.
+    def render_h_file(self, type_def_file, header_guard):
+        return \
+            f"""/*
  * Generated with cddl_gen.py (https://github.com/oyvindronningstad/cddl_gen){'''
- * at: ''' + datetime.now().strftime('%Y-%m-%d %H:%M:%S') if print_time else ''}
- * Generated with a default_maxq of {default_maxq}
+ * at: ''' + datetime.now().strftime('%Y-%m-%d %H:%M:%S') if self.print_time else ''}
+ * Generated with a default_maxq of {self.default_maxq}
  */
 
 #ifndef {header_guard}
@@ -1653,25 +1668,25 @@ def render_h_file(type_def_file, header_guard, entry_types, print_time, default_
 #include <stdbool.h>
 #include <stddef.h>
 #include <string.h>
-#include "cbor_{mode}.h"
+#include "cbor_{self.mode}.h"
 #include "{type_def_file}"
 
-#if DEFAULT_MAXQ != {default_maxq}
+#if DEFAULT_MAXQ != {self.default_maxq}
 #error "The type file was generated with a different default_maxq than this file"
 #endif
 
-{(linesep+linesep).join([f"{xcoder.public_xcode_func_sig()};" for xcoder in entry_types])}
+{(linesep+linesep).join([f"{xcoder.public_xcode_func_sig()};" for xcoder in self.entry_types])}
 
 
 #endif /* {header_guard} */
 """
 
-def render_type_file(type_defs, header_guard, print_time, default_maxq, mode):
-    return \
-        f"""/*
+    def render_type_file(self, header_guard):
+        return \
+            f"""/*
  * Generated with cddl_gen.py (https://github.com/oyvindronningstad/cddl_gen){'''
- * at: ''' + datetime.now().strftime('%Y-%m-%d %H:%M:%S') if print_time else ''}
- * Generated with a default_maxq of {default_maxq}
+ * at: ''' + datetime.now().strftime('%Y-%m-%d %H:%M:%S') if self.print_time else ''}
+ * Generated with a default_maxq of {self.default_maxq}
  */
 
 #ifndef {header_guard}
@@ -1681,11 +1696,11 @@ def render_type_file(type_defs, header_guard, print_time, default_maxq, mode):
 #include <stdbool.h>
 #include <stddef.h>
 #include <string.h>
-#include "cbor_{mode}.h"
+#include "cbor_{self.mode}.h"
 
-#define DEFAULT_MAXQ {default_maxq}
+#define DEFAULT_MAXQ {self.default_maxq}
 
-{(linesep+linesep).join([f"{typedef[1]} {{{linesep} {linesep.join(typedef[0][1:])};" for typedef in type_defs])}
+{(linesep+linesep).join([f"{typedef[1]} {{{linesep} {linesep.join(typedef[0][1:])};" for typedef in self.type_defs])}
 
 
 #endif /* {header_guard} */
@@ -1789,39 +1804,28 @@ def main():
     # Prepare the list of types that will have exposed encoder/decoder functions.
     entry_types = [my_types[entry] for entry in args.entry_types]
 
-    # Sort type definitions so the typedefs will come in the correct order in the header file and the function in the
-    # correct order in the c file.
-    sorted_types = list(sorted(entry_types, key=lambda _type: _type.depends_on(), reverse=False))
+    renderer = CodeRenderer(entry_types=entry_types, mode=mode,
+                            print_time=args.time_header,
+                            default_maxq=args.default_maxq)
 
-    u_funcs = unique_funcs(sorted_types)
-    u_funcs = used_funcs(u_funcs, entry_types)
-    u_types = unique_types(sorted_types)
+    h_dir, h_name = path.split(args.output_h.name)
 
     # Create and populate the generated c and h file.
     makedirs("./" + path.dirname(args.output_c.name), exist_ok=True)
 
     print ("Writing to " + args.output_c.name)
-    args.output_c.write(render_c_file(functions=u_funcs, header_file_name=path.basename(args.output_h.name),
-                            entry_types=entry_types, print_time=args.time_header,
-                            default_maxq=args.default_maxq, mode=mode))
+    args.output_c.write(renderer.render_c_file(header_file_name=h_name))
 
-    makedirs("./" + path.dirname(args.output_h.name), exist_ok=True)
-    type_file = args.output_h_types or open(path.join(path.split(args.output_h.name)[0], f"types_{path.split(args.output_h.name)[1]}"), 'w')
+    makedirs("./" + h_dir, exist_ok=True)
+    type_file = args.output_h_types or open(path.join(h_dir, f"types_{h_name}"), 'w')
     type_file_name = path.basename(type_file.name)
 
     print("Writing to " + args.output_h.name)
-    args.output_h.write(render_h_file(type_def_file=type_file_name,
-                            header_guard=path.basename(args.output_h.name).replace(".", "_").replace("-", "_").upper()
-                                        + "__",
-                            entry_types=entry_types, print_time=args.time_header,
-                            default_maxq=args.default_maxq, mode=mode))
+    args.output_h.write(renderer.render_h_file(type_def_file=type_file_name,
+                            header_guard=header_guard(args.output_h.name)))
 
     print("Writing to " + type_file_name)
-    type_file.write(render_type_file(type_defs=u_types,
-                            header_guard=path.basename(type_file_name).replace(".", "_").replace("-", "_").upper()
-                                        + "__",
-                            print_time=args.time_header, default_maxq=args.default_maxq,
-                            mode=mode))
+    type_file.write(renderer.render_type_file(header_guard=header_guard(type_file_name)))
 
 
 if __name__ == "__main__":
