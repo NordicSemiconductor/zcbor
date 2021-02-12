@@ -71,25 +71,6 @@ def list_replace_if_not_null(lst, i, r):
     return convert(lst)
 
 
-def do_flatten(to_flatten, allow_multi=False):
-    to_flatten.flatten()
-    if to_flatten.type in ["GROUP", "UNION"]\
-            and (len(to_flatten.value) == 1)\
-            and (not (to_flatten.key and to_flatten.value[0].key)):
-        to_flatten.value[0].minQ *= to_flatten.minQ
-        to_flatten.value[0].maxQ *= to_flatten.maxQ
-        if not to_flatten.value[0].label:
-            to_flatten.value[0].label = to_flatten.label
-        if not to_flatten.value[0].key:
-            to_flatten.value[0].key = to_flatten.key
-        to_flatten.value[0].tags.extend(to_flatten.tags)
-        return to_flatten.value
-    elif allow_multi and to_flatten.type in ["GROUP"] and to_flatten.minQ == 1 and to_flatten.maxQ == 1:
-        return to_flatten.value
-    else:
-        return [to_flatten]
-
-
 # Return a code snippet that assigns the value to a variable var_name and
 # returns pointer to the variable, or returns NULL if the value is None.
 def val_or_null(value, var_name):
@@ -249,19 +230,36 @@ class CddlParser:
             reprstr += " cbor: " + repr(self.cbor)
         return reprstr.replace('\n', '\n    ')
 
-    def flatten(self):
+    def _flatten(self):
         new_value = []
         if self.type in ["LIST", "MAP", "GROUP", "UNION"]:
             for child in self.value:
                 new_value.extend(
-                    do_flatten(
-                        child,
-                        allow_multi=self.type != "UNION"))
+                    child.flatten(allow_multi=self.type != "UNION"))
             self.value = new_value
         if self.key:
-            self.key = do_flatten(self.key)[0]
+            self.key = self.key.flatten()[0]
         if self.cbor:
-            self.cbor = do_flatten(self.cbor)[0]
+            self.cbor = self.cbor.flatten()[0]
+
+
+    def flatten(self, allow_multi=False):
+        self._flatten()
+        if self.type in ["GROUP", "UNION"]\
+                and (len(self.value) == 1)\
+                and (not (self.key and self.value[0].key)):
+            self.value[0].minQ *= self.minQ
+            self.value[0].maxQ *= self.maxQ
+            if not self.value[0].label:
+                self.value[0].label = self.label
+            if not self.value[0].key:
+                self.value[0].key = self.key
+            self.value[0].tags.extend(self.tags)
+            return self.value
+        elif allow_multi and self.type in ["GROUP"] and self.minQ == 1 and self.maxQ == 1:
+            return self.value
+        else:
+            return [self]
 
     # Set the self.type and self.value of this element. For use during CDDL
     # parsing.
@@ -1784,8 +1782,8 @@ def main():
         parsed = CodeGenerator(args.entry_types, args.verbose, mode,
                                args.default_maxq, my_types, base_name=my_type)
         parsed.get_value(my_types[my_type].replace("\n", " "))
-        parsed.my_types[my_type] = do_flatten(parsed)[0]
-        parsed.my_types[my_type].set_id_prefix("")
+        my_types[my_type] = parsed.flatten()[0]
+        my_types[my_type].set_id_prefix("")
 
         counter(True)
 
