@@ -84,12 +84,7 @@ function(generate_cddl cddl_file)
     set(default_maxq_arg --default-maxq ${CDDL_DEFAULT_MAXQ})
   endif()
 
-  execute_process(
-    #OUTPUT
-    #${CDDL_C_FILE}
-    #${CDDL_H_FILE}
-
-    COMMAND
+  set(py_command
     ${PYTHON_EXECUTABLE}
     ${CDDL_GEN_BASE}/scripts/cddl_gen.py
     -i ${cddl_path}
@@ -99,11 +94,17 @@ function(generate_cddl cddl_file)
     -t ${CDDL_ENTRY_TYPES}
     ${code_arg}
     ${default_maxq_arg}
-    ${verbose_arg}
+    ${verbose_arg})
 
-    #DEPENDS
-    #${cddl_path}
-    #${CDDL_GEN_BASE}/scripts/cddl_gen.py
+
+  if (CDDL_VERBOSE)
+    string(REPLACE ";" " " py_command_print "${py_command}")
+    message("${py_command_print}")
+  endif()
+
+  execute_process(
+    COMMAND
+    ${py_command}
   )
 endfunction()
 
