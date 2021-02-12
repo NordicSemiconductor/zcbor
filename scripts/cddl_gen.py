@@ -136,7 +136,7 @@ def ternary_if_chain(access, names, xcode_strings):
 #  - For "OTHER" types, one instance points to another type definition.
 #  - For "GROUP" and "UNION" types, there is no separate data item for the instance.
 class CddlParser:
-    def __init__(self, entry_type_names, verbose_flag, mode, default_maxq, my_types):
+    def __init__(self, entry_type_names, verbose_flag, mode, default_maxq, my_types, base_name=None):
         self.id_prefix = "temp_" + str(counter())
         self.id_num = None  # Unique ID number. Only populated if needed.
         # The value of the data item. Has different meaning for different
@@ -175,6 +175,35 @@ class CddlParser:
         self.verbose_flag = verbose_flag # args.verbose
         self.mode = mode # "decode" if args.decode else "encode"
         self.default_maxq = default_maxq # args.default_maxq
+        self.base_name = base_name  # Used as default for self.get_base_name()
+
+    # Generate a (hopefully) unique and descriptive name
+    def generate_base_name(self):
+        return ((self.label
+                 or (self.key.value if self.key and self.key.type in ["TSTR", "OTHER"] else None)
+                 or (f"{self.value}_{self.type.lower()}" if self.type == "TSTR" and self.value is not None else None)
+                 or (f"{self.type.lower()}{self.value}" if self.type in ["INT", "UINT"] and self.value is not None else None)
+                 or (next((key for key, value in self.my_types.items() if value == self), None))
+                 or ("_"+self.value if self.type == "OTHER" else None)
+                 or ("_"+self.value[0].get_base_name()
+                     if self.type in ["LIST", "GROUP"] and self.value is not None else None)
+                 or (self.cbor.value if self.cbor and self.cbor.type in ["TSTR", "OTHER"] else None)
+                 or ((self.key.generate_base_name() + self.type.lower()) if self.key else None)
+                 or self.type.lower()).replace("-", "_"))
+
+    # Base name used for functions, variables, and typedefs.
+    def get_base_name(self):
+        generated = self.generate_base_name()
+        return (self.base_name or generated).replace("-", "_")
+
+    # Set an explicit base name for this element.
+    def set_base_name(self, base_name):
+        self.base_name = base_name
+
+    # Add uniqueness to the base name.
+    def id(self):
+        return "%s%s" % ((self.id_prefix + "_")
+                         if self.id_prefix != "" else "", self.get_base_name())
 
     def init_args(self):
         return (self.entry_type_names, self.verbose_flag, self.mode, self.default_maxq)
@@ -191,9 +220,6 @@ class CddlParser:
             self.cbor.set_id_prefix(self.child_base_id())
         if self.key:
             self.key.set_id_prefix(self.child_base_id())
-
-    def id(self):
-        return "%s_%s" % (self.id_prefix, self.get_id_num())
 
     # Id to pass to children for them to use as basis for their id/base name.
     def child_base_id(self):
@@ -652,43 +678,14 @@ class CddlParser:
 # to the CDDL.
 class CodeGenerator(CddlParser):
 
-    def __init__(self, *args, base_name=None, **kwargs):
+    def __init__(self, *args, **kwargs):
         super(CodeGenerator, self).__init__(*args, **kwargs)
         # The prefix used for C code accessing this element, i.e. the struct
         # hierarchy leading up to this element.
         self.accessPrefix = None
         # Used as a guard against endless recursion in self.dependsOn()
         self.dependsOnCall = False
-        self.base_name = base_name  # Used as default for self.get_base_name()
         self.skipped = False
-
-    # Generate a (hopefully) unique and descriptive name
-    def generate_base_name(self):
-        return ((self.label
-                 or (self.key.value if self.key and self.key.type in ["TSTR", "OTHER"] else None)
-                 or (f"{self.value}_{self.type.lower()}" if self.type == "TSTR" and self.value is not None else None)
-                 or (f"{self.type.lower()}{self.value}" if self.type in ["INT", "UINT"] and self.value is not None else None)
-                 or (next((key for key, value in self.my_types.items() if value == self), None))
-                 or ("_"+self.value if self.type == "OTHER" else None)
-                 or ("_"+self.value[0].get_base_name()
-                     if self.type in ["LIST", "GROUP"] and self.value is not None else None)
-                 or (self.cbor.value if self.cbor and self.cbor.type in ["TSTR", "OTHER"] else None)
-                 or ((self.key.generate_base_name() + self.type.lower()) if self.key else None)
-                 or self.type.lower()).replace("-", "_"))
-
-    # Base name used for functions, variables, and typedefs.
-    def get_base_name(self):
-        generated = self.generate_base_name()
-        return (self.base_name or generated).replace("-", "_")
-
-    # Set an explicit base name for this element.
-    def set_base_name(self, base_name):
-        self.base_name = base_name
-
-    # Add uniqueness to the base name.
-    def id(self):
-        return "%s%s" % ((self.id_prefix + "_")
-                         if self.id_prefix != "" else "", self.get_base_name())
 
     # Base name if this element needs to declare a type.
     def raw_type_name(self):
