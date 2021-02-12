@@ -1564,59 +1564,6 @@ def used_types(type_defs, entry_types):
     return list(reversed(out_types))
 
 
-def parse_args():
-    parser = ArgumentParser(
-        description='''Parse a CDDL file and produce C code that validates and xcodes CBOR.
-The output from this script is a C file and a header file. The header file
-contains typedefs for all the types specified in the cddl input file, as well
-as declarations to xcode functions for the types designated as entry types when
-running the script. The c file contains all the code for decoding and validating
-the types in the CDDL input file. All types are validated as they are xcoded.
-
-Where a `bstr .cbor <Type>` is specified in the CDDL, AND the Type is an entry
-type, the xcoder will not xcode the string, only provide a pointer into the
-payload buffer. This is useful to reduce the size of typedefs, or to break up
-decoding. Using this mechanism is necessary when the CDDL contains self-
-referencing types, since the C type cannot be self referencing.
-
-This script requires 'regex' for lookaround functionality not present in 're'.''',
-        formatter_class=RawDescriptionHelpFormatter)
-
-    parser.add_argument("-i", "--input", required=True, type=FileType('r'),
-                        help="Path to input CDDL file.")
-    parser.add_argument("--output-c", "--oc", required=True, type=FileType('w'),
-                        help="Path to output C file.")
-    parser.add_argument("--output-h", "--oh", required=True, type=FileType('w'),
-                        help="Path to output header file.")
-    parser.add_argument("--output-h-types", "--oht", required=False, type=FileType('w'),
-                        help="Path to output header file with typedefs (shared between decode and encode).")
-    parser.add_argument(
-        "-t",
-        "--entry-types",
-        required=True,
-        type=str,
-        nargs="+",
-        help="Names of the types which should have their xcode functions exposed.")
-    parser.add_argument(
-        "-v",
-        "--verbose",
-        required=False,
-        action="store_true",
-        default=False,
-        help="Print more information while parsing CDDL and generating code.")
-    parser.add_argument("--time-header", required=False, action="store_true", default=False,
-                        help="Put the current time in a comment in the generated files.")
-    parser.add_argument("-d", "--decode", required = False, action="store_true",
-                        default = False, help="Generate decoding code.")
-    parser.add_argument("-e", "--encode", required = False, action="store_true",
-                        default = False, help="Generate encoding code.")
-    parser.add_argument("--default-maxq", required = False, type=int,
-                        default = 3, help="""Default maximum number of repetitions when no maximum
-is specified. This is needed to construct complete C types.""")
-
-    return parser.parse_args()
-
-
 # Render a single decoding function with signature and body.
 def render_function(xcoder, mode):
     body = xcoder[0]
@@ -1743,6 +1690,63 @@ def render_type_file(type_defs, header_guard, print_time, default_maxq, mode):
 
 #endif /* {header_guard} */
 """
+
+
+def parse_args():
+    parser = ArgumentParser(
+        description='''Parse a CDDL file and produce C code that validates and xcodes CBOR.
+The output from this script is a C file and a header file. The header file
+contains typedefs for all the types specified in the cddl input file, as well
+as declarations to xcode functions for the types designated as entry types when
+running the script. The c file contains all the code for decoding and validating
+the types in the CDDL input file. All types are validated as they are xcoded.
+
+Where a `bstr .cbor <Type>` is specified in the CDDL, AND the Type is an entry
+type, the xcoder will not xcode the string, only provide a pointer into the
+payload buffer. This is useful to reduce the size of typedefs, or to break up
+decoding. Using this mechanism is necessary when the CDDL contains self-
+referencing types, since the C type cannot be self referencing.
+
+This script requires 'regex' for lookaround functionality not present in 're'.''',
+        formatter_class=RawDescriptionHelpFormatter)
+
+    parser.add_argument("-i", "--input", required=True, type=FileType('r'),
+                        help="Path to input CDDL file.")
+    parser.add_argument("--output-c", "--oc", required=True, type=FileType('w'),
+                        help="Path to output C file.")
+    parser.add_argument("--output-h", "--oh", required=True, type=FileType('w'),
+                        help="Path to output header file.")
+    parser.add_argument("--output-h-types", "--oht", required=False, type=FileType('w'),
+                        help="Path to output header file with typedefs (shared between decode and encode).")
+    parser.add_argument(
+        "-t",
+        "--entry-types",
+        required=True,
+        type=str,
+        nargs="+",
+        help="Names of the types which should have their xcode functions exposed.")
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        required=False,
+        action="store_true",
+        default=False,
+        help="Print more information while parsing CDDL and generating code.")
+    parser.add_argument("--time-header", required=False, action="store_true", default=False,
+                        help="Put the current time in a comment in the generated files.")
+    parser.add_argument("-d", "--decode", required = False, action="store_true",
+                        default = False, help="Generate decoding code.")
+    parser.add_argument("-e", "--encode", required = False, action="store_true",
+                        default = False, help="Generate encoding code.")
+    parser.add_argument("--default-maxq", required = False, type=int,
+                        default = 3, help="""Default maximum number of repetitions when no maximum
+is specified. This is needed to construct complete C types.""")
+
+    return parser.parse_args()
+
+
+def header_guard(file_name):
+    return path.basename(file_name).replace(".", "_").replace("-", "_").upper() + "__"
 
 
 def main():
