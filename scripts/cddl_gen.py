@@ -674,18 +674,278 @@ class CddlParser:
         return self.mrepr(False)
 
 
-# Class for generating C code that encode/decodes CBOR and validates it according
-# to the CDDL.
-class CodeGenerator(CddlParser):
+class CddlXcoder(CddlParser):
 
     def __init__(self, *args, **kwargs):
-        super(CodeGenerator, self).__init__(*args, **kwargs)
+        super(CddlXcoder, self).__init__(*args, **kwargs)
+
         # The prefix used for C code accessing this element, i.e. the struct
         # hierarchy leading up to this element.
         self.accessPrefix = None
         # Used as a guard against endless recursion in self.dependsOn()
         self.dependsOnCall = False
         self.skipped = False
+
+    # Name of variables and enum members for this element.
+    def var_name(self):
+        name = ("_%s" % self.id())
+        return name
+
+    def skip_condition(self):
+        if self.skipped:
+            return True
+        if self.type in ["LIST", "MAP", "GROUP"]:
+            return not self.multi_val_condition()
+        if self.type ==  "OTHER":
+            return (not self.repeated_multi_var_condition()) and self.single_func_impl_condition()
+        return False
+
+    def set_skipped(self, skipped):
+        if self.range_check_condition() and self.repeated_single_func_impl_condition():
+            self.skipped = True
+        else:
+            self.skipped = skipped
+
+    # Recursively set the access prefix for this element and all its children.
+    def set_access_prefix(self, prefix):
+        self.accessPrefix = prefix
+        if self.type in ["LIST", "MAP", "GROUP", "UNION"]:
+            list(map(lambda child: child.set_access_prefix(self.var_access()),
+                     self.value))
+            list(map(lambda child: child.set_skipped(self.skip_condition()),
+                     self.value))
+        if self.key is not None:
+            self.key.set_access_prefix(self.var_access())
+        if self.cbor_var_condition():
+            self.cbor.set_access_prefix(self.var_access())
+
+    # Whether this type has multiple member variables.
+    def multi_member(self):
+        return self.multi_var_condition() or self.repeated_multi_var_condition()
+
+    def is_unambiguous_value(self):
+        return (self.type == "NIL"
+                or (self.type in ["INT", "NINT", "UINT", "FLOAT", "BSTR", "TSTR", "BOOL"] and self.value is not None)
+                or (self.type == "BSTR" and self.cbor is not None and self.cbor.is_unambiguous())
+                or (self.type == "OTHER" and self.my_types[self.value].is_unambiguous()))
+
+    def is_unambiguous_repeated(self):
+        return self.is_unambiguous_value() and (self.key is None or self.key.is_unambiguous_repeated()) \
+                or (self.type in ["LIST", "GROUP", "MAP"] and len(self.value) == 0)
+                # or (self.type in ["LIST", "GROUP", "MAP"] and all(((child.minQ == child.maxQ and child.is_unambiguous()) for child in self.value)))
+                # or (self.type is "UNION" and len(self.value) is 1 and self.value[0].is_unambiguous()))
+
+    def is_unambiguous(self):
+        return (self.is_unambiguous_repeated() and (self.minQ == self.maxQ))
+
+    # Create an access prefix based on an existing prefix, delimiter and a
+    # suffix.
+    def access_append_delimiter(self, prefix, delimiter, *suffix):
+        assert prefix is not None, "No access prefix for %s" % self.var_name()
+        return delimiter.join((prefix,) + suffix)
+
+    # Create an access prefix from this element's prefix, delimiter and a
+    # provided suffix.
+    def access_append(self, *suffix):
+        suffix = list(suffix)
+        return self.access_append_delimiter(self.accessPrefix, '.', *suffix)
+
+    # "Path" to this element's variable.
+    # If full is false, the path to the repeated part is returned.
+    def var_access(self):
+        if self.is_unambiguous():
+            return "NULL"
+        return self.access_append()
+
+    # "Path" to access this element's actual value variable.
+    def val_access(self):
+        if self.is_unambiguous_repeated():
+            return "NULL"
+        if self.skip_condition():
+            return self.var_access()
+        return self.access_append(self.var_name())
+
+    def repeated_val_access(self):
+        if self.is_unambiguous_repeated():
+            return "NULL"
+        return self.access_append(self.var_name())
+
+    # Whether to include a "present" variable for this element.
+    def present_var_condition(self):
+        return self.minQ == 0 and self.maxQ <= 1
+
+    # Whether to include a "count" variable for this element.
+    def count_var_condition(self):
+        return self.maxQ > 1
+
+    # Whether to include a "cbor" variable for this element.
+    def is_cbor(self):
+        return (self.type not in ["NIL", "ANY"]) and ((self.type != "OTHER") or (
+                (self.value not in self.entry_type_names) and self.my_types[self.value].is_cbor()))
+
+    # Whether to include a "cbor" variable for this element.
+    def cbor_var_condition(self):
+        return (self.cbor is not None) and self.cbor.is_cbor()
+
+    # Whether to include a "choice" variable for this element.
+    def choice_var_condition(self):
+        return self.type == "UNION"
+
+    # Whether to include a "key" variable for this element.
+    def key_var_condition(self):
+        return self.key is not None
+
+    # Whether this value adds any repeated elements by itself. I.e. excluding
+    # multiple elements from children.
+    def self_repeated_multi_var_condition(self):
+        return (self.key_var_condition()
+                or self.cbor_var_condition()
+                or self.choice_var_condition())
+
+    # Whether this element's actual value has multiple members.
+    def multi_val_condition(self):
+        return (self.type in ["LIST", "MAP", "GROUP", "UNION"]
+                and (len(self.value) > 1
+                     or (len(self.value) == 1
+                        and self.value[0].multi_member())))
+
+    # Whether any extra variables are to be included for this element for each
+    # repetition.
+    def repeated_multi_var_condition(self):
+        return self.self_repeated_multi_var_condition() or self.multi_val_condition()
+
+    # Whether any extra variables are to be included for this element outside
+    # of repetitions.
+    def multi_var_condition(self):
+        return self.present_var_condition() or self.count_var_condition()
+
+    # Whether this element must involve a call to multi_xcode(), i.e. unless
+    # it's repeated exactly once.
+    def multi_xcode_condition(self):
+        return self.count_var_condition() or self.present_var_condition()
+
+    # Whether this element needs a check (memcmp) for a string value.
+    def range_check_condition(self):
+        if self.type not in ["INT", "NINT", "UINT", "BSTR", "TSTR"]:
+            return False
+        if self.value is not None:
+            return False
+        if self.type in ["INT", "NINT", "UINT"] and (self.min_value is not None or self.max_value is not None):
+            return True
+        if self.type in ["BSTR", "TSTR"] and (self.min_size is not None or self.max_size is not None):
+            return True
+        return False
+
+    # Whether this element should have a typedef in the code.
+    def type_def_condition(self):
+        if self in self.my_types.values() and self.multi_member() and not self.is_unambiguous():
+            return True
+        return False
+
+    # Whether this type needs a typedef for its repeated part.
+    def repeated_type_def_condition(self):
+        retval = self.repeated_multi_var_condition() and self.multi_var_condition() and not self.is_unambiguous_repeated()
+        return retval
+
+    # Whether this element needs its own encoder/decoder function.
+    def single_func_impl_condition(self):
+        return (False or self.key or self.cbor_var_condition() or self.tags or
+                self.type_def_condition() or (self.type in ["LIST", "MAP"] and len(self.value) != 0)
+                )
+
+    # Whether this element needs its own encoder/decoder function.
+    def repeated_single_func_impl_condition(self):
+        return self.repeated_type_def_condition() \
+                or (self.type in ["LIST", "MAP"] and self.multi_member()) \
+                or (self.multi_xcode_condition() and (self.self_repeated_multi_var_condition() or self.range_check_condition()))
+
+    def uint_val(self):
+        if self.key:
+            return self.key.uint_val()
+        elif self.type == "UINT" and self.is_unambiguous():
+            return self.value
+        elif self.type == "GROUP" and not self.count_var_condition():
+            return self.value[0].uint_val()
+        elif self.type == "OTHER" and not self.count_var_condition() and not self.single_func_impl_condition():
+            return self.my_types[self.value].uint_val()
+        return None
+
+    def is_uint_disambiguated(self):
+        return self.uint_val() != None
+
+    def all_children_uint_disambiguated(self):
+        values = set(child.uint_val() for child in self.value)
+        return (len(values) == len(self.value)) and None not in values
+
+    # Name of the "present" variable for this element.
+    def present_var_name(self):
+        return "%s_present" % (self.var_name())
+
+    # Full "path" of the "present" variable for this element.
+    def present_var_access(self):
+        return self.access_append(self.present_var_name())
+
+    # Name of the "count" variable for this element.
+    def count_var_name(self):
+        return "%s_count" % (self.var_name())
+
+    # Full "path" of the "count" variable for this element.
+    def count_var_access(self):
+        return self.access_append(self.count_var_name())
+
+    # Name of the "choice" variable for this element.
+    def choice_var_name(self):
+        return self.var_name() + "_choice"
+
+    # Name of the enum entry for this element.
+    def enum_var_name(self, uint_val=False):
+        if not uint_val:
+            return self.var_name()
+        else:
+            return f"{self.var_name()} = {self.uint_val()}"
+
+    # Full "path" of the "choice" variable for this element.
+    def choice_var_access(self):
+        return self.access_append(self.choice_var_name())
+
+
+# Class for generating C code that encode/decodes CBOR and validates it according
+# to the CDDL.
+class CodeGenerator(CddlXcoder):
+
+    # Declaration of the "present" variable for this element.
+    def present_var(self):
+        return ["size_t %s;" % self.present_var_name()]
+
+    # Declaration of the "count" variable for this element.
+    def count_var(self):
+        return ["size_t %s;" % self.count_var_name()]
+
+    # Declaration of the "choice" variable for this element.
+    def choice_var(self):
+        var = self.enclose("enum",
+            [val.enum_var_name(self.all_children_uint_disambiguated()) + "," for val in self.value])
+        var[-1] += f" {self.choice_var_name()};"
+        return var
+
+    # Name of the encoder/decoder function for this element.
+    def xcode_func_name(self):
+        return f"{self.mode}{self.var_name()}"
+
+    # Name of the encoder/decoder function for the repeated part of this element.
+    def repeated_xcode_func_name(self):
+        return f"{self.mode}_repeated{self.var_name()}"
+
+    # Declaration of the variables of all children.
+    def child_declarations(self):
+        decl = [line for child in self.value for line in child.full_declaration()]
+        return decl
+
+    # Declaration of the variables of all children.
+    def child_single_declarations(self):
+        decl = [
+            line for child in self.value for line in child.add_var_name(child.single_var_type(), anonymous=True)]
+        return decl
 
     # Base name if this element needs to declare a type.
     def raw_type_name(self):
@@ -739,219 +999,6 @@ class CodeGenerator(CddlParser):
             name = self.repeated_type_name()
         return name
 
-    # Name of variables and enum members for this element.
-    def var_name(self):
-        name = ("_%s" % self.id())
-        return name
-
-    def skip_condition(self):
-        if self.skipped:
-            return True
-        if self.type in ["LIST", "MAP", "GROUP"]:
-            return not self.multi_val_condition()
-        if self.type ==  "OTHER":
-            return (not self.repeated_multi_var_condition()) and self.single_func_impl_condition()
-        return False
-
-    # Create an access prefix based on an existing prefix, delimiter and a
-    # suffix.
-    def access_append_delimiter(self, prefix, delimiter, *suffix):
-        assert prefix is not None, "No access prefix for %s" % self.var_name()
-        return delimiter.join((prefix,) + suffix)
-
-    # Create an access prefix from this element's prefix, delimiter and a
-    # provided suffix.
-    def access_append(self, *suffix):
-        suffix = list(suffix)
-        return self.access_append_delimiter(self.accessPrefix, '.', *suffix)
-
-    # "Path" to this element's variable.
-    # If full is false, the path to the repeated part is returned.
-    def var_access(self):
-        if self.is_unambiguous():
-            return "NULL"
-        return self.access_append()
-
-    # "Path" to access this element's actual value variable.
-    def val_access(self):
-        if self.is_unambiguous_repeated():
-            return "NULL"
-        if self.skip_condition():
-            return self.var_access()
-        return self.access_append(self.var_name())
-
-    def repeated_val_access(self):
-        if self.is_unambiguous_repeated():
-            return "NULL"
-        return self.access_append(self.var_name())
-
-    # Whether to include a "present" variable for this element.
-    def present_var_condition(self):
-        return self.minQ == 0 and self.maxQ <= 1
-
-    # Name of the "present" variable for this element.
-    def present_var_name(self):
-        return "%s_present" % (self.var_name())
-
-    # Declaration of the "present" variable for this element.
-    def present_var(self):
-        return ["size_t %s;" % self.present_var_name()]
-
-    # Full "path" of the "present" variable for this element.
-    def present_var_access(self):
-        return self.access_append(self.present_var_name())
-
-    # Whether to include a "count" variable for this element.
-    def count_var_condition(self):
-        return self.maxQ > 1
-
-    # Name of the "count" variable for this element.
-    def count_var_name(self):
-        return "%s_count" % (self.var_name())
-
-    # Declaration of the "count" variable for this element.
-    def count_var(self):
-        return ["size_t %s;" % self.count_var_name()]
-
-    # Full "path" of the "count" variable for this element.
-    def count_var_access(self):
-        return self.access_append(self.count_var_name())
-
-    # Whether to include a "cbor" variable for this element.
-    def is_cbor(self):
-        return (self.type_name() is not None) and ((self.type != "OTHER") or (
-                (self.value not in self.entry_type_names) and self.my_types[self.value].is_cbor()))
-
-    # Whether to include a "cbor" variable for this element.
-    def cbor_var_condition(self):
-        return (self.cbor is not None) and self.cbor.is_cbor()
-
-    # Whether to include a "choice" variable for this element.
-    def choice_var_condition(self):
-        return self.type == "UNION"
-
-    # Name of the "choice" variable for this element.
-    def choice_var_name(self):
-        return self.var_name() + "_choice"
-
-    # Name of the enum entry for this element.
-    def enum_var_name(self, uint_val=False):
-        if not uint_val:
-            return self.var_name()
-        else:
-            return f"{self.var_name()} = {self.uint_val()}"
-
-    # Declaration of the "choice" variable for this element.
-    def choice_var(self):
-        var = self.enclose("enum",
-            [val.enum_var_name(self.all_children_uint_disambiguated()) + "," for val in self.value])
-        var[-1] += f" {self.choice_var_name()};"
-        return var
-
-    # Full "path" of the "choice" variable for this element.
-    def choice_var_access(self):
-        return self.access_append(self.choice_var_name())
-
-    # Whether to include a "key" variable for this element.
-    def key_var_condition(self):
-        return self.key is not None
-
-    # Whether this value adds any repeated elements by itself. I.e. excluding
-    # multiple elements from children.
-    def self_repeated_multi_var_condition(self):
-        return (self.key_var_condition()
-                or self.cbor_var_condition()
-                or self.choice_var_condition())
-
-    # Whether this element's actual value has multiple members.
-    def multi_val_condition(self):
-        return (self.type in ["LIST", "MAP", "GROUP", "UNION"]
-                and (len(self.value) > 1
-                     or (len(self.value) == 1
-                        and self.value[0].multi_member())))
-
-    # Whether any extra variables are to be included for this element for each
-    # repetition.
-    def repeated_multi_var_condition(self):
-        return self.self_repeated_multi_var_condition() or self.multi_val_condition()
-
-    # Whether any extra variables are to be included for this element outside
-    # of repetitions.
-    def multi_var_condition(self):
-        return self.present_var_condition() or self.count_var_condition()
-
-    # Whether this element must involve a call to multi_xcode(), i.e. unless
-    # it's repeated exactly once.
-    def multi_xcode_condition(self):
-        return self.count_var_condition() or self.present_var_condition()
-
-    # Name of the encoder/decoder function for this element.
-    def xcode_func_name(self):
-        return f"{self.mode}{self.var_name()}"
-
-    # Name of the encoder/decoder function for the repeated part of this element.
-    def repeated_xcode_func_name(self):
-        return f"{self.mode}_repeated{self.var_name()}"
-
-    # Declaration of the variables of all children.
-    def child_declarations(self):
-        decl = [line for child in self.value for line in child.full_declaration()]
-        return decl
-
-    # Declaration of the variables of all children.
-    def child_single_declarations(self):
-        decl = [
-            line for child in self.value for line in child.add_var_name(child.single_var_type(), anonymous=True)]
-        return decl
-
-    # Enclose a list of declarations in a block (struct, union or enum).
-    def enclose(self, ingress, declaration):
-        return [f"{ingress} {{"] + [indentation +
-                                    line for line in declaration] + ["}"]
-
-    # Type declaration for unions.
-    def union_type(self):
-        declaration = self.enclose("union", self.child_single_declarations())
-        return declaration
-
-    def set_skipped(self, skipped):
-        if self.range_check_condition() and self.repeated_single_func_impl_condition():
-            self.skipped = True
-        else:
-            self.skipped = skipped
-
-    # Recursively set the access prefix for this element and all its children.
-    def set_access_prefix(self, prefix):
-        self.accessPrefix = prefix
-        if self.type in ["LIST", "MAP", "GROUP", "UNION"]:
-            list(map(lambda child: child.set_access_prefix(self.var_access()),
-                     self.value))
-            list(map(lambda child: child.set_skipped(self.skip_condition()),
-                     self.value))
-        if self.key is not None:
-            self.key.set_access_prefix(self.var_access())
-        if self.cbor_var_condition():
-            self.cbor.set_access_prefix(self.var_access())
-
-    # Whether this type has multiple member variables.
-    def multi_member(self):
-        return self.multi_var_condition() or self.repeated_multi_var_condition()
-
-    def is_unambiguous_value(self):
-        return (self.type == "NIL"
-                or (self.type in ["INT", "NINT", "UINT", "FLOAT", "BSTR", "TSTR", "BOOL"] and self.value is not None)
-                or (self.type == "BSTR" and self.cbor is not None and self.cbor.is_unambiguous())
-                or (self.type == "OTHER" and self.my_types[self.value].is_unambiguous()))
-
-    def is_unambiguous_repeated(self):
-        return self.is_unambiguous_value() and (self.key is None or self.key.is_unambiguous_repeated()) \
-                or (self.type in ["LIST", "GROUP", "MAP"] and len(self.value) == 0)
-                # or (self.type in ["LIST", "GROUP", "MAP"] and all(((child.minQ == child.maxQ and child.is_unambiguous()) for child in self.value)))
-                # or (self.type is "UNION" and len(self.value) is 1 and self.value[0].is_unambiguous()))
-
-    def is_unambiguous(self):
-        return (self.is_unambiguous_repeated() and (self.minQ == self.maxQ))
-
     # Take a multi member type name and create a variable declaration. Make it an array if the element is repeated.
     def add_var_name(self, var_type, full=False, anonymous=False):
         if var_type:
@@ -968,6 +1015,16 @@ class CodeGenerator(CddlParser):
         elif self.type == "UNION":
             return self.union_type()
         return []
+
+    # Enclose a list of declarations in a block (struct, union or enum).
+    def enclose(self, ingress, declaration):
+        return [f"{ingress} {{"] + [indentation +
+                                    line for line in declaration] + ["}"]
+
+    # Type declaration for unions.
+    def union_type(self):
+        declaration = self.enclose("union", self.child_single_declarations())
+        return declaration
 
     # Declaration of the repeated part of this element.
     def repeated_declaration(self):
@@ -1055,30 +1112,6 @@ class CodeGenerator(CddlParser):
         else:
             return self.var_type()
 
-    # Whether this element needs a check (memcmp) for a string value.
-    def range_check_condition(self):
-        if self.type not in ["INT", "NINT", "UINT", "BSTR", "TSTR"]:
-            return False
-        if self.value is not None:
-            return False
-        if self.type in ["INT", "NINT", "UINT"] and (self.min_value is not None or self.max_value is not None):
-            return True
-        if self.type in ["BSTR", "TSTR"] and (self.min_size is not None or self.max_size is not None):
-            return True
-        return False
-
-
-    # Whether this element should have a typedef in the code.
-    def type_def_condition(self):
-        if self in self.my_types.values() and self.multi_member() and not self.is_unambiguous():
-            return True
-        return False
-
-    # Whether this type needs a typedef for its repeated part.
-    def repeated_type_def_condition(self):
-        retval = self.repeated_multi_var_condition() and self.multi_var_condition() and not self.is_unambiguous_repeated()
-        return retval
-
     # Return the type definition of this element, and all its children + key +
     # cbor.
     def type_def(self):
@@ -1159,18 +1192,6 @@ class CodeGenerator(CddlParser):
                 min_val = self.min_value
                 max_val = self.max_value
         return (func, arg)
-
-    # Whether this element needs its own encoder/decoder function.
-    def single_func_impl_condition(self):
-        return (False or self.key or self.cbor_var_condition() or self.tags or
-                self.type_def_condition() or (self.type in ["LIST", "MAP"] and len(self.value) != 0)
-                )
-
-    # Whether this element needs its own encoder/decoder function.
-    def repeated_single_func_impl_condition(self):
-        return self.repeated_type_def_condition() \
-                or (self.type in ["LIST", "MAP"] and self.multi_member()) \
-                or (self.multi_xcode_condition() and (self.self_repeated_multi_var_condition() or self.range_check_condition()))
 
     # Return the function name and arguments to call to encode/decode this element.
     def single_func(self, access=None, union_uint=None):
@@ -1277,24 +1298,6 @@ class CodeGenerator(CddlParser):
         return "(%s)" % (newl_ind + "&& ").join(
             [self.value[0].full_xcode(union_uint)]
                 +[child.full_xcode() for child in self.value[1:]])
-
-    def uint_val(self):
-        if self.key:
-            return self.key.uint_val()
-        elif self.type == "UINT" and self.is_unambiguous():
-            return self.value
-        elif self.type == "GROUP" and not self.count_var_condition():
-            return self.value[0].uint_val()
-        elif self.type == "OTHER" and not self.count_var_condition() and not self.single_func_impl_condition():
-            return self.my_types[self.value].uint_val()
-        return None
-
-    def is_uint_disambiguated(self):
-        return self.uint_val() != None
-
-    def all_children_uint_disambiguated(self):
-        values = set(child.uint_val() for child in self.value)
-        return (len(values) == len(self.value)) and None not in values
 
     # Return the full code needed to encode/decode a "UNION" element's children.
     def xcode_union(self):
