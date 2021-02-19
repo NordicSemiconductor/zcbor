@@ -4,7 +4,7 @@ Generate code from CDDL description
 CDDL is a human-readable description language defined in [IETF RFC 8610](https://datatracker.ietf.org/doc/rfc8610/).
 By calling the Python script [cddl_gen.py](scripts/cddl_gen.py), you can generate C code that validates/encodes/decodes CBOR data conforming to a CDDL schema.
 
-The generated code depends on low-level CBOR ([libraries](include/src)).
+The generated code depends on low-level CBOR ([headers](include) and [source](src)).
 There are tests for the code generation in [tests/](tests/).
 For now the tests require [Zephyr](https://github.com/zephyrproject-rtos/zephyr) (if your shell is set up to build Zephyr samples, the tests should also build).
 
