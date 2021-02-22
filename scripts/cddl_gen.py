@@ -1472,27 +1472,6 @@ __attribute__((unused)) static bool type_test_{self.xcode_func_name()}(
 		{"" if self.mode == "decode" else "const "}{self.type_name()} *{struct_ptr_name(self.mode)})"""
 
 
-# Returns a dict containing multiple typename=>string
-def get_types(instr):
-    type_regex = r"(\s*?\$?\$?([\w-]+)\s*(\/{0,2})=\s*(.*?)(?=(\Z|\s*\$?\$?[\w-]+\s*\/{0,2}=(?!\>))))"
-    result = defaultdict(lambda: "")
-    types = [(key, value, slashes) for (_1, key, slashes, value, _2) in findall(type_regex, instr, S | M)]
-    for key, value, slashes in types:
-        if slashes:
-            result[key] += slashes
-            result[key] += value
-            result[key] = result[key].lstrip(slashes)  # strip from front
-        else:
-            result[key] = value
-    return dict(result)
-
-
-# Strip CDDL comments (';') from the string.
-def strip_comments(instr):
-    comment_regex = r"\;.*?\n"
-    return sub(comment_regex, '', instr)
-
-
 class CodeRenderer():
     def __init__(self, entry_types, mode, print_time, default_maxq):
         self.entry_types = entry_types
@@ -1758,9 +1737,27 @@ is specified. This is needed to construct complete C types.""")
     return parser.parse_args()
 
 
+# Returns a dict containing multiple typename=>string
+def get_types(instr):
+    type_regex = r"(\s*?\$?\$?([\w-]+)\s*(\/{0,2})=\s*(.*?)(?=(\Z|\s*\$?\$?[\w-]+\s*\/{0,2}=(?!\>))))"
+    result = defaultdict(lambda: "")
+    types = [(key, value, slashes) for (_1, key, slashes, value, _2) in findall(type_regex, instr, S | M)]
+    for key, value, slashes in types:
+        if slashes:
+            result[key] += slashes
+            result[key] += value
+            result[key] = result[key].lstrip(slashes)  # strip from front
+        else:
+            result[key] = value
+    return dict(result)
+
+# Strip CDDL comments (';') from the string.
+def strip_comments(instr):
+    comment_regex = r"\;.*?\n"
+    return sub(comment_regex, '', instr)
+
 def header_guard(file_name):
     return path.basename(file_name).replace(".", "_").replace("-", "_").upper() + "__"
-
 
 def main():
     # Parse command line arguments.
