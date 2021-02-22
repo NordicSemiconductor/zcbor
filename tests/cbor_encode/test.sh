@@ -17,7 +17,7 @@ do_test() {
             exit 1
         fi
 
-        ninja > test.log
+        ninja >> test.log
         if [[ $? -ne 0 ]]; then
             cat test.log
             exit 1
