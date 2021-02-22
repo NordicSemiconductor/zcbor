@@ -136,7 +136,7 @@ def ternary_if_chain(access, names, xcode_strings):
 #  - For "OTHER" types, one instance points to another type definition.
 #  - For "GROUP" and "UNION" types, there is no separate data item for the instance.
 class CddlParser:
-    def __init__(self, entry_type_names, verbose_flag, mode, default_maxq, my_types, base_name=None):
+    def __init__(self, default_maxq, my_types, base_name=None):
         self.id_prefix = "temp_" + str(counter())
         self.id_num = None  # Unique ID number. Only populated if needed.
         # The value of the data item. Has different meaning for different
@@ -171,11 +171,53 @@ class CddlParser:
         self.match_str = ""
 
         self.my_types = my_types
-        self.entry_type_names = entry_type_names # args.entry_types
-        self.verbose_flag = verbose_flag # args.verbose
-        self.mode = mode # "decode" if args.decode else "encode"
         self.default_maxq = default_maxq # args.default_maxq
         self.base_name = base_name  # Used as default for self.get_base_name()
+
+    @classmethod
+    def from_cddl(cddl_class, cddl_string, default_maxq, *args, **kwargs):
+        my_types = dict()
+
+        type_strings = cddl_class.get_types(cddl_string)
+        my_types = {my_type: None for my_type in type_strings.keys()}
+
+        # Parse the definitions, replacing the each string with a
+        # CodeGenerator instance.
+        for my_type, cddl_string in type_strings.items():
+            parsed = cddl_class(*args, default_maxq, my_types, **kwargs, base_name=my_type)
+            parsed.get_value(cddl_string.replace("\n", " "))
+            my_types[my_type] = parsed.flatten()[0]
+            my_types[my_type].set_id_prefix("")
+
+        counter(True)
+
+        # post_validate all the definitions.
+        for my_type in my_types:
+            my_types[my_type].post_validate()
+
+        return my_types
+
+    # Strip CDDL comments (';') from the string.
+    @staticmethod
+    def strip_comments(instr):
+        comment_regex = r"\;.*?\n"
+        return sub(comment_regex, '', instr)
+
+    # Returns a dict containing multiple typename=>string
+    @classmethod
+    def get_types(cls, cddl_string):
+        instr = cls.strip_comments(cddl_string)
+        type_regex = r"(\s*?\$?\$?([\w-]+)\s*(\/{0,2})=\s*(.*?)(?=(\Z|\s*\$?\$?[\w-]+\s*\/{0,2}=(?!\>))))"
+        result = defaultdict(lambda: "")
+        types = [(key, value, slashes) for (_1, key, slashes, value, _2) in findall(type_regex, instr, S | M)]
+        for key, value, slashes in types:
+            if slashes:
+                result[key] += slashes
+                result[key] += value
+                result[key] = result[key].lstrip(slashes)  # strip from front
+            else:
+                result[key] = value
+        return dict(result)
 
     # Generate a (hopefully) unique and descriptive name
     def generate_base_name(self):
@@ -206,7 +248,7 @@ class CddlParser:
                          if self.id_prefix != "" else "", self.get_base_name())
 
     def init_args(self):
-        return (self.entry_type_names, self.verbose_flag, self.mode, self.default_maxq)
+        return (self.default_maxq,)
 
     def init_kwargs(self):
         return {"my_types":self.my_types}
@@ -781,7 +823,7 @@ class CddlXcoder(CddlParser):
     # Whether to include a "cbor" variable for this element.
     def is_cbor(self):
         return (self.type not in ["NIL", "ANY"]) and ((self.type != "OTHER") or (
-                (self.value not in self.entry_type_names) and self.my_types[self.value].is_cbor()))
+                self.my_types[self.value].is_cbor()))
 
     # Whether to include a "cbor" variable for this element.
     def cbor_var_condition(self):
@@ -912,6 +954,28 @@ class CddlXcoder(CddlParser):
 # Class for generating C code that encode/decodes CBOR and validates it according
 # to the CDDL.
 class CodeGenerator(CddlXcoder):
+    def __init__(self, mode, entry_type_names, *args, **kwargs):
+        super(CodeGenerator, self).__init__(*args, **kwargs)
+        self.mode = mode
+        self.entry_type_names = entry_type_names
+
+    @classmethod
+    def from_cddl(cddl_class, mode, *args, **kwargs):
+        my_types = super(CodeGenerator, cddl_class).from_cddl(*args, **kwargs)
+
+        # set access prefix (struct access paths) for all the definitions.
+        for my_type in my_types:
+            my_types[my_type].set_access_prefix(f"(*{struct_ptr_name(mode)})")
+
+        return my_types
+
+    # Whether to include a "cbor" variable for this element.
+    def is_cbor(self):
+        return (self.type_name() is not None) and ((self.type != "OTHER") or (
+                (self.value not in self.entry_type_names) and self.my_types[self.value].is_cbor()))
+
+    def init_args(self):
+        return (self.mode, self.entry_type_names, self.default_maxq)
 
     # Declaration of the "present" variable for this element.
     def present_var(self):
@@ -1146,6 +1210,14 @@ class CodeGenerator(CddlXcoder):
             "NIL": f"nilx",
             "ANY": f"any",
         }[self.type]
+
+    # Name of the encoder/decoder function for this element.
+    def xcode_func_name(self):
+        return f"{self.mode}{self.var_name()}"
+
+    # Name of the encoder/decoder function for the repeated part of this element.
+    def repeated_xcode_func_name(self):
+        return f"{self.mode}_repeated{self.var_name()}"
 
     # Return the function name and arguments to call to encode/decode this element. Only used when this element DOESN'T
     # define its own encoder/decoder function (when it's a primitive type, for which functions already exist, or when the
@@ -1487,6 +1559,9 @@ class CodeRenderer():
         self.functions = self.used_funcs()
         self.type_defs = self.unique_types()
 
+    def header_guard(self, file_name):
+        return path.basename(file_name).replace(".", "_").replace("-", "_").upper() + "__"
+
     # Return a list of typedefs for all defined types, with duplicate typedefs
     # removed.
     def unique_types(self):
@@ -1683,6 +1758,26 @@ static bool {xcoder[1]}(
 #endif /* {header_guard} */
 """
 
+    def render(self, h_file, c_file, type_file_in):
+        h_dir, h_name = path.split(h_file.name)
+        type_file = type_file_in or open(path.join(h_dir, f"types_{h_name}"), 'w')
+
+        # Create and populate the generated c and h file.
+        makedirs("./" + path.dirname(c_file.name), exist_ok=True)
+
+        print ("Writing to " + c_file.name)
+        c_file.write(self.render_c_file(header_file_name=h_name))
+
+        makedirs("./" + h_dir, exist_ok=True)
+        type_file_name = path.basename(type_file.name)
+
+        print("Writing to " + h_file.name)
+        h_file.write(self.render_h_file(type_def_file=type_file_name,
+                                header_guard=self.header_guard(h_file.name)))
+
+        print("Writing to " + type_file_name)
+        type_file.write(self.render_type_file(header_guard=self.header_guard(type_file_name)))
+
 
 def parse_args():
     parser = ArgumentParser(
@@ -1737,28 +1832,6 @@ is specified. This is needed to construct complete C types.""")
     return parser.parse_args()
 
 
-# Returns a dict containing multiple typename=>string
-def get_types(instr):
-    type_regex = r"(\s*?\$?\$?([\w-]+)\s*(\/{0,2})=\s*(.*?)(?=(\Z|\s*\$?\$?[\w-]+\s*\/{0,2}=(?!\>))))"
-    result = defaultdict(lambda: "")
-    types = [(key, value, slashes) for (_1, key, slashes, value, _2) in findall(type_regex, instr, S | M)]
-    for key, value, slashes in types:
-        if slashes:
-            result[key] += slashes
-            result[key] += value
-            result[key] = result[key].lstrip(slashes)  # strip from front
-        else:
-            result[key] = value
-    return dict(result)
-
-# Strip CDDL comments (';') from the string.
-def strip_comments(instr):
-    comment_regex = r"\;.*?\n"
-    return sub(comment_regex, '', instr)
-
-def header_guard(file_name):
-    return path.basename(file_name).replace(".", "_").replace("-", "_").upper() + "__"
-
 def main():
     # Parse command line arguments.
     args = parse_args()
@@ -1768,59 +1841,19 @@ def main():
     if args.decode == args.encode:
         args.error("Please specify exactly one of --decode or --encode.")
 
-    # Read CDDL file. self.my_types will become a dict {name:str => definition:str}
-    # for all types in the CDDL file.
     print ("Parsing " + args.input.name)
-    my_types = get_types(strip_comments(args.input.read()))
 
-    # Parse the definitions, replacing the each string with a
-    # CodeGenerator instance.
-    for my_type in my_types:
-        parsed = CodeGenerator(args.entry_types, args.verbose, mode,
-                               args.default_maxq, my_types, base_name=my_type)
-        parsed.get_value(my_types[my_type].replace("\n", " "))
-        my_types[my_type] = parsed.flatten()[0]
-        my_types[my_type].set_id_prefix("")
-
-        counter(True)
-
-    # set access prefix (struct access paths) for all the definitions.
-    for my_type in my_types:
-        my_types[my_type].set_access_prefix(f"(*{struct_ptr_name(mode)})")
-
-    # post_validate all the definitions.
-    for my_type in my_types:
-        my_types[my_type].post_validate()
+    my_types = CodeGenerator.from_cddl(mode, args.input.read(), args.default_maxq, mode, args.entry_types)
 
     # Parsing is done, pretty print the result.
     verbose_print(args.verbose, "Parsed CDDL types:")
     verbose_pprint(args.verbose, my_types)
 
-    # Prepare the list of types that will have exposed encoder/decoder functions.
-    entry_types = [my_types[entry] for entry in args.entry_types]
-
-    renderer = CodeRenderer(entry_types=entry_types, mode=mode,
+    renderer = CodeRenderer(entry_types=[my_types[entry] for entry in args.entry_types], mode=mode,
                             print_time=args.time_header,
                             default_maxq=args.default_maxq)
 
-    h_dir, h_name = path.split(args.output_h.name)
-
-    # Create and populate the generated c and h file.
-    makedirs("./" + path.dirname(args.output_c.name), exist_ok=True)
-
-    print ("Writing to " + args.output_c.name)
-    args.output_c.write(renderer.render_c_file(header_file_name=h_name))
-
-    makedirs("./" + h_dir, exist_ok=True)
-    type_file = args.output_h_types or open(path.join(h_dir, f"types_{h_name}"), 'w')
-    type_file_name = path.basename(type_file.name)
-
-    print("Writing to " + args.output_h.name)
-    args.output_h.write(renderer.render_h_file(type_def_file=type_file_name,
-                            header_guard=header_guard(args.output_h.name)))
-
-    print("Writing to " + type_file_name)
-    type_file.write(renderer.render_type_file(header_guard=header_guard(type_file_name)))
+    renderer.render(args.output_h, args.output_c, args.output_h_types)
 
 
 if __name__ == "__main__":
