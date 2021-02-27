@@ -5,13 +5,19 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-from regex import match, search, sub, findall, S, M
+from regex import match, search, sub, findall, S, M, fullmatch
 from pprint import pformat, pprint
 from os import path, linesep, makedirs
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 from argparse import ArgumentParser, RawDescriptionHelpFormatter, FileType
 from datetime import datetime
 from copy import copy
+from itertools import tee
+from cbor2 import loads, dumps, CBORTag, load, CBORDecodeValueError, CBORDecodeEOF
+from yaml import safe_load as yaml_load, dump as yaml_dump
+from json import loads as json_load, dumps as json_dump
+from io import BytesIO
+import sys
 
 indentation = "\t"
 newl_ind = "\n" + indentation
@@ -175,6 +181,7 @@ class CddlParser:
         # "MAP","GROUP", "UNION" and "OTHER". "OTHER" represents a CDDL type defined with '='.
         self.type = None
         self.match_str = ""
+        self.errors = list()
 
         self.my_types = my_types
         self.default_maxq = default_maxq  # args.default_maxq
@@ -977,6 +984,407 @@ class CddlXcoder(CddlParser):
     # Full "path" of the "choice" variable for this element.
     def choice_var_access(self):
         return self.access_append(self.choice_var_name())
+
+
+class CddlValidationError(Exception):
+    pass
+
+
+# Subclass of tuple for holding key,value pairs. This is to make it possible to use isinstance() to
+# separate it from other tuples.
+class KeyTuple(tuple):
+    def __new__(cls, *in_tuple):
+        return super(KeyTuple, cls).__new__(cls, *in_tuple)
+
+
+# Convert data between CBOR, JSON and YAML, and validate against the provided CDDL.
+# Decode and validate CBOR into Python structures to be able to make Python scripts that manipulate CBOR code.
+class DataTranslator(CddlXcoder):
+    # Format a Python object for printing by adding newlines and indentation.
+    @staticmethod
+    def format_obj(obj):
+        formatted = pformat(obj)
+        out_str = ""
+        indent = 0
+        new_line = True
+        for c in formatted:
+            if new_line:
+                if c == " ":
+                    continue
+                new_line = False
+            out_str += c
+            if c in "[(":
+                indent += 1
+            if c in ")]" and indent > 0:
+                indent -= 1
+            if c in "[(,":
+                out_str += linesep
+                out_str += "  " * indent
+                new_line = True
+        return out_str
+
+    # Override the id() function
+    def id(self):
+        return self.generate_base_name().strip("_")
+
+    # Override the var_name()
+    def var_name(self):
+        return self.id()
+
+    # Check a condition and raise a CddlValidationError if not.
+    def _decode_assert(self, test, msg=""):
+        if not test:
+            raise CddlValidationError(f"Data did not decode correctly {'('+msg+')' if msg else ''}")
+
+    # Check that no unexpected tags are attached to this data. Return whether a tag was present.
+    def _check_tag(self, obj):
+        if isinstance(obj, CBORTag):
+            self._decode_assert(obj.tag in self.tags or self.type == "ANY", f"Tag ({obj.tag}) not expected for {self}")
+            return True
+        return False
+
+    # Return our expected python type as returned by cbor2.
+    def _expected_type(self):
+        return {
+            "UINT": lambda: int,
+            "INT": lambda: int,
+            "NINT": lambda: int,
+            "FLOAT": lambda: float,
+            "TSTR": lambda: str,
+            "BSTR": lambda: bytes,
+            "NIL": lambda: type(None),
+            "ANY": lambda: (int, float, str, bytes, type(None), bool, list, dict),
+            "BOOL": lambda: bool,
+            "LIST": lambda: (tuple, list),
+            "MAP": lambda: dict,
+            "UNION": lambda: tuple((child._expected_type() for child in self.value)),
+            "GROUP": lambda: self.value[0]._expected_type(),
+            "OTHER": lambda: self.my_types[self.value]._expected_type(),
+        }[self.type]()
+
+    # Check that the decoded object has the correct type.
+    def _check_type(self, obj):
+        exp_type = self._expected_type()
+        self._decode_assert(
+            isinstance(obj, exp_type), f"{str(self)}: Wrong type of {str(obj)}, expected {str(exp_type)}")
+
+    # Check that the decode value conforms to the restrictions in the CDDL.
+    def _check_value(self, obj):
+        if self.type in ["UINT", "INT", "NINT", "FLOAT", "TSTR", "BSTR", "BOOL"] and self.value is not None:
+            self._decode_assert(
+                self.value == obj, f"{obj} should have value {self.value} according to {self.var_name()}")
+        if self.type in ["UINT", "INT", "NINT", "FLOAT"]:
+            if self.min_value is not None:
+                self._decode_assert(obj >= self.min_value, "Minimum value: " + str(self.min_value))
+            if self.max_value is not None:
+                self._decode_assert(obj <= self.max_value, "Maximum value: " + str(self.max_value))
+        if self.type in ["TSTR", "BSTR"]:
+            if self.min_size is not None:
+                self._decode_assert(len(obj) >= self.min_size, "Minimum length: " + str(self.min_size))
+            if self.max_size is not None:
+                self._decode_assert(len(obj) <= self.max_size, "Maximum length: " + str(self.max_size))
+
+    # Check that the object is not a KeyTuple since that means it hasn't been properly processed.
+    def _check_key(self, obj):
+        self._decode_assert(not isinstance(obj, KeyTuple), "Unexpected key found: (key,value)=" + str(obj))
+
+    # Recursively remove intermediate objects that have single members. Keep lists as is.
+    def _flatten_obj(self, obj):
+        if isinstance(obj, tuple) and len(obj) == 1:
+            return self._flatten_obj(obj[0])
+        return obj
+
+    # Return the contents of a list if it has a single member and it's name is the same as us.
+    def _flatten_list(self, name, obj):
+        if isinstance(obj, list) and len(obj) == 1 and len(obj[0]) == 1 and hasattr(obj[0], name):
+            return [obj[0][0]]
+        return obj
+
+    # Construct a namedtuple object from my_list. my_list contains tuples of name/value.
+    # Also, attempt to flatten redundant levels of abstraction.
+    def _construct_obj(self, my_list):
+        if my_list == []:
+            return None
+        names, values = tuple(zip(*my_list))
+        if len(values) == 1:
+            values = (self._flatten_obj(values[0]), )
+        values = tuple(self._flatten_list(names[i], values[i]) for i in range(len(values)))
+        assert (not any((isinstance(elem, KeyTuple) for elem in values))), f"KeyTuple not processed: {values}"
+        return namedtuple("_", names)(*values)
+
+    # Add construct obj and add it to my_list if relevant. Also, process any KeyTuples present.
+    def _add_if(self, my_list, obj, expect_key=False, name=None):
+        if expect_key and self.type == "OTHER" and self.key is None:
+            self.my_types[self.value]._add_if(my_list, obj)
+            return
+        if self.is_unambiguous():
+            return
+        if isinstance(obj, list):
+            for i in range(len(obj)):
+                if isinstance(obj[i], KeyTuple):
+                    retvals = list()
+                    self._add_if(retvals, obj[i])
+                    obj[i] = self._construct_obj(retvals)
+
+            # obj = self._flatten_list(obj)
+        if isinstance(obj, KeyTuple):
+            key, obj = obj
+            if key is not None:
+                self.key._add_if(my_list, key, name=self.var_name() + "_key")
+        my_list.append((name or self.var_name(), obj))
+
+    # Throw CddlValidationError if iterator is not empty. This consumes one element if present.
+    def _iter_is_empty(self, it):
+        try:
+            val = next(it)
+        except StopIteration:
+            return True
+        raise CddlValidationError(
+            f"Iterator not consumed while parsing \n{self}\nRemaining elements:\n elem: "
+            + "\n elem: ".join(str(elem) for elem in ([val] + list(it))))
+
+    # Get next element from iterator, throw CddlValidationError instead of StopIteration.
+    def _iter_next(self, it):
+        try:
+            next_obj = next(it)
+            return next_obj
+        except StopIteration:
+            raise CddlValidationError("Iterator empty")
+
+    # Decode single CDDL value, excluding repetitions
+    def _decode_single_obj(self, obj):
+        self._check_key(obj)
+        if self._check_tag(obj):
+            return self._decode_single_obj(obj.value)
+        self._check_type(obj)
+        self._check_value(obj)
+        if self.type == "BSTR" and self.cbor_var_condition():
+            decoded = self.cbor.decode_str(obj)
+            return decoded
+        elif self.type in ["UINT", "INT", "NINT", "FLOAT", "TSTR", "BSTR", "BOOL", "NIL", "ANY"]:
+            return obj
+        elif self.type == "OTHER":
+            return self.my_types[self.value]._decode_single_obj(obj)
+        elif self.type == "LIST":
+            retval = list()
+            child_val = iter(obj)
+            for child in self.value:
+                ret = child._decode_full(child_val)
+                child_val, child_obj = ret
+                child._add_if(retval, child_obj)
+            self._iter_is_empty(child_val)
+            return self._construct_obj(retval)
+        elif self.type == "MAP":
+            retval = list()
+            child_val = iter(KeyTuple(item) for item in obj.items())
+            for child in self.value:
+                child_val, child_key_val = child._decode_full(child_val)
+                child._add_if(retval, child_key_val, expect_key=True)
+            self._iter_is_empty(child_val)
+            return self._construct_obj(retval)
+        elif self.type == "UNION":
+            retval = list()
+            for child in self.value:
+                try:
+                    child_obj = child._decode_single_obj(obj)
+                    child._add_if(retval, child_obj)
+                    retval.append(("union_choice", child.var_name()))
+                    return self._construct_obj(retval)
+                except CddlValidationError as c:
+                    self.errors.append(str(c))
+            self._decode_assert(False, "No matches for union: " + str(self))
+        assert False, "Unexpected type: " + self.type
+
+    # Decode key and value in the form of a KeyTuple
+    def _handle_key(self, next_obj):
+        self._decode_assert(isinstance(next_obj, KeyTuple), f"Expected key: {self.key} value=" + pformat(next_obj))
+        key, obj = next_obj
+        key_res = self.key._decode_single_obj(key)
+        obj_res = self._decode_single_obj(obj)
+        res = KeyTuple((key_res if not self.key.is_unambiguous() else None, obj_res))
+        return res
+
+    # Decode single CDDL value, excluding repetitions. May consume 0 to n CBOR objects via the iterator.
+    def _decode_obj(self, it):
+        my_list = list()
+        if self.key is not None:
+            it, it_copy = tee(it)
+            key_res = self._handle_key(self._iter_next(it_copy))
+            return it_copy, key_res
+        if self.tags:
+            it, it_copy = tee(it)
+            maybe_tag = next(it_copy)
+            if isinstance(maybe_tag, CBORTag):
+                tag_res = self._decode_single_obj(maybe_tag)
+                return it_copy, tag_res
+        if self.type == "OTHER" and self.key is None:
+            return self.my_types[self.value]._decode_full(it)
+        elif self.type == "GROUP":
+            my_list = list()
+            child_it = it
+            for child in self.value:
+                child_it, child_obj = child._decode_full(child_it)
+                if child.key is not None:
+                    child._add_if(my_list, child_obj, expect_key=True)
+                else:
+                    child._add_if(my_list, child_obj)
+            ret = (child_it, self._construct_obj(my_list))
+        elif self.type == "UNION":
+            my_list = list()
+            child_it = it
+            found = False
+            for child in self.value:
+                try:
+                    child_it, it_copy = tee(child_it)
+                    child_it, child_obj = child._decode_full(child_it)
+                    child._add_if(my_list, child_obj)
+                    my_list.append(("union_choice", child.var_name()))
+                    ret = (child_it, self._construct_obj(my_list))
+                    found = True
+                    break
+                except CddlValidationError as c:
+                    self.errors.append(str(c))
+                    child_it = it_copy
+            self._decode_assert(found, "No matches for union: " + str(self))
+        else:
+            ret = (it, self._decode_single_obj(self._iter_next(it)))
+        return ret
+
+    # Decode single CDDL value, with repetitions. May consume 0 to n CBOR objects via the iterator.
+    def _decode_full(self, it):
+        if self.multi_var_condition():
+            retvals = []
+            for i in range(self.minQ):
+                it, retval = self._decode_obj(it)
+                retvals.append(retval if not self.is_unambiguous_repeated() else None)
+            try:
+                for i in range(self.maxQ - self.minQ):
+                    it, it_copy = tee(it)
+                    it, retval = self._decode_obj(it)
+                    retvals.append(retval if not self.is_unambiguous_repeated() else None)
+            except CddlValidationError as c:
+                it = it_copy
+            return it, retvals
+        else:
+            ret = self._decode_obj(it)
+            return ret
+
+    # CBOR object => python object
+    def decode_obj(self, obj):
+        it = iter([obj])
+        _, decoded = self._decode_full(it)
+        self._iter_is_empty(it)
+        return decoded
+
+    # CBOR bytestring => python object
+    def decode_str(self, cbor_str):
+        cbor_obj = loads(cbor_str)
+        return self.decode_obj(cbor_obj)
+
+    # Validate CBOR object against CDDL. Exception if not valid.
+    def validate_obj(self, obj):
+        self.decode_obj(obj)
+        return True
+
+    # Validate CBOR bytestring against CDDL. Exception if not valid.
+    def validate_str(self, cbor_str):
+        cbor_obj = loads(cbor_str)
+        return self.validate_obj(cbor_obj)
+
+    # Convert object from YAML/JSON (with special dicts for bstr, tag etc) to CBOR object
+    # that cbor2 understands.
+    def _to_cbor_obj(self, obj):
+        if isinstance(obj, list):
+            return [self._to_cbor_obj(elem) for elem in obj]
+        elif isinstance(obj, dict):
+            if ["bstr"] == list(obj.keys()):
+                if isinstance(obj["bstr"], str):
+                    bstr = bytes.fromhex(obj["bstr"])
+                else:
+                    bstr = dumps(self._to_cbor_obj(obj["bstr"]))
+                return bstr
+            elif ["tag", "val"] == list(obj.keys()):
+                return CBORTag(obj["tag"], self._to_cbor_obj(obj["val"]))
+            retval = dict()
+            for key, val in obj.items():
+                match = fullmatch(r"keyval\d+", key)
+                if match is not None:
+                    new_key = self._to_cbor_obj(val["key"])
+                    new_val = self._to_cbor_obj(val["val"])
+                    if isinstance(new_key, list):
+                        new_key = tuple(new_key)
+                    retval[new_key] = new_val
+                else:
+                    retval[key] = val
+            return retval
+        return obj
+
+    # inverse of _to_cbor_obj
+    def _from_cbor_obj(self, obj):
+        if isinstance(obj, list) or isinstance(obj, tuple):
+            return [self._from_cbor_obj(elem) for elem in obj]
+        elif isinstance(obj, dict):
+            retval = dict()
+            i = 0
+            for key, val in obj.items():
+                if not isinstance(key, str):
+                    retval[f"keyval{i}"] = {"key": self._from_cbor_obj(key), "val": self._from_cbor_obj(val)}
+                    i += 1
+                else:
+                    retval[key] = val
+            return retval
+        elif isinstance(obj, bytes):
+            f = BytesIO(obj)
+            try:
+                bstr_obj = self._from_cbor_obj(load(f))
+            except (CBORDecodeValueError, CBORDecodeEOF):
+                # failed decoding
+                bstr_obj = obj.hex()
+            else:
+                if f.read(1) != b'':
+                    # not fully decoded
+                    bstr_obj = obj.hex()
+            return {"bstr": bstr_obj}
+        elif isinstance(obj, CBORTag):
+            return {"tag": obj.tag, "val": self._from_cbor_obj(obj.value)}
+        assert not isinstance(obj, bytes)
+        return obj
+
+    # YAML str => CBOR bytestr
+    def from_yaml(self, yaml_str):
+        yaml_obj = yaml_load(yaml_str)
+        obj = self._to_cbor_obj(yaml_obj)
+        self.validate_obj(obj)
+        return dumps(obj)
+
+    # CBOR object => YAML str
+    def obj_to_yaml(self, obj):
+        self.validate_obj(obj)
+        return yaml_dump(self._from_cbor_obj(obj))
+
+    # CBOR bytestring => YAML str
+    def str_to_yaml(self, cbor_str):
+        return self.obj_to_yaml(loads(cbor_str))
+
+    # JSON str => CBOR bytestr
+    def from_json(self, json_str):
+        obj = self._to_cbor_obj(json_load(json_str))
+        self.validate_obj(obj)
+        return dumps(obj)
+
+    # CBOR object => JSON str
+    def obj_to_json(self, obj):
+        self.validate_obj(obj)
+        json_obj = self._from_cbor_obj(obj)
+        return json_dump(json_obj)
+
+    # CBOR bytestring => JSON str
+    def str_to_json(self, cbor_str):
+        return self.obj_to_json(loads(cbor_str))
+
+    # CBOR bytestring => C code (uint8_t array initialization)
+    def str_to_c_code(self, cbor_str, var_name):
+        return f'uint8_t {var_name}[] = {{{", ".join(hex(c) for c in cbor_str)}}};\n'
 
 
 # Class for generating C code that encode/decodes CBOR and validates it according
