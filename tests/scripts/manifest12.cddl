@@ -35,18 +35,30 @@ suit-digest-algorithm-ids /= algorithm-id-sha3-256
 suit-digest-algorithm-ids /= algorithm-id-sha3-384
 suit-digest-algorithm-ids /= algorithm-id-sha3-512
 
+SUIT_Authentication_Block /= COSE_Sign1_Tagged
 SUIT_Authentication_Block /= COSE_Mac_Tagged
 SUIT_Authentication_Block /= COSE_Sign_Tagged
 SUIT_Authentication_Block /= COSE_Mac0_Tagged
-SUIT_Authentication_Block /= COSE_Sign1_Tagged
 
 
 COSE_Mac_Tagged = any
 COSE_Sign_Tagged = any
 COSE_Mac0_Tagged = any
-COSE_Sign1_Tagged = any
+COSE_Sign1_Tagged = #6.18(COSE_Sign1)
 COSE_Encrypt_Tagged = any
 COSE_Encrypt0_Tagged = any
+
+
+COSE_Sign1 = [
+    protected: bstr .cbor header_map,
+    unprotected: {},
+    payload : bstr / nil,
+    signature : bstr
+]
+
+header_map = {
+    *(uint => int)
+}
 
 SUIT_Severable_Manifest_Members = (
   ? suit-dependency-resolution => bstr .cbor SUIT_Command_Sequence,
@@ -59,9 +71,10 @@ SUIT_Severable_Manifest_Members = (
 
 SUIT_Integrated_Payload = (suit-integrated-payload-key => bstr)
 SUIT_Integrated_Dependency = (
-    suit-integrated-payload-key => bstr .cbor SUIT_Envelope
+    suit-integrated-dependency-key => bstr .cbor SUIT_Envelope
 )
 suit-integrated-payload-key = nint / uint .ge 24
+suit-integrated-dependency-key = suit-integrated-payload-key
 
 SUIT_Manifest_Tagged = #6.480(SUIT_Manifest)
 
@@ -171,7 +184,7 @@ SUIT_Directive //= (suit-directive-garbage-collect,   SUIT_Rep_Policy)
 
 SUIT_Directive_Try_Each_Argument = [
     + bstr .cbor SUIT_Command_Sequence,
-    nil / bstr .cbor SUIT_Command_Sequence
+    ?nil
 ]
 
 SUIT_Rep_Policy = uint ;.bits suit-reporting-bits
@@ -299,10 +312,10 @@ SUIT_Unpack_Algorithm_Srec = 4
 SUIT_URI_List = [+ tstr ]
 
 SUIT_Text_Map = {
+    SUIT_Text_Keys,
     * SUIT_Component_Identifier => {
         SUIT_Text_Component_Keys
-    },
-    SUIT_Text_Keys
+    }
 }
 
 SUIT_Text_Component_Keys = (
