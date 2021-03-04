@@ -3,6 +3,8 @@ Generate code from CDDL description
 
 CDDL is a human-readable description language defined in [IETF RFC 8610](https://datatracker.ietf.org/doc/rfc8610/).
 By calling the Python script [cddl_gen.py](scripts/cddl_gen.py), you can generate C code that validates/encodes/decodes CBOR data conforming to a CDDL schema.
+The script can also validate and convert CBOR data to and from JSON/YAML.
+If the script is imported as a module, you can use it to validate and decode CBOR data into a python structure with names (similar to the struct available in the generated code).
 
 The generated code depends on low-level CBOR ([headers](include) and [source](src)).
 There are tests for the code generation in [tests/](tests/).
@@ -20,7 +22,7 @@ CDDL allows placing restrictions on the members of your data structure.
 Restrictions can be on type, on content (e.g. values/sizes of ints or strings), and repetition (e.g. the number of members in a list).
 The generated code will validate the input (i.e. the structure if encoding, or the payload for decoding), which means that it will check all the restriction set in the CDDL description, and fail if a restriction is broken.
 
-The cbor librarie do most of the actual translation and moving of bytes, and the validation of values.
+The cbor libraries do most of the actual translation and moving of bytes, and the validation of values.
 
 Build system
 ------------
@@ -83,6 +85,9 @@ See [test3_simple](tests/cbor_decode/test3_simple/) for CDDL example code.
 Usage Example
 =============
 
+Code generation
+---------------
+
 This example is is taken from [test3_simple](tests/cbor_decode/test3_simple/).
 
 If your CDDL file contains the following code:
@@ -100,7 +105,7 @@ Pet = [
 Call the Python script
 
 ```sh
-python3 <ccdlgen base>/scripts/cddl_gen.py -i pet.cddl -d -t Pet --oc pet_decode.c --oh pet_decode.h
+python3 <cddl-gen base>/scripts/cddl_gen.py -c pet.cddl code -d -t Pet --oc pet_decode.c --oh pet_decode.h
 ```
 
 Or add the following line to your CMake code:
@@ -143,6 +148,19 @@ uint8_t output[100]; /* 100 is an example. Must be large enough for data to fit.
 size_t out_len;
 bool success = cbor_encode_Pet(output, sizeof(output), &pet, &out_len);
 ```
+
+Converting
+----------
+
+Here is an example call for converting from YAML to CBOR:
+
+```sh
+python3 <cddl-gen base>/scripts/cddl_gen.py -c pet.cddl convert -t Pet -i mypet.yaml -o mypet.cbor
+```
+
+Which takes a yaml structure from mypet.yaml, validates it against the Pet type in the CDDL description in pet.cddl, and writes binary CBOR data to mypet.cbor.
+
+See the tests in  <cddl-gen base>/scripts/ for examples of using the python module
 
 Running tests
 =============
