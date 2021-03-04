@@ -87,14 +87,16 @@ function(generate_cddl cddl_file)
   set(py_command
     ${PYTHON_EXECUTABLE}
     ${CDDL_GEN_BASE}/scripts/cddl_gen.py
-    -i ${cddl_path}
+    -c ${cddl_path}
+    ${default_maxq_arg}
+    ${verbose_arg}
+    code
     --oc ${CDDL_C_FILE}
     --oh ${CDDL_H_FILE}
     ${type_file_arg}
     -t ${CDDL_ENTRY_TYPES}
     ${code_arg}
-    ${default_maxq_arg}
-    ${verbose_arg})
+    )
 
 
   if (CDDL_VERBOSE)
