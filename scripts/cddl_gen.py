@@ -335,6 +335,12 @@ class CddlParser:
         else:
             return [self]
 
+    def set_min_value(self, min_value):
+        self.min_value = min_value
+
+    def set_max_value(self, max_value):
+        self.max_value = max_value
+
     # Set the self.type and self.value of this element. For use during CDDL
     # parsing.
     def type_and_value(self, new_type, value_generator):
@@ -348,19 +354,21 @@ class CddlParser:
             raise ValueError("Did not expect multiple parsed values for union")
 
         self.type = new_type
+        self.set_value(value_generator)
 
+    def set_value(self, value_generator):
         value = value_generator()
         self.value = value
 
-        if new_type in ["BSTR", "TSTR"]:
+        if self.type in ["BSTR", "TSTR"]:
             if value is not None:
                 self.set_size(len(value))
-        if new_type in ["UINT", "NINT"]:
+        if self.type in ["UINT", "NINT"]:
             if value is not None:
                 self.size = sizeof(value)
-                self.min_value = value
-                self.max_value = value
-        if new_type == "NINT":
+                self.set_min_value(value)
+                self.set_max_value(value)
+        if self.type == "NINT":
             self.max_value = -1
 
     # Set the self.type and self.minValue and self.max_value (or self.min_size and self.max_size depending on the type)
@@ -377,8 +385,8 @@ class CddlParser:
         if min_val == max_val:
             return self.type_and_value(new_type, min_val)
         self.type = new_type
-        self.min_value = min_val
-        self.max_value = max_val
+        self.set_min_value(min_val)
+        self.set_max_value(max_val)
         if new_type in "UINT":
             self.set_size_range(sizeof(min_val), sizeof(max_val))
         if new_type == "NINT":
@@ -620,6 +628,16 @@ class CddlParser:
              lambda _range: self.set_size_range(*map(int, _range.split("..")))),
             (r'\.size \(?(?P<item>\d+)\)?',
              lambda size: self.set_size(int(size))),
+            (r'\.gt \(?(?P<item>\d+)\)?',
+             lambda minvalue: self.set_min_value(int(minvalue) + 1)),
+            (r'\.lt \(?(?P<item>\d+)\)?',
+             lambda maxvalue: self.set_max_value(int(maxvalue) - 1)),
+            (r'\.ge \(?(?P<item>\d+)\)?',
+             lambda minvalue: self.set_min_value(int(minvalue))),
+            (r'\.le \(?(?P<item>\d+)\)?',
+             lambda maxvalue: self.set_max_value(int(maxvalue))),
+            (r'\.eq \(?(?P<item>\d+)\)?',
+             lambda value: self.set_value(int(value))),
             (r'\.cbor (?P<item>[\w-]+)',
              lambda type_str: self.set_cbor(self.parse(type_str)[0], False)),
             (r'\.cborseq (?P<item>[\w-]+)',
