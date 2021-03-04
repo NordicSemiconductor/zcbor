@@ -19,11 +19,23 @@ jobs:
         pip3 install -U regex
         pip3 install -U pyelftools==0.26
         pip3 install -U pycodestyle
+        pip3 install -U PyYAML>=5.1
+        pip3 install -U cbor2
 
     - name: Run pycodestyle cddl_gen.py
       working-directory: tests
       run: |
         pycodestyle ../scripts/cddl_gen.py --max-line-length=120 --ignore=W191,E101,W503
+
+    - name: Run pycodestyle run_tests.py
+      working-directory: tests
+      run: |
+        pycodestyle scripts/run_tests.py --max-line-length=120 --ignore=W503,E501,E402
+
+    - name: Run python tests
+      working-directory: tests/scripts
+      run: |
+        python3 -m unittest run_tests
 
     - name: Clone zephyr
       working-directory: tests
