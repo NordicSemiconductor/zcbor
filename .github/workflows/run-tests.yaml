@@ -11,11 +11,6 @@ jobs:
     - name: Checkout the code
       uses: actions/checkout@v2
 
-    - name: Install packages
-      run: |
-        sudo apt update
-        sudo apt install -y ninja-build gcc-multilib
-
     - name: Install west and dependencies
       run: |
         pip3 install -U pip
@@ -36,6 +31,11 @@ jobs:
         export ZEPHYR_TOOLCHAIN_VARIANT=host
         export PATH="$HOME/.local/bin:$PATH"
         west init -l zephyr
+
+    - name: Install packages
+      run: |
+        sudo apt update
+        sudo apt install -y ninja-build gcc-multilib
 
     - name: Run cbor_decode tests
       working-directory: tests
