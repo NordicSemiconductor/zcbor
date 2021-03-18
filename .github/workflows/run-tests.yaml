@@ -17,7 +17,13 @@ jobs:
         pip3 install -U setuptools
         pip3 install -U west
         pip3 install -U regex
-        pip3 install pyelftools==0.26
+        pip3 install -U pyelftools==0.26
+        pip3 install -U pycodestyle
+
+    - name: Run pycodestyle cddl_gen.py
+      working-directory: tests
+      run: |
+        pycodestyle ../scripts/cddl_gen.py --max-line-length=120 --ignore=W191,E101,W503
 
     - name: Clone zephyr
       working-directory: tests
