@@ -58,6 +58,7 @@ union {
 	                             updated when an element is correctly
 	                             processed. */
 };
+	uint8_t const *payload_bak; /**< Temporary backup of payload. */
 	size_t elem_count; /**< The current element is part of a LIST or a MAP,
 	                        and this keeps count of how many elements are
 	                        expected. This will be checked before processing
