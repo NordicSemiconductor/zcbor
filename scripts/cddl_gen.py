@@ -148,7 +148,7 @@ def ternary_if_chain(access, names, xcode_strings):
 #  - For "OTHER" types, one instance points to another type definition.
 #  - For "GROUP" and "UNION" types, there is no separate data item for the instance.
 class CddlParser:
-    def __init__(self, default_maxq, my_types, base_name=None):
+    def __init__(self, default_max_qty, my_types, base_name=None):
         self.id_prefix = "temp_" + str(counter())
         self.id_num = None  # Unique ID number. Only populated if needed.
         # The value of the data item. Has different meaning for different
@@ -158,8 +158,8 @@ class CddlParser:
         self.min_value = None  # Minimum value. Only used for numbers and bools.
         # The readable label associated with the element in the CDDL.
         self.label = None
-        self.minQ = 1  # The minimum number of times this element is repeated.
-        self.maxQ = 1  # The maximum number of times this element is repeated.
+        self.min_qty = 1  # The minimum number of times this element is repeated.
+        self.max_qty = 1  # The maximum number of times this element is repeated.
         # The size of the element. Only used for integers, byte strings, and
         # text strings.
         self.size = None
@@ -173,8 +173,8 @@ class CddlParser:
         self.cbor = None
         # Any tags (type 6) to precede the element.
         self.tags = []
-        # The CDDL string used to determine the minQ and maxQ. Not used after
-        # minQ and maxQ are determined.
+        # The CDDL string used to determine the min_qty and max_qty. Not used after
+        # min_qty and max_qty are determined.
         self.quantifier = None
         # The "type" of the element. This follows the CBOR types loosely, but are more related to CDDL
         # concepts. The possible types are "INT", "UINT", "NINT", "FLOAT", "BSTR", "TSTR", "BOOL",  "NIL", "LIST",
@@ -184,11 +184,11 @@ class CddlParser:
         self.errors = list()
 
         self.my_types = my_types
-        self.default_maxq = default_maxq  # args.default_maxq
+        self.default_max_qty = default_max_qty  # args.default_max_qty
         self.base_name = base_name  # Used as default for self.get_base_name()
 
     @classmethod
-    def from_cddl(cddl_class, cddl_string, default_maxq, *args, **kwargs):
+    def from_cddl(cddl_class, cddl_string, default_max_qty, *args, **kwargs):
         my_types = dict()
 
         type_strings = cddl_class.get_types(cddl_string)
@@ -197,7 +197,7 @@ class CddlParser:
         # Parse the definitions, replacing the each string with a
         # CodeGenerator instance.
         for my_type, cddl_string in type_strings.items():
-            parsed = cddl_class(*args, default_maxq, my_types, **kwargs, base_name=my_type)
+            parsed = cddl_class(*args, default_max_qty, my_types, **kwargs, base_name=my_type)
             parsed.get_value(cddl_string.replace("\n", " "))
             my_types[my_type] = parsed.flatten()[0]
             my_types[my_type].set_id_prefix("")
@@ -262,7 +262,7 @@ class CddlParser:
                          if self.id_prefix != "" else "", self.get_base_name())
 
     def init_args(self):
-        return (self.default_maxq,)
+        return (self.default_max_qty,)
 
     def init_kwargs(self):
         return {"my_types": self.my_types}
@@ -329,15 +329,15 @@ class CddlParser:
         if self.type in ["GROUP", "UNION"]\
                 and (len(self.value) == 1)\
                 and (not (self.key and self.value[0].key)):
-            self.value[0].minQ *= self.minQ
-            self.value[0].maxQ *= self.maxQ
+            self.value[0].min_qty *= self.min_qty
+            self.value[0].max_qty *= self.max_qty
             if not self.value[0].label:
                 self.value[0].label = self.label
             if not self.value[0].key:
                 self.value[0].key = self.key
             self.value[0].tags.extend(self.tags)
             return self.value
-        elif allow_multi and self.type in ["GROUP"] and self.minQ == 1 and self.maxQ == 1:
+        elif allow_multi and self.type in ["GROUP"] and self.min_qty == 1 and self.max_qty == 1:
             return self.value
         else:
             return [self]
@@ -413,7 +413,7 @@ class CddlParser:
             raise TypeError("Cannot have label after value: " + label)
         self.label = label
 
-    # Set the self.quantifier, self.minQ, and self.maxQ of this element. For
+    # Set the self.quantifier, self.min_qty, and self.max_qty of this element. For
     # use during CDDL parsing.
     def set_quantifier(self, quantifier):
         if self.type is not None:
@@ -431,9 +431,9 @@ class CddlParser:
         for (reg, handler) in quantifier_mapping:
             match_obj = match(reg, quantifier)
             if match_obj:
-                (self.minQ, self.maxQ) = handler(match_obj)
-                if self.maxQ is None:
-                    self.maxQ = self.default_maxq
+                (self.min_qty, self.max_qty) = handler(match_obj)
+                if self.max_qty is None:
+                    self.max_qty = self.default_max_qty
                 return
         raise ValueError("invalid quantifier: %s" % quantifier)
 
@@ -485,7 +485,7 @@ class CddlParser:
                 (".cborseq" if cborseq else ".cbor",))
         self.cbor = cbor
         if cborseq:
-            self.cbor.maxQ = self.default_maxq
+            self.cbor.max_qty = self.default_max_qty
         self.cbor.set_base_name("cbor")
 
     # Set the self.key of this element. For use during CDDL parsing.
@@ -525,15 +525,15 @@ class CddlParser:
                 self.label = convert_val.label
                 self.key = convert_val.key
                 self.quantifier = convert_val.quantifier
-                self.maxQ = convert_val.maxQ
-                self.minQ = convert_val.minQ
+                self.max_qty = convert_val.max_qty
+                self.min_qty = convert_val.min_qty
                 self.base_name = convert_val.base_name
 
                 convert_val.label = None
                 convert_val.key = None
                 convert_val.quantifier = None
-                convert_val.maxQ = 1
-                convert_val.minQ = 1
+                convert_val.max_qty = 1
+                convert_val.min_qty = 1
                 convert_val.base_name = None
         self.value.append(value)
 
@@ -544,14 +544,14 @@ class CddlParser:
 
         self.label = convert_val.label
         self.quantifier = convert_val.quantifier
-        self.maxQ = convert_val.maxQ
-        self.minQ = convert_val.minQ
+        self.max_qty = convert_val.max_qty
+        self.min_qty = convert_val.min_qty
         self.base_name = convert_val.base_name
 
         convert_val.label = None
         convert_val.quantifier = None
-        convert_val.maxQ = 1
-        convert_val.minQ = 1
+        convert_val.max_qty = 1
+        convert_val.min_qty = 1
         convert_val.base_name = None
 
     # Parse from the beginning of instr (string) until a full element has been parsed. self will become that element.
@@ -716,7 +716,7 @@ class CddlParser:
         if self.type == "LIST":
             for child in self.value[:-1]:
                 if child.type == "ANY":
-                    if child.minQ != child.maxQ:
+                    if child.min_qty != child.max_qty:
                         raise TypeError(f"ambiguous quantity of 'any' is not supported in list, "
                                         + "except as last element:\n{str(child)}")
         if self.type == "UNION" and len(self.value) > 1:
@@ -804,11 +804,11 @@ class CddlXcoder(CddlParser):
                 or (self.type == "OTHER" and self.my_types[self.value].is_unambiguous()))
 
     def is_unambiguous_repeated(self):
-        return (self.is_unambiguous_value() and (self.key is None or self.key.is_unambiguous_repeated())
-                or (self.type in ["LIST", "GROUP", "MAP"] and len(self.value) == 0))
+        return self.is_unambiguous_value() and (self.key is None or self.key.is_unambiguous_repeated()) \
+            or (self.type in ["LIST", "GROUP", "MAP"] and len(self.value) == 0)
 
     def is_unambiguous(self):
-        return (self.is_unambiguous_repeated() and (self.minQ == self.maxQ))
+        return (self.is_unambiguous_repeated() and (self.min_qty == self.max_qty))
 
     # Create an access prefix based on an existing prefix, delimiter and a
     # suffix.
@@ -844,11 +844,11 @@ class CddlXcoder(CddlParser):
 
     # Whether to include a "present" variable for this element.
     def present_var_condition(self):
-        return self.minQ == 0 and self.maxQ <= 1
+        return self.min_qty == 0 and self.max_qty <= 1
 
     # Whether to include a "count" variable for this element.
     def count_var_condition(self):
-        return self.maxQ > 1
+        return self.max_qty > 1
 
     # Whether to include a "cbor" variable for this element.
     def is_cbor(self):
@@ -1254,11 +1254,11 @@ class DataTranslator(CddlXcoder):
     def _decode_full(self, it):
         if self.multi_var_condition():
             retvals = []
-            for i in range(self.minQ):
+            for i in range(self.min_qty):
                 it, retval = self._decode_obj(it)
                 retvals.append(retval if not self.is_unambiguous_repeated() else None)
             try:
-                for i in range(self.maxQ - self.minQ):
+                for i in range(self.max_qty - self.min_qty):
                     it, it_copy = tee(it)
                     it, retval = self._decode_obj(it)
                     retvals.append(retval if not self.is_unambiguous_repeated() else None)
@@ -1412,7 +1412,7 @@ class CodeGenerator(CddlXcoder):
             or ((self.value not in self.entry_type_names) and self.my_types[self.value].is_cbor()))
 
     def init_args(self):
-        return (self.mode, self.entry_type_names, self.default_maxq)
+        return (self.mode, self.entry_type_names, self.default_max_qty)
 
     # Declaration of the "present" variable for this element.
     def present_var(self):
@@ -1505,7 +1505,7 @@ class CodeGenerator(CddlXcoder):
         if var_type:
             assert(var_type[-1][-1] == "}" or len(var_type) == 1), f"Expected single var: {var_type!r}"
             if not anonymous or var_type[-1][-1] != "}":
-                var_type[-1] += " %s%s" % (self.var_name(), "[%d]" % self.maxQ if full and self.maxQ != 1 else "")
+                var_type[-1] += " %s%s" % (self.var_name(), "[%d]" % self.max_qty if full and self.max_qty != 1 else "")
             var_type = add_semicolon(var_type)
         return var_type
 
@@ -1756,25 +1756,25 @@ class CodeGenerator(CddlXcoder):
     # element.
     def list_counts(self):
         retval = ({
-            "INT": lambda: (self.minQ, self.maxQ),
-            "UINT": lambda: (self.minQ, self.maxQ),
-            "NINT": lambda: (self.minQ, self.maxQ),
-            "FLOAT": lambda: (self.minQ, self.maxQ),
-            "BSTR": lambda: (self.minQ, self.maxQ),
-            "TSTR": lambda: (self.minQ, self.maxQ),
-            "BOOL": lambda: (self.minQ, self.maxQ),
-            "NIL": lambda: (self.minQ, self.maxQ),
-            "ANY": lambda: (self.minQ, self.maxQ),
+            "INT": lambda: (self.min_qty, self.max_qty),
+            "UINT": lambda: (self.min_qty, self.max_qty),
+            "NINT": lambda: (self.min_qty, self.max_qty),
+            "FLOAT": lambda: (self.min_qty, self.max_qty),
+            "BSTR": lambda: (self.min_qty, self.max_qty),
+            "TSTR": lambda: (self.min_qty, self.max_qty),
+            "BOOL": lambda: (self.min_qty, self.max_qty),
+            "NIL": lambda: (self.min_qty, self.max_qty),
+            "ANY": lambda: (self.min_qty, self.max_qty),
             # Lists are their own element
-            "LIST": lambda: (self.minQ, self.maxQ),
+            "LIST": lambda: (self.min_qty, self.max_qty),
             # Maps are their own element
-            "MAP": lambda: (self.minQ, self.maxQ),
-            "GROUP": lambda: (self.minQ * sum((child.list_counts()[0] for child in self.value)),
-                              self.maxQ * sum((child.list_counts()[1] for child in self.value))),
-            "UNION": lambda: (self.minQ * min((child.list_counts()[0] for child in self.value)),
-                              self.maxQ * max((child.list_counts()[1] for child in self.value))),
-            "OTHER": lambda: (self.minQ * self.my_types[self.value].list_counts()[0],
-                              self.maxQ * self.my_types[self.value].list_counts()[1]),
+            "MAP": lambda: (self.min_qty, self.max_qty),
+            "GROUP": lambda: (self.min_qty * sum((child.list_counts()[0] for child in self.value)),
+                              self.max_qty * sum((child.list_counts()[1] for child in self.value))),
+            "UNION": lambda: (self.min_qty * min((child.list_counts()[0] for child in self.value)),
+                              self.max_qty * max((child.list_counts()[1] for child in self.value))),
+            "OTHER": lambda: (self.min_qty * self.my_types[self.value].list_counts()[0],
+                              self.max_qty * self.my_types[self.value].list_counts()[1]),
         }[self.type]())
         return retval
 
@@ -1928,8 +1928,8 @@ class CodeGenerator(CddlXcoder):
             func, *arguments = self.repeated_single_func(ptr_result=True)
             return (
                 f"multi_{self.mode}(%s, %s, &%s, (void *)%s, %s, %s)" %
-                (self.minQ,
-                 self.maxQ,
+                (self.min_qty,
+                 self.max_qty,
                  self.count_var_access(),
                  func,
                  xcode_args(*arguments),
@@ -1978,11 +1978,11 @@ __attribute__((unused)) static bool type_test_{self.xcode_func_name()}(
 
 
 class CodeRenderer():
-    def __init__(self, entry_types, mode, print_time, default_maxq):
+    def __init__(self, entry_types, mode, print_time, default_max_qty):
         self.entry_types = entry_types
         self.mode = mode
         self.print_time = print_time
-        self.default_maxq = default_maxq
+        self.default_max_qty = default_max_qty
 
         # Sort type definitions so the typedefs will come in the correct order in the header file and the function in
         # the correct order in the c file.
@@ -2114,7 +2114,7 @@ static bool {xcoder[1]}(
         return f"""/*
  * Generated with cddl_gen.py (https://github.com/oyvindronningstad/cddl_gen){'''
  * at: ''' + datetime.now().strftime('%Y-%m-%d %H:%M:%S') if self.print_time else ''}
- * Generated with a default_maxq of {self.default_maxq}
+ * Generated with a default_max_qty of {self.default_max_qty}
  */
 
 #include <stdint.h>
@@ -2124,8 +2124,8 @@ static bool {xcoder[1]}(
 #include "cbor_{self.mode}.h"
 #include "{header_file_name}"
 
-#if DEFAULT_MAXQ != {self.default_maxq}
-#error "The type file was generated with a different default_maxq than this file"
+#if DEFAULT_MAX_QTY != {self.default_max_qty}
+#error "The type file was generated with a different default_max_qty than this file"
 #endif
 
 {linesep.join([self.render_function(xcoder) for xcoder in self.functions])}
@@ -2139,7 +2139,7 @@ static bool {xcoder[1]}(
             f"""/*
  * Generated with cddl_gen.py (https://github.com/oyvindronningstad/cddl_gen){'''
  * at: ''' + datetime.now().strftime('%Y-%m-%d %H:%M:%S') if self.print_time else ''}
- * Generated with a default_maxq of {self.default_maxq}
+ * Generated with a default_max_qty of {self.default_max_qty}
  */
 
 #ifndef {header_guard}
@@ -2152,8 +2152,8 @@ static bool {xcoder[1]}(
 #include "cbor_{self.mode}.h"
 #include "{type_def_file}"
 
-#if DEFAULT_MAXQ != {self.default_maxq}
-#error "The type file was generated with a different default_maxq than this file"
+#if DEFAULT_MAX_QTY != {self.default_max_qty}
+#error "The type file was generated with a different default_max_qty than this file"
 #endif
 
 {(linesep+linesep).join([f"{xcoder.public_xcode_func_sig()};" for xcoder in self.entry_types])}
@@ -2167,7 +2167,7 @@ static bool {xcoder[1]}(
             f"""/*
  * Generated with cddl_gen.py (https://github.com/oyvindronningstad/cddl_gen){'''
  * at: ''' + datetime.now().strftime('%Y-%m-%d %H:%M:%S') if self.print_time else ''}
- * Generated with a default_maxq of {self.default_maxq}
+ * Generated with a default_max_qty of {self.default_max_qty}
  */
 
 #ifndef {header_guard}
@@ -2179,7 +2179,7 @@ static bool {xcoder[1]}(
 #include <string.h>
 #include "cbor_{self.mode}.h"
 
-#define DEFAULT_MAXQ {self.default_maxq}
+#define DEFAULT_MAX_QTY {self.default_max_qty}
 
 {(linesep+linesep).join([f"{typedef[1]} {{{linesep} {linesep.join(typedef[0][1:])};" for typedef in self.type_defs])}
 
@@ -2215,7 +2215,7 @@ Can also generate C code for validation/encoding/decoding of CBOR.''')
     parser.add_argument(
         "-c", "--cddl", required=True, type=FileType('r'), help="Path to input CDDL file.")
     parser.add_argument(
-        "--default-maxq", required=False, type=int, default=3,
+        "--default-max-qty", required=False, type=int, default=3,
         help="""Default maximum number of repetitions when no maximum
 is specified. This is needed to construct complete C types.""")
     parser.add_argument(
@@ -2325,17 +2325,17 @@ def process_code(args):
 
     print("Parsing " + args.cddl.name)
 
-    my_types = CodeGenerator.from_cddl(mode, args.cddl.read(), args.default_maxq, mode, args.entry_types)
+    my_types = CodeGenerator.from_cddl(mode, args.cddl.read(), args.default_max_qty, mode, args.entry_types)
 
     renderer = CodeRenderer(entry_types=[my_types[entry] for entry in args.entry_types], mode=mode,
                             print_time=args.time_header,
-                            default_maxq=args.default_maxq)
+                            default_max_qty=args.default_max_qty)
 
     renderer.render(args.output_h, args.output_c, args.output_h_types)
 
 
 def process_convert(args):
-    my_types = DataTranslator.from_cddl(args.cddl.read(), args.default_maxq)
+    my_types = DataTranslator.from_cddl(args.cddl.read(), args.default_max_qty)
 
     # Parsing is done, pretty print the result.
     verbose_print(args.verbose, "Parsed CDDL types:")

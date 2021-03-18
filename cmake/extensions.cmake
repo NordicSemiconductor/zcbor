@@ -11,7 +11,7 @@
 #               DECODE|ENCODE
 #               [VERBOSE]
 #               [TYPE_FILE <type_file_path>]
-#               [DEFAULT_MAXQ <default_maxq>])
+#               [DEFAULT_MAX_QTY <default_max_qty>])
 #
 # Generate code with cddl_gen.
 #
@@ -34,7 +34,7 @@
 #
 # If provided, <type_file_path> overrides the default typedef file path.
 #
-# <default_maxq> is the maximum number of elements when no maximum is given.
+# <default_max_qty> is the maximum number of elements when no maximum is given.
 # This is used when constructing the C types from types containing '+' and '*'.
 #
 # The result of the function is that code is generated at build time
@@ -53,7 +53,7 @@ function(generate_cddl cddl_file)
 
   cmake_parse_arguments(CDDL
     "DECODE;ENCODE;VERBOSE"
-    "C_FILE;H_FILE;TYPE_FILE;DEFAULT_MAXQ"
+    "C_FILE;H_FILE;TYPE_FILE;DEFAULT_MAX_QTY"
     "ENTRY_TYPES"
     ${ARGN}
     )
@@ -80,15 +80,15 @@ function(generate_cddl cddl_file)
     set(verbose_arg -v)
   endif()
 
-  if (CDDL_DEFAULT_MAXQ)
-    set(default_maxq_arg --default-maxq ${CDDL_DEFAULT_MAXQ})
+  if (CDDL_DEFAULT_MAX_QTY)
+    set(default_max_qty_arg --default-max-qty ${CDDL_DEFAULT_MAX_QTY})
   endif()
 
   set(py_command
     ${PYTHON_EXECUTABLE}
     ${CDDL_GEN_BASE}/scripts/cddl_gen.py
     -c ${cddl_path}
-    ${default_maxq_arg}
+    ${default_max_qty_arg}
     ${verbose_arg}
     code
     --oc ${CDDL_C_FILE}
@@ -123,7 +123,7 @@ endfunction()
 #                    DECODE|ENCODE
 #                    [VERBOSE] [CANONICAL]
 #                    [TYPE_FILE_NAME <filename>]
-#                    [DEFAULT_MAXQ <default_maxq>])
+#                    [DEFAULT_MAX_QTY <default_max_qty>])
 #
 # Add generated code to the project for decoding CBOR.
 #
@@ -146,7 +146,7 @@ endfunction()
 # If provided, TYPE_FILE_NAME can be used to specify what the file containing
 # typedefs should be called.
 #
-# <default_maxq> is passed to the generate_cddl function.
+# <default_max_qty> is passed to the generate_cddl function.
 #
 # The result of the function is that a library is added to the project which
 # contains the generated decoding code. The code is generated at build time
@@ -161,7 +161,7 @@ function(target_cddl_source target cddl_file)
 
   cmake_parse_arguments(CDDL
     "DECODE;ENCODE;VERBOSE;CANONICAL"
-    "TYPE_FILE_NAME;DEFAULT_MAXQ"
+    "TYPE_FILE_NAME;DEFAULT_MAX_QTY"
     "ENTRY_TYPES"
     ${ARGN}
     )
@@ -194,7 +194,7 @@ function(target_cddl_source target cddl_file)
   generate_cddl(${cddl_file} ${CODE} ${CDDL_VERBOSE} ${CDDL_CANONICAL}
     ENTRY_TYPES ${CDDL_ENTRY_TYPES}
     C_FILE ${c_file} H_FILE ${h_file} TYPE_FILE ${type_file_path}
-    DEFAULT_MAXQ ${CDDL_DEFAULT_MAXQ}
+    DEFAULT_MAX_QTY ${CDDL_DEFAULT_MAX_QTY}
     )
 
   # Add to provided target

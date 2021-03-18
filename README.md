@@ -74,7 +74,7 @@ An element can be repeated:
  - `+`: 1 or more times. E.g. `Foo = [+Bar]`.
  - `x**y`: Between x and y times, inclusive. E.g. `Foo = {4**8(int => bstr)}` where Foo is a map with 4 to 8 key/value pairs where each key is an int and each value is a bstr.
 
-Note that in the cddl_gen script and its generated code, the number of entries supported via `*` and `+` is affected by the default_maxq value.
+Note that in the cddl_gen script and its generated code, the number of entries supported via `*` and `+` is affected by the default_max_qty value.
 
 Any element can be labeled with `:`.
 The label is only for readability and does not impact the data structure in any way.
