@@ -42,6 +42,19 @@ do {\
 	} \
 } while(0)
 
+#define FAIL_IF(expr) \
+do {\
+	if (expr) { \
+		FAIL(); \
+	} \
+} while(0)
+
+
+#define FAIL_RESTORE() \
+	state->payload = state->payload_bak; \
+	state->elem_count++; \
+	FAIL()
+
 /** Get a single value.
  *
  * @details @p ppayload must point to the header byte. This function will
@@ -67,12 +80,13 @@ static bool value_extract(cbor_state_t *state,
 	cbor_assert(result_len != 0, "0-length result not supported.\n");
 	cbor_assert(result != NULL, NULL);
 
-	FAIL_AND_DECR_IF(state->elem_count == 0);
-	FAIL_AND_DECR_IF(state->payload >= state->payload_end);
+	FAIL_IF((state->elem_count == 0) \
+		|| (state->payload >= state->payload_end));
 
 	uint8_t *u8_result  = (uint8_t *)result;
 	uint8_t additional = ADDITIONAL(*state->payload);
 
+	state->payload_bak = state->payload;
 	(state->payload)++;
 
 	memset(result, 0, result_len);
@@ -118,7 +132,7 @@ static bool int32_decode(cbor_state_t *state, int32_t *result)
 	cbor_print("uintval: %u\r\n", uint_result);
 	if (uint_result >= (1 << (8*sizeof(uint_result)-1))) {
 		/* Value is too large to fit in a signed integer. */
-		FAIL();
+		FAIL_RESTORE();
 	}
 
 	if (major_type == CBOR_MAJOR_TYPE_NINT) {
@@ -153,12 +167,14 @@ bool intx32_decode(cbor_state_t *state, int32_t *result)
 bool intx32_expect(cbor_state_t *state, int32_t result)
 {
 	int32_t value;
+
 	if (!intx32_decode(state, &value)) {
 		FAIL();
 	}
+
 	if (value != result) {
 		cbor_print("%d != %d\r\n", value, result);
-		FAIL();
+		FAIL_RESTORE();
 	}
 	return true;
 }
@@ -191,12 +207,13 @@ bool uintx32_decode(cbor_state_t *state, uint32_t *result)
 bool uintx32_expect(cbor_state_t *state, uint32_t result)
 {
 	uint32_t value;
+
 	if (!uintx32_decode(state, &value)) {
 		FAIL();
 	}
 	if (value != result) {
 		cbor_print("%u != %u\r\n", value, result);
-		FAIL();
+		FAIL_RESTORE();
 	}
 	return true;
 }
@@ -227,7 +244,7 @@ static bool strx_start_decode(cbor_state_t *state,
 		cbor_print("error: 0x%x > 0x%x\r\n",
 		(uint32_t)(state->payload + result->len),
 		(uint32_t)state->payload_end);
-		FAIL();
+		FAIL_RESTORE();
 	}
 
 	result->value = state->payload;
@@ -241,7 +258,7 @@ bool bstrx_cbor_start_decode(cbor_state_t *state, cbor_string_type_t *result)
 	}
 
 	if (!new_backup(state, 0xFFFFFFFF)) {
-		FAIL();
+		FAIL_RESTORE();
 	}
 
 	state->payload_end = result->value + result->len;
@@ -279,12 +296,13 @@ bool strx_expect(cbor_state_t *state, cbor_string_type_t *result,
 		cbor_major_type_t exp_major_type)
 {
 	cbor_string_type_t tmp_result;
+
 	if (!strx_decode(state, &tmp_result, exp_major_type)) {
 		FAIL();
 	}
 	if ((tmp_result.len != result->len)
 			|| memcmp(result->value, tmp_result.value, tmp_result.len)) {
-		FAIL();
+		FAIL_RESTORE();
 	}
 	return true;
 }
@@ -329,7 +347,7 @@ static bool list_map_start_decode(cbor_state_t *state,
 	}
 
 	if (!new_backup(state, new_elem_count)) {
-		FAIL();
+		FAIL_RESTORE();
 	}
 
 	return true;
@@ -345,6 +363,7 @@ bool list_start_decode(cbor_state_t *state)
 bool map_start_decode(cbor_state_t *state)
 {
 	bool ret = list_map_start_decode(state, CBOR_MAJOR_TYPE_MAP);
+
 	if (ret) {
 		state->elem_count *= 2;
 	}
@@ -388,7 +407,7 @@ static bool primx_decode(cbor_state_t *state, uint32_t *result)
 		FAIL();
 	}
 	if (*result > 0xFF) {
-		FAIL();
+		FAIL_RESTORE();
 	}
 	return true;
 }
@@ -396,11 +415,12 @@ static bool primx_decode(cbor_state_t *state, uint32_t *result)
 static bool primx_expect(cbor_state_t *state, uint32_t result)
 {
 	uint32_t value;
+
 	if (!primx_decode(state, &value)) {
 		FAIL();
 	}
 	if (value != result) {
-		FAIL();
+		FAIL_RESTORE();
 	}
 	return true;
 }
@@ -432,11 +452,12 @@ bool boolx_decode(cbor_state_t *state, bool *result)
 bool boolx_expect(cbor_state_t *state, bool *result)
 {
 	bool value;
+
 	if (!boolx_decode(state, &value)) {
 		FAIL();
 	}
 	if (value != *result) {
-		FAIL();
+		FAIL_RESTORE();
 	}
 	return true;
 }
@@ -461,11 +482,12 @@ bool double_decode(cbor_state_t *state, double *result)
 bool double_expect(cbor_state_t *state, double *result)
 {
 	double value;
+
 	if (!double_decode(state, &value)) {
 		FAIL();
 	}
 	if (value != *result) {
-		FAIL();
+		FAIL_RESTORE();
 	}
 	return true;
 }
@@ -481,6 +503,7 @@ bool any_decode(cbor_state_t *state, void *result)
 	size_t num_decode;
 	void *null_result = NULL;
 	size_t temp_elem_count;
+	uint8_t const *payload_bak;
 
 	if (!value_extract(state, &value, sizeof(value))) {
 		/* Can happen because of elem_count (or payload_end) */
@@ -497,11 +520,13 @@ bool any_decode(cbor_state_t *state, void *result)
 			/* Fallthrough */
 		case CBOR_MAJOR_TYPE_LIST:
 			temp_elem_count = state->elem_count;
+			payload_bak = state->payload;
 			state->elem_count = value;
 			if (!multi_decode(value, value, &num_decode,
 					(void *)any_decode, state,
-					&null_result,	0)) {
+					&null_result, 0)) {
 				state->elem_count = temp_elem_count;
+				state->payload = payload_bak;
 				FAIL();
 			}
 			state->elem_count = temp_elem_count;
@@ -539,7 +564,7 @@ bool tag_expect(cbor_state_t *state, uint32_t result)
 		FAIL();
 	}
 	if (tag_val != result) {
-		FAIL();
+		FAIL_RESTORE();
 	}
 	return true;
 }

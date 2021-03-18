@@ -9,6 +9,7 @@ from regex import match, search, sub, findall, S, M, fullmatch
 from pprint import pformat, pprint
 from os import path, linesep, makedirs
 from collections import defaultdict, namedtuple
+from typing import NamedTuple
 from argparse import ArgumentParser, RawDescriptionHelpFormatter, FileType
 from datetime import datetime
 from copy import copy
@@ -1387,6 +1388,12 @@ class DataTranslator(CddlXcoder):
         return f'uint8_t {var_name}[] = {{{", ".join(hex(c) for c in cbor_str)}}};\n'
 
 
+class XcoderTuple(NamedTuple):
+    body: list
+    func_name: str
+    type_name: str
+
+
 # Class for generating C code that encode/decodes CBOR and validates it according
 # to the CDDL.
 class CodeGenerator(CddlXcoder):
@@ -1447,6 +1454,13 @@ class CodeGenerator(CddlXcoder):
         decl = [
             line for child in self.value for line in child.add_var_name(child.single_var_type(), anonymous=True)]
         return decl
+
+    def simple_func_condition(self):
+        if self.single_func_impl_condition():
+            return True
+        if self.type == "OTHER" and self.my_types[self.value].simple_func_condition():
+            return True
+        return False
 
     # Base name if this element needs to declare a type.
     def raw_type_name(self):
@@ -1815,7 +1829,7 @@ class CodeGenerator(CddlXcoder):
                             child.full_xcode(union_uint="DROP"))
                         for child in self.value])
                 return "((%s) && (%s))" % (
-                    f"(uintx32_decode(state, &{self.choice_var_access()}))",
+                    f"(uintx32_{self.mode}(state, (uint32_t *)&{self.choice_var_access()}))",
                     f"{newl_ind}|| ".join(lines), )
             child_values = ["(%s && ((%s = %s) || 1))" %
                             (child.full_xcode(union_uint="EXPECT" if child.is_uint_disambiguated() else None),
@@ -1824,7 +1838,9 @@ class CodeGenerator(CddlXcoder):
 
             # Reset state for all but the first child.
             for i in range(1, len(child_values)):
-                if not self.value[i].is_uint_disambiguated():
+                if ((not self.value[i].is_uint_disambiguated())
+                        and (self.value[i].simple_func_condition()
+                             or self.value[i - 1].simple_func_condition())):
                     child_values[i] = f"(union_elem_code(state) && {child_values[i]})"
 
             return "(%s && (int_res = (%s), %s, int_res))" \
@@ -1943,7 +1959,6 @@ class CodeGenerator(CddlXcoder):
 
     # Recursively return a list of the bodies of the encoder/decoder functions for
     # this element and its children + key + cbor.
-
     def xcoders(self):
         if self.type in ["LIST", "MAP", "GROUP", "UNION"]:
             for child in self.value:
@@ -1959,10 +1974,10 @@ class CodeGenerator(CddlXcoder):
             for xcoder in self.my_types[self.value].xcoders():
                 yield xcoder
         if self.repeated_single_func_impl_condition():
-            yield (self.repeated_xcode(), self.repeated_xcode_func_name(), self.repeated_type_name())
+            yield XcoderTuple(self.repeated_xcode(), self.repeated_xcode_func_name(), self.repeated_type_name())
         if (self.single_func_impl_condition()):
             xcode_body = self.xcode()
-            yield (xcode_body, self.xcode_func_name(), self.type_name())
+            yield XcoderTuple(xcode_body, self.xcode_func_name(), self.type_name())
 
     def public_xcode_func_sig(self):
         return f"""
@@ -2039,9 +2054,10 @@ class CodeRenderer():
     # functions removed.
     def used_funcs(self):
         mod_entry_types = [
-            (func_type.xcode(),
-             func_type.xcode_func_name(),
-             func_type.type_name()) for func_type in self.entry_types]
+            XcoderTuple(
+                func_type.xcode(),
+                func_type.xcode_func_name(),
+                func_type.type_name()) for func_type in self.entry_types]
         out_types = [func_type for func_type in mod_entry_types]
         full_code = "".join([func_type[0] for func_type in mod_entry_types])
         for func_type in reversed(self.functions):
@@ -2064,12 +2080,11 @@ class CodeRenderer():
 
     # Render a single decoding function with signature and body.
     def render_function(self, xcoder):
-        body = xcoder[0]
-        func_name = xcoder
+        body = xcoder.body
         return f"""
-static bool {xcoder[1]}(
+static bool {xcoder.func_name}(
 		cbor_state_t *state, {"" if self.mode == "decode" else "const "}{
-            xcoder[2] if struct_ptr_name(self.mode) in body else "void"} *{struct_ptr_name(self.mode)})
+            xcoder.type_name if struct_ptr_name(self.mode) in body else "void"} *{struct_ptr_name(self.mode)})
 {{
 	cbor_print("%s\\n", __func__);
 	{f"size_t temp_elem_counts[{body.count('temp_elem_count')}];" if "temp_elem_count" in body else ""}
