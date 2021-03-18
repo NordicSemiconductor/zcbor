@@ -24,7 +24,7 @@ target_cddl_source(app strange.cddl ENCODE ENTRY_TYPES
   Map
   Level1
   Range
-  DEFAULT_MAXQ 6
+  DEFAULT_MAX_QTY 6
   ${VERBOSE}
   ${CANONICAL}
   )
