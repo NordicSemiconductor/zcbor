@@ -16,6 +16,7 @@ from copy import copy
 indentation = "\t"
 newl_ind = "\n" + indentation
 
+
 # Size of "additional" field if num is encoded as int
 def sizeof(num):
     if num <= 23:
@@ -30,6 +31,7 @@ def sizeof(num):
         return 8
     else:
         raise ValueError("Number too large (more than 64 bits).")
+
 
 # Print only if verbose
 def verbose_print(verbose_flag, *things):
@@ -74,8 +76,7 @@ def list_replace_if_not_null(lst, i, r):
 # Return a code snippet that assigns the value to a variable var_name and
 # returns pointer to the variable, or returns NULL if the value is None.
 def val_or_null(value, var_name):
-    return "(%s = %d, &%s)" % (var_name, value,
-                                var_name) if value is not None else "NULL"
+    return "(%s = %d, &%s)" % (var_name, value, var_name) if value is not None else "NULL"
 
 
 # Assign the tmp_value variable.
@@ -86,8 +87,8 @@ def tmp_val_or_null(value):
 
 # Assign the min_value variable.
 def tmp_str_or_null(value):
-    return f"""(tmp_str.value = {f'"{value}"' if value is not None else 'NULL'}, tmp_str.len = {len(value)}, &tmp_str)"""
-    # return f"""&(cbor_string_type_t){{.value = {f'"{value}"' if value is not None else 'NULL'}, .len = {len(value)}}}"""
+    return \
+        f"""(tmp_str.value = {f'"{value}"' if value is not None else 'NULL'}, tmp_str.len = {len(value)}, &tmp_str)"""
 
 
 # Assign the max_value variable.
@@ -96,7 +97,7 @@ def min_bool_or_null(value):
 
 
 def deref_if_not_null(access):
-    return access if access == "NULL" else "&"+access
+    return access if access == "NULL" else "&" + access
 
 
 # Return an argument list for a function call to a encoder/decoder function.
@@ -108,10 +109,11 @@ def xcode_args(res, *sargs):
         return "state, %s" % (
             "(%s)" % res if res != "NULL" else res)
 
+
 # Return the code that calls a encoder/decoder function with a given set of
 # arguments.
 def xcode_statement(func, *sargs, **kwargs):
-    if func == None:
+    if func is None:
         return "1"
     return "(%s(%s))" % (func, xcode_args(*sargs, **kwargs))
 
@@ -121,15 +123,19 @@ def add_semicolon(decl):
         decl[-1] += ";"
     return decl
 
+
 def struct_ptr_name(mode):
     return "result" if mode == "decode" else "input"
 
+
 def ternary_if_chain(access, names, xcode_strings):
-    return "((%s == %s) ? %s%s: %s)" % (access,
-                                       names[0],
-                                       xcode_strings[0],
-                                       newl_ind,
-                                       ternary_if_chain(access, names[1:], xcode_strings[1:]) if len(names) > 1 else "false")
+    return "((%s == %s) ? %s%s: %s)" % (
+        access,
+        names[0],
+        xcode_strings[0],
+        newl_ind,
+        ternary_if_chain(access, names[1:], xcode_strings[1:]) if len(names) > 1 else "false")
+
 
 # Class for parsing CDDL. One instance represents one CBOR data item, with a few caveats:
 #  - For repeated data, one instance represents all repetitions.
@@ -171,7 +177,7 @@ class CddlParser:
         self.match_str = ""
 
         self.my_types = my_types
-        self.default_maxq = default_maxq # args.default_maxq
+        self.default_maxq = default_maxq  # args.default_maxq
         self.base_name = base_name  # Used as default for self.get_base_name()
 
     @classmethod
@@ -221,17 +227,18 @@ class CddlParser:
 
     # Generate a (hopefully) unique and descriptive name
     def generate_base_name(self):
-        return ((self.label
-                 or (self.key.value if self.key and self.key.type in ["TSTR", "OTHER"] else None)
-                 or (f"{self.value}_{self.type.lower()}" if self.type == "TSTR" and self.value is not None else None)
-                 or (f"{self.type.lower()}{self.value}" if self.type in ["INT", "UINT"] and self.value is not None else None)
-                 or (next((key for key, value in self.my_types.items() if value == self), None))
-                 or ("_"+self.value if self.type == "OTHER" else None)
-                 or ("_"+self.value[0].get_base_name()
-                     if self.type in ["LIST", "GROUP"] and self.value is not None else None)
-                 or (self.cbor.value if self.cbor and self.cbor.type in ["TSTR", "OTHER"] else None)
-                 or ((self.key.generate_base_name() + self.type.lower()) if self.key else None)
-                 or self.type.lower()).replace("-", "_"))
+        return ((
+            self.label
+            or (self.key.value if self.key and self.key.type in ["TSTR", "OTHER"] else None)
+            or (f"{self.value}_{self.type.lower()}" if self.type == "TSTR" and self.value is not None else None)
+            or (f"{self.type.lower()}{self.value}" if self.type in ["INT", "UINT"] and self.value is not None else None)
+            or (next((key for key, value in self.my_types.items() if value == self), None))
+            or ("_" + self.value if self.type == "OTHER" else None)
+            or ("_" + self.value[0].get_base_name()
+                if self.type in ["LIST", "GROUP"] and self.value is not None else None)
+            or (self.cbor.value if self.cbor and self.cbor.type in ["TSTR", "OTHER"] else None)
+            or ((self.key.generate_base_name() + self.type.lower()) if self.key else None)
+            or self.type.lower()).replace("-", "_"))
 
     # Base name used for functions, variables, and typedefs.
     def get_base_name(self):
@@ -251,7 +258,7 @@ class CddlParser:
         return (self.default_maxq,)
 
     def init_kwargs(self):
-        return {"my_types":self.my_types}
+        return {"my_types": self.my_types}
 
     def set_id_prefix(self, id_prefix):
         self.id_prefix = id_prefix
@@ -310,7 +317,6 @@ class CddlParser:
         if self.cbor:
             self.cbor = self.cbor.flatten()[0]
 
-
     def flatten(self, allow_multi=False):
         self._flatten()
         if self.type in ["GROUP", "UNION"]\
@@ -354,11 +360,11 @@ class CddlParser:
                 self.size = sizeof(value)
                 self.min_value = value
                 self.max_value = value
-        if new_type =="NINT":
-                self.max_value = -1
+        if new_type == "NINT":
+            self.max_value = -1
 
-    # Set the self.type and self.minValue and self.max_value (or self.min_size and self.max_size depending on the type) of
-    # this element. For use during CDDL parsing.
+    # Set the self.type and self.minValue and self.max_value (or self.min_size and self.max_size depending on the type)
+    # of this element. For use during CDDL parsing.
     def type_and_range(self, new_type, min_val, max_val):
         if new_type not in ["INT", "UINT", "NINT"]:
             raise TypeError(
@@ -378,9 +384,7 @@ class CddlParser:
         if new_type == "NINT":
             self.set_size_range(sizeof(abs(max_val)), sizeof(abs(min_val)))
         if new_type == "INT":
-            self.set_size_range(
-                None, max(sizeof(abs(max_val)),
-                       sizeof(abs(min_val))))
+            self.set_size_range(None, max(sizeof(abs(max_val)), sizeof(abs(min_val))))
 
     # Set the self.value and self.size of this element. For use during CDDL
     # parsing.
@@ -399,8 +403,7 @@ class CddlParser:
     def set_quantifier(self, quantifier):
         if self.type is not None:
             raise TypeError(
-                "Cannot have quantifier after value: " +
-                quantifier)
+                "Cannot have quantifier after value: " + quantifier)
 
         quantifier_mapping = [
             (r"\?", lambda mo: (0, 1)),
@@ -446,7 +449,7 @@ class CddlParser:
     # Set self.min_size, and self.minValue if type is UINT.
     def set_min_size(self, min_size):
         if self.type == "UINT":
-            self.minValue = 256**min(0, abs(min_size-1)) if min_size else None
+            self.minValue = 256**min(0, abs(min_size - 1)) if min_size else None
         self.min_size = min_size if min_size else None
 
     # Set self.max_size, and self.max_value if type is UINT.
@@ -554,7 +557,9 @@ class CddlParser:
             (r'{(?P<item>(?>[^{}]+|(?R))*)}',
              lambda map_str: self.type_and_value("MAP", lambda: self.parse(map_str))),
             (r'\/\/\s*(?P<item>.+?)(?=\/\/|\Z)',
-             lambda union_str: self.union_add_value(self.parse("(%s)" % union_str if ',' in union_str else union_str)[0], doubleslash=True)),
+             lambda union_str: self.union_add_value(
+                 self.parse("(%s)" % union_str if ',' in union_str else union_str)[0],
+                 doubleslash=True)),
             (r'(\=\>)',
              lambda _: self.convert_to_key()),
             (r'([+*?])',
@@ -623,11 +628,11 @@ class CddlParser:
         all_type_regex = '|'.join([regex for (regex, _) in (types[:3] + types[5:])])
         for i in range(0, all_type_regex.count("item")):
             all_type_regex = all_type_regex.replace("item", "it%dem" % i, 1)
-        types.insert(5, (r'(?P<item>'+all_type_regex+r')\s*\:',
+        types.insert(5, (r'(?P<item>' + all_type_regex + r')\s*\:',
                          lambda key_str: self.set_key_or_label(self.parse(key_str)[0])))
-        types.insert(6, (r'(?P<item>'+all_type_regex+r')\s*\=\>',
+        types.insert(6, (r'(?P<item>' + all_type_regex + r')\s*\=\>',
                          lambda key_str: self.set_key(self.parse(key_str)[0])))
-        types.insert(7, (r'\/\s*(?P<item>(('+all_type_regex+r')\s*)+?)(?=\/|\,|\Z)',
+        types.insert(7, (r'\/\s*(?P<item>((' + all_type_regex + r')\s*)+?)(?=\/|\,|\Z)',
                          lambda union_str: self.union_add_value(self.parse(union_str)[0])))
 
         # Keep parsing until a comma, or to the end of the string.
@@ -676,7 +681,9 @@ class CddlParser:
         if self.type == "MAP":
             none_keys = [child for child in self.value if not child.elem_has_key()]
             if none_keys:
-                raise TypeError("Map entry must have key: " + str(none_keys) + " pointing to " + str([self.my_types[elem.value] for elem in none_keys if elem.type == "OTHER"]))
+                raise TypeError(
+                    "Map entry must have key: " + str(none_keys) + " pointing to "
+                    + str([self.my_types[elem.value] for elem in none_keys if elem.type == "OTHER"]))
         if self.type == "OTHER":
             if self.value not in self.my_types.keys() or not isinstance(
                     self.my_types[self.value], type(self)):
@@ -738,7 +745,7 @@ class CddlXcoder(CddlParser):
             return True
         if self.type in ["LIST", "MAP", "GROUP"]:
             return not self.multi_val_condition()
-        if self.type ==  "OTHER":
+        if self.type == "OTHER":
             return (not self.repeated_multi_var_condition()) and self.single_func_impl_condition()
         return False
 
@@ -772,10 +779,8 @@ class CddlXcoder(CddlParser):
                 or (self.type == "OTHER" and self.my_types[self.value].is_unambiguous()))
 
     def is_unambiguous_repeated(self):
-        return self.is_unambiguous_value() and (self.key is None or self.key.is_unambiguous_repeated()) \
-                or (self.type in ["LIST", "GROUP", "MAP"] and len(self.value) == 0)
-                # or (self.type in ["LIST", "GROUP", "MAP"] and all(((child.minQ == child.maxQ and child.is_unambiguous()) for child in self.value)))
-                # or (self.type is "UNION" and len(self.value) is 1 and self.value[0].is_unambiguous()))
+        return (self.is_unambiguous_value() and (self.key is None or self.key.is_unambiguous_repeated())
+                or (self.type in ["LIST", "GROUP", "MAP"] and len(self.value) == 0))
 
     def is_unambiguous(self):
         return (self.is_unambiguous_repeated() and (self.minQ == self.maxQ))
@@ -822,8 +827,8 @@ class CddlXcoder(CddlParser):
 
     # Whether to include a "cbor" variable for this element.
     def is_cbor(self):
-        return (self.type not in ["NIL", "ANY"]) and ((self.type != "OTHER") or (
-                self.my_types[self.value].is_cbor()))
+        return (self.type not in ["NIL", "ANY"]) \
+            and ((self.type != "OTHER") or (self.my_types[self.value].is_cbor()))
 
     # Whether to include a "cbor" variable for this element.
     def cbor_var_condition(self):
@@ -846,10 +851,9 @@ class CddlXcoder(CddlParser):
 
     # Whether this element's actual value has multiple members.
     def multi_val_condition(self):
-        return (self.type in ["LIST", "MAP", "GROUP", "UNION"]
-                and (len(self.value) > 1
-                     or (len(self.value) == 1
-                        and self.value[0].multi_member())))
+        return (
+            self.type in ["LIST", "MAP", "GROUP", "UNION"]
+            and (len(self.value) > 1 or (len(self.value) == 1 and self.value[0].multi_member())))
 
     # Whether any extra variables are to be included for this element for each
     # repetition.
@@ -886,20 +890,26 @@ class CddlXcoder(CddlParser):
 
     # Whether this type needs a typedef for its repeated part.
     def repeated_type_def_condition(self):
-        retval = self.repeated_multi_var_condition() and self.multi_var_condition() and not self.is_unambiguous_repeated()
-        return retval
+        return (
+            self.repeated_multi_var_condition() and self.multi_var_condition() and not self.is_unambiguous_repeated())
 
     # Whether this element needs its own encoder/decoder function.
     def single_func_impl_condition(self):
-        return (False or self.key or self.cbor_var_condition() or self.tags or
-                self.type_def_condition() or (self.type in ["LIST", "MAP"] and len(self.value) != 0)
-                )
+        return (
+            False
+            or self.key
+            or self.cbor_var_condition()
+            or self.tags
+            or self.type_def_condition()
+            or (self.type in ["LIST", "MAP"] and len(self.value) != 0))
 
     # Whether this element needs its own encoder/decoder function.
     def repeated_single_func_impl_condition(self):
         return self.repeated_type_def_condition() \
-                or (self.type in ["LIST", "MAP"] and self.multi_member()) \
-                or (self.multi_xcode_condition() and (self.self_repeated_multi_var_condition() or self.range_check_condition()))
+            or (self.type in ["LIST", "MAP"] and self.multi_member()) \
+            or (
+                self.multi_xcode_condition()
+                and (self.self_repeated_multi_var_condition() or self.range_check_condition()))
 
     def uint_val(self):
         if self.key:
@@ -913,7 +923,7 @@ class CddlXcoder(CddlParser):
         return None
 
     def is_uint_disambiguated(self):
-        return self.uint_val() != None
+        return self.uint_val() is not None
 
     def all_children_uint_disambiguated(self):
         values = set(child.uint_val() for child in self.value)
@@ -971,8 +981,9 @@ class CodeGenerator(CddlXcoder):
 
     # Whether to include a "cbor" variable for this element.
     def is_cbor(self):
-        return (self.type_name() is not None) and ((self.type != "OTHER") or (
-                (self.value not in self.entry_type_names) and self.my_types[self.value].is_cbor()))
+        return (self.type_name() is not None) and (
+            (self.type != "OTHER")
+            or ((self.value not in self.entry_type_names) and self.my_types[self.value].is_cbor()))
 
     def init_args(self):
         return (self.mode, self.entry_type_names, self.default_maxq)
@@ -987,8 +998,8 @@ class CodeGenerator(CddlXcoder):
 
     # Declaration of the "choice" variable for this element.
     def choice_var(self):
-        var = self.enclose("enum",
-            [val.enum_var_name(self.all_children_uint_disambiguated()) + "," for val in self.value])
+        var = self.enclose(
+            "enum", [val.enum_var_name(self.all_children_uint_disambiguated()) + "," for val in self.value])
         var[-1] += f" {self.choice_var_name()};"
         return var
 
@@ -1082,8 +1093,7 @@ class CodeGenerator(CddlXcoder):
 
     # Enclose a list of declarations in a block (struct, union or enum).
     def enclose(self, ingress, declaration):
-        return [f"{ingress} {{"] + [indentation +
-                                    line for line in declaration] + ["}"]
+        return [f"{ingress} {{"] + [indentation + line for line in declaration] + ["}"]
 
     # Type declaration for unions.
     def union_type(self):
@@ -1098,7 +1108,7 @@ class CodeGenerator(CddlXcoder):
         var_type = self.var_type()
         multi_var = False
 
-        decl = self.add_var_name(var_type, anonymous = self.type == "UNION")
+        decl = self.add_var_name(var_type, anonymous=(self.type == "UNION"))
 
         if self.type in ["LIST", "MAP", "GROUP"]:
             decl += self.child_declarations()
@@ -1168,11 +1178,9 @@ class CodeGenerator(CddlXcoder):
     # If full is False, only repeated part is used.
     def single_var_type(self, full=True):
         if full and self.multi_member():
-            return self.enclose(
-                "struct", self.full_declaration())
+            return self.enclose("struct", self.full_declaration())
         elif not full and self.repeated_multi_var_condition():
-            return self.enclose(
-                "struct", self.repeated_declaration())
+            return self.enclose("struct", self.repeated_declaration())
         else:
             return self.var_type()
 
@@ -1181,8 +1189,7 @@ class CodeGenerator(CddlXcoder):
     def type_def(self):
         ret_val = []
         if self.type in ["LIST", "MAP", "GROUP", "UNION"]:
-            ret_val.extend(
-                [elem for typedef in [child.type_def() for child in self.value] for elem in typedef])
+            ret_val.extend([elem for typedef in [child.type_def() for child in self.value] for elem in typedef])
         if self.cbor_var_condition():
             ret_val.extend(self.cbor.type_def())
         if self.key_var_condition():
@@ -1190,8 +1197,7 @@ class CodeGenerator(CddlXcoder):
         if self.type == "OTHER":
             ret_val.extend(self.my_types[self.value].type_def())
         if self.repeated_type_def_condition():
-            ret_val.extend(
-                [(self.single_var_type(full=False), self.repeated_type_name())])
+            ret_val.extend([(self.single_var_type(full=False), self.repeated_type_name())])
         if self.type_def_condition():
             ret_val.extend([(self.single_var_type(), self.type_name())])
         return ret_val
@@ -1199,7 +1205,7 @@ class CodeGenerator(CddlXcoder):
     def single_func_prim_prefix(self):
         if self.type == "OTHER":
             return self.my_types[self.value].single_func_prim_prefix()
-        return {
+        return ({
             "INT": f"intx32",
             "UINT": f"uintx32",
             "NINT": f"intx32",
@@ -1209,7 +1215,7 @@ class CodeGenerator(CddlXcoder):
             "BOOL": f"boolx",
             "NIL": f"nilx",
             "ANY": f"any",
-        }[self.type]
+        }[self.type])
 
     # Name of the encoder/decoder function for this element.
     def xcode_func_name(self):
@@ -1220,8 +1226,8 @@ class CodeGenerator(CddlXcoder):
         return f"{self.mode}_repeated{self.var_name()}"
 
     # Return the function name and arguments to call to encode/decode this element. Only used when this element DOESN'T
-    # define its own encoder/decoder function (when it's a primitive type, for which functions already exist, or when the
-    # function is defined elsewhere ("OTHER"))
+    # define its own encoder/decoder function (when it's a primitive type, for which functions already exist, or when
+    # the function is defined elsewhere ("OTHER"))
     def single_func_prim(self, access, union_uint=None, ptr_result=False):
         assert self.type not in ["LIST", "MAP"], "Must have wrapper function for list or map."
 
@@ -1274,11 +1280,11 @@ class CodeGenerator(CddlXcoder):
 
     # Return the function name and arguments to call to encode/decode the repeated
     # part of this element.
-    def repeated_single_func(self, ptr_result = False):
+    def repeated_single_func(self, ptr_result=False):
         if self.repeated_single_func_impl_condition():
             return (self.repeated_xcode_func_name(), deref_if_not_null(self.repeated_val_access()))
         else:
-            return self.single_func_prim(self.repeated_val_access(), ptr_result = ptr_result)
+            return self.single_func_prim(self.repeated_val_access(), ptr_result=ptr_result)
 
     def has_backup(self):
         return (self.cbor_var_condition() or self.type in ["LIST", "MAP", "UNION"])
@@ -1323,7 +1329,7 @@ class CodeGenerator(CddlXcoder):
     # Recursively sum the total minimum and maximum element count for this
     # element.
     def list_counts(self):
-        retval = {
+        retval = ({
             "INT": lambda: (self.minQ, self.maxQ),
             "UINT": lambda: (self.minQ, self.maxQ),
             "NINT": lambda: (self.minQ, self.maxQ),
@@ -1343,7 +1349,7 @@ class CodeGenerator(CddlXcoder):
                               self.maxQ * max((child.list_counts()[1] for child in self.value))),
             "OTHER": lambda: (self.minQ * self.my_types[self.value].list_counts()[0],
                               self.maxQ * self.my_types[self.value].list_counts()[1]),
-        }[self.type]()
+        }[self.type]())
         return retval
 
     # Return the full code needed to encode/decode a "LIST" or "MAP" element with children.
@@ -1355,13 +1361,13 @@ class CodeGenerator(CddlXcoder):
         assert self.type in ["LIST", "MAP"], "Expected LIST or MAP type, was %s." % self.type
         min_counts, max_counts = zip(*(child.list_counts() for child in self.value)) if self.value else ((0,), (0,))
         count_arg = f', {str(sum(max_counts))}' if self.mode == 'encode' else ''
-        with_children = "(%s && (int_res = (%s), ((%s) && int_res)))" \
-                    % (f"{start_func}(state{count_arg})",
-                       f"{newl_ind}&& ".join(child.full_xcode() for child in self.value),
-                       f"{end_func}(state{count_arg})")
-        without_children = "(%s && %s)" \
-                    % (f"{start_func}(state{count_arg})",
-                       f"{end_func}(state{count_arg})")
+        with_children = "(%s && (int_res = (%s), ((%s) && int_res)))" % (
+            f"{start_func}(state{count_arg})",
+            f"{newl_ind}&& ".join(child.full_xcode() for child in self.value),
+            f"{end_func}(state{count_arg})")
+        without_children = "(%s && %s)" % (
+            f"{start_func}(state{count_arg})",
+            f"{end_func}(state{count_arg})")
         return with_children if len(self.value) > 0 else without_children
 
     # Return the full code needed to encode/decode a "GROUP" element's children.
@@ -1369,7 +1375,7 @@ class CodeGenerator(CddlXcoder):
         assert self.type in ["GROUP"], "Expected GROUP type."
         return "(%s)" % (newl_ind + "&& ").join(
             [self.value[0].full_xcode(union_uint)]
-                +[child.full_xcode() for child in self.value[1:]])
+            + [child.full_xcode() for child in self.value[1:]])
 
     # Return the full code needed to encode/decode a "UNION" element's children.
     def xcode_union(self):
@@ -1377,10 +1383,11 @@ class CodeGenerator(CddlXcoder):
         if self.mode == "decode":
             if self.all_children_uint_disambiguated():
                 lines = []
-                lines.extend(["((%s == %s) && (%s))" %
-                            (self.choice_var_access(), child.var_name(),
-                                child.full_xcode(union_uint="DROP"))
-                            for child in self.value])
+                lines.extend(
+                    ["((%s == %s) && (%s))" %
+                        (self.choice_var_access(), child.var_name(),
+                            child.full_xcode(union_uint="DROP"))
+                        for child in self.value])
                 return "((%s) && (%s))" % (
                     f"(uintx32_decode(state, &{self.choice_var_access()}))",
                     f"{newl_ind}|| ".join(lines), )
@@ -1395,19 +1402,20 @@ class CodeGenerator(CddlXcoder):
                     child_values[i] = f"(union_elem_code(state) && {child_values[i]})"
 
             return "(%s && (int_res = (%s), %s, int_res))" \
-                        % ("union_start_code(state)",
-                           f"{newl_ind}|| ".join(child_values),
-                           "union_end_code(state)")
+                % ("union_start_code(state)",
+                   f"{newl_ind}|| ".join(child_values),
+                   "union_end_code(state)")
         else:
-            return ternary_if_chain(self.choice_var_access(),
-                                             [child.var_name() for child in self.value],
-                                             [child.full_xcode() for child in self.value])
+            return ternary_if_chain(
+                self.choice_var_access(),
+                [child.var_name() for child in self.value],
+                [child.full_xcode() for child in self.value])
 
     def xcode_bstr(self):
         if self.cbor_var_condition():
             xcode_cbor = "(%s)" % ((newl_ind + "&& ").join(
-                   [f"(int_res = (bstrx_cbor_start_{self.mode}(state, &{self.val_access()})",
-                    f"{self.cbor.full_xcode()})), bstrx_cbor_end_{self.mode}(state), int_res"]))
+                [f"(int_res = (bstrx_cbor_start_{self.mode}(state, &{self.val_access()})",
+                 f"{self.cbor.full_xcode()})), bstrx_cbor_end_{self.mode}(state), int_res"]))
             if self.mode == "decode":
                 return xcode_cbor
             else:
@@ -1438,7 +1446,6 @@ class CodeGenerator(CddlXcoder):
             range_checks.extend(self.my_types[self.value].range_checks(access))
 
         return range_checks
-
 
     # Return the full code needed to encode/decode this element, including children,
     # key and cbor, excluding repetitions.
@@ -1485,14 +1492,14 @@ class CodeGenerator(CddlXcoder):
     # key, cbor, and repetitions.
     def full_xcode(self, union_uint=None):
         if self.present_var_condition():
-            func, *arguments = self.repeated_single_func(ptr_result = True)
+            func, *arguments = self.repeated_single_func(ptr_result=True)
             return (
                 f"present_{self.mode}(&(%s), (void *)%s, %s)" %
                 (self.present_var_access(),
                  func,
                  xcode_args(*arguments),))
         elif self.count_var_condition():
-            func, *arguments = self.repeated_single_func(ptr_result = True)
+            func, *arguments = self.repeated_single_func(ptr_result=True)
             return (
                 f"multi_{self.mode}(%s, %s, &%s, (void *)%s, %s, %s)" %
                 (self.minQ,
@@ -1551,8 +1558,8 @@ class CodeRenderer():
         self.print_time = print_time
         self.default_maxq = default_maxq
 
-        # Sort type definitions so the typedefs will come in the correct order in the header file and the function in the
-        # correct order in the c file.
+        # Sort type definitions so the typedefs will come in the correct order in the header file and the function in
+        # the correct order in the c file.
         self.sorted_types = list(sorted(self.entry_types, key=lambda _type: _type.depends_on(), reverse=False))
 
         self.functions = self.unique_funcs()
@@ -1574,11 +1581,12 @@ class CodeRenderer():
                     type_names[type_name] = type_def[0]
                     out_types.append(type_def)
                 else:
-                    assert (''.join(type_names[type_name]) == ''.join(type_def[0])),\
-                        ("Two elements share the type name %s, but their implementations are not identical. "
-                            + "Please change one or both names. One of them is %s") % (type_name, pformat(mtype.type_def()))
+                    assert (
+                        ''.join(type_names[type_name]) == ''.join(type_def[0])), \
+                        "Two elements share the type name %s, but their implementations are not identical. " \
+                        + "Please change one or both names. One of them is %s" \
+                        % (type_name, pformat(mtype.type_def()))
         return out_types
-
 
     # Return a list of encoder/decoder functions for all defined types, with duplicate
     # functions removed.
@@ -1601,14 +1609,13 @@ class CodeRenderer():
 
         return out_types
 
-
     # Return a list of encoder/decoder functions for all defined types, with unused
     # functions removed.
     def used_funcs(self):
         mod_entry_types = [
             (func_type.xcode(),
-            func_type.xcode_func_name(),
-            func_type.type_name()) for func_type in self.entry_types]
+             func_type.xcode_func_name(),
+             func_type.type_name()) for func_type in self.entry_types]
         out_types = [func_type for func_type in mod_entry_types]
         full_code = "".join([func_type[0] for func_type in mod_entry_types])
         for func_type in reversed(self.functions):
@@ -1617,7 +1624,6 @@ class CodeRenderer():
                 full_code += func_type[0]
                 out_types.append(func_type)
         return list(reversed(out_types))
-
 
     # Return a list of typedefs for all defined types, with unused types removed.
     def used_types(self, type_defs, entry_types):
@@ -1630,14 +1636,14 @@ class CodeRenderer():
                 out_types.append(typeDef)
         return list(reversed(out_types))
 
-
     # Render a single decoding function with signature and body.
     def render_function(self, xcoder):
         body = xcoder[0]
         func_name = xcoder
         return f"""
 static bool {xcoder[1]}(
-		cbor_state_t *state, {"" if self.mode == "decode" else "const "}{xcoder[2] if struct_ptr_name(self.mode) in body else "void"} *{struct_ptr_name(self.mode)})
+		cbor_state_t *state, {"" if self.mode == "decode" else "const "}{
+            xcoder[2] if struct_ptr_name(self.mode) in body else "void"} *{struct_ptr_name(self.mode)})
 {{
 	cbor_print("%s\\n", __func__);
 	{f"size_t temp_elem_counts[{body.count('temp_elem_count')}];" if "temp_elem_count" in body else ""}
@@ -1658,7 +1664,6 @@ static bool {xcoder[1]}(
 	return tmp_result;
 }}""".replace("	\n", "")  # call replace() to remove empty lines.
 
-
     # Render a single entry function (API function) with signature and body.
     def render_entry_function(self, xcoder):
         return f"""
@@ -1677,7 +1682,6 @@ static bool {xcoder[1]}(
 		payload_len_out, (void *){xcoder.xcode_func_name()},
 		{xcoder.list_counts()[1]}, {xcoder.num_backups()});
 }}"""
-
 
     # Render the entire generated C file contents.
     def render_c_file(self, header_file_name):
@@ -1702,7 +1706,6 @@ static bool {xcoder[1]}(
 
 {linesep.join([self.render_entry_function(xcoder) for xcoder in self.entry_types])}
 """
-
 
     # Render the entire generated header file contents.
     def render_h_file(self, type_def_file, header_guard):
@@ -1765,15 +1768,14 @@ static bool {xcoder[1]}(
         # Create and populate the generated c and h file.
         makedirs("./" + path.dirname(c_file.name), exist_ok=True)
 
-        print ("Writing to " + c_file.name)
+        print("Writing to " + c_file.name)
         c_file.write(self.render_c_file(header_file_name=h_name))
 
         makedirs("./" + h_dir, exist_ok=True)
         type_file_name = path.basename(type_file.name)
 
         print("Writing to " + h_file.name)
-        h_file.write(self.render_h_file(type_def_file=type_file_name,
-                                header_guard=self.header_guard(h_file.name)))
+        h_file.write(self.render_h_file(type_def_file=type_file_name, header_guard=self.header_guard(h_file.name)))
 
         print("Writing to " + type_file_name)
         type_file.write(self.render_type_file(header_guard=self.header_guard(type_file_name)))
@@ -1797,36 +1799,33 @@ referencing types, since the C type cannot be self referencing.
 This script requires 'regex' for lookaround functionality not present in 're'.''',
         formatter_class=RawDescriptionHelpFormatter)
 
-    parser.add_argument("-i", "--input", required=True, type=FileType('r'),
-                        help="Path to input CDDL file.")
-    parser.add_argument("--output-c", "--oc", required=True, type=FileType('w'),
-                        help="Path to output C file.")
-    parser.add_argument("--output-h", "--oh", required=True, type=FileType('w'),
-                        help="Path to output header file.")
-    parser.add_argument("--output-h-types", "--oht", required=False, type=FileType('w'),
-                        help="Path to output header file with typedefs (shared between decode and encode).")
     parser.add_argument(
-        "-t",
-        "--entry-types",
-        required=True,
-        type=str,
-        nargs="+",
+        "-i", "--input", required=True, type=FileType('r'), help="Path to input CDDL file.")
+    parser.add_argument(
+        "--output-c", "--oc", required=True, type=FileType('w'), help="Path to output C file.")
+    parser.add_argument(
+        "--output-h", "--oh", required=True, type=FileType('w'), help="Path to output header file.")
+    parser.add_argument(
+        "--output-h-types", "--oht", required=False, type=FileType('w'),
+        help="Path to output header file with typedefs (shared between decode and encode).")
+    parser.add_argument(
+        "-t", "--entry-types", required=True, type=str, nargs="+",
         help="Names of the types which should have their xcode functions exposed.")
     parser.add_argument(
-        "-v",
-        "--verbose",
-        required=False,
-        action="store_true",
-        default=False,
+        "-v", "--verbose", required=False, action="store_true", default=False,
         help="Print more information while parsing CDDL and generating code.")
-    parser.add_argument("--time-header", required=False, action="store_true", default=False,
-                        help="Put the current time in a comment in the generated files.")
-    parser.add_argument("-d", "--decode", required = False, action="store_true",
-                        default = False, help="Generate decoding code.")
-    parser.add_argument("-e", "--encode", required = False, action="store_true",
-                        default = False, help="Generate encoding code.")
-    parser.add_argument("--default-maxq", required = False, type=int,
-                        default = 3, help="""Default maximum number of repetitions when no maximum
+    parser.add_argument(
+        "--time-header", required=False, action="store_true", default=False,
+        help="Put the current time in a comment in the generated files.")
+    parser.add_argument(
+        "-d", "--decode", required=False, action="store_true", default=False,
+        help="Generate decoding code.")
+    parser.add_argument(
+        "-e", "--encode", required=False, action="store_true", default=False,
+        help="Generate encoding code.")
+    parser.add_argument(
+        "--default-maxq", required=False, type=int, default=3,
+        help="""Default maximum number of repetitions when no maximum
 is specified. This is needed to construct complete C types.""")
 
     return parser.parse_args()
@@ -1841,7 +1840,7 @@ def main():
     if args.decode == args.encode:
         args.error("Please specify exactly one of --decode or --encode.")
 
-    print ("Parsing " + args.input.name)
+    print("Parsing " + args.input.name)
 
     my_types = CodeGenerator.from_cddl(mode, args.input.read(), args.default_maxq, mode, args.entry_types)
 
