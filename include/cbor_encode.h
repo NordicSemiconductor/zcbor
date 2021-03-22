@@ -21,9 +21,11 @@
  * @retval false  If the payload is exhausted.
  */
 bool intx32_encode(cbor_state_t *state, const int32_t *input);
+bool intx32_put(cbor_state_t *state, int32_t result);
 
 /** Encode a PINT into a uint32_t. */
 bool uintx32_encode(cbor_state_t *state, const uint32_t *result);
+bool uintx32_put(cbor_state_t *state, uint32_t result);
 
 /** Encode a BSTR header.
  *
@@ -47,6 +49,12 @@ bool bstrx_encode(cbor_state_t *state, const cbor_string_type_t *result);
 /** Encode a TSTR. */
 bool tstrx_encode(cbor_state_t *state, const cbor_string_type_t *result);
 
+#define tstrx_put(state, string) \
+	tstrx_encode(state, &(cbor_string_type_t){.value = string, len = (sizeof(string) - 1)})
+
+#define tstrx_put_term(state, string) \
+	tstrx_encode(state, &(cbor_string_type_t){.value = string, len = strlen(string)})
+
 /** Encode a LIST header.
  *
  * The contents of the list can be decoded via subsequent function calls.
@@ -68,9 +76,11 @@ bool nilx_encode(cbor_state_t *state, const void *result);
 
 /** Encode a boolean primitive value. */
 bool boolx_encode(cbor_state_t *state, const bool *result);
+bool boolx_put(cbor_state_t *state, bool result);
 
 /** Encode a float */
 bool float_encode(cbor_state_t *state, double *result);
+bool float_put(cbor_state_t *state, double result);
 
 /** Dummy encode "any": Encode a "nil". input should be NULL. */
 bool any_encode(cbor_state_t *state, void *input);

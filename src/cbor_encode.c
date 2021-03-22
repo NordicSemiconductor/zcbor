@@ -102,25 +102,29 @@ static bool value_encode(cbor_state_t *state, cbor_major_type_t major_type,
 }
 
 
-bool intx32_encode(cbor_state_t *state, const int32_t *input)
+bool intx32_put(cbor_state_t *state, int32_t input)
 {
 	cbor_major_type_t major_type;
-	uint32_t uint_input;
 
-	if (*input < 0) {
+	if (input < 0) {
 		major_type = CBOR_MAJOR_TYPE_NINT;
 		/* Convert from CBOR's representation. */
-		uint_input = -1 - *input;
+		input = -1 - input;
 	} else {
 		major_type = CBOR_MAJOR_TYPE_PINT;
-		uint_input = *input;
+		input = input;
 	}
 
-	if (!value_encode(state, major_type, &uint_input, 4)) {
+	if (!value_encode(state, major_type, &input, 4)) {
 		FAIL();
 	}
 
 	return true;
+}
+
+bool intx32_encode(cbor_state_t *state, const int32_t *input)
+{
+	return intx32_put(state, *input);
 }
 
 
@@ -137,6 +141,15 @@ static bool uint32_encode(cbor_state_t *state, const uint32_t *input,
 bool uintx32_encode(cbor_state_t *state, const uint32_t *input)
 {
 	if (!uint32_encode(state, input, CBOR_MAJOR_TYPE_PINT)) {
+		FAIL();
+	}
+	return true;
+}
+
+
+bool uintx32_put(cbor_state_t *state, uint32_t input)
+{
+	if (!uint32_encode(state, &input, CBOR_MAJOR_TYPE_PINT)) {
 		FAIL();
 	}
 	return true;
@@ -347,6 +360,15 @@ bool boolx_encode(cbor_state_t *state, const bool *input)
 }
 
 
+bool boolx_put(cbor_state_t *state, bool input)
+{
+	if (!primx_encode(state, input + BOOL_TO_PRIM)) {
+		FAIL();
+	}
+	return true;
+}
+
+
 bool double_encode(cbor_state_t *state, double *input)
 {
 	if (!value_encode(state, CBOR_MAJOR_TYPE_PRIM, input,
@@ -355,6 +377,12 @@ bool double_encode(cbor_state_t *state, double *input)
 	}
 
 	return true;
+}
+
+
+bool double_put(cbor_state_t *state, double input)
+{
+	return double_encode(state, &input);
 }
 
 
