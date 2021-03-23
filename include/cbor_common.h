@@ -55,8 +55,8 @@ typedef struct{
 union {
 	uint8_t *payload_mut;
 	uint8_t const *payload; /**< The current place in the payload. Will be
-	                               updated when an element is correctly
-	                               processed. */
+	                             updated when an element is correctly
+	                             processed. */
 };
 	size_t elem_count; /**< The current element is part of a LIST or a MAP,
 	                        and this keeps count of how many elements are

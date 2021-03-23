@@ -107,7 +107,11 @@ function(generate_cddl cddl_file)
   execute_process(
     COMMAND
     ${py_command}
+    RESULT_VARIABLE ret
   )
+  if (ret)
+    message(FATAL_ERROR "cddl_gen.py failed.")
+  endif()
 endfunction()
 
 
