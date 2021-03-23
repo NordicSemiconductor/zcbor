@@ -32,11 +32,11 @@ do_test() {
 	fi
 }
 
-if [ "$1" = "nrf52840_pca10056" ]; then
+if [ "$1" = "nrf52840dk_nrf52840" ]; then
 	flash_offset=0xC200
-elif [ "$1" = "nrf9160_pca10090" ]; then
+elif [ "$1" = "nrf9160dk_nrf9160" ]; then
 	flash_offset=0x10200
-elif [ "$1" = "nrf5340_dk_nrf5340_cpuapp" ]; then
+elif [ "$1" = "nrf5340dk_nrf5340_cpuapp" ]; then
 	flash_offset=0x10200
 fi
 
