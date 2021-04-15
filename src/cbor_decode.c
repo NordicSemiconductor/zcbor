@@ -449,14 +449,14 @@ bool boolx_decode(cbor_state_t *state, bool *result)
 }
 
 
-bool boolx_expect(cbor_state_t *state, bool *result)
+bool boolx_expect(cbor_state_t *state, bool result)
 {
 	bool value;
 
 	if (!boolx_decode(state, &value)) {
 		FAIL();
 	}
-	if (value != *result) {
+	if (value != result) {
 		FAIL_RESTORE();
 	}
 	return true;
