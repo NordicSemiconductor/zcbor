@@ -72,7 +72,7 @@ bool list_end_encode(cbor_state_t *state, size_t max_num);
 bool map_end_encode(cbor_state_t *state, size_t max_num);
 
 /** Encode a "nil" primitive value. result should be NULL. */
-bool nilx_encode(cbor_state_t *state, const void *result);
+bool nilx_put(cbor_state_t *state, const void *result);
 
 /** Encode a boolean primitive value. */
 bool boolx_encode(cbor_state_t *state, const bool *result);
