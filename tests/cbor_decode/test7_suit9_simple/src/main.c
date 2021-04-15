@@ -6,6 +6,7 @@
 
 #include <ztest.h>
 #include "manifest9_simple_decode.h"
+#include "cbor_debug.h" // Enables use of print functions when debugging tests.
 
 
 /* draft-ietf-suit-manifest-09 Example B.2 */

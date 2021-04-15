@@ -12,6 +12,7 @@
 
 #define min(a,b) (((a) < (b)) ? (a) : (b))
 
+__attribute__((used))
 static void print_compare_lines(const uint8_t *str1, const uint8_t *str2, size_t size)
 {
 	for (uint32_t j = 0; j < size; j++) {
@@ -29,6 +30,7 @@ static void print_compare_lines(const uint8_t *str1, const uint8_t *str2, size_t
 	printk("\r\n");
 }
 
+__attribute__((used))
 static void print_compare_strings(const uint8_t *str1, const uint8_t *str2, size_t size)
 {
 	for (uint32_t i = 0; i <= size / 16; i++) {
@@ -39,6 +41,7 @@ static void print_compare_strings(const uint8_t *str1, const uint8_t *str2, size
 	printk("\r\n");
 }
 
+__attribute__((used))
 static void print_compare_strings_diff(const uint8_t *str1, const uint8_t *str2, size_t size)
 {
 	bool printed = false;
