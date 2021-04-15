@@ -61,3 +61,12 @@ Range = [
 	+multiHello: "hello",
 	+multi0to10: 0..10
 ]
+
+ValueRange = [
+	greater10: uint .gt 10,
+	less1000: int .lt 1000,
+	greatereqmin10: int .ge -10,
+	lesseq1: uint .le 1,
+	equal42: uint .eq 42,
+	equalstrworld: tstr .eq "world",
+]
