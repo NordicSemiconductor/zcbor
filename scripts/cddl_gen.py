@@ -1692,10 +1692,8 @@ class CodeGenerator(CddlXcoder):
             arg = deref_if_not_null(access)
         elif self.type in ["BSTR", "TSTR"]:
             arg = tmp_str_or_null(self.value)
-        elif self.type == "BOOL":
-            arg = min_bool_or_null(self.value)
-        elif self.type in ["UINT", "INT", "NINT", "FLOAT"] and self.mode == "decode":
-            arg = ("(void *) " if ptr_result else "") + str(self.value)
+        elif self.type in ["UINT", "INT", "NINT", "FLOAT", "BOOL"]:
+            arg = ("(void *) " if ptr_result else "") + str(self.value).lower()  # Make False and True lower case
         else:
             arg = tmp_val_or_null(self.value)
 

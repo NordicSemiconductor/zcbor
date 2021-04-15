@@ -161,7 +161,7 @@ bool nilx_expect(cbor_state_t *state, void *result);
 
 /** Decode a boolean primitive value. */
 bool boolx_decode(cbor_state_t *state, bool *result);
-bool boolx_expect(cbor_state_t *state, bool *result);
+bool boolx_expect(cbor_state_t *state, bool result);
 
 /** Decode a float */
 bool float_decode(cbor_state_t *state, double *result);
