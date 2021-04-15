@@ -7,6 +7,7 @@
 #include <ztest.h>
 #include "manifest3_decode.h"
 #include "manifest3_encode.h"
+#include "cbor_debug.h" // Enables use of print functions when debugging tests.
 
 /* draft-ietf-suit-manifest-02 Example 0 */
 uint8_t test_vector0_02[] = {

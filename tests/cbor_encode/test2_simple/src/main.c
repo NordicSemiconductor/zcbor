@@ -6,6 +6,7 @@
 
 #include <ztest.h>
 #include "pet_encode.h"
+#include "cbor_debug.h" // Enables use of print functions when debugging tests.
 // #include "serial_recovery.h"
 
 uint8_t serial_rec_input1[] = {

@@ -6,6 +6,7 @@
 
 #include <ztest.h>
 #include "strange_decode.h"
+#include "cbor_debug.h" // Enables use of print functions when debugging tests.
 
 void test_numbers(void)
 {
