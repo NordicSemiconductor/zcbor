@@ -95,7 +95,8 @@ def tmp_val_or_null(value):
 # Assign the min_value variable.
 def tmp_str_or_null(value):
     return \
-        f"""(tmp_str.value = {f'"{value}"' if value is not None else 'NULL'}, tmp_str.len = {len(value)}, &tmp_str)"""
+        f"""(tmp_str.value = {f'"{value}"' if value is not None else 'NULL'},
+    tmp_str.len = sizeof({f'"{value}"'}) - 1, &tmp_str)"""
 
 
 # Assign the max_value variable.
@@ -233,12 +234,15 @@ class CddlParser:
                 result[key] = value
         return dict(result)
 
+    backslash_quotation_mark = r'\"'
+
     # Generate a (hopefully) unique and descriptive name
     def generate_base_name(self):
         return ((
             self.label
             or (self.key.value if self.key and self.key.type in ["TSTR", "OTHER"] else None)
-            or (f"{self.value}_{self.type.lower()}" if self.type == "TSTR" and self.value is not None else None)
+            or (f"{self.value.replace(self.backslash_quotation_mark, '')}_{self.type.lower()}"
+                if self.type == "TSTR" and self.value is not None else None)
             or (f"{self.type.lower()}{self.value}" if self.type in ["INT", "UINT"] and self.value is not None else None)
             or (next((key for key, value in self.my_types.items() if value == self), None))
             or ("_" + self.value if self.type == "OTHER" else None)
@@ -612,11 +616,11 @@ class CddlParser:
              lambda num: self.type_and_value("UINT", lambda: int(num))),
             (r'bstr(?!\w)',
              lambda _: self.type_and_value("BSTR", lambda: None)),
-            (r'\'(?P<item>.*?)\'(?<!\\)',
+            (r'\'(?P<item>.*?)(?<!\\)\'',
              lambda string: self.type_and_value("BSTR", lambda: string)),
             (r'tstr(?!\w)',
              lambda _: self.type_and_value("TSTR", lambda: None)),
-            (r'\"(?P<item>.*?)\"(?<!\\)',
+            (r'\"(?P<item>.*?)(?<!\\)\"',
              lambda string: self.type_and_value("TSTR", lambda: string)),
             (r'bool(?!\w)',
              lambda _: self.type_and_value("BOOL", lambda: None)),
