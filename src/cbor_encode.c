@@ -344,7 +344,7 @@ bool map_end_encode(cbor_state_t *state, size_t max_num)
 }
 
 
-bool nilx_encode(cbor_state_t *state, const void *input)
+bool nilx_put(cbor_state_t *state, const void *input)
 {
 	(void)input;
 	return primx_encode(state, 22);
@@ -388,7 +388,7 @@ bool double_put(cbor_state_t *state, double input)
 
 bool any_encode(cbor_state_t *state, void *input)
 {
-	return nilx_encode(state, input);
+	return nilx_put(state, input);
 }
 
 
