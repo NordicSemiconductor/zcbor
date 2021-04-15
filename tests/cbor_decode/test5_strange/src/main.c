@@ -288,7 +288,7 @@ void test_union(void)
 	zassert_true(cbor_decode_Union(payload_union9_long, sizeof(payload_union9_long),
 				&_union, &decode_len), NULL);
 	zassert_equal(2, decode_len, NULL);
-	
+
 	zassert_true(cbor_decode_Union(payload_union10_inv, sizeof(payload_union10_inv),
 				&_union, &decode_len), NULL);
 	zassert_equal(6, _union._Union__MultiGroup._MultiGroup_count, NULL);
@@ -580,6 +580,166 @@ void test_range(void)
 				&output, NULL), NULL);
 }
 
+void test_value_range(void)
+{
+	const uint8_t payload_value_range1[] = {0x86,
+		11,
+		0x19, 0x03, 0xe7, // 999
+		0x29, // -10
+		1,
+		0x18, 42, // 42
+		0x65, 'w', 'o', 'r', 'l', 'd', // "world"
+	};
+
+	const uint8_t payload_value_range2[] = {0x86,
+		0x18, 100, // 100
+		0x39, 0x03, 0xe8, // -1001
+		0x18, 100, // 100
+		0,
+		0x18, 42, // 42
+		0x65, 'w', 'o', 'r', 'l', 'd', // "world"
+	};
+
+	const uint8_t payload_value_range3_inv[] = {0x86,
+		10,
+		0x19, 0x03, 0xe7, // 999
+		0x29, // -10
+		1,
+		0x18, 42, // 42
+		0x65, 'w', 'o', 'r', 'l', 'd', // "world"
+	};
+
+	const uint8_t payload_value_range4_inv[] = {0x86,
+		11,
+		0x19, 0x03, 0xe8, // 1000
+		0x29, // -10
+		1,
+		0x18, 42, // 42
+		0x65, 'w', 'o', 'r', 'l', 'd', // "world"
+	};
+
+	const uint8_t payload_value_range5_inv[] = {0x86,
+		11,
+		0x19, 0x03, 0xe7, // 999
+		0x2a, // -11
+		1,
+		0x18, 42, // 42
+		0x65, 'w', 'o', 'r', 'l', 'd', // "world"
+	};
+
+	const uint8_t payload_value_range6_inv[] = {0x86,
+		11,
+		0x19, 0x03, 0xe7, // 999
+		0x29, // -10
+		2,
+		0x18, 42, // 42
+		0x65, 'w', 'o', 'r', 'l', 'd', // "world"
+	};
+
+	const uint8_t payload_value_range7_inv[] = {0x86,
+		11,
+		0x19, 0x03, 0xe7, // 999
+		0x29, // -10
+		1,
+		0x18, 43, // 42
+		0x65, 'w', 'o', 'r', 'l', 'e', // "worle"
+	};
+
+	const uint8_t payload_value_range8_inv[] = {0x86,
+		11,
+		0x19, 0x03, 0xe7, // 999
+		0x29, // -10
+		1,
+		0x18, 42, // 42
+		0x66, 'w', 'o', 'r', 'l', 'd', 'd', // "world"
+	};
+
+	const uint8_t payload_value_range9_inv[] = {0x86,
+		11,
+		0x19, 0x03, 0xe7, // 999
+		0x29, // -10
+		1,
+		0x18, 42, // 42
+		0x64, 'w', 'o', 'r', 'l', // "worl"
+	};
+
+	const uint8_t payload_value_range10_inv[] = {0x86,
+		11,
+		0x39, 0x03, 0xe6, // -999
+		0x39, // -10
+		1,
+		0x18, 42, // 42
+		0x65, 'w', 'o', 'r', 'l', 'd', // "world"
+	};
+
+	const uint8_t payload_value_range11_inv[] = {0x86,
+		11,
+		0x1a, 0x10, 0x00, 0x00, 0x00, // 0x10000000
+		0x39, 0x03, 0xe8, // -1001
+		1,
+		0x18, 42, // 42
+		0x65, 'w', 'o', 'r', 'l', 'd', // "world"
+	};
+
+	struct ValueRange exp_output_value_range1 = {
+		._ValueRange_greater10 = 11,
+		._ValueRange_less1000 = 999,
+		._ValueRange_greatereqmin10 = -10,
+		._ValueRange_lesseq1 = 1,
+	};
+	struct ValueRange exp_output_value_range2 = {
+		._ValueRange_greater10 = 100,
+		._ValueRange_less1000 = -1001,
+		._ValueRange_greatereqmin10 = 100,
+		._ValueRange_lesseq1 = 0,
+	};
+
+	struct ValueRange output;
+	size_t out_len;
+
+	zassert_true(cbor_decode_ValueRange(payload_value_range1, sizeof(payload_value_range1),
+					&output, &out_len), NULL);
+	zassert_equal(sizeof(payload_value_range1), out_len, NULL);
+	zassert_equal(exp_output_value_range1._ValueRange_greater10,
+			output._ValueRange_greater10, NULL);
+	zassert_equal(exp_output_value_range1._ValueRange_less1000,
+			output._ValueRange_less1000, NULL);
+	zassert_equal(exp_output_value_range1._ValueRange_greatereqmin10,
+			output._ValueRange_greatereqmin10, NULL);
+	zassert_equal(exp_output_value_range1._ValueRange_lesseq1,
+			output._ValueRange_lesseq1, NULL);
+
+	zassert_true(cbor_decode_ValueRange(payload_value_range2, sizeof(payload_value_range2),
+					&output, &out_len), NULL);
+	zassert_equal(sizeof(payload_value_range2), out_len, NULL);
+	zassert_equal(exp_output_value_range2._ValueRange_greater10,
+			output._ValueRange_greater10, NULL);
+	zassert_equal(exp_output_value_range2._ValueRange_less1000,
+			output._ValueRange_less1000, NULL);
+	zassert_equal(exp_output_value_range2._ValueRange_greatereqmin10,
+			output._ValueRange_greatereqmin10, NULL);
+	zassert_equal(exp_output_value_range2._ValueRange_lesseq1,
+			output._ValueRange_lesseq1, NULL);
+
+	zassert_false(cbor_decode_ValueRange(payload_value_range3_inv,
+				sizeof(payload_value_range3_inv), &output, &out_len), NULL);
+	zassert_false(cbor_decode_ValueRange(payload_value_range4_inv,
+				sizeof(payload_value_range4_inv), &output, &out_len), NULL);
+	zassert_false(cbor_decode_ValueRange(payload_value_range5_inv,
+				sizeof(payload_value_range5_inv), &output, &out_len), NULL);
+	zassert_false(cbor_decode_ValueRange(payload_value_range6_inv,
+				sizeof(payload_value_range6_inv), &output, &out_len), NULL);
+	zassert_false(cbor_decode_ValueRange(payload_value_range7_inv,
+				sizeof(payload_value_range7_inv), &output, &out_len), NULL);
+	zassert_false(cbor_decode_ValueRange(payload_value_range8_inv,
+				sizeof(payload_value_range8_inv), &output, &out_len), NULL);
+	zassert_false(cbor_decode_ValueRange(payload_value_range9_inv,
+				sizeof(payload_value_range9_inv), &output, &out_len), NULL);
+	zassert_false(cbor_decode_ValueRange(payload_value_range10_inv,
+				sizeof(payload_value_range10_inv), &output, &out_len), NULL);
+	zassert_false(cbor_decode_ValueRange(payload_value_range11_inv,
+				sizeof(payload_value_range11_inv), &output, &out_len), NULL);
+}
 
 void test_main(void)
 {
@@ -592,7 +752,8 @@ void test_main(void)
 			 ztest_unit_test(test_map),
 			 ztest_unit_test(test_nested_list_map),
 			 ztest_unit_test(test_nested_map_list_map),
-			 ztest_unit_test(test_range)
+			 ztest_unit_test(test_range),
+			 ztest_unit_test(test_value_range)
 	);
 	ztest_run_test_suite(cbor_decode_test5);
 }

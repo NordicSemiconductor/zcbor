@@ -696,6 +696,120 @@ void test_range(void)
 	zassert_mem_equal(exp_payload_range3, output, sizeof(exp_payload_range3), NULL);
 }
 
+void test_value_range(void)
+{
+	const uint8_t exp_payload_value_range1[] = {LIST(6),
+		11,
+		0x19, 0x03, 0xe7, // 999
+		0x29, // -10
+		1,
+		0x18, 42, // 42
+		0x65, 'w', 'o', 'r', 'l', 'd', // "world"
+		END
+	};
+
+	const uint8_t exp_payload_value_range2[] = {LIST(6),
+		0x18, 100, // 100
+		0x39, 0x03, 0xe8, // -1001
+		0x18, 100, // 100
+		0,
+		0x18, 42, // 42
+		0x65, 'w', 'o', 'r', 'l', 'd', // "world"
+		END
+	};
+
+	struct ValueRange input1 = {
+		._ValueRange_greater10 = 11,
+		._ValueRange_less1000 = 999,
+		._ValueRange_greatereqmin10 = -10,
+		._ValueRange_lesseq1 = 1,
+	};
+	struct ValueRange input2 = {
+		._ValueRange_greater10 = 100,
+		._ValueRange_less1000 = -1001,
+		._ValueRange_greatereqmin10 = 100,
+		._ValueRange_lesseq1 = 0,
+	};
+	struct ValueRange input3_inval = {
+		._ValueRange_greater10 = 10,
+		._ValueRange_less1000 = 999,
+		._ValueRange_greatereqmin10 = -10,
+		._ValueRange_lesseq1 = 1,
+	};
+	struct ValueRange input4_inval = {
+		._ValueRange_greater10 = 11,
+		._ValueRange_less1000 = 1000,
+		._ValueRange_greatereqmin10 = -10,
+		._ValueRange_lesseq1 = 1,
+	};
+	struct ValueRange input5_inval = {
+		._ValueRange_greater10 = 11,
+		._ValueRange_less1000 = 999,
+		._ValueRange_greatereqmin10 = -11,
+		._ValueRange_lesseq1 = 1,
+	};
+	struct ValueRange input6_inval = {
+		._ValueRange_greater10 = 11,
+		._ValueRange_less1000 = 999,
+		._ValueRange_greatereqmin10 = -10,
+		._ValueRange_lesseq1 = 2,
+	};
+	struct ValueRange input7_inval = {
+		._ValueRange_greater10 = 1,
+		._ValueRange_less1000 = 999,
+		._ValueRange_greatereqmin10 = -10,
+		._ValueRange_lesseq1 = 1,
+	};
+	struct ValueRange input8_inval = {
+		._ValueRange_greater10 = 11,
+		._ValueRange_less1000 = 10000,
+		._ValueRange_greatereqmin10 = -10,
+		._ValueRange_lesseq1 = 1,
+	};
+	struct ValueRange input9_inval = {
+		._ValueRange_greater10 = 11,
+		._ValueRange_less1000 = 999,
+		._ValueRange_greatereqmin10 = -100,
+		._ValueRange_lesseq1 = 1,
+	};
+	struct ValueRange input10_inval = {
+		._ValueRange_greater10 = 11,
+		._ValueRange_less1000 = 999,
+		._ValueRange_greatereqmin10 = -10,
+		._ValueRange_lesseq1 = 21,
+	};
+
+	uint8_t output[25];
+	size_t out_len;
+
+	zassert_true(cbor_encode_ValueRange(output, sizeof(output), &input1,
+				&out_len), NULL);
+	zassert_equal(sizeof(exp_payload_value_range1), out_len, NULL);
+	zassert_mem_equal(exp_payload_value_range1, output, sizeof(exp_payload_value_range1), NULL);
+
+	zassert_true(cbor_encode_ValueRange(output, sizeof(output), &input2,
+				&out_len), NULL);
+	zassert_equal(sizeof(exp_payload_value_range2), out_len, NULL);
+	zassert_mem_equal(exp_payload_value_range2, output, sizeof(exp_payload_value_range2), NULL);
+
+	zassert_false(cbor_encode_ValueRange(output, sizeof(output), &input3_inval,
+				&out_len), NULL);
+	zassert_false(cbor_encode_ValueRange(output, sizeof(output), &input4_inval,
+				&out_len), NULL);
+	zassert_false(cbor_encode_ValueRange(output, sizeof(output), &input5_inval,
+				&out_len), NULL);
+	zassert_false(cbor_encode_ValueRange(output, sizeof(output), &input6_inval,
+				&out_len), NULL);
+	zassert_false(cbor_encode_ValueRange(output, sizeof(output), &input7_inval,
+				&out_len), NULL);
+	zassert_false(cbor_encode_ValueRange(output, sizeof(output), &input8_inval,
+				&out_len), NULL);
+	zassert_false(cbor_encode_ValueRange(output, sizeof(output), &input9_inval,
+				&out_len), NULL);
+	zassert_false(cbor_encode_ValueRange(output, sizeof(output), &input10_inval,
+				&out_len), NULL);
+}
+
 void test_main(void)
 {
 	ztest_test_suite(cbor_encode_test3,
@@ -707,7 +821,8 @@ void test_main(void)
 			 ztest_unit_test(test_map),
 			 ztest_unit_test(test_nested_list_map),
 			 ztest_unit_test(test_nested_map_list_map),
-			 ztest_unit_test(test_range)
+			 ztest_unit_test(test_range),
+			 ztest_unit_test(test_value_range)
 	);
 	ztest_run_test_suite(cbor_encode_test3);
 }
