@@ -1685,7 +1685,10 @@ class CodeGenerator(CddlXcoder):
             elif union_uint == "DROP":
                 return (None, None)
         else:
-            func = f"{func_prefix}_encode"
+            if (not self.is_unambiguous_value()) or self.type in ["TSTR", "BSTR"]:
+                func = f"{func_prefix}_encode"
+            else:
+                func = f"{func_prefix}_put"
         if self.type in ["NIL", "ANY"]:
             arg = "NULL"
         elif not self.is_unambiguous_value():
