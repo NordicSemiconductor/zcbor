@@ -60,16 +60,16 @@ bool tstrx_encode(cbor_state_t *state, const cbor_string_type_t *result);
  * The contents of the list can be decoded via subsequent function calls.
  * A state backup is created to keep track of the element count.
  */
-bool list_start_encode(cbor_state_t *state, size_t max_num);
+bool list_start_encode(cbor_state_t *state, uint32_t max_num);
 
 /** Encode a MAP header. */
-bool map_start_encode(cbor_state_t *state, size_t max_num);
+bool map_start_encode(cbor_state_t *state, uint32_t max_num);
 
 /** Encode end of a LIST. Do some checks and deallocate backup. */
-bool list_end_encode(cbor_state_t *state, size_t max_num);
+bool list_end_encode(cbor_state_t *state, uint32_t max_num);
 
 /** Encode end of a MAP. Do some checks and deallocate backup. */
-bool map_end_encode(cbor_state_t *state, size_t max_num);
+bool map_end_encode(cbor_state_t *state, uint32_t max_num);
 
 /** Encode a "nil" primitive value. result should be NULL. */
 bool nilx_put(cbor_state_t *state, const void *result);
@@ -97,7 +97,7 @@ bool tag_encode(cbor_state_t *state, uint32_t tag);
  *          @code{c}
  *              uint32_t int_min = 0;
  *              uint32_t int_max = 100;
- *              size_t bstr_size = 8;
+ *              uint32_t bstr_size = 8;
  *              uint32_t ints[3];
  *              cbor_string_type_t bstrs[2] = <initialize here>;
  *              bool res;
@@ -133,11 +133,11 @@ bool tag_encode(cbor_state_t *state, uint32_t tag);
  * @retval false  If @p encoder failed before having encoded @p min_encode
  *                values.
  */
-bool multi_encode(size_t min_encode, size_t max_encode, const size_t *num_encode,
+bool multi_encode(uint32_t min_encode, uint32_t max_encode, const uint32_t *num_encode,
 		cbor_encoder_t encoder, cbor_state_t *state, const void *input,
-		size_t result_len);
+		uint32_t result_len);
 
-bool present_encode(const size_t *present,
+bool present_encode(const uint32_t *present,
 		cbor_encoder_t encoder,
 		cbor_state_t *state,
 		const void *input);

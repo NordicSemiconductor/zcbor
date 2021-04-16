@@ -10,7 +10,7 @@
 
 void test_numbers(void)
 {
-	size_t decode_len = 0xFFFFFFFF;
+	uint32_t decode_len = 0xFFFFFFFF;
 	const uint8_t payload_numbers1[] = {
 		0x8A, // List start
 			0x01, // 1
@@ -287,7 +287,7 @@ void test_union(void)
 	const uint8_t payload_union10_inv[] = {
 		0x03, 0x23, 0x03, 0x23, 0x03, 0x23, 0x03, 0x23,
 		0x03, 0x23, 0x03, 0x23, 0x03, 0x23}; /* Too many */
-	size_t decode_len;
+	uint32_t decode_len;
 
 	struct Union_ _union;
 	zassert_true(cbor_decode_Union(payload_union1, sizeof(payload_union1),
@@ -729,7 +729,7 @@ void test_value_range(void)
 	};
 
 	struct ValueRange output;
-	size_t out_len;
+	uint32_t out_len;
 
 	zassert_true(cbor_decode_ValueRange(payload_value_range1, sizeof(payload_value_range1),
 					&output, &out_len), NULL);

@@ -17,9 +17,9 @@
  * $CDDL_GEN_BASE/scripts/cddl_gen.py
  *
  * Some details to notice about this library:
- *  - Integers are all 32 bits (uint32_t and size_t). This means that CBOR's
- *    64 bit values are not supported. This applies to integer types, as well as
- *    lengths for other types.
+ *  - Integers are all 32 bits (uint32_t). This means that CBOR's 64 bit values
+ *    are not supported, even when the code is running on a 64 bit architecture.
+ *    This applies to integer types, as well as lengths for other types.
  *  - Strings are kept in the container type cbor_string_type_t, which is a
  *    pointer and a length.
  *  - When a function returns false, it only means that decoding that particular
@@ -179,7 +179,7 @@ bool tag_expect(cbor_state_t *state, uint32_t result);
  *          @code{c}
  *              uint32_t int_min = 0;
  *              uint32_t int_max = 100;
- *              size_t bstr_size = 8;
+ *              uint32_t bstr_size = 8;
  *              uint32_t ints[3];
  *              cbor_string_type_t bstrs[2];
  *              bool res;
@@ -216,11 +216,11 @@ bool tag_expect(cbor_state_t *state, uint32_t result);
  * @retval false  If @p decoder failed before having decoded @p min_decode
  *                values.
  */
-bool multi_decode(size_t min_decode, size_t max_decode, size_t *num_decode,
+bool multi_decode(uint32_t min_decode, uint32_t max_decode, uint32_t *num_decode,
 		cbor_decoder_t decoder, cbor_state_t *state, void *result,
-		size_t result_len);
+		uint32_t result_len);
 
-bool present_decode(size_t *present,
+bool present_decode(uint32_t *present,
 		cbor_decoder_t decoder,
 		cbor_state_t *state,
 		void *result);

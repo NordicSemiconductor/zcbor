@@ -74,7 +74,7 @@ do {\
  *          big to little-endian if necessary (@ref CONFIG_BIG_ENDIAN).
  */
 static bool value_extract(cbor_state_t *state,
-		void *const result, size_t result_len)
+		void *const result, uint32_t result_len)
 {
 	cbor_trace();
 	cbor_assert(result_len != 0, "0-length result not supported.\n");
@@ -234,8 +234,6 @@ static bool strx_start_decode(cbor_state_t *state,
 		FAIL();
 	}
 
-	_Static_assert((sizeof(size_t) == sizeof(uint32_t)),
-			"This code needs size_t to be 4 bytes long.");
 	if (!uint32_decode(state, &result->len)) {
 		FAIL();
 	}
@@ -335,7 +333,7 @@ bool tstrx_expect(cbor_state_t *state, cbor_string_type_t *result)
 static bool list_map_start_decode(cbor_state_t *state,
 		cbor_major_type_t exp_major_type)
 {
-	size_t new_elem_count;
+	uint32_t new_elem_count;
 	uint8_t major_type = MAJOR_TYPE(*state->payload);
 
 	if (major_type != exp_major_type) {
@@ -500,9 +498,9 @@ bool any_decode(cbor_state_t *state, void *result)
 
 	uint8_t major_type = MAJOR_TYPE(*state->payload);
 	uint32_t value;
-	size_t num_decode;
+	uint32_t num_decode;
 	void *null_result = NULL;
-	size_t temp_elem_count;
+	uint32_t temp_elem_count;
 	uint8_t const *payload_bak;
 
 	if (!value_extract(state, &value, sizeof(value))) {
@@ -570,17 +568,17 @@ bool tag_expect(cbor_state_t *state, uint32_t result)
 }
 
 
-bool multi_decode(size_t min_decode,
-		size_t max_decode,
-		size_t *num_decode,
+bool multi_decode(uint32_t min_decode,
+		uint32_t max_decode,
+		uint32_t *num_decode,
 		cbor_decoder_t decoder,
 		cbor_state_t *state,
 		void *result,
-		size_t result_len)
+		uint32_t result_len)
 {
-	for (size_t i = 0; i < max_decode; i++) {
+	for (uint32_t i = 0; i < max_decode; i++) {
 		uint8_t const *payload_bak = state->payload;
-		size_t elem_count_bak = state->elem_count;
+		uint32_t elem_count_bak = state->elem_count;
 
 		if (!decoder(state,
 				(uint8_t *)result + i*result_len)) {
@@ -601,12 +599,12 @@ bool multi_decode(size_t min_decode,
 }
 
 
-bool present_decode(size_t *present,
+bool present_decode(uint32_t *present,
 		cbor_decoder_t decoder,
 		cbor_state_t *state,
 		void *result)
 {
-	size_t num_decode;
+	uint32_t num_decode;
 	bool retval = multi_decode(0, 1, &num_decode, decoder, state, result, 0);
 	if (retval) {
 		*present = num_decode;

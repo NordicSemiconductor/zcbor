@@ -102,7 +102,7 @@ static struct SUIT_Outer_Wrapper outerwrapper4 = {0};
 // Example 9.1 from draft-moran-suit-manifest-03
 void test_1(void)
 {
-	size_t decode_len;
+	uint32_t decode_len;
 	uint8_t expected_tag[] = {
 		0x8c, 0xaf, 0x92, 0x83, 0xb1, 0x36, 0x66, 0xca,
 		0x4e, 0x50, 0xf7, 0xa1, 0xee, 0xe8, 0x6b, 0xa4,
@@ -150,7 +150,7 @@ void test_1(void)
 // Example 9.3 from draft-moran-suit-manifest-03
 void test_2(void)
 {
-	size_t decode_len;
+	uint32_t decode_len;
 	memset(&outerwrapper, 0, sizeof(struct OuterWrapper));
 	char expected_updateDescription[] =
 		"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc "
@@ -200,7 +200,7 @@ void test_2(void)
 // Example 1 from draft-moran-suit-manifest-04
 void test_3(void)
 {
-	size_t decode_len;
+	uint32_t decode_len;
 	char expected_uri[] = "http://example.com/file.bin";
 	memset(&outerwrapper4, 0, sizeof(struct SUIT_Outer_Wrapper));
 	zassert_true(cbor_decode_SUIT_Outer_Wrapper(test_vector4,
