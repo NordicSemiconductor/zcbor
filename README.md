@@ -165,20 +165,13 @@ See the tests in  <cddl-gen base>/scripts/ for examples of using the python modu
 Running tests
 =============
 
-Run the tests the same way as Zephyr ztests, e.g.:
-
-```sh
-cd tests/cbor_encode/test1_suit
-mkdir build
-cd build
-cmake -GNinja -DBOARD=native-posix ..
-ninja run
-```
+The tests for the generated code are based on Zephyr ztests.
+Tests for the conversion functions in the script are implemented with the unittest module.
 
 There are also test.sh scripts to quickly run all tests.
-tests/test.sh runs all tests.
-tests/cbor_decode/test.sh runs all decoding tests.
-tests/cbor_encode/test.sh runs all encoding tests.
+[`tests/test.sh`](tests/test.sh) runs all tests, including python tests in [`tests/scripts`](tests/scripts).
+[`tests/cbor_decode/test.sh`](tests/cbor_decode/test.sh) runs all decoding tests.
+[`tests/cbor_encode/test.sh`](tests/cbor_encode/test.sh) runs all encoding tests.
 Run these scripts with no arguments.
 
-To set up the environment to run tests, follow [Zephyr's Getting Started Guide](https://docs.zephyrproject.org/latest/getting_started/index.html)
+To set up the environment to run the ztest tests, follow [Zephyr's Getting Started Guide](https://docs.zephyrproject.org/latest/getting_started/index.html), or see the workflow in the [`.github`](.github) directory.
