@@ -24,16 +24,12 @@
  *    pointer and a length.
  *  - When a function returns false, it only means that decoding that particular
  *    value failed. If a value is allowed to take multiple different values,
- *    another decoding function can be called if the first fails. Don't expect
- *    state to be valid when a function fails.
+ *    another decoding function can be called if the first fails.
  *  - There is some type casting going on under the hood to make the code
  *    generator friendly. See especially the processor_t type which is compatible
  *    with all functions except multi_decode, but the compiler doesn't "know"
  *    this because they are defined with different pointer types. It also means
  *    any usage of multi_decode must be made with care for function types.
- *  - This library has no function for semantic tags.
- *  - This library doesn't distinguish lists from maps other than multiplying
- *    the element count of maps by 2.
  *
  *
  * CBOR's format is described well on Wikipedia
