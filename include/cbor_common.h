@@ -17,7 +17,7 @@
 typedef struct
 {
 	const uint8_t *value;
-	size_t len;
+	uint32_t len;
 } cbor_string_type_t;
 
 #ifdef CDDL_CBOR_VERBOSE
@@ -59,11 +59,11 @@ union {
 	                             processed. */
 };
 	uint8_t const *payload_bak; /**< Temporary backup of payload. */
-	size_t elem_count; /**< The current element is part of a LIST or a MAP,
-	                        and this keeps count of how many elements are
-	                        expected. This will be checked before processing
-	                        and decremented if the element is correctly
-	                        processed. */
+	uint32_t elem_count; /**< The current element is part of a LIST or a MAP,
+	                          and this keeps count of how many elements are
+	                          expected. This will be checked before processing
+	                          and decremented if the element is correctly
+	                          processed. */
 	uint8_t const *payload_end; /**< The end of the payload. This will be
 	                                 checked against payload before
 	                                 processing each element. */
@@ -72,8 +72,8 @@ union {
 
 struct cbor_state_backups_s{
 	cbor_state_t *backup_list;
-	size_t current_backup;
-	size_t num_backups;
+	uint32_t current_backup;
+	uint32_t num_backups;
 };
 
 /** Function pointer type used with multi_decode.
@@ -122,10 +122,10 @@ do {\
 #define FLAG_DISCARD 2UL
 #define FLAG_TRANSFER_PAYLOAD 4UL
 
-bool new_backup(cbor_state_t *state, size_t new_elem_count);
+bool new_backup(cbor_state_t *state, uint32_t new_elem_count);
 
 bool restore_backup(cbor_state_t *state, uint32_t flags,
-		size_t max_elem_count);
+		uint32_t max_elem_count);
 
 bool union_start_code(cbor_state_t *state);
 
@@ -133,8 +133,8 @@ bool union_elem_code(cbor_state_t *state);
 
 bool union_end_code(cbor_state_t *state);
 
-bool entry_function(const uint8_t *payload, size_t payload_len,
-		const void *struct_ptr, size_t *payload_len_out,
-		cbor_encoder_t func, size_t elem_count, size_t num_backups);
+bool entry_function(const uint8_t *payload, uint32_t payload_len,
+		const void *struct_ptr, uint32_t *payload_len_out,
+		cbor_encoder_t func, uint32_t elem_count, uint32_t num_backups);
 
 #endif /* CBOR_COMMON_H__ */

@@ -1431,11 +1431,11 @@ class CodeGenerator(CddlXcoder):
 
     # Declaration of the "present" variable for this element.
     def present_var(self):
-        return ["size_t %s;" % self.present_var_name()]
+        return ["uint32_t %s;" % self.present_var_name()]
 
     # Declaration of the "count" variable for this element.
     def count_var(self):
-        return ["size_t %s;" % self.count_var_name()]
+        return ["uint32_t %s;" % self.count_var_name()]
 
     # Declaration of the "choice" variable for this element.
     def choice_var(self):
@@ -1991,9 +1991,9 @@ class CodeGenerator(CddlXcoder):
     def public_xcode_func_sig(self):
         return f"""
 bool cbor_{self.xcode_func_name()}(
-		{"const " if self.mode == "decode" else ""}uint8_t *payload, size_t payload_len,
+		{"const " if self.mode == "decode" else ""}uint8_t *payload, uint32_t payload_len,
 		{"" if self.mode == "decode" else "const "}{self.type_name()} *{struct_ptr_name(self.mode)},
-		{"size_t *payload_len_out"})"""
+		{"uint32_t *payload_len_out"})"""
 
     def type_test_xcode_func_sig(self):
         return f"""
@@ -2096,11 +2096,11 @@ static bool {xcoder.func_name}(
             xcoder.type_name if struct_ptr_name(self.mode) in body else "void"} *{struct_ptr_name(self.mode)})
 {{
 	cbor_print("%s\\n", __func__);
-	{f"size_t temp_elem_counts[{body.count('temp_elem_count')}];" if "temp_elem_count" in body else ""}
-	{"size_t *temp_elem_count = temp_elem_counts;" if "temp_elem_count" in body else ""}
+	{f"uint32_t temp_elem_counts[{body.count('temp_elem_count')}];" if "temp_elem_count" in body else ""}
+	{"uint32_t *temp_elem_count = temp_elem_counts;" if "temp_elem_count" in body else ""}
 	{"uint32_t current_list_num;" if "current_list_num" in body else ""}
 	{"uint8_t const *payload_bak;" if "payload_bak" in body else ""}
-	{"size_t elem_count_bak;" if "elem_count_bak" in body else ""}
+	{"uint32_t elem_count_bak;" if "elem_count_bak" in body else ""}
 	{"uint32_t tmp_value;" if "tmp_value" in body else ""}
 	{"cbor_string_type_t tmp_str;" if "tmp_str" in body else ""}
 	{"bool int_res;" if "int_res" in body else ""}

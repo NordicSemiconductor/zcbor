@@ -238,7 +238,7 @@ void test_command_sequence(cbor_string_type_t *sequence_str,
 	bool try_each1_present;
 	cbor_string_type_t *try_each2;
 	bool try_each2_present;
-	size_t out_len;
+	uint32_t out_len;
 
 	if (!present) {
 		return;
@@ -310,7 +310,7 @@ void test_command_sequence(cbor_string_type_t *sequence_str,
 	}
 }
 
-void test_manifest(const uint8_t *input, size_t len)
+void test_manifest(const uint8_t *input, uint32_t len)
 {
 	struct SUIT_Outer_Wrapper outerwrapper1 = {0};
 	struct SUIT_Manifest *manifest;
@@ -336,7 +336,7 @@ void test_manifest(const uint8_t *input, size_t len)
 	cbor_string_type_t *run;
 	bool run_present;
 	bool res;
-	size_t out_len;
+	uint32_t out_len;
 
 	cbor_print("test_vector at: 0x%x\r\n", (uint32_t)input);
 	cbor_print("test_vector end at: 0x%x\r\n",

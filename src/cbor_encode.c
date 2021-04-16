@@ -11,8 +11,10 @@
 #include "cbor_encode.h"
 #include "cbor_common.h"
 
+_Static_assert((sizeof(size_t) == sizeof(void *)),
+	"This code needs size_t to be the same length as pointers.");
 
-uint8_t get_additional(size_t len, uint8_t value0)
+uint8_t get_additional(uint32_t len, uint8_t value0)
 {
 	switch(len) {
 		case 0: return value0;
@@ -46,7 +48,7 @@ static bool encode_header_byte(cbor_state_t *state,
 /** Encode a single value.
  */
 static bool value_encode_len(cbor_state_t *state, cbor_major_type_t major_type,
-		const void *const input, size_t result_len)
+		const void *const input, uint32_t result_len)
 {
 	uint8_t *u8_result  = (uint8_t *)input;
 
@@ -76,7 +78,7 @@ static bool value_encode_len(cbor_state_t *state, cbor_major_type_t major_type,
 }
 
 
-static size_t get_result_len(const void *const input, size_t max_result_len)
+static uint32_t get_result_len(const void *const input, uint32_t max_result_len)
 {
 	uint8_t *u8_result  = (uint8_t *)input;
 
@@ -94,7 +96,7 @@ static size_t get_result_len(const void *const input, size_t max_result_len)
 
 
 static bool value_encode(cbor_state_t *state, cbor_major_type_t major_type,
-		const void *const input, size_t max_result_len)
+		const void *const input, uint32_t max_result_len)
 {
 	cbor_assert(max_result_len != 0, "0-length result not supported.\n");
 	return value_encode_len(state, major_type, input,
@@ -160,12 +162,10 @@ static bool strx_start_encode(cbor_state_t *state,
 		const cbor_string_type_t *input, cbor_major_type_t major_type)
 {
 	if (input->value && ((get_result_len(&input->len, sizeof(input->len))
-			+ 1 + input->len + (uint32_t)state->payload)
-			> (uint32_t)state->payload_end)) {
+			+ 1 + input->len + (size_t)state->payload)
+			> (size_t)state->payload_end)) {
 		FAIL();
 	}
-	_Static_assert((sizeof(size_t) == sizeof(uint32_t)),
-			"This code needs size_t to be 4 bytes long.");
 	if (!uint32_encode(state, &input->len, major_type)) {
 		FAIL();
 	}
@@ -183,10 +183,10 @@ static bool primx_encode(cbor_state_t *state, uint32_t input)
 }
 
 
-static size_t remaining_str_len(cbor_state_t *state)
+static uint32_t remaining_str_len(cbor_state_t *state)
 {
-	size_t max_len = (size_t)state->payload_end - (size_t)state->payload;
-	size_t result_len = get_result_len(&max_len, sizeof(size_t));
+	uint32_t max_len = (size_t)state->payload_end - (size_t)state->payload;
+	uint32_t result_len = get_result_len(&max_len, sizeof(uint32_t));
 	return max_len - result_len - 1;
 }
 
@@ -197,7 +197,7 @@ bool bstrx_cbor_start_encode(cbor_state_t *state, const cbor_string_type_t *resu
 		FAIL();
 	}
 
-	size_t max_len = remaining_str_len(state);
+	uint32_t max_len = remaining_str_len(state);
 
 	/* Encode a dummy header */
 	if (!uint32_encode(state, &max_len,
@@ -254,7 +254,7 @@ bool tstrx_encode(cbor_state_t *state, const cbor_string_type_t *input)
 }
 
 
-static bool list_map_start_encode(cbor_state_t *state, size_t max_num,
+static bool list_map_start_encode(cbor_state_t *state, uint32_t max_num,
 		cbor_major_type_t major_type)
 {
 #ifdef CDDL_CBOR_CANONICAL
@@ -276,29 +276,29 @@ static bool list_map_start_encode(cbor_state_t *state, size_t max_num,
 }
 
 
-bool list_start_encode(cbor_state_t *state, size_t max_num)
+bool list_start_encode(cbor_state_t *state, uint32_t max_num)
 {
 	return list_map_start_encode(state, max_num, CBOR_MAJOR_TYPE_LIST);
 }
 
 
-bool map_start_encode(cbor_state_t *state, size_t max_num)
+bool map_start_encode(cbor_state_t *state, uint32_t max_num)
 {
 	return list_map_start_encode(state, max_num, CBOR_MAJOR_TYPE_MAP);
 }
 
 
-bool list_map_end_encode(cbor_state_t *state, size_t max_num,
+bool list_map_end_encode(cbor_state_t *state, uint32_t max_num,
 			cbor_major_type_t major_type)
 {
 #ifdef CDDL_CBOR_CANONICAL
-	size_t list_count = ((major_type == CBOR_MAJOR_TYPE_LIST) ?
+	uint32_t list_count = ((major_type == CBOR_MAJOR_TYPE_LIST) ?
 					state->elem_count
 					: (state->elem_count / 2));
 
 	const uint8_t *payload = state->payload;
-	size_t max_header_len = get_result_len(&max_num, 4);
-	size_t header_len = get_result_len(&list_count, 4);
+	uint32_t max_header_len = get_result_len(&max_num, 4);
+	uint32_t header_len = get_result_len(&list_count, 4);
 
 	if (!restore_backup(state, FLAG_RESTORE | FLAG_DISCARD, 0xFFFFFFFF)) {
 		FAIL();
@@ -313,7 +313,7 @@ bool list_map_end_encode(cbor_state_t *state, size_t max_num,
 
 	if (max_header_len != header_len) {
 		const uint8_t *start = state->payload + max_header_len - header_len;
-		size_t body_size = payload - start;
+		uint32_t body_size = payload - start;
 		memmove(state->payload_mut,
 			state->payload + max_header_len - header_len,
 			body_size);
@@ -332,13 +332,13 @@ bool list_map_end_encode(cbor_state_t *state, size_t max_num,
 }
 
 
-bool list_end_encode(cbor_state_t *state, size_t max_num)
+bool list_end_encode(cbor_state_t *state, uint32_t max_num)
 {
 	return list_map_end_encode(state, max_num, CBOR_MAJOR_TYPE_LIST);
 }
 
 
-bool map_end_encode(cbor_state_t *state, size_t max_num)
+bool map_end_encode(cbor_state_t *state, uint32_t max_num)
 {
 	return list_map_end_encode(state, max_num, CBOR_MAJOR_TYPE_MAP);
 }
@@ -403,18 +403,18 @@ bool tag_encode(cbor_state_t *state, uint32_t tag)
 }
 
 
-bool multi_encode(size_t min_encode,
-		size_t max_encode,
-		const size_t *num_encode,
+bool multi_encode(uint32_t min_encode,
+		uint32_t max_encode,
+		const uint32_t *num_encode,
 		cbor_encoder_t encoder,
 		cbor_state_t *state,
 		const void *input,
-		size_t result_len)
+		uint32_t result_len)
 {
-	if (!PTR_VALUE_IN_RANGE(size_t, num_encode, NULL, &max_encode)) {
+	if (!PTR_VALUE_IN_RANGE(uint32_t, num_encode, NULL, &max_encode)) {
 		FAIL();
 	}
-	for (size_t i = 0; i < *num_encode; i++) {
+	for (uint32_t i = 0; i < *num_encode; i++) {
 		if (!encoder(state, (const uint8_t *)input + i*result_len)) {
 			FAIL();
 		}
@@ -424,12 +424,12 @@ bool multi_encode(size_t min_encode,
 }
 
 
-bool present_encode(const size_t *present,
+bool present_encode(const uint32_t *present,
 		cbor_encoder_t encoder,
 		cbor_state_t *state,
 		const void *input)
 {
-	size_t num_encode = *present;
+	uint32_t num_encode = *present;
 	bool retval = multi_encode(0, 1, &num_encode, encoder, state, input, 0);
 	return retval;
 }

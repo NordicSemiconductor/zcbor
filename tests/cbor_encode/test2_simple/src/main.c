@@ -147,7 +147,7 @@ void test_pet(void)
 	};
 
 	uint8_t output[25];
-	size_t out_len;
+	uint32_t out_len;
 
 	zassert_true(cbor_encode_Pet(output, sizeof(output), &pet, &out_len), "");
 

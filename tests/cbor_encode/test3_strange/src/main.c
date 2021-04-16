@@ -40,7 +40,7 @@ void test_numbers(void)
 
 	struct Numbers numbers = {0};
 	uint8_t output[100];
-	size_t out_len;
+	uint32_t out_len;
 
 	numbers._Numbers_fourtoten = 3; // Invalid
 	numbers._Numbers_twobytes = 256;
@@ -215,7 +215,7 @@ void test_strings(void)
 	uint8_t output2[100];
 	uint8_t output3[400];
 	uint8_t output4[800];
-	size_t out_len;
+	uint32_t out_len;
 
 	numbers1._Numbers_fourtoten = 5;
 	numbers1._Numbers_twobytes = 0xFFFF;
@@ -300,7 +300,7 @@ void test_optional(void)
 				._Optional_opttwo_present = true, ._Optional_manduint = 2,
 				._Optional_multi8_count = 3};
 	uint8_t output[10];
-	size_t out_len;
+	uint32_t out_len;
 
 	zassert_true(cbor_encode_Optional(output,
 			sizeof(output), &optional1, &out_len), NULL);
@@ -359,7 +359,7 @@ void test_union(void)
 	struct Union_ _union6_inv = {._Union_choice = _Union__MultiGroup, ._Union__MultiGroup._MultiGroup_count = 7};
 
 	uint8_t output[15];
-	size_t out_len;
+	uint32_t out_len;
 
 	zassert_true(cbor_encode_Union(output, sizeof(output),
 				&_union1, &out_len), NULL);
@@ -409,7 +409,7 @@ void test_levels(void)
 		END END END
 	};
 	uint8_t output[32];
-	size_t out_len;
+	uint32_t out_len;
 
 	struct Level2 level1 = {._Level2__Level3_count = 2, ._Level2__Level3 = {
 		{._Level3__Level4_count = 4}, {._Level3__Level4_count = 4}
@@ -482,7 +482,7 @@ void test_map(void)
 	};
 
 	uint8_t output[25];
-	size_t out_len;
+	uint32_t out_len;
 
 	zassert_true(cbor_encode_Map(output, sizeof(output),
 			&map1, &out_len), NULL);
@@ -538,7 +538,7 @@ void test_nested_list_map(void)
 		}
 	};
 	uint8_t output[40];
-	size_t out_len;
+	uint32_t out_len;
 
 	zassert_true(cbor_encode_NestedListMap(output,
 			sizeof(output), &listmap1, &out_len), NULL);
@@ -610,7 +610,7 @@ void test_nested_map_list_map(void)
 		}
 	};
 	uint8_t output[30];
-	size_t out_len;
+	uint32_t out_len;
 
 	zassert_true(cbor_encode_NestedMapListMap(output,
 			sizeof(output), &maplistmap1, &out_len), NULL);
@@ -701,7 +701,7 @@ void test_range(void)
 	};
 
 	uint8_t output[25];
-	size_t out_len;
+	uint32_t out_len;
 
 	zassert_true(cbor_encode_Range(output, sizeof(output), &input1,
 				&out_len), NULL);
@@ -803,7 +803,7 @@ void test_value_range(void)
 	};
 
 	uint8_t output[25];
-	size_t out_len;
+	uint32_t out_len;
 
 	zassert_true(cbor_encode_ValueRange(output, sizeof(output), &input1,
 				&out_len), NULL);

@@ -10,14 +10,17 @@
 #include <string.h>
 #include "cbor_common.h"
 
-bool new_backup(cbor_state_t *state, size_t new_elem_count)
+_Static_assert((sizeof(size_t) == sizeof(void *)),
+	"This code needs size_t to be the same length as pointers.");
+
+bool new_backup(cbor_state_t *state, uint32_t new_elem_count)
 {
 	if ((state->backups->current_backup + 1)
 		>= state->backups->num_backups) {
 		FAIL();
 	}
 
-	size_t i = ++(state->backups->current_backup);
+	uint32_t i = ++(state->backups->current_backup);
 	memcpy(&state->backups->backup_list[i], state,
 		sizeof(cbor_state_t));
 
@@ -28,17 +31,17 @@ bool new_backup(cbor_state_t *state, size_t new_elem_count)
 
 
 bool restore_backup(cbor_state_t *state, uint32_t flags,
-		size_t max_elem_count)
+		uint32_t max_elem_count)
 {
 	const uint8_t *payload = state->payload;
-	const size_t elem_count = state->elem_count;
+	const uint32_t elem_count = state->elem_count;
 
 	if (state->backups->current_backup == 0) {
 		FAIL();
 	}
 
 	if (flags & FLAG_RESTORE) {
-		size_t i = state->backups->current_backup;
+		uint32_t i = state->backups->current_backup;
 
 		memcpy(state, &state->backups->backup_list[i],
 			sizeof(cbor_state_t));
@@ -87,9 +90,9 @@ bool union_end_code(cbor_state_t *state)
 	return true;
 }
 
-bool entry_function(const uint8_t *payload, size_t payload_len,
-		const void *struct_ptr, size_t *payload_len_out,
-		cbor_encoder_t func, size_t elem_count, size_t num_backups)
+bool entry_function(const uint8_t *payload, uint32_t payload_len,
+		const void *struct_ptr, uint32_t *payload_len_out,
+		cbor_encoder_t func, uint32_t elem_count, uint32_t num_backups)
 {
 	cbor_state_t state = {
 		.payload = payload,

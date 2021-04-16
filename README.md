@@ -145,7 +145,7 @@ The process is the same for encoding, except:
  * has been specified as an ENTRY_TYPE in the cmake call. */
 Pet_t pet = { /* Initialize with desired data. */ };
 uint8_t output[100]; /* 100 is an example. Must be large enough for data to fit. */
-size_t out_len;
+uint32_t out_len;
 bool success = cbor_encode_Pet(output, sizeof(output), &pet, &out_len);
 ```
 
