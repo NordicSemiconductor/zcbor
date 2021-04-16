@@ -33,6 +33,7 @@ Optional = [
 	?optbool: bool,
 	?opttwo: 2,
 	manduint: uint,
+	*multi8: 8,
 ]
 
 Group = (1,-2)

@@ -187,6 +187,15 @@ void test_optional(void)
 	const uint8_t payload_optional8_inv[] = {
 		0x82 /* List start */, 0xF4 /* False (no tag first) */, 0x03,
 	};
+	const uint8_t payload_optional9[] = {
+		0x84 /* List start */, 0xCA /* tag */, 0xF4 /* False */, 0x02, 0x03, 0x08,
+	};
+	const uint8_t payload_optional10[] = {
+		0x86 /* List start */, 0xCA /* tag */, 0xF4 /* False */, 0x02, 0x03, 0x08, 0x08, 0x08,
+	};
+	const uint8_t payload_optional11_inv[] = {
+		0x86 /* List start */, 0xCA /* tag */, 0xF4 /* False */, 0x02, 0x03, 0x08, 0x08, 0x09,
+	};
 
 	struct Optional optional;
 	zassert_true(cbor_decode_Optional(payload_optional1,
@@ -195,6 +204,7 @@ void test_optional(void)
 	zassert_false(optional._Optional_optbool_present, NULL);
 	zassert_true(optional._Optional_opttwo_present, NULL);
 	zassert_equal(3, optional._Optional_manduint, NULL);
+	zassert_equal(0, optional._Optional_multi8_count, NULL);
 
 	zassert_true(cbor_decode_Optional(payload_optional2,
 			sizeof(payload_optional2), &optional, NULL), NULL);
@@ -202,6 +212,7 @@ void test_optional(void)
 	zassert_false(optional._Optional_optbool_present, NULL);
 	zassert_false(optional._Optional_opttwo_present, NULL);
 	zassert_equal(3, optional._Optional_manduint, NULL);
+	zassert_equal(0, optional._Optional_multi8_count, NULL);
 
 	zassert_false(cbor_decode_Optional(payload_optional3_inv,
 			sizeof(payload_optional3_inv), &optional, NULL), NULL);
@@ -212,6 +223,7 @@ void test_optional(void)
 	zassert_false(optional._Optional_optbool_present, NULL);
 	zassert_true(optional._Optional_opttwo_present, NULL);
 	zassert_equal(1, optional._Optional_manduint, NULL);
+	zassert_equal(0, optional._Optional_multi8_count, NULL);
 
 	zassert_true(cbor_decode_Optional(payload_optional5,
 			sizeof(payload_optional5), &optional, NULL), NULL);
@@ -219,6 +231,7 @@ void test_optional(void)
 	zassert_false(optional._Optional_optbool_present, NULL);
 	zassert_true(optional._Optional_opttwo_present, NULL);
 	zassert_equal(2, optional._Optional_manduint, NULL);
+	zassert_equal(0, optional._Optional_multi8_count, NULL);
 
 	zassert_true(cbor_decode_Optional(payload_optional6,
 			sizeof(payload_optional6), &optional, NULL), NULL);
@@ -227,12 +240,32 @@ void test_optional(void)
 	zassert_false(optional._Optional_optbool, NULL);
 	zassert_true(optional._Optional_opttwo_present, NULL);
 	zassert_equal(2, optional._Optional_manduint, NULL);
+	zassert_equal(0, optional._Optional_multi8_count, NULL);
 
 	zassert_false(cbor_decode_Optional(payload_optional7_inv,
 			sizeof(payload_optional7_inv), &optional, NULL), NULL);
 
 	zassert_false(cbor_decode_Optional(payload_optional8_inv,
 			sizeof(payload_optional8_inv), &optional, NULL), NULL);
+
+	zassert_true(cbor_decode_Optional(payload_optional9,
+			sizeof(payload_optional9), &optional, NULL), NULL);
+	zassert_false(optional._Optional_boolval, NULL);
+	zassert_false(optional._Optional_optbool_present, NULL);
+	zassert_true(optional._Optional_opttwo_present, NULL);
+	zassert_equal(3, optional._Optional_manduint, NULL);
+	zassert_equal(1, optional._Optional_multi8_count, NULL);
+
+	zassert_true(cbor_decode_Optional(payload_optional10,
+			sizeof(payload_optional10), &optional, NULL), NULL);
+	zassert_false(optional._Optional_boolval, NULL);
+	zassert_false(optional._Optional_optbool_present, NULL);
+	zassert_true(optional._Optional_opttwo_present, NULL);
+	zassert_equal(3, optional._Optional_manduint, NULL);
+	zassert_equal(3, optional._Optional_multi8_count, NULL);
+
+	zassert_false(cbor_decode_Optional(payload_optional11_inv,
+			sizeof(payload_optional11_inv), &optional, NULL), NULL);
 }
 
 void test_union(void)
@@ -288,7 +321,7 @@ void test_union(void)
 	zassert_true(cbor_decode_Union(payload_union9_long, sizeof(payload_union9_long),
 				&_union, &decode_len), NULL);
 	zassert_equal(2, decode_len, NULL);
-	
+
 	zassert_true(cbor_decode_Union(payload_union10_inv, sizeof(payload_union10_inv),
 				&_union, &decode_len), NULL);
 	zassert_equal(6, _union._Union__MultiGroup._MultiGroup_count, NULL);

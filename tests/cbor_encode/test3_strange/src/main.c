@@ -278,6 +278,12 @@ void test_optional(void)
 	const uint8_t exp_payload_optional5[] = {
 		LIST(4) /* List start */, 0xCA /* tag */, 0xF5 /* True */, 0xF4 /* False */, 0x02, 0x02, END
 	};
+	const uint8_t exp_payload_optional6[] = {
+		LIST(5) /* List start */, 0xCA /* tag */, 0xF5 /* True */, 0xF4 /* False */, 0x02, 0x02, 0x08, END
+	};
+	const uint8_t exp_payload_optional7[] = {
+		LIST(7) /* List start */, 0xCA /* tag */, 0xF5 /* True */, 0xF4 /* False */, 0x02, 0x02, 0x08, 0x08, 0x08, END
+	};
 
 	struct Optional optional1 = {._Optional_opttwo_present = true, ._Optional_manduint = 3};
 	struct Optional optional2 = {._Optional_manduint = 3};
@@ -286,6 +292,12 @@ void test_optional(void)
 				._Optional_manduint = 2};
 	struct Optional optional5 = {._Optional_boolval = true, ._Optional_optbool_present = true,
 				._Optional_opttwo_present = true, ._Optional_manduint = 2};
+	struct Optional optional6 = {._Optional_boolval = true, ._Optional_optbool_present = true,
+				._Optional_opttwo_present = true, ._Optional_manduint = 2,
+				._Optional_multi8_count = 1};
+	struct Optional optional7 = {._Optional_boolval = true, ._Optional_optbool_present = true,
+				._Optional_opttwo_present = true, ._Optional_manduint = 2,
+				._Optional_multi8_count = 3};
 	uint8_t output[10];
 	size_t out_len;
 
@@ -313,6 +325,16 @@ void test_optional(void)
 			sizeof(output), &optional5, &out_len), NULL);
 	zassert_equal(sizeof(exp_payload_optional5), out_len, NULL);
 	zassert_mem_equal(exp_payload_optional5, output, sizeof(exp_payload_optional5), NULL);
+
+	zassert_true(cbor_encode_Optional(output,
+			sizeof(output), &optional6, &out_len), NULL);
+	zassert_equal(sizeof(exp_payload_optional6), out_len, NULL);
+	zassert_mem_equal(exp_payload_optional6, output, sizeof(exp_payload_optional6), NULL);
+
+	zassert_true(cbor_encode_Optional(output,
+			sizeof(output), &optional7, &out_len), NULL);
+	zassert_equal(sizeof(exp_payload_optional7), out_len, NULL);
+	zassert_mem_equal(exp_payload_optional7, output, sizeof(exp_payload_optional7), NULL);
 }
 
 void test_union(void)
