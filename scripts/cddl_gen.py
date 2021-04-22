@@ -1285,6 +1285,13 @@ class DataTranslator(CddlXcoder):
         self._iter_is_empty(it)
         return decoded
 
+    # YAML => python object
+    def decode_str_yaml(self, yaml_str):
+        yaml_obj = yaml_load(yaml_str)
+        obj = self._to_cbor_obj(yaml_obj)
+        self.validate_obj(obj)
+        return self.decode_obj(obj)
+
     # CBOR bytestring => python object
     def decode_str(self, cbor_str):
         cbor_obj = loads(cbor_str)
