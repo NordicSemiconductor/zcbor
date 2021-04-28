@@ -896,13 +896,10 @@ class CddlXcoder(CddlParser):
 
     # Whether any extra variables are to be included for this element outside
     # of repetitions.
+    # Also, whether this element must involve a call to multi_xcode(), i.e. unless
+    # it's repeated exactly once.
     def multi_var_condition(self):
         return self.present_var_condition() or self.count_var_condition()
-
-    # Whether this element must involve a call to multi_xcode(), i.e. unless
-    # it's repeated exactly once.
-    def multi_xcode_condition(self):
-        return self.count_var_condition() or self.present_var_condition()
 
     # Whether this element needs a check (memcmp) for a string value.
     def range_check_condition(self):
@@ -931,7 +928,7 @@ class CddlXcoder(CddlParser):
     def single_func_impl_condition(self):
         return (
             False
-            or self.key
+            or self.key_var_condition()
             or self.cbor_var_condition()
             or self.tags
             or self.type_def_condition()
@@ -942,7 +939,7 @@ class CddlXcoder(CddlParser):
         return self.repeated_type_def_condition() \
             or (self.type in ["LIST", "MAP"] and self.multi_member()) \
             or (
-                self.multi_xcode_condition()
+                self.multi_var_condition()
                 and (self.self_repeated_multi_var_condition() or self.range_check_condition()))
 
     def uint_val(self):
@@ -1673,15 +1670,8 @@ class CodeGenerator(CddlXcoder):
     def repeated_xcode_func_name(self):
         return f"{self.mode}_repeated{self.var_name()}"
 
-    # Return the function name and arguments to call to encode/decode this element. Only used when this element DOESN'T
-    # define its own encoder/decoder function (when it's a primitive type, for which functions already exist, or when
-    # the function is defined elsewhere ("OTHER"))
-    def single_func_prim(self, access, union_uint=None, ptr_result=False):
-        assert self.type not in ["LIST", "MAP"], "Must have wrapper function for list or map."
-
-        if self.type == "OTHER":
-            return self.my_types[self.value].single_func(access, union_uint)
-
+    def single_func_prim_name(self, union_uint=False):
+        """Function name for xcoding this type, when it is a primitive type"""
         func_prefix = self.single_func_prim_prefix()
         if self.mode == "decode":
             if not self.is_unambiguous_value():
@@ -1691,12 +1681,28 @@ class CodeGenerator(CddlXcoder):
             elif union_uint == "EXPECT":
                 func = f"{func_prefix}_expect_union"
             elif union_uint == "DROP":
-                return (None, None)
+                return None
         else:
             if (not self.is_unambiguous_value()) or self.type in ["TSTR", "BSTR"]:
                 func = f"{func_prefix}_encode"
             else:
                 func = f"{func_prefix}_put"
+        return func
+
+    def single_func_prim(self, access, union_uint=None, ptr_result=False):
+        """Return the function name and arguments to call to encode/decode this element. Only used when this element
+        DOESN'T define its own encoder/decoder function (when it's a primitive type, for which functions already exist,
+        or when the function is defined elsewhere ("OTHER"))
+        """
+        assert self.type not in ["LIST", "MAP"], "Must have wrapper function for list or map."
+
+        if self.type == "OTHER":
+            return self.my_types[self.value].single_func(access, union_uint)
+
+        func_name = self.single_func_prim_name(union_uint)
+        if func_name is None:
+            return (None, None)
+
         if self.type in ["NIL", "ANY"]:
             arg = "NULL"
         elif not self.is_unambiguous_value():
@@ -1718,7 +1724,7 @@ class CodeGenerator(CddlXcoder):
             else:
                 min_val = self.min_value
                 max_val = self.max_value
-        return (func, arg)
+        return (func_name, arg)
 
     # Return the function name and arguments to call to encode/decode this element.
     def single_func(self, access=None, union_uint=None):
@@ -2116,6 +2122,7 @@ static bool {xcoder.func_name}(
 
     # Render a single entry function (API function) with signature and body.
     def render_entry_function(self, xcoder):
+        func_name, func_arg = (xcoder.xcode_func_name(), struct_ptr_name(self.mode))
         return f"""
 {xcoder.type_test_xcode_func_sig()}
 {{
@@ -2123,13 +2130,13 @@ static bool {xcoder.func_name}(
 	 * the types of the function and struct match, since this information
 	 * is lost with the casts in the entry function.
 	 */
-	return {xcoder.xcode_func_name()}(NULL, {struct_ptr_name(self.mode)});
+	return {func_name}(NULL, {func_arg});
 }}
 
 {xcoder.public_xcode_func_sig()}
 {{
-	return entry_function(payload, payload_len, (const void *){struct_ptr_name(self.mode)},
-		payload_len_out, (void *){xcoder.xcode_func_name()},
+	return entry_function(payload, payload_len, (const void *){func_arg},
+		payload_len_out, (void *){func_name},
 		{xcoder.list_counts()[1]}, {xcoder.num_backups()});
 }}"""
 
