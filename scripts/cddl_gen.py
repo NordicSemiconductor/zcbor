@@ -797,6 +797,8 @@ class CddlXcoder(CddlParser):
                      self.value))
             list(map(lambda child: child.set_skipped(self.skip_condition()),
                      self.value))
+        elif self in self.my_types.values() and self.type != "OTHER":
+            self.set_skipped(not self.multi_member())
         if self.key is not None:
             self.key.set_access_prefix(self.var_access())
         if self.cbor_var_condition():

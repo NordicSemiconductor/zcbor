@@ -833,6 +833,41 @@ void test_value_range(void)
 				&out_len), NULL);
 }
 
+void test_single(void)
+{
+	uint8_t exp_payload_single0[] = {0x45, 'h', 'e', 'l', 'l', 'o'};
+	uint8_t exp_payload_single1[] = {0x18, 52,};
+	uint8_t exp_payload_single2[] = {9};
+	uint8_t output[10];
+	uint32_t out_len;
+	cbor_string_type_t input_single0 = {
+		.value = "hello",
+		.len = 5
+	};
+	uint32_t input_single1 = 52;
+	uint32_t input_single2_ign = 53;
+	uint32_t input_single3 = 9;
+	uint32_t input_single4_inv = 10;
+
+	zassert_true(cbor_encode_SingleBstr(output, sizeof(output), &input_single0, &out_len), NULL);
+	zassert_equal(sizeof(exp_payload_single0), out_len, NULL);
+	zassert_mem_equal(exp_payload_single0, output, sizeof(exp_payload_single0), NULL);
+	zassert_false(cbor_encode_SingleBstr(output, 5, &input_single0, &out_len), NULL);
+
+	zassert_true(cbor_encode_SingleInt(output, sizeof(output), &input_single1, &out_len), NULL);
+	zassert_equal(sizeof(exp_payload_single1), out_len, NULL);
+	zassert_mem_equal(exp_payload_single1, output, sizeof(exp_payload_single1), NULL);
+	zassert_false(cbor_encode_SingleInt(output, 1, &input_single1, &out_len), NULL);
+	zassert_true(cbor_encode_SingleInt(output, sizeof(output), &input_single2_ign, &out_len), NULL);
+	zassert_equal(sizeof(exp_payload_single1), out_len, NULL);
+	zassert_mem_equal(exp_payload_single1, output, sizeof(exp_payload_single1), NULL);
+
+	zassert_true(cbor_encode_SingleInt2(output, sizeof(output), &input_single3, &out_len), NULL);
+	zassert_equal(sizeof(exp_payload_single2), out_len, NULL);
+	zassert_mem_equal(exp_payload_single2, output, sizeof(exp_payload_single2), NULL);
+	zassert_false(cbor_encode_SingleInt2(output, sizeof(output), &input_single4_inv, &out_len), NULL);
+}
+
 void test_main(void)
 {
 	ztest_test_suite(cbor_encode_test3,
@@ -845,7 +880,8 @@ void test_main(void)
 			 ztest_unit_test(test_nested_list_map),
 			 ztest_unit_test(test_nested_map_list_map),
 			 ztest_unit_test(test_range),
-			 ztest_unit_test(test_value_range)
+			 ztest_unit_test(test_value_range),
+			 ztest_unit_test(test_single)
 	);
 	ztest_run_test_suite(cbor_encode_test3);
 }
