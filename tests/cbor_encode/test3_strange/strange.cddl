@@ -70,3 +70,9 @@ ValueRange = [
 	equal42: uint .eq 42,
 	equalstrworld: tstr .eq "world",
 ]
+
+SingleBstr = bstr
+
+SingleInt = 52
+
+SingleInt2 = uint .lt 10

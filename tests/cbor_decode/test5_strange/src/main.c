@@ -775,6 +775,34 @@ void test_value_range(void)
 				sizeof(payload_value_range11_inv), &output, &out_len), NULL);
 }
 
+void test_single(void)
+{
+	uint8_t payload_single0[] = {0x45, 'h', 'e', 'l', 'l', 'o'};
+	uint8_t payload_single1[] = {0x18, 52};
+	uint8_t payload_single2_inv[] = {0x18, 53};
+	uint8_t payload_single3[] = {9};
+	uint8_t payload_single4_inv[] = {10};
+	cbor_string_type_t result_bstr;
+	uint32_t result_int;
+	uint32_t out_len;
+
+	zassert_true(cbor_decode_SingleBstr(payload_single0, sizeof(payload_single0), &result_bstr, &out_len), NULL);
+	zassert_equal(sizeof(payload_single0), out_len, NULL);
+	zassert_equal(5, result_bstr.len, NULL);
+	zassert_mem_equal(result_bstr.value, "hello", result_bstr.len, NULL);
+	zassert_false(cbor_decode_SingleBstr(payload_single0, 5, &result_bstr, &out_len), NULL);
+
+	zassert_true(cbor_decode_SingleInt(payload_single1, sizeof(payload_single1), NULL, &out_len), NULL); // Result pointer not needed.
+	zassert_equal(sizeof(payload_single1), out_len, NULL);
+	zassert_false(cbor_decode_SingleInt(payload_single1, 1, NULL, &out_len), NULL);
+	zassert_false(cbor_decode_SingleInt(payload_single2_inv, sizeof(payload_single2_inv), NULL, &out_len), NULL);
+
+	zassert_true(cbor_decode_SingleInt2(payload_single3, sizeof(payload_single3), &result_int, &out_len), NULL);
+	zassert_equal(sizeof(payload_single3), out_len, NULL);
+	zassert_equal(9, result_int, NULL);
+	zassert_false(cbor_decode_SingleInt2(payload_single4_inv, sizeof(payload_single4_inv), &result_int, &out_len), NULL);
+}
+
 void test_main(void)
 {
 	ztest_test_suite(cbor_decode_test5,
@@ -787,7 +815,8 @@ void test_main(void)
 			 ztest_unit_test(test_nested_list_map),
 			 ztest_unit_test(test_nested_map_list_map),
 			 ztest_unit_test(test_range),
-			 ztest_unit_test(test_value_range)
+			 ztest_unit_test(test_value_range),
+			 ztest_unit_test(test_single)
 	);
 	ztest_run_test_suite(cbor_decode_test5);
 }

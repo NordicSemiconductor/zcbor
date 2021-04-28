@@ -25,6 +25,9 @@ target_cddl_source(app strange.cddl ENCODE ENTRY_TYPES
   Level1
   Range
   ValueRange
+  SingleBstr
+  SingleInt
+  SingleInt2
   DEFAULT_MAX_QTY 6
   ${VERBOSE}
   ${CANONICAL}
