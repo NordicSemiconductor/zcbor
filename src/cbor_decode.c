@@ -192,6 +192,7 @@ static bool uint32_decode(cbor_state_t *state, uint32_t *result)
 
 bool uintx32_decode(cbor_state_t *state, uint32_t *result)
 {
+    FAIL_IF(state->payload >= state->payload_end);
 	uint8_t major_type = MAJOR_TYPE(*state->payload);
 
 	if (major_type != CBOR_MAJOR_TYPE_PINT) {
@@ -228,6 +229,7 @@ bool uintx32_expect_union(cbor_state_t *state, uint32_t result)
 static bool strx_start_decode(cbor_state_t *state,
 		cbor_string_type_t *result, cbor_major_type_t exp_major_type)
 {
+    FAIL_IF(state->payload >= state->payload_end);
 	uint8_t major_type = MAJOR_TYPE(*state->payload);
 
 	if (major_type != exp_major_type) {
@@ -334,6 +336,8 @@ static bool list_map_start_decode(cbor_state_t *state,
 		cbor_major_type_t exp_major_type)
 {
 	uint32_t new_elem_count;
+
+    FAIL_IF(state->payload >= state->payload_end);
 	uint8_t major_type = MAJOR_TYPE(*state->payload);
 
 	if (major_type != exp_major_type) {
