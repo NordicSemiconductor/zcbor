@@ -15,6 +15,6 @@ $ ./fuzz-test/fuzz_pet
 $ mkdir build-afl
 $ cd build-afl
 $ export AFL_USE_ASAN=1
-$ cmake ../.. -DCMAKE_C_COMPILER=afl-clang
+$ cmake ../.. -DCMAKE_C_COMPILER=afl-clang-fast
 $ make fuzz_pet
 ```
