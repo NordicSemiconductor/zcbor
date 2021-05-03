@@ -10,3 +10,9 @@ set(CDDL_GEN_BASE ${CMAKE_CURRENT_LIST_DIR} CACHE FILEPATH
 
 include(${CMAKE_CURRENT_LIST_DIR}/cmake/extensions.cmake)
 add_subdirectory(src)
+
+
+option(FUZZ_TESTS "Build fuzz tests" ON)
+if(FUZZ_TESTS)
+add_subdirectory(fuzz-test)
+endif(FUZZ_TESTS)
