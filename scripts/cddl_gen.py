@@ -2145,7 +2145,7 @@ static bool {xcoder.func_name}(
     # Render the entire generated C file contents.
     def render_c_file(self, header_file_name):
         return f"""/*
- * Generated with cddl_gen.py (https://github.com/oyvindronningstad/cddl_gen){'''
+ * Generated with cddl_gen.py (https://github.com/NordicSemiconductor/cddl-gen){'''
  * at: ''' + datetime.now().strftime('%Y-%m-%d %H:%M:%S') if self.print_time else ''}
  * Generated with a default_max_qty of {self.default_max_qty}
  */
@@ -2170,7 +2170,7 @@ static bool {xcoder.func_name}(
     def render_h_file(self, type_def_file, header_guard):
         return \
             f"""/*
- * Generated with cddl_gen.py (https://github.com/oyvindronningstad/cddl_gen){'''
+ * Generated with cddl_gen.py (https://github.com/NordicSemiconductor/cddl-gen){'''
  * at: ''' + datetime.now().strftime('%Y-%m-%d %H:%M:%S') if self.print_time else ''}
  * Generated with a default_max_qty of {self.default_max_qty}
  */
@@ -2198,7 +2198,7 @@ static bool {xcoder.func_name}(
     def render_type_file(self, header_guard):
         return \
             f"""/*
- * Generated with cddl_gen.py (https://github.com/oyvindronningstad/cddl_gen){'''
+ * Generated with cddl_gen.py (https://github.com/NordicSemiconductor/cddl-gen){'''
  * at: ''' + datetime.now().strftime('%Y-%m-%d %H:%M:%S') if self.print_time else ''}
  * Generated with a default_max_qty of {self.default_max_qty}
  */
