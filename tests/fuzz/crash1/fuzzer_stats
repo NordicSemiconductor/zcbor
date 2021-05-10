@@ -1,0 +1,37 @@
+start_time        : 1620666102
+last_update       : 1620667162
+run_time          : 1059
+fuzzer_pid        : 3029491
+cycles_done       : 75
+cycles_wo_finds   : 0
+execs_done        : 25513104
+execs_per_sec     : 24077.51
+execs_ps_last_min : 3361.03
+paths_total       : 617
+paths_favored     : 219
+paths_found       : 616
+paths_imported    : 0
+max_depth         : 19
+cur_path          : 228
+pending_favs      : 0
+pending_total     : 205
+variable_paths    : 9
+stability         : 99.82%
+bitmap_cvg        : 59.75%
+unique_crashes    : 19
+unique_hangs      : 0
+last_path         : 1620666997
+last_crash        : 1620666889
+last_hang         : 0
+execs_since_crash : 3624460
+exec_timeout      : 20
+slowest_exec_ms   : 0
+peak_rss_mb       : 0
+cpu_affinity      : 2
+edges_found       : 564
+var_byte_count    : 1
+havoc_expansion   : 3
+afl_banner        : fuzz_manifest12
+afl_version       : ++2.67c
+target_mode       : persistent shmem_testcase 
+command_line      : afl-fuzz -i build-afl/fuzz_input -o build-afl/output -V 1000 -- ./build-afl/fuzz_manifest12
