@@ -184,12 +184,14 @@ function(target_cddl_source target cddl_file)
 
   get_filename_component(name ${cddl_path} NAME_WE)
   set(c_file ${CMAKE_CURRENT_BINARY_DIR}/${name}_${code}.c)
-  set(h_file_dir ${CMAKE_CURRENT_BINARY_DIR}/zephyr/include/generated)
+  set(h_file_dir ${CMAKE_CURRENT_BINARY_DIR}/include/generated)
   set(h_file ${h_file_dir}/${name}_${code}.h)
 
   if (DEFINED CDDL_TYPE_FILE_NAME)
     set(type_file_path ${h_file_dir}/${CDDL_TYPE_FILE_NAME})
   endif()
+
+  file(MAKE_DIRECTORY ${h_file_dir})
 
   generate_cddl(${cddl_file} ${CODE} ${CDDL_VERBOSE} ${CDDL_CANONICAL}
     ENTRY_TYPES ${CDDL_ENTRY_TYPES}
@@ -210,7 +212,10 @@ function(target_cddl_source target cddl_file)
   else()
     set(cbor_lib cbor_encode)
   endif()
-  target_link_libraries(${target} PRIVATE ${cbor_lib} zephyr_interface)
+  target_link_libraries(${target} PRIVATE ${cbor_lib})
+  if(DEFINED BUILD_WITH_ZEPHYR)
+    target_link_libraries(${target} PRIVATE zephyr_interface)
+  endif()
   if (CDDL_VERBOSE)
     target_compile_definitions(${cbor_lib} PRIVATE CDDL_CBOR_VERBOSE)
     target_compile_definitions(${target} PRIVATE CDDL_CBOR_VERBOSE)
