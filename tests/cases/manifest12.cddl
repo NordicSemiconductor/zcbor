@@ -4,8 +4,8 @@ SUIT_Envelope = {
   suit-authentication-wrapper => bstr .cbor SUIT_Authentication,
   suit-manifest  => bstr .cbor SUIT_Manifest,
   SUIT_Severable_Manifest_Members,
-  * SUIT_Integrated_Payload,
-  * SUIT_Integrated_Dependency,
+  *(suit-integrated-payload-key => bstr),
+  *(suit-integrated-dependency-key => bstr .cbor SUIT_Envelope),
   ;* $$SUIT_Envelope_Extensions,
   * (int => bstr)
 }
@@ -69,12 +69,8 @@ SUIT_Severable_Manifest_Members = (
   ;* $$SUIT_severable-members-extensions,
 )
 
-SUIT_Integrated_Payload = (suit-integrated-payload-key => bstr)
-SUIT_Integrated_Dependency = (
-    suit-integrated-dependency-key => bstr .cbor SUIT_Envelope
-)
 suit-integrated-payload-key = nint / uint .ge 24
-suit-integrated-dependency-key = suit-integrated-payload-key
+suit-integrated-dependency-key = nint / uint .ge 24
 
 SUIT_Manifest_Tagged = #6.480(SUIT_Manifest)
 
