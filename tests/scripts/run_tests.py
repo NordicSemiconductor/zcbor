@@ -4,8 +4,8 @@ from sys import path
 tests_path = dirname(realpath(__file__))
 scripts_path = realpath(pjoin(tests_path, "..", "..", "scripts"))
 cddl_gen_path = realpath(pjoin(scripts_path, "cddl_gen.py"))
-manifest_path = pjoin(tests_path, "manifest12.cddl")
-test_vector_paths = tuple(pjoin(tests_path, f"manifest12_example{i}.cborhex") for i in range(6))
+manifest_path = pjoin(tests_path, "../cases/manifest12.cddl")
+test_vector_paths = tuple(pjoin(tests_path, f"../cases/manifest12_example{i}.cborhex") for i in range(6))
 
 path.insert(0, scripts_path)
 
