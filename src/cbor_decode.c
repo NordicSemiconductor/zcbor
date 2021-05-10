@@ -121,6 +121,7 @@ static bool value_extract(cbor_state_t *state,
 
 static bool int32_decode(cbor_state_t *state, int32_t *result)
 {
+	FAIL_IF(state->payload >= state->payload_end);
 	uint8_t major_type = MAJOR_TYPE(*state->payload);
 	uint32_t uint_result;
 	int32_t int_result;
@@ -150,6 +151,7 @@ static bool int32_decode(cbor_state_t *state, int32_t *result)
 
 bool intx32_decode(cbor_state_t *state, int32_t *result)
 {
+	FAIL_IF(state->payload >= state->payload_end);
 	uint8_t major_type = MAJOR_TYPE(*state->payload);
 
 	if (major_type != CBOR_MAJOR_TYPE_PINT
@@ -192,6 +194,7 @@ static bool uint32_decode(cbor_state_t *state, uint32_t *result)
 
 bool uintx32_decode(cbor_state_t *state, uint32_t *result)
 {
+	FAIL_IF(state->payload >= state->payload_end);
 	uint8_t major_type = MAJOR_TYPE(*state->payload);
 
 	if (major_type != CBOR_MAJOR_TYPE_PINT) {
@@ -228,6 +231,7 @@ bool uintx32_expect_union(cbor_state_t *state, uint32_t result)
 static bool strx_start_decode(cbor_state_t *state,
 		cbor_string_type_t *result, cbor_major_type_t exp_major_type)
 {
+	FAIL_IF(state->payload >= state->payload_end);
 	uint8_t major_type = MAJOR_TYPE(*state->payload);
 
 	if (major_type != exp_major_type) {
@@ -333,8 +337,9 @@ bool tstrx_expect(cbor_state_t *state, cbor_string_type_t *result)
 static bool list_map_start_decode(cbor_state_t *state,
 		cbor_major_type_t exp_major_type)
 {
-	uint32_t new_elem_count;
+	FAIL_IF(state->payload >= state->payload_end);
 	uint8_t major_type = MAJOR_TYPE(*state->payload);
+	uint32_t new_elem_count;
 
 	if (major_type != exp_major_type) {
 		FAIL();
@@ -395,6 +400,7 @@ bool map_end_decode(cbor_state_t *state)
 
 static bool primx_decode(cbor_state_t *state, uint32_t *result)
 {
+	FAIL_IF(state->payload >= state->payload_end);
 	uint8_t major_type = MAJOR_TYPE(*state->payload);
 
 	if (major_type != CBOR_MAJOR_TYPE_PRIM) {
@@ -463,6 +469,7 @@ bool boolx_expect(cbor_state_t *state, bool result)
 
 bool double_decode(cbor_state_t *state, double *result)
 {
+	FAIL_IF(state->payload >= state->payload_end);
 	uint8_t major_type = MAJOR_TYPE(*state->payload);
 
 	if (major_type != CBOR_MAJOR_TYPE_PRIM) {
@@ -496,6 +503,7 @@ bool any_decode(cbor_state_t *state, void *result)
 	cbor_assert(result == NULL,
 			"'any' type cannot be returned, only skipped.\n");
 
+	FAIL_IF(state->payload >= state->payload_end);
 	uint8_t major_type = MAJOR_TYPE(*state->payload);
 	uint32_t value;
 	uint32_t num_decode;
@@ -540,6 +548,7 @@ bool any_decode(cbor_state_t *state, void *result)
 
 bool tag_decode(cbor_state_t *state, uint32_t *result)
 {
+	FAIL_IF(state->payload >= state->payload_end);
 	uint8_t major_type = MAJOR_TYPE(*state->payload);
 
 	if (major_type != CBOR_MAJOR_TYPE_TAG) {
