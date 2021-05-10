@@ -95,7 +95,7 @@ def tmp_val_or_null(value):
 # Assign the min_value variable.
 def tmp_str_or_null(value):
     return \
-        f"""(tmp_str.value = {f'"{value}"' if value is not None else 'NULL'},
+        f"""(tmp_str.value = {f'(const uint8_t *)"{value}"' if value is not None else 'NULL'},
     tmp_str.len = sizeof({f'"{value}"'}) - 1, &tmp_str)"""
 
 
