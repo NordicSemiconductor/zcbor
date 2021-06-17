@@ -15,12 +15,7 @@ jobs:
       run: |
         pip3 install -U pip
         pip3 install -U setuptools
-        pip3 install -U west
-        pip3 install -U regex
-        pip3 install -U pyelftools==0.26
-        pip3 install -U pycodestyle
-        pip3 install -U PyYAML>=5.1
-        pip3 install -U cbor2
+        pip3 install -U -r scripts/requirements.txt
 
     - name: Install cddl-gen package
       run: |

@@ -9,15 +9,30 @@ import setuptools
 from pathlib import Path
 
 
+P_REPO_ROOT = Path(__file__).absolute().parents[0]
+
+
 def get_long_description():
     """Use the README as the long description that appears on PyPI."""
-    p_readme = Path(
-        Path(__file__).absolute().parents[0], 'README.md').absolute()
+    p_readme = Path(P_REPO_ROOT, 'README.md').absolute()
 
     if p_readme.is_file():
         with p_readme.open(encoding='utf-8') as f:
             return f.read()
     return ''
+
+
+def get_dependencies():
+    """Extract base requirement packages from file."""
+    p_base_reqs = Path(
+        P_REPO_ROOT, 'scripts', 'requirements-base.txt').absolute()
+
+    l_dependencies = list()
+    if p_base_reqs.is_file():
+        with p_base_reqs.open(encoding='utf-8') as f:
+            for line in f.readlines():
+                l_dependencies.append(line.strip())
+    return l_dependencies
 
 
 setuptools.setup(
@@ -37,11 +52,7 @@ setuptools.setup(
     ],
     python_requires='>=3.6',
     packages=setuptools.find_packages(),
-    install_requires=[
-        'cbor2>=5.4.0',
-        'pyyaml~=5.4.1',
-        'regex>=2020.11.13'
-    ],
+    install_requires=get_dependencies(),
     entry_points={
         'console_scripts': [ 'cddl_gen=cddl_gen.cddl_gen:main' ],
     }
