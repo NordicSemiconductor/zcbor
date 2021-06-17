@@ -86,7 +86,7 @@ function(generate_cddl cddl_file)
 
   set(py_command
     ${PYTHON_EXECUTABLE}
-    ${CDDL_GEN_BASE}/scripts/cddl_gen.py
+    ${CDDL_GEN_BASE}/cddl_gen/cddl_gen.py
     -c ${cddl_path}
     ${default_max_qty_arg}
     ${verbose_arg}
