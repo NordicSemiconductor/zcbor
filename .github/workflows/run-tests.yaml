@@ -22,6 +22,13 @@ jobs:
         pip3 install -U PyYAML>=5.1
         pip3 install -U cbor2
 
+    - name: Install cddl-gen package
+      run: |
+        python3 setup.py sdist bdist_wheel
+        pip3 install dist/cddl-gen-*.tar.gz
+        pip3 uninstall -y cddl-gen
+        pip3 install dist/cddl_gen-*.whl
+
     - name: Run pycodestyle cddl_gen.py
       working-directory: tests
       run: |
