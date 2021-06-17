@@ -108,6 +108,12 @@ Call the Python script:
 python3 <cddl-gen base>/cddl_gen/cddl_gen.py -c pet.cddl code -d -t Pet --oc pet_decode.c --oh pet_decode.h
 ```
 
+Or invoke its command line executable (if installed via `pip`):
+
+```sh
+cddl_gen -c pet.cddl code -d -t Pet --oc pet_decode.c --oh pet_decode.h
+```
+
 Or add the following line to your CMake code:
 
 ```cmake
@@ -155,7 +161,7 @@ Converting
 Here is an example call for converting from YAML to CBOR:
 
 ```sh
-python3 <cddl-gen base>/cddl_gen/cddl_gen.py -c pet.cddl convert -t Pet -i mypet.yaml -o mypet.cbor
+cddl_gen -c pet.cddl convert -t Pet -i mypet.yaml -o mypet.cbor
 ```
 
 Which takes a yaml structure from mypet.yaml, validates it against the Pet type in the CDDL description in pet.cddl, and writes binary CBOR data to mypet.cbor.

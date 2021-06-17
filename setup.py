@@ -42,4 +42,7 @@ setuptools.setup(
         'pyyaml~=5.4.1',
         'regex>=2020.11.13'
     ],
+    entry_points={
+        'console_scripts': [ 'cddl_gen=cddl_gen.cddl_gen:main' ],
+    }
 )
