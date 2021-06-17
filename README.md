@@ -2,7 +2,7 @@ Generate code from CDDL description
 ===================================
 
 CDDL is a human-readable description language defined in [IETF RFC 8610](https://datatracker.ietf.org/doc/rfc8610/).
-By calling the Python script [cddl_gen.py](scripts/cddl_gen.py), you can generate C code that validates/encodes/decodes CBOR data conforming to a CDDL schema.
+By calling the Python script [cddl_gen.py](cddl_gen/cddl_gen.py), you can generate C code that validates/encodes/decodes CBOR data conforming to a CDDL schema.
 The script can also validate and convert CBOR data to and from JSON/YAML.
 If the script is imported as a module, you can use it to validate and decode CBOR data into a python structure with names (similar to the struct available in the generated code).
 
@@ -102,10 +102,10 @@ Pet = [
     species: (cat: 1) / (dog: 2) / (other: 3),
 ]
 ```
-Call the Python script
+Call the Python script:
 
 ```sh
-python3 <cddl-gen base>/scripts/cddl_gen.py -c pet.cddl code -d -t Pet --oc pet_decode.c --oh pet_decode.h
+python3 <cddl-gen base>/cddl_gen/cddl_gen.py -c pet.cddl code -d -t Pet --oc pet_decode.c --oh pet_decode.h
 ```
 
 Or add the following line to your CMake code:
@@ -155,12 +155,12 @@ Converting
 Here is an example call for converting from YAML to CBOR:
 
 ```sh
-python3 <cddl-gen base>/scripts/cddl_gen.py -c pet.cddl convert -t Pet -i mypet.yaml -o mypet.cbor
+python3 <cddl-gen base>/cddl_gen/cddl_gen.py -c pet.cddl convert -t Pet -i mypet.yaml -o mypet.cbor
 ```
 
 Which takes a yaml structure from mypet.yaml, validates it against the Pet type in the CDDL description in pet.cddl, and writes binary CBOR data to mypet.cbor.
 
-See the tests in  <cddl-gen base>/scripts/ for examples of using the python module
+See the tests in  <cddl-gen base>/tests/ for examples of using the python module
 
 Running tests
 =============
@@ -172,6 +172,8 @@ There are also test.sh scripts to quickly run all tests.
 [`tests/test.sh`](tests/test.sh) runs all tests, including python tests in [`tests/scripts`](tests/scripts).
 [`tests/cbor_decode/test.sh`](tests/cbor_decode/test.sh) runs all decoding tests.
 [`tests/cbor_encode/test.sh`](tests/cbor_encode/test.sh) runs all encoding tests.
+
+These tests are dependent upon the `pycodestyle` package from `pip`.
 Run these scripts with no arguments.
 
 To set up the environment to run the ztest tests, follow [Zephyr's Getting Started Guide](https://docs.zephyrproject.org/latest/getting_started/index.html), or see the workflow in the [`.github`](.github) directory.

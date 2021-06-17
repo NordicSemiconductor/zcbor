@@ -19,7 +19,7 @@ file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/fuzz_input)
 target_cddl_source(fuzz_pet ../cases/pet.cddl ENTRY_TYPES Pet DECODE)
 
 execute_process(
-    COMMAND python3 ../../../scripts/cddl_gen.py
+    COMMAND python3 ../../../cddl_gen/cddl_gen.py
     --verbose
     --cddl ../../cases/pet.cddl
     convert

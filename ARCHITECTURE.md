@@ -9,7 +9,7 @@ Since cddl-gen is a Python script that generates C code, this document is split 
 Architecture of the Python script
 =================================
 
-The cddl_gen.py script is located in [scripts/cddl_gen.py](scripts/cddl_gen.py).
+The `cddl_gen.py` script is located in [cddl_gen/cddl_gen.py](cddl_gen/cddl_gen.py).
 
 The functionality is spread across 5 classes:
 
