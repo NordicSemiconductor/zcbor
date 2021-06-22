@@ -234,6 +234,9 @@ static bool strx_encode(cbor_state_t *state,
 	if (!strx_start_encode(state, input, major_type)) {
 		FAIL();
 	}
+	if (input->len > (state->payload_end - state->payload)) {
+		FAIL();
+	}
 	if (state->payload_mut != input->value) {
 		memmove(state->payload_mut, input->value, input->len);
 	}

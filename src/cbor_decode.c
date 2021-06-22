@@ -242,10 +242,10 @@ static bool strx_start_decode(cbor_state_t *state,
 		FAIL();
 	}
 
-	if ((state->payload + result->len) > state->payload_end) {
+	if (result->len > (state->payload_end - state->payload)) {
 		cbor_print("error: 0x%x > 0x%x\r\n",
-		(uint32_t)(state->payload + result->len),
-		(uint32_t)state->payload_end);
+		(uint32_t)result->len,
+		(uint32_t)(state->payload_end - state->payload));
 		FAIL_RESTORE();
 	}
 
@@ -263,6 +263,7 @@ bool bstrx_cbor_start_decode(cbor_state_t *state, cbor_string_type_t *result)
 		FAIL_RESTORE();
 	}
 
+	/* Overflow is checked in strx_start_decode() */
 	state->payload_end = result->value + result->len;
 	return true;
 }
@@ -289,6 +290,7 @@ bool strx_decode(cbor_state_t *state, cbor_string_type_t *result,
 		FAIL();
 	}
 
+	/* Overflow is checked in strx_start_decode() */
 	(state->payload) += result->len;
 	return true;
 }
