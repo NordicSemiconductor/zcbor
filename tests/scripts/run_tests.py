@@ -1,26 +1,31 @@
-from os.path import realpath, dirname, join as pjoin
-from sys import path
-
-tests_path = dirname(realpath(__file__))
-scripts_path = realpath(pjoin(tests_path, "..", "..", "cddl_gen"))
-cddl_gen_path = realpath(pjoin(scripts_path, "cddl_gen.py"))
-manifest_path = pjoin(tests_path, "../cases/manifest12.cddl")
-test_vector_paths = tuple(pjoin(tests_path, f"../cases/manifest12_example{i}.cborhex") for i in range(6))
-
-path.insert(0, scripts_path)
-
-import cddl_gen
-from pprint import pprint, pformat
 from unittest import TestCase, main
 from subprocess import Popen, PIPE
 from re import sub
+from pathlib import Path
+
+
+try:
+    import cddl_gen
+except ImportError:
+    print("""
+The cddl_gen package must be installed to run these tests.
+During development, install with `python3 setup.py develop` to install in a way
+that picks up changes in the files without having to reinstall.
+""")
+    import sys
+    sys.exit(1)
+
+
+p_root = Path(__file__).absolute().parents[2]
+p_tests = Path(p_root, 'tests')
+p_manifest = Path(p_tests, 'cases/manifest12.cddl')
+p_test_vectors = tuple(Path(p_tests, f'cases/manifest12_example{i}.cborhex') for i in range(6))
 
 
 class Testn(TestCase):
     def decode(self, ccdl_path, data_path):
         with open(ccdl_path, 'r') as f:
             my_types = cddl_gen.DataTranslator.from_cddl(f.read(), 16)
-        # pprint(my_types)
         cddl = my_types["SUIT_Envelope_Tagged"]
         with open(data_path, 'r') as f:
             data = bytes.fromhex(f.read().replace("\n", ""))
@@ -31,8 +36,7 @@ class Testn(TestCase):
 class Test0(Testn):
     def __init__(self, *args, **kwargs):
         super(Test0, self).__init__(*args, **kwargs)
-        self.decode(manifest_path, test_vector_paths[0])
-        # print(cddl_gen.DataTranslator.format_obj(self.decoded))
+        self.decode(p_manifest, p_test_vectors[0])
 
     def test_manifest_digest(self):
         self.assertEqual(
@@ -65,8 +69,7 @@ class Test0(Testn):
 class Test1(Testn):
     def __init__(self, *args, **kwargs):
         super(Test1, self).__init__(*args, **kwargs)
-        self.decode(manifest_path, test_vector_paths[1])
-        # print(cddl_gen.DataTranslator.format_obj(self.decoded))
+        self.decode(p_manifest, p_test_vectors[1])
 
     def test_components(self):
         self.assertEqual(
@@ -82,8 +85,7 @@ class Test1(Testn):
 class Test2(Testn):
     def __init__(self, *args, **kwargs):
         super(Test2, self).__init__(*args, **kwargs)
-        self.decode(manifest_path, test_vector_paths[2])
-        # print(cddl_gen.DataTranslator.format_obj(self.decoded))
+        self.decode(p_manifest, p_test_vectors[2])
 
     def test_severed_uri(self):
         self.assertEqual(
@@ -108,8 +110,7 @@ class Test2(Testn):
 class Test3(Testn):
     def __init__(self, *args, **kwargs):
         super(Test3, self).__init__(*args, **kwargs)
-        self.decode(manifest_path, test_vector_paths[3])
-        # print(cddl_gen.DataTranslator.format_obj(self.decoded))
+        self.decode(p_manifest, p_test_vectors[3])
 
     def test_A_B_offset(self):
         self.assertEqual(
@@ -123,8 +124,7 @@ class Test3(Testn):
 class Test4(Testn):
     def __init__(self, *args, **kwargs):
         super(Test4, self).__init__(*args, **kwargs)
-        self.decode(manifest_path, test_vector_paths[4])
-        # print(cddl_gen.DataTranslator.format_obj(self.decoded))
+        self.decode(p_manifest, p_test_vectors[4])
 
     def test_load_decompress(self):
         self.assertEqual(
@@ -138,7 +138,7 @@ class Test4(Testn):
 class Test5(Testn):
     def __init__(self, *args, **kwargs):
         super(Test5, self).__init__(*args, **kwargs)
-        self.decode(manifest_path, test_vector_paths[5])
+        self.decode(p_manifest, p_test_vectors[5])
 
     def test_two_image_match(self):
         self.assertEqual(
@@ -151,10 +151,10 @@ class Test5(Testn):
 
 class TestCLI(TestCase):
     def get_std_args(self, input):
-        return ["python3", cddl_gen_path, "--cddl", manifest_path, "--default-max-qty", "16", "convert", "--input", input, "-t", "SUIT_Envelope_Tagged"]
+        return ["cddl_gen", "--cddl", p_manifest, "--default-max-qty", "16", "convert", "--input", input, "-t", "SUIT_Envelope_Tagged"]
 
     def do_testn(self, n):
-        call0 = Popen(self.get_std_args(test_vector_paths[n]) + ["--output", "-", "--output-as", "cbor"], stdout=PIPE)
+        call0 = Popen(self.get_std_args(p_test_vectors[n]) + ["--output", "-", "--output-as", "cbor"], stdout=PIPE)
         stdout0, _ = call0.communicate()
         self.assertEqual(0, call0.returncode)
 
@@ -184,7 +184,7 @@ class TestCLI(TestCase):
 
         self.maxDiff = None
 
-        with open(test_vector_paths[n], 'r') as f:
+        with open(p_test_vectors[n], 'r') as f:
             self.assertEqual(sub(r"\W+", "", f.read()), sub(r"\W+", "", stdout4.decode("utf-8")))
 
     def test_0(self):
