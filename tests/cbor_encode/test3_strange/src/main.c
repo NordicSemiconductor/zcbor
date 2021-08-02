@@ -868,6 +868,18 @@ void test_single(void)
 	zassert_false(cbor_encode_SingleInt2(output, sizeof(output), &input_single4_inv, &out_len), NULL);
 }
 
+void test_string_overflow(void)
+{
+	cbor_string_type_t input_overflow0 = {
+		.value = "",
+		.len = 0xFFFFFF00, /* overflows to before this object. */
+	};
+	uint8_t output[10];
+	uint32_t out_len;
+
+	zassert_false(cbor_encode_SingleBstr(output, sizeof(output), &input_overflow0, &out_len), NULL);
+}
+
 void test_main(void)
 {
 	ztest_test_suite(cbor_encode_test3,
@@ -881,7 +893,8 @@ void test_main(void)
 			 ztest_unit_test(test_nested_map_list_map),
 			 ztest_unit_test(test_range),
 			 ztest_unit_test(test_value_range),
-			 ztest_unit_test(test_single)
+			 ztest_unit_test(test_single),
+			 ztest_unit_test(test_string_overflow)
 	);
 	ztest_run_test_suite(cbor_encode_test3);
 }
