@@ -162,6 +162,18 @@ void test_strings(void)
 	zassert_false(strings2._Strings_cborseqPrimitives_cbor[0]._Primitives_boolval, NULL);
 }
 
+void test_string_overflow(void)
+{
+	const uint8_t payload_overflow[] = {
+		0x5A, 0xFF, 0xFF, 0xF0, 0x00, /* overflows to before this string. */
+	};
+
+	cbor_string_type_t result_overflow;
+	uint32_t out_len;
+
+	zassert_false(cbor_decode_SingleBstr(payload_overflow, sizeof(payload_overflow), &result_overflow, &out_len), NULL);
+}
+
 void test_optional(void)
 {
 	const uint8_t payload_optional1[] = {
@@ -808,6 +820,7 @@ void test_main(void)
 	ztest_test_suite(cbor_decode_test5,
 			 ztest_unit_test(test_numbers),
 			 ztest_unit_test(test_strings),
+			 ztest_unit_test(test_string_overflow),
 			 ztest_unit_test(test_optional),
 			 ztest_unit_test(test_union),
 			 ztest_unit_test(test_levels),
