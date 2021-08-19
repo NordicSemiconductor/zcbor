@@ -12,6 +12,10 @@ Numbers = [
 	integer: #6.65535(int),
 ]
 
+Numbers2 = [
+	threebytes: uint .size 4,
+]
+
 Strings = [
 	hello: "hello",
 	threehundrebytebstr: bstr .size 300,

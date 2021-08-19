@@ -84,6 +84,23 @@ void test_numbers(void)
 		sizeof(output), &numbers, &out_len), NULL);
 }
 
+void test_numbers2(void)
+{
+	const uint8_t exp_payload_numbers2[] = {
+		LIST(1), // List start
+			0x1A, 0x00, 0x12, 0x34, 0x56, // 0x123456
+		END
+	};
+	uint32_t numbers = 0x123456;
+	uint8_t output[100];
+	uint32_t out_len;
+
+	zassert_true(cbor_encode_Numbers2(output,
+		sizeof(output), &numbers, &out_len), NULL);
+	zassert_equal(sizeof(exp_payload_numbers2), out_len, "%d != %d\r\n", sizeof(exp_payload_numbers2), out_len);
+	zassert_mem_equal(exp_payload_numbers2, output, sizeof(exp_payload_numbers2), NULL);
+}
+
 
 void test_strings(void)
 {
@@ -910,6 +927,7 @@ void test_main(void)
 {
 	ztest_test_suite(cbor_encode_test3,
 			 ztest_unit_test(test_numbers),
+			 ztest_unit_test(test_numbers2),
 			 ztest_unit_test(test_strings),
 			 ztest_unit_test(test_optional),
 			 ztest_unit_test(test_union),

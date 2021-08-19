@@ -20,6 +20,7 @@ target_sources(app PRIVATE
 target_cddl_source(app strange.cddl DECODE ENTRY_TYPES
   NestedListMap NestedMapListMap
   Numbers
+  Numbers2
   Strings
   Optional
   Union

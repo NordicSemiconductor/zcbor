@@ -43,6 +43,21 @@ void test_numbers(void)
 }
 
 
+void test_numbers2(void)
+{
+	uint32_t decode_len = 0xFFFFFFFF;
+	const uint8_t payload_numbers2[] = {
+		0x81, // List start
+			0x1A, 0x00, 0x12, 0x34, 0x56, // 0x123456
+	};
+	uint32_t numbers2;
+
+	zassert_true(cbor_decode_Numbers2(payload_numbers2,
+		sizeof(payload_numbers2), &numbers2, &decode_len), NULL);
+
+	zassert_equal(0x123456, numbers2, NULL);
+}
+
 void test_strings(void)
 {
 	const uint8_t payload_strings1[] = {
@@ -854,6 +869,7 @@ void test_main(void)
 {
 	ztest_test_suite(cbor_decode_test5,
 			 ztest_unit_test(test_numbers),
+			 ztest_unit_test(test_numbers2),
 			 ztest_unit_test(test_strings),
 			 ztest_unit_test(test_string_overflow),
 			 ztest_unit_test(test_optional),
