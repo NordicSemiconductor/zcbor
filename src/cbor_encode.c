@@ -21,12 +21,6 @@ static uint8_t log2ceil(uint32_t val)
 		case 2: return 1;
 		case 3: return 2;
 		case 4: return 2;
-#if 0 /* 64-bit numbers are not supported */
-		case 5: return 3;
-		case 6: return 3;
-		case 7: return 3;
-		case 8: return 3;
-#endif
 	}
 
 	cbor_assert(false, NULL); /* Should not come here. */
