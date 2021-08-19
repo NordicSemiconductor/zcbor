@@ -87,17 +87,23 @@ static bool value_encode_len(cbor_state_t *state, cbor_major_type_t major_type,
 static uint32_t get_result_len(const void *const input, uint32_t max_result_len)
 {
 	uint8_t *u8_result  = (uint8_t *)input;
+	uint32_t len = max_result_len;
 
-	for (; max_result_len > 0; max_result_len--) {
-		if (u8_result[max_result_len - 1] != 0) {
+	for (; len > 0; len--) {
+#ifdef CONFIG_BIG_ENDIAN
+		if (u8_result[max_result_len - len] != 0) {
+#else
+		if (u8_result[len - 1] != 0) {
+#endif
 			break;
 		}
 	}
-	if ((max_result_len == 1) && (u8_result[0] <= VALUE_IN_HEADER)) {
-		max_result_len = 0;
+	if ((len == 1) && (u8_result[0] <= VALUE_IN_HEADER)) {
+		len = 0;
 	}
 
-	return max_result_len;
+	/* Round up to nearest power of 2. */
+	return len <= 2 ? len : (1 << log2ceil(len));
 }
 
 
