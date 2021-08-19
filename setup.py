@@ -37,7 +37,7 @@ def get_dependencies():
 
 setuptools.setup(
     name='cddl-gen',
-    version='0.1.0',
+    version='0.2.0',
     description='Generate code from CDDL description',
     long_description=get_long_description(),
     long_description_content_type='text/markdown',
