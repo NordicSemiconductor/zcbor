@@ -14,22 +14,28 @@
 _Static_assert((sizeof(size_t) == sizeof(void *)),
 	"This code needs size_t to be the same length as pointers.");
 
-uint8_t get_additional(uint32_t len, uint8_t value0)
+static uint8_t log2ceil(uint32_t val)
 {
-	switch(len) {
-		case 0: return value0;
-		case 1: return 24;
-		case 2: return 25;
-		case 3: return 25;
-		case 4: return 26;
-		case 5: return 26;
-		case 6: return 26;
-		case 7: return 26;
-		case 8: return 27;
+	switch(val) {
+		case 1: return 0;
+		case 2: return 1;
+		case 3: return 2;
+		case 4: return 2;
+#if 0 /* 64-bit numbers are not supported */
+		case 5: return 3;
+		case 6: return 3;
+		case 7: return 3;
+		case 8: return 3;
+#endif
 	}
 
-	cbor_assert(false, NULL);
+	cbor_assert(false, NULL); /* Should not come here. */
 	return 0;
+}
+
+static uint8_t get_additional(uint32_t len, uint8_t value0)
+{
+	return len == 0 ? value0 : (24 + log2ceil(len));
 }
 
 static bool encode_header_byte(cbor_state_t *state,
