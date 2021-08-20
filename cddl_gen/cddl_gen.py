@@ -2261,9 +2261,12 @@ Can also generate C code for validation/encoding/decoding of CBOR.''')
     parser.add_argument(
         "-c", "--cddl", required=True, type=FileType('r'), help="Path to input CDDL file.")
     parser.add_argument(
-        "--default-max-qty", required=False, type=int, default=3,
+        "--default-max-qty", "--dq", required=False, type=int, default=3,
         help="""Default maximum number of repetitions when no maximum
-is specified. This is needed to construct complete C types.""")
+is specified. This is needed to construct complete C types.
+This is relevant for the generated code. It is not relevant for converting,
+except when handling data that will be decoded by generated code.
+The default value of this option is 3. Set it to a large number when not relevant.""")
     parser.add_argument(
         "-v", "--verbose", required=False, action="store_true", default=False,
         help="Print more information while parsing CDDL and generating code.")
