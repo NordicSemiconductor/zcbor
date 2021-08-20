@@ -2322,9 +2322,8 @@ E.g.
 {"bstr": ["first element", 2, [3]]}
 
 Dicts in JSON/YAML only support text strings for keys, so if a dict
-needs other types of keys, add the key and value as two entries
-named "n_key" and "n_val", where n is an arbitrary integer.
-e.g. {"name": "foo", "0_key": 123, "0_val": "bar"}
+needs other types of keys, encapsulate the key and value into a dict (n is an arbitrary integer):
+e.g. {"name": "foo", "keyvaln": {"key": 123, "val": "bar"}}
 which will conform to the CDDL {tstr => tstr, int => tstr}.
 
 Lastly, tags are specified by a dict with two elements, e.g.
