@@ -1,17 +1,69 @@
-Generate code from CDDL description
-===================================
+Schema based data manipulation and code generation
+==================================================
 
-CDDL is a human-readable description language defined in [IETF RFC 8610](https://datatracker.ietf.org/doc/rfc8610/).
+CDDL is a human-readable data description language defined in [IETF RFC 8610](https://datatracker.ietf.org/doc/rfc8610/).
 By calling the Python script [cddl_gen.py](cddl_gen/cddl_gen.py), you can generate C code that validates/encodes/decodes CBOR data conforming to a CDDL schema.
-The script can also validate and convert CBOR data to and from JSON/YAML.
-If the script is imported as a module, you can use it to validate and decode CBOR data into a python structure with names (similar to the struct available in the generated code).
-
-The generated code depends on low-level CBOR ([headers](include) and [source](src)).
-There are tests for the code generation in [tests/](tests/).
-For now the tests require [Zephyr](https://github.com/zephyrproject-rtos/zephyr) (if your shell is set up to build Zephyr samples, the tests should also build).
+`cddl_gen.py` can also validate, and convert CBOR data to and from JSON/YAML, either from the command line, or imported as a module.
+Finally, the package contains a light-weight CBOR encoding/decoding library in C.
+This library is used by the generated code, and can also be used directly.
 
 Features
 ========
+
+Here are some possible ways cddl-gen can be used:
+
+ - Python scripting:
+   - Validate a YAML file and translate it into CBOR e.g. for transmission.
+   - Validate a YAML/JSON/CBOR file before processing it with some other tool
+   - Decode and validate incoming CBOR data into human-readable YAML/JSON.
+   - As part of a python script that processes YAML/JSON/CBOR files. cddl-gen is compatible with PyYAML and can additionally provide validation and/or easier inspection via named tuples.
+ - C code:
+   - Generate C code for validating and decoding or encoding CBOR, for use in optimized or constrained environments, such as microcontrollers.
+   - Provide a low-footprint CBOR decoding/encoding library similar to TinyCBOR/QCBOR/NanoCBOR.
+
+Python scripting
+================
+
+Invoking cddl_gen.py from the command line
+------------------------------------------
+
+The cddl_gen.py script can directly read CBOR, YAML, or JSON data and validate it against a CDDL description.
+It can also freely convert the data between CBOR/YAML/JSON.
+It can also output the data to a C file formatted as a byte array.
+
+The following is a generalized example for converting (and validating) data from the command line.
+The script infers the data format from the file extension, but the format can also be specified explicitly.
+See `cddl_gen.py convert --help` for more information.
+
+```sh
+python3 <cddl-gen base>/cddl_gen/cddl_gen.py -c <CDDL description file> convert -t <which CDDL type to expect> -i <input data file> -o <output data file>
+```
+
+Note that since CBOR supports more data types than YAML and JSON, cddl_gen uses an idiomatic format when converting to/from YAML/JSON.
+This is relevant when handling YAML/JSON conversions of data that uses the unsupported features.
+The following data types are supported by CBOR, but not by YAML (and JSON which is a subset of YAML):
+
+ 1. bytestrings: YAML supports only text strings. In YAML, bytestrings ('<bytestring>') are represented as {"bstr": "<hex-formatted bytestring>"}, or as {"bstr": <any type>} if the CBOR bytestring contains CBOR-formatted data, in which the data is decoded into <any type>.
+ 2. map keys other than text string: In YAML, such key value pairs are represented as {"keyval<unique int>": {"key": <key, not text>, "val": <value>}}
+ 3. tags: In cbor2, tags are represented by a special type, cbor2.CBORTag. In YAML, these are represented as {"tag": <tag number>, "val": <tagged data>}.
+
+Importing cddl_gen in a Python script
+-------------------------------------
+
+Importing cddl_gen gives access to the DataTranslator class which is used to implement the command line conversion features.
+DataTranslator can be used to programmatically perform the translations, or to manipulate the data.
+When accessing the data, you can choose between two internal formats:
+
+ 1. The format provided by the cbor2, yaml (pyyaml), and json packages.
+    This is a format where the serialization types (map, list, string, number etc.) are mapped directly to the corresponding Python types.
+    This format is common between these packages, which makes translation very simple.
+    When returning this format, DataTranslator hides the idiomatic representations for bytestrings, tags, and non-text keys described above.
+ 2. A custom format which allows accessing the data via the names from the CDDL description file.
+    This format is implemented using named tuples, and is immutable, meaning that it can be used for inspecting data, but not for changing or creating data.
+
+
+Code generation
+===============
 
 The generated code consists of:
  - A header file containing typedefs for the types defined in the CDDL, as well as declarations for decoding functions for some types (those specified as entry types). The typedefs are the same for both encoding and decoding.
@@ -24,12 +76,60 @@ The generated code will validate the input (i.e. the structure if encoding, or t
 
 The cbor libraries do most of the actual translation and moving of bytes, and the validation of values.
 
+There are tests for the code generation in [tests/](tests/).
+For now the tests require [Zephyr](https://github.com/zephyrproject-rtos/zephyr) (if your shell is set up to build Zephyr samples, the tests should also build).
+
 Build system
 ------------
 
 There is some CMake code available which requires Zephyr to run.
 When you call the [`target_cddl_source()`](cmake/extensions.cmake) CMake function, it sets up build steps necessary to call the script on the provided CDDL file, and adds the generated file as well as the cbor libraries to your project.
 As long as the `target_cddl_source()` function is called in your project, you should be able to #include the generated file and use it in your code.
+
+CBOR decoding/encoding library
+==============================
+
+The CBOR library found at [headers](include) and [source](src) is used by the generated code, but can also be used directly.
+If so, you must instantiate a `cbor_state_t` object as well as a `cbor_state_backups_t` object (backups can be NULL in simple use cases).
+
+The elem_count member refers to the number of encoded objects in the current list or map.
+elem_count starts again when entering a nested list or map, and is restored when exiting.
+
+elem_count is one reason for needing "backup" states (the other is to allow rollback of the payload).
+You need a number of backups corresponding to the maximum number of nested levels in your data.
+
+Backups are needed for encoding if you are using canonical encoding (CDDL_CBOR_CANONICAL), or using the bstrx_cbor_* functions.
+Backups are needed for decoding if there are any lists, maps, or CBOR-encoded strings in the data.
+
+Note that the benefits of using the library directly is greater for encoding than for decoding.
+For decoding, the code generation will provide a number of checks that are tedious to write manually, and easy to forget.
+
+```c
+cbor_state_t state = {
+  .payload = payload,
+  /* .payload_mut = payload, for encoding */
+  .payload_end = payload + payload_len,
+  .elem_count = elem_count, /** Initial elem_count. Must be 0 when encoding, or
+                              * the maximum expected number of elements when
+                              * decoding.
+                              */
+};
+
+/* and optionally: */
+
+cbor_state_t state_backups[num_backups]; /** The number of backups must be at
+                                           * least equal to the maximum nested
+                                           * depth of the data. */
+
+cbor_state_backups_t backups = {
+  .backup_list = state_backups,
+  .current_backup = 0,
+  .num_backups = num_backups,
+};
+
+state.backups = &backups;
+
+```
 
 Introduction to CDDL
 ====================
@@ -132,7 +232,8 @@ And use the generated code with
 /* The following type and function refer to the Pet type in the CDDL, which
  * has been specified as an ENTRY_TYPE in the cmake call. */
 Pet_t pet;
-bool success = cbor_decode_Pet(input, sizeof(input), &pet, true);
+uint32_t decode_len;
+bool success = cbor_decode_Pet(input, sizeof(input), &pet, &decode_len);
 ```
 
 The process is the same for encoding, except:
@@ -153,6 +254,36 @@ Pet_t pet = { /* Initialize with desired data. */ };
 uint8_t output[100]; /* 100 is an example. Must be large enough for data to fit. */
 uint32_t out_len;
 bool success = cbor_encode_Pet(output, sizeof(output), &pet, &out_len);
+```
+
+CBOR decoding/encoding library
+------------------------------
+
+For encoding:
+
+```c
+#include <cbor_encode.h>
+
+uint8_t payload[100];
+cbor_state_t state = {
+  .payload_mut = payload,
+  .payload_end = payload + sizeof(payload),
+  .elem_count = 0,
+};
+
+res = res && list_start_encode(&state, 0);
+res = res && tstrx_put(&state, "first");
+res = res && tstrx_put(&state, "second");
+res = res && list_end_encode(&state, 0);
+uint8_t timestamp[8] = {1, 2, 3, 4, 5, 6, 7, 8};
+cbor_string_type_t timestamp_str = {
+  .value = timestamp,
+  .len = sizeof(timestamp),
+};
+res = res && bstrx_encode(&state, &timestamp_str);
+res = res && uintx32_put(&state, 2 /* dog */);
+res = res && list_end_encode(&state, 0);
+
 ```
 
 Converting
