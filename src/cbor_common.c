@@ -15,12 +15,17 @@ _Static_assert((sizeof(size_t) == sizeof(void *)),
 
 bool new_backup(cbor_state_t *state, uint32_t new_elem_count)
 {
-	if ((state->backups->current_backup + 1)
-		>= state->backups->num_backups) {
+	if (!state->backups || ((state->backups->current_backup)
+		>= state->backups->num_backups)) {
 		FAIL();
 	}
 
-	uint32_t i = ++(state->backups->current_backup);
+	(state->backups->current_backup)++;
+
+	/* use the backup at current_backup - 1, since otherwise, the 0th
+	 * backup would be unused. */
+	uint32_t i = (state->backups->current_backup) - 1;
+
 	memcpy(&state->backups->backup_list[i], state,
 		sizeof(cbor_state_t));
 
@@ -36,12 +41,14 @@ bool restore_backup(cbor_state_t *state, uint32_t flags,
 	const uint8_t *payload = state->payload;
 	const uint32_t elem_count = state->elem_count;
 
-	if (state->backups->current_backup == 0) {
+	if (!state->backups || (state->backups->current_backup == 0)) {
 		FAIL();
 	}
 
 	if (flags & FLAG_RESTORE) {
-		uint32_t i = state->backups->current_backup;
+		/* use the backup at current_backup - 1, since otherwise, the
+		 * 0th backup would be unused. */
+		uint32_t i = state->backups->current_backup - 1;
 
 		memcpy(state, &state->backups->backup_list[i],
 			sizeof(cbor_state_t));
@@ -100,12 +107,12 @@ bool entry_function(const uint8_t *payload, uint32_t payload_len,
 		.elem_count = elem_count,
 	};
 
-	cbor_state_t state_backups[num_backups + 1];
+	cbor_state_t state_backups[num_backups];
 
 	cbor_state_backups_t backups = {
 		.backup_list = state_backups,
 		.current_backup = 0,
-		.num_backups = num_backups + 1,
+		.num_backups = num_backups,
 	};
 
 	state.backups = &backups;
