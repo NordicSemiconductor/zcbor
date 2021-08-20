@@ -122,6 +122,27 @@ uint8_t serial_rec_input2[] = {
 };
 
 
+#define CONCAT_BYTE(a,b) a ## b
+
+/* LIST() adds a start byte for a list with 'num' elements.
+ * MAP() does the same, but for a map.
+ * END adds an end byte for the list/map.
+ *
+ * With CDDL_CBOR_CANONINCAL, the start byte contains the list, so no end byte is
+ * needed. Without CDDL_CBOR_CANONINCAL, the start byte is the same no matter
+ * the number of elements, so it needs an explicit end byte.
+ */
+#ifndef CDDL_CBOR_CANONICAL
+#define LIST(num) 0x9F
+#define MAP(num) 0xBF
+#define END 0xFF,
+#else
+#define LIST(num) CONCAT_BYTE(0x8, num)
+#define MAP(num) CONCAT_BYTE(0xA, num)
+#define END
+#endif
+
+
 /* This test uses generated code to encode a 'Pet' instance. It populates the
  * generated struct, and runs the generated encoding function, then checks that
  * everything is correct.
@@ -136,19 +157,14 @@ void test_pet(void)
 		._Pet_species_choice = _Pet_species_dog
 	};
 	uint8_t exp_output[] = {
-#ifndef CDDL_CBOR_CANONICAL
-		0x9f, 0x9f,
-#else
-		0x83, 0x82,
-#endif
-		0x63, 0x66, 0x6f, 0x6f, 0x63, 0x62, 0x61, 0x72,
-#ifndef CDDL_CBOR_CANONICAL
-		0xff,
-#endif
-		0x48, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x02,
-#ifndef CDDL_CBOR_CANONICAL
-		0xff
-#endif
+		LIST(3),
+		LIST(2),
+			0x63, 0x66, 0x6f, 0x6f, /* foo */
+			0x63, 0x62, 0x61, 0x72, /* bar */
+		END
+		0x48, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+		0x02, /* 2: dog */
+		END
 	};
 
 	uint8_t output[25];
@@ -161,6 +177,76 @@ void test_pet(void)
 	zassert_equal(sizeof(exp_output), out_len, NULL);
 	/* Check the payload contents. */
 	zassert_mem_equal(exp_output, output, sizeof(exp_output), NULL);
+}
+
+
+/* This test uses the CBOR encoding library directly, i.e. no generated code.
+ * It has no checking against a CDDL schema, but follows the "Pet" structure.
+ * It sets up the cbor_state_t variable, and for canonical encoding it adds
+ * backups (for entering containers).
+ * It then makes a number of calls to functions in cbor_encode.h and checks the
+ * resulting payload agains the expected output.
+ */
+void test_pet_raw(void)
+{
+	uint8_t payload[100];
+	cbor_state_t state = {
+		.payload_mut = payload,
+		.payload_end = payload + sizeof(payload),
+		.elem_count = 0,
+	};
+
+#ifdef CDDL_CBOR_CANONICAL
+	cbor_state_t state_backups[2];
+
+	cbor_state_backups_t backups = {
+	.backup_list = state_backups,
+	.current_backup = 0,
+	.num_backups = 2,
+	};
+
+	state.backups = &backups;
+#endif
+
+	uint8_t exp_output[] = {
+		LIST(3),
+		LIST(2),
+			0x65, 0x66, 0x69, 0x72, 0x73, 0x74, /* first */
+			0x66, 0x73, 0x65, 0x63, 0x6f, 0x6e, 0x64, /* second */
+		END
+		0x48, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+		0x02, /* 2: dog */
+		END
+	};
+
+	bool res = list_start_encode(&state, 0);
+	zassert_true(res, NULL);
+
+	res = res && list_start_encode(&state, 0);
+	zassert_true(res, NULL);
+	res = res && tstrx_put(&state, "first");
+	zassert_true(res, NULL);
+	res = res && tstrx_put(&state, "second");
+	zassert_true(res, NULL);
+	res = res && list_end_encode(&state, 0);
+	zassert_true(res, NULL);
+	uint8_t timestamp[8] = {1, 2, 3, 4, 5, 6, 7, 8};
+	cbor_string_type_t timestamp_str = {
+		.value = timestamp,
+		.len = sizeof(timestamp),
+	};
+	res = res && bstrx_encode(&state, &timestamp_str);
+	zassert_true(res, NULL);
+	res = res && uintx32_put(&state, 2 /* dog */);
+	zassert_true(res, NULL);
+	res = res && list_end_encode(&state, 0);
+
+	/* Check that encoding succeeded. */
+	zassert_true(res, NULL);
+	/* Check that the resulting length is correct. */
+	zassert_equal(sizeof(exp_output), state.payload - payload, NULL);
+	/* Check the payload contents. */
+	zassert_mem_equal(exp_output, payload, sizeof(exp_output), NULL);
 }
 
 // void test_serial1(void)
@@ -208,7 +294,8 @@ void test_pet(void)
 void test_main(void)
 {
 	ztest_test_suite(cbor_encode_test2,
-			 ztest_unit_test(test_pet)
+			 ztest_unit_test(test_pet),
+			 ztest_unit_test(test_pet_raw)
 			//  ztest_unit_test(test_serial1),
 			//  ztest_unit_test(test_serial2)
 	);
