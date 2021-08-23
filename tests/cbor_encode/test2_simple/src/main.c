@@ -121,6 +121,11 @@ uint8_t serial_rec_input2[] = {
 	0xfb
 };
 
+
+/* This test uses generated code to encode a 'Pet' instance. It populates the
+ * generated struct, and runs the generated encoding function, then checks that
+ * everything is correct.
+ */
 void test_pet(void)
 {
 	struct Pet pet = {
@@ -149,9 +154,12 @@ void test_pet(void)
 	uint8_t output[25];
 	uint32_t out_len;
 
-	zassert_true(cbor_encode_Pet(output, sizeof(output), &pet, &out_len), "");
+	/* Check that encoding succeeded. */
+	zassert_true(cbor_encode_Pet(output, sizeof(output), &pet, &out_len), NULL);
 
+	/* Check that the resulting length is correct. */
 	zassert_equal(sizeof(exp_output), out_len, NULL);
+	/* Check the payload contents. */
 	zassert_mem_equal(exp_output, output, sizeof(exp_output), NULL);
 }
 

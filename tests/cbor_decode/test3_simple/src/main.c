@@ -121,6 +121,12 @@ uint8_t serial_rec_input2[] = {
 	0xfb
 };
 
+
+/* This test uses generated code to decode a 'Pet' instance. It constructs a
+ * payload and runs the generated decoding function on the payload. It then
+ * checks that the decoding was successful, and that the resulting struct is
+ * populated correctly.
+ */
 void test_pet(void)
 {
 	struct Pet pet;
