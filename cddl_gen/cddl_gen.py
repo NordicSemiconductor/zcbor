@@ -2399,7 +2399,7 @@ This script requires 'regex' for lookaround functionality not present in 're'.''
         "--output-h-types", "--oht", required=False, type=FileType('w'),
         help="Path to output header file with typedefs (shared between decode and encode).")
     code_parser.add_argument(
-        "-t", "--entry-types", required=True, type=str, nargs="+",
+        "-t", "--entry-types", required=True, type=str, action='append',
         help="Names of the types which should have their xcode functions exposed.")
     code_parser.add_argument(
         "-d", "--decode", required=False, action="store_true", default=False,
