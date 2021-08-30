@@ -4,7 +4,7 @@ Numbers = [
 	minustwo: -2,
 	fourtoten: 4..10,
 	twobytes: uint .size 2,
-	onetofourbytes: uint .size 1..4,
+	onetofourbytes: uint .size 0b1..0o4, ; Testing binary and octal
 	minusfivektoplustwohundred: -5000..200,
 	fourbillion: 0xEE6B2800,
 	negint: nint,
@@ -59,7 +59,7 @@ Range = [
 	?optStr3to6: tstr .size 3..6,
 	+multi8: 8,
 	+multiHello: "hello",
-	+multi0to10: 0..10
+	+multi0to10: 0..0x0A; Testing hexadecimal
 ]
 
 ValueRange = [
