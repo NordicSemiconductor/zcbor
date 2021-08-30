@@ -815,6 +815,41 @@ void test_single(void)
 	zassert_false(cbor_decode_SingleInt2(payload_single4_inv, sizeof(payload_single4_inv), &result_int, &out_len), NULL);
 }
 
+void test_unabstracted(void)
+{
+	uint8_t payload_unabstracted0[] = {0x82, 0x01, 0x03};
+	uint8_t payload_unabstracted1[] = {0x82, 0x02, 0x04};
+	uint8_t payload_unabstracted2_inv[] = {0x82, 0x03, 0x03};
+	uint8_t payload_unabstracted3_inv[] = {0x82, 0x01, 0x01};
+	struct Unabstracted result_unabstracted;
+	uint32_t out_len;
+
+	zassert_true(cbor_decode_Unabstracted(payload_unabstracted0,
+					sizeof(payload_unabstracted0),
+					&result_unabstracted, &out_len), NULL);
+	zassert_equal(result_unabstracted._Unabstracted_unabstractedunion1_choice,
+			_Unabstracted_unabstractedunion1_choice1, NULL);
+	zassert_equal(result_unabstracted._Unabstracted_unabstractedunion2_choice,
+			_Unabstracted_unabstractedunion2_uint3, NULL);
+	zassert_equal(sizeof(payload_unabstracted0), out_len, NULL);
+
+	zassert_true(cbor_decode_Unabstracted(payload_unabstracted1,
+					sizeof(payload_unabstracted1),
+					&result_unabstracted, &out_len), NULL);
+	zassert_equal(result_unabstracted._Unabstracted_unabstractedunion1_choice,
+			_Unabstracted_unabstractedunion1_choice2, NULL);
+	zassert_equal(result_unabstracted._Unabstracted_unabstractedunion2_choice,
+			_Unabstracted_unabstractedunion2_choice4, NULL);
+	zassert_equal(sizeof(payload_unabstracted1), out_len, NULL);
+
+	zassert_false(cbor_decode_Unabstracted(payload_unabstracted2_inv,
+					sizeof(payload_unabstracted2_inv),
+					&result_unabstracted, &out_len), NULL);
+	zassert_false(cbor_decode_Unabstracted(payload_unabstracted3_inv,
+					sizeof(payload_unabstracted3_inv),
+					&result_unabstracted, &out_len), NULL);
+}
+
 void test_main(void)
 {
 	ztest_test_suite(cbor_decode_test5,
@@ -829,7 +864,8 @@ void test_main(void)
 			 ztest_unit_test(test_nested_map_list_map),
 			 ztest_unit_test(test_range),
 			 ztest_unit_test(test_value_range),
-			 ztest_unit_test(test_single)
+			 ztest_unit_test(test_single),
+			 ztest_unit_test(test_unabstracted)
 	);
 	ztest_run_test_suite(cbor_decode_test5);
 }
