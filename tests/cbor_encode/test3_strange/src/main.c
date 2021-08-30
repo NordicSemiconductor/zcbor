@@ -868,6 +868,32 @@ void test_single(void)
 	zassert_false(cbor_encode_SingleInt2(output, sizeof(output), &input_single4_inv, &out_len), NULL);
 }
 
+void test_unabstracted(void)
+{
+	uint8_t exp_payload_unabstracted0[] = {LIST(2), 0x01, 0x03, END};
+	uint8_t exp_payload_unabstracted1[] = {LIST(2), 0x02, 0x04, END};
+	struct Unabstracted result_unabstracted0 = {
+		._Unabstracted_unabstractedunion1_choice = _Unabstracted_unabstractedunion1_choice1,
+		._Unabstracted_unabstractedunion2_choice = _Unabstracted_unabstractedunion2_uint3,
+	};
+	struct Unabstracted result_unabstracted1 = {
+		._Unabstracted_unabstractedunion1_choice = _Unabstracted_unabstractedunion1_choice2,
+		._Unabstracted_unabstractedunion2_choice = _Unabstracted_unabstractedunion2_choice4,
+	};
+	uint8_t output[4];
+	uint32_t out_len;
+
+	zassert_true(cbor_encode_Unabstracted(output, sizeof(output),
+					&result_unabstracted0, &out_len), NULL);
+	zassert_equal(sizeof(exp_payload_unabstracted0), out_len, "was %d\n", out_len);
+	zassert_mem_equal(exp_payload_unabstracted0, output, sizeof(exp_payload_unabstracted0), NULL);
+
+	zassert_true(cbor_encode_Unabstracted(output, sizeof(output),
+					&result_unabstracted1, &out_len), NULL);
+	zassert_equal(sizeof(exp_payload_unabstracted1), out_len, NULL);
+	zassert_mem_equal(exp_payload_unabstracted1, output, sizeof(exp_payload_unabstracted1), NULL);
+}
+
 void test_string_overflow(void)
 {
 	cbor_string_type_t input_overflow0 = {
@@ -894,7 +920,8 @@ void test_main(void)
 			 ztest_unit_test(test_range),
 			 ztest_unit_test(test_value_range),
 			 ztest_unit_test(test_single),
-			 ztest_unit_test(test_string_overflow)
+			 ztest_unit_test(test_string_overflow),
+			 ztest_unit_test(test_unabstracted)
 	);
 	ztest_run_test_suite(cbor_encode_test3);
 }

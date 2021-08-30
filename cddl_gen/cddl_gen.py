@@ -582,6 +582,8 @@ class CddlParser:
                  doubleslash=True)),
             (r'(\=\>)',
              lambda _: self.convert_to_key()),
+            (r'(?P<item>\w)\s*\:',
+             lambda key_str: self.set_key_or_label(keystr)),
             (r'([+*?])',
              self.set_quantifier),
             (r'(\d*\*\*\d*)',

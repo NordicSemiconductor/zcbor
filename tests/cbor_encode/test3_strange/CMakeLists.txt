@@ -30,6 +30,7 @@ target_cddl_source(app strange.cddl ENCODE ENTRY_TYPES
   SingleBstr
   SingleInt
   SingleInt2
+  Unabstracted
   DEFAULT_MAX_QTY 6
   ${VERBOSE}
   ${CANONICAL}
