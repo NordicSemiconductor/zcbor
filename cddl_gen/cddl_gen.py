@@ -1104,7 +1104,11 @@ class DataTranslator(CddlXcoder):
 
     # Return the contents of a list if it has a single member and it's name is the same as us.
     def _flatten_list(self, name, obj):
-        if isinstance(obj, list) and len(obj) == 1 and len(obj[0]) == 1 and hasattr(obj[0], name):
+        if (isinstance(obj, list)
+                and len(obj) == 1
+                and (isinstance(obj[0], list) or isinstance(obj[0], tuple))
+                and len(obj[0]) == 1
+                and hasattr(obj[0], name)):
             return [obj[0][0]]
         return obj
 

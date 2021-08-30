@@ -1,0 +1,8 @@
+MEM_CONFIG = [
+	READ: ( 1 / 0 ),
+	? N: 0..15
+]
+
+cfg = {
+	? "mem_config" => MEM_CONFIG
+}
