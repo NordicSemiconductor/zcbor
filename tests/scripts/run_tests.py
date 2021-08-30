@@ -20,6 +20,7 @@ p_root = Path(__file__).absolute().parents[2]
 p_tests = Path(p_root, 'tests')
 p_manifest = Path(p_tests, 'cases/manifest12.cddl')
 p_test_vectors = tuple(Path(p_tests, f'cases/manifest12_example{i}.cborhex') for i in range(6))
+p_optional = Path(p_tests, 'cases/optional.cddl')
 
 
 class Testn(TestCase):
@@ -204,6 +205,20 @@ class TestCLI(TestCase):
 
     def test_5(self):
         self.do_testn(5)
+
+
+class TestOptional(TestCase):
+    def test_0(self):
+        with open(p_optional, 'r') as f:
+            my_types = cddl_gen.DataTranslator.from_cddl(f.read(), 16)
+        cddl = my_types['cfg']
+        test_yaml = """
+            mem_config:
+                - 0
+                - 5"""
+        decoded = cddl.decode_str_yaml(test_yaml)
+        self.assertEqual(decoded.mem_config[0].READ.union_choice, "uint0")
+        self.assertEqual(decoded.mem_config[0].N, [5])
 
 
 if __name__ == "__main__":
