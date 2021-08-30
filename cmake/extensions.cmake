@@ -193,7 +193,11 @@ function(target_cddl_source target cddl_file)
 
   file(MAKE_DIRECTORY ${h_file_dir})
 
-  generate_cddl(${cddl_file} ${CODE} ${CDDL_VERBOSE} ${CDDL_CANONICAL}
+  if (CDDL_VERBOSE)
+    set(verbose_arg VERBOSE)
+  endif()
+
+  generate_cddl(${cddl_file} ${CODE} ${verbose_arg} ${CDDL_CANONICAL}
     ENTRY_TYPES ${CDDL_ENTRY_TYPES}
     C_FILE ${c_file} H_FILE ${h_file} TYPE_FILE ${type_file_path}
     DEFAULT_MAX_QTY ${CDDL_DEFAULT_MAX_QTY}

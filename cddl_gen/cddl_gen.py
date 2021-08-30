@@ -573,7 +573,7 @@ class CddlParser:
             (r'\[(?P<item>(?>[^[\]]+|(?R))*)\]',
              lambda list_str: self.type_and_value("LIST", lambda: self.parse(list_str))),
             (r'\((?P<item>(?>[^\(\)]+|(?R))*)\)',
-             lambda group_str: self.type_and_value("GROUP", lambda:self. parse(group_str))),
+             lambda group_str: self.type_and_value("GROUP", lambda:self.parse(group_str))),
             (r'{(?P<item>(?>[^{}]+|(?R))*)}',
              lambda map_str: self.type_and_value("MAP", lambda: self.parse(map_str))),
             (r'\/\/\s*(?P<item>.+?)(?=\/\/|\Z)',
@@ -591,7 +591,7 @@ class CddlParser:
             (r'nint(?!\w)',
              lambda _: self.type_and_value("NINT", lambda: None)),
             (r'int(?!\w)',
-             lambda _: self.type_and_value("INT", lambda:None)),
+             lambda _: self.type_and_value("INT", lambda: None)),
             (r'float(?!\w)',
              lambda _: self.type_and_value("FLOAT", lambda: None)),
             (r'float16(?!\w)',
@@ -2366,6 +2366,10 @@ def process_code(args):
     print("Parsing " + args.cddl.name)
 
     my_types = CodeGenerator.from_cddl(mode, args.cddl.read(), args.default_max_qty, mode, args.entry_types)
+
+    # Parsing is done, pretty print the result.
+    verbose_print(args.verbose, "Parsed CDDL types:")
+    verbose_pprint(args.verbose, my_types)
 
     renderer = CodeRenderer(entry_types=[my_types[entry] for entry in args.entry_types], mode=mode,
                             print_time=args.time_header,
