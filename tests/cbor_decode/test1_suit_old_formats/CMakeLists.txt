@@ -13,13 +13,13 @@ set(BUILD_WITH_ZEPHYR ON)
 
 add_subdirectory(../../.. ${PROJECT_BINARY_DIR}/cddl_gen)
 
-target_cddl_source(app manifest-moran3.cddl
+target_cddl_source(app ../../cases/manifest-moran3.cddl
   ENTRY_TYPES OuterWrapper
   DECODE
   ${VERBOSE}
   ${CANONICAL}
   )
-target_cddl_source(app manifest-moran4.cddl
+target_cddl_source(app ../../cases/manifest-moran4.cddl
   ENTRY_TYPES SUIT_Outer_Wrapper
   DECODE
   ${VERBOSE}

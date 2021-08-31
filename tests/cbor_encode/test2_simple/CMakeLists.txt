@@ -17,11 +17,11 @@ FILE(GLOB app_sources src/*.c)
 target_sources(app PRIVATE
   ${app_sources})
 
-target_cddl_source(app pet.cddl ENTRY_TYPES Pet ENCODE
+target_cddl_source(app ../../cases/pet.cddl ENTRY_TYPES Pet ENCODE
   ${VERBOSE}
   ${CANONICAL}
   )
-#target_cddl_source(app serial_recovery.cddl ENTRY_TYPES Upload ENCODE
+#target_cddl_source(app ../../cases/serial_recovery.cddl ENTRY_TYPES Upload ENCODE
  # ${VERBOSE}
  # ${CANONICAL}
  # )
