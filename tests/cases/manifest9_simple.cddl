@@ -1,3 +1,16 @@
+;
+; From https://datatracker.ietf.org/doc/draft-ietf-suit-manifest/09/
+;
+; Copyright (c) 2020 IETF Trust and the persons identified as the
+; document authors.  All rights reserved.
+; Copyright (c) 2020 Nordic Semiconductor ASA
+;
+; Redistribution and use in source and binary forms, with or without
+; modification, is permitted pursuant to, and subject to the license terms
+; contained in, the Simplified BSD License set forth in Section 4.c of the
+; IETF Trust’s Legal Provisions Relating to IETF Documents
+; (http://trustee.ietf.org/license-info).
+;
 
 SUIT_Envelope = {
   ? suit-authentication-wrapper => bstr .cbor SUIT_Authentication,

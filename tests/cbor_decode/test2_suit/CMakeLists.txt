@@ -13,7 +13,7 @@ set(BUILD_WITH_ZEPHYR ON)
 
 add_subdirectory(../../.. ${PROJECT_BINARY_DIR}/cddl_gen)
 
-target_cddl_source(app manifest2.cddl
+target_cddl_source(app ../../cases/manifest2.cddl
   ENTRY_TYPES
   SUIT_Outer_Wrapper
   SUIT_Command_Sequence

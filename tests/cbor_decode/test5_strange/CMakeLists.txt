@@ -17,7 +17,7 @@ FILE(GLOB app_sources src/*.c)
 target_sources(app PRIVATE
   ${app_sources})
 
-target_cddl_source(app strange.cddl DECODE ENTRY_TYPES
+target_cddl_source(app ../../cases/strange.cddl DECODE ENTRY_TYPES
   NestedListMap NestedMapListMap
   Numbers
   Numbers2

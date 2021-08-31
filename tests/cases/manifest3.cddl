@@ -1,33 +1,41 @@
 ;
-; Copyright (c) 2020 Nordic Semiconductor ASA
+; From https://datatracker.ietf.org/doc/draft-ietf-suit-manifest/03/
 ;
-; SPDX-License-Identifier: Apache-2.0
+; Copyright (c) 2020 IETF Trust and the persons identified as the
+; document authors.  All rights reserved.
+;
+; Redistribution and use in source and binary forms, with or without
+; modification, is permitted pursuant to, and subject to the license terms
+; contained in, the Simplified BSD License set forth in Section 4.c of the
+; IETF Trust’s Legal Provisions Relating to IETF Documents
+; (http://trustee.ietf.org/license-info).
 ;
 
 SUIT_Outer_Wrapper = {
-    suit-authentication-wrapper => bstr .cbor SUIT_Authentication_Wrapper / nil,
+    ?suit-delegation            => bstr, ;.cbor SUIT_Delegation,
+    ?suit-authentication-wrapper
+        => bstr .cbor SUIT_Authentication_Wrapper / nil,
     $$SUIT_Manifest_Wrapped,
-    ?suit-dependency-resolution  => bstr .cbor SUIT_Command_Sequence,
-    ?suit-payload-fetch          => bstr .cbor SUIT_Command_Sequence,
-    ?suit-install                => bstr .cbor SUIT_Command_Sequence,
-    ?suit-text                   => bstr .cbor SUIT_Text_Map,
-    ?suit-coswid                 => bstr .cbor concise-software-identity
+    ?suit-dependency-resolution => bstr .cbor SUIT_Command_Sequence,
+    ?suit-payload-fetch         => bstr .cbor SUIT_Command_Sequence,
+    ?suit-install               => bstr .cbor SUIT_Command_Sequence,
+    ?suit-text                  => bstr .cbor SUIT_Text_Map,
+    ?suit-coswid                => bstr .cbor concise-software-identity
 }
 
-SUIT_Authentication_Wrapper = (
+SUIT_Authentication_Wrapper = [ + (
     COSE_Mac_Tagged /
     COSE_Sign_Tagged /
     COSE_Mac0_Tagged /
     COSE_Sign1_Tagged)
-
-SUIT_Authentication_Wrapper_List = [ + SUIT_Authentication_Wrapper ]
+]
 
 SUIT_Encryption_Wrapper = COSE_Encrypt_Tagged / COSE_Encrypt0_Tagged
 
 $$SUIT_Manifest_Wrapped //= (suit-manifest  => bstr .cbor SUIT_Manifest)
 $$SUIT_Manifest_Wrapped //= (
-    suit-manifest-encryption-info => bstr .cbor SUIT_Encryption_Wrapper,
-    suit-manifest-encrypted       => bstr
+    ?suit-manifest-encryption-info => bstr .cbor SUIT_Encryption_Wrapper,
+    ?suit-manifest-encrypted       => bstr
 )
 
 COSE_Mac_Tagged = any
@@ -40,7 +48,7 @@ COSE_Encrypt0_Tagged = any
 SUIT_Digest = [
   suit-digest-algorithm-id : $suit-digest-algorithm-ids,
   suit-digest-bytes : bstr,
-  ? suit-digest-parameters : any
+  ;? suit-digest-parameters : any
 ]
 
 ; Named Information Hash Algorithm Identifiers
@@ -66,20 +74,25 @@ SUIT_Manifest = {
     suit-manifest-version         => 1,
     suit-manifest-sequence-number => uint,
     ? suit-common                 => bstr .cbor SUIT_Common,
-    ? suit-dependency-resolution  => SUIT_Digest / bstr .cbor SUIT_Command_Sequence,
-    ? suit-payload-fetch          => SUIT_Digest / bstr .cbor SUIT_Command_Sequence,
-    ? suit-install                => SUIT_Digest / bstr .cbor SUIT_Command_Sequence,
+    ? suit-dependency-resolution
+        => SUIT_Digest / bstr .cbor SUIT_Command_Sequence,
+    ? suit-payload-fetch
+        => SUIT_Digest / bstr .cbor SUIT_Command_Sequence,
+    ? suit-install
+        => SUIT_Digest / bstr .cbor SUIT_Command_Sequence,
     ? suit-validate               => bstr .cbor SUIT_Command_Sequence,
     ? suit-load                   => bstr .cbor SUIT_Command_Sequence,
     ? suit-run                    => bstr .cbor SUIT_Command_Sequence,
     ? suit-text                   => SUIT_Digest,
-    ? suit-coswid                 => SUIT_Digest / bstr .cbor concise-software-identity,
+    ? suit-coswid
+        => SUIT_Digest / bstr .cbor concise-software-identity,
 }
 
 SUIT_Common = {
     ? suit-dependencies           => bstr .cbor SUIT_Dependencies,
     ? suit-components             => bstr .cbor SUIT_Components,
-    ? suit-dependency-components  => bstr .cbor SUIT_Component_References,
+    ? suit-dependency-components
+        => bstr .cbor SUIT_Component_References,
     ? suit-common-sequence        => bstr .cbor SUIT_Command_Sequence,
 }
 
@@ -96,14 +109,14 @@ SUIT_Dependency = {
 
 SUIT_Component_Identifier =  [* bstr]
 
-
 SUIT_Component_Reference = {
     suit-component-identifier => SUIT_Component_Identifier,
     suit-component-dependency-index => uint
 }
 
-SUIT_Command = (SUIT_Condition / SUIT_Directive / SUIT_Command_Custom)
-SUIT_Command_Sequence = [ 1**20 SUIT_Command ]
+SUIT_Command_Sequence = [ 1**6 (
+    SUIT_Condition // SUIT_Directive // SUIT_Command_Custom
+) ]
 
 SUIT_Command_Custom = (nint, bstr)
 SUIT_Condition //= (suit-condition-vendor-identifier, nil)
@@ -113,22 +126,30 @@ SUIT_Condition //= (suit-condition-image-match,       nil)
 SUIT_Condition //= (suit-condition-image-not-match,   nil)
 SUIT_Condition //= (suit-condition-use-before,        uint)
 SUIT_Condition //= (suit-condition-minimum-battery,   uint)
-SUIT_Condition //= (suit-condition-update-authorised, int)
-SUIT_Condition //= (suit-condition-version,           SUIT_Condition_Version_Argument)
+SUIT_Condition //= (suit-condition-update-authorized, int)
+SUIT_Condition //= (suit-condition-version,
+    SUIT_Condition_Version_Argument)
 SUIT_Condition //= (suit-condition-component-offset,  uint)
 SUIT_Condition //= (suit-condition-custom,            bstr)
 
 RFC4122_UUID = bstr .size 16
 
 SUIT_Condition_Version_Argument = [
-    suit-condition-version-comparison-type: SUIT_Condition_Version_Comparison_Types,
-    suit-condition-version-comparison-value: SUIT_Condition_Version_Comparison_Value
+    suit-condition-version-comparison-type:
+        SUIT_Condition_Version_Comparison_Types,
+    suit-condition-version-comparison-value:
+        SUIT_Condition_Version_Comparison_Value
 ]
-SUIT_Condition_Version_Comparison_Types /= suit-condition-version-comparison-greater
-SUIT_Condition_Version_Comparison_Types /= suit-condition-version-comparison-greater-equal
-SUIT_Condition_Version_Comparison_Types /= suit-condition-version-comparison-equal
-SUIT_Condition_Version_Comparison_Types /= suit-condition-version-comparison-lesser-equal
-SUIT_Condition_Version_Comparison_Types /= suit-condition-version-comparison-lesser
+SUIT_Condition_Version_Comparison_Types /=
+    suit-condition-version-comparison-greater
+SUIT_Condition_Version_Comparison_Types /=
+    suit-condition-version-comparison-greater-equal
+SUIT_Condition_Version_Comparison_Types /=
+    suit-condition-version-comparison-equal
+SUIT_Condition_Version_Comparison_Types /=
+    suit-condition-version-comparison-lesser-equal
+SUIT_Condition_Version_Comparison_Types /=
+    suit-condition-version-comparison-lesser
 
 suit-condition-version-comparison-greater = 1
 suit-condition-version-comparison-greater-equal = 2
@@ -138,26 +159,31 @@ suit-condition-version-comparison-lesser = 5
 
 SUIT_Condition_Version_Comparison_Value = [+int]
 
-SUIT_Directive //= (suit-directive-set-component-index,      uint/bool)
-SUIT_Directive //= (suit-directive-set-dependency-index,     uint/bool)
-SUIT_Directive //= (suit-directive-run-sequence,             bstr .cbor SUIT_Command_Sequence)
-SUIT_Directive //= (suit-directive-try-each,                 SUIT_Directive_Try_Each_Argument)
-SUIT_Directive //= (suit-directive-process-dependency,       nil)
-SUIT_Directive //= (suit-directive-set-parameters,           {+ SUIT_Parameters})
-SUIT_Directive //= (suit-directive-override-parameters,      {+ SUIT_Parameters})
-SUIT_Directive //= (suit-directive-fetch,                    nil)
-SUIT_Directive //= (suit-directive-copy,                     nil)
-SUIT_Directive //= (suit-directive-swap,                     nil)
-SUIT_Directive //= (suit-directive-run,                      nil)
-SUIT_Directive //= (suit-directive-wait,                     { + SUIT_Wait_Events })
-SUIT_Directive //= (suit-directive-run-with-arguments,       bstr)
+SUIT_Directive //= (suit-directive-set-component-index,  uint/bool)
+SUIT_Directive //= (suit-directive-set-dependency-index, uint/bool)
+SUIT_Directive //= (suit-directive-run-sequence,
+    bstr .cbor SUIT_Command_Sequence)
+SUIT_Directive //= (suit-directive-try-each,
+    SUIT_Directive_Try_Each_Argument)
+SUIT_Directive //= (suit-directive-process-dependency,   nil)
+SUIT_Directive //= (suit-directive-set-parameters,
+    {+ SUIT_Parameters})
+SUIT_Directive //= (suit-directive-override-parameters,
+    {+ SUIT_Parameters})
+SUIT_Directive //= (suit-directive-fetch,                nil)
+SUIT_Directive //= (suit-directive-copy,                 nil)
+SUIT_Directive //= (suit-directive-swap,                 nil)
+SUIT_Directive //= (suit-directive-run,                  nil)
+SUIT_Directive //= (suit-directive-wait,
+    { + SUIT_Wait_Events })
+SUIT_Directive //= (suit-directive-run-with-arguments,   bstr)
 
 SUIT_Directive_Try_Each_Argument = [
     + bstr .cbor SUIT_Command_Sequence,
     nil / bstr .cbor SUIT_Command_Sequence
 ]
 
-SUIT_Wait_Events //= (suit-wait-event-authorisation => int)
+SUIT_Wait_Events //= (suit-wait-event-authorization => int)
 SUIT_Wait_Events //= (suit-wait-event-power => int)
 SUIT_Wait_Events //= (suit-wait-event-network => int)
 SUIT_Wait_Events //= (suit-wait-event-other-device-version
@@ -168,8 +194,7 @@ SUIT_Wait_Events //= (suit-wait-event-time-of-day
 SUIT_Wait_Events //= (suit-wait-event-day-of-week
     => uint); Days since Sunday
 
-
-SUIT_Wait_Event_Argument_Authorisation = int ; priority
+SUIT_Wait_Event_Argument_Authorization = int ; priority
 SUIT_Wait_Event_Argument_Power = int ; Power Level
 SUIT_Wait_Event_Argument_Network = int ; Network State
 SUIT_Wait_Event_Argument_Other_Device_Version = [
@@ -177,7 +202,8 @@ SUIT_Wait_Event_Argument_Other_Device_Version = [
     other-device-version: [+int]
 ]
 SUIT_Wait_Event_Argument_Time = uint ; Timestamp
-SUIT_Wait_Event_Argument_Time_Of_Day = uint ; Time of Day (seconds since 00:00:00)
+SUIT_Wait_Event_Argument_Time_Of_Day = uint ; Time of Day
+                                            ; (seconds since 00:00:00)
 SUIT_Wait_Event_Argument_Day_Of_Week = uint ; Days since Sunday
 
 SUIT_Parameters //= (suit-parameter-strict-order => bool)
@@ -186,19 +212,21 @@ SUIT_Parameters //= (suit-parameter-vendor-id => bstr)
 SUIT_Parameters //= (suit-parameter-class-id => bstr)
 SUIT_Parameters //= (suit-parameter-device-id => bstr)
 SUIT_Parameters //= (suit-parameter-uri => tstr)
-SUIT_Parameters //= (suit-parameter-encryption-info => bstr .cbor SUIT_Encryption_Info)
-SUIT_Parameters //= (suit-parameter-compression-info => bstr .cbor SUIT_Compression_Info)
-SUIT_Parameters //= (suit-parameter-unpack-info => bstr .cbor SUIT_Unpack_Info)
+SUIT_Parameters //= (suit-parameter-encryption-info
+    => bstr .cbor SUIT_Encryption_Info)
+SUIT_Parameters //= (suit-parameter-compression-info
+    => bstr .cbor SUIT_Compression_Info)
+SUIT_Parameters //= (suit-parameter-unpack-info
+    => bstr .cbor SUIT_Unpack_Info)
 SUIT_Parameters //= (suit-parameter-source-component => uint)
-SUIT_Parameters //= (suit-parameter-image-digest => bstr .cbor SUIT_Digest)
+SUIT_Parameters //= (suit-parameter-image-digest
+    => bstr .cbor SUIT_Digest)
 SUIT_Parameters //= (suit-parameter-image-size => uint)
-SUIT_Parameters //= (suit-parameter-uri-list => bstr .cbor SUIT_Component_URI_List)
+SUIT_Parameters //= (suit-parameter-uri-list
+    => bstr .cbor SUIT_Component_URI_List)
 SUIT_Parameters //= (suit-parameter-custom => int/bool/tstr/bstr)
 
-SUIT_Component_URI = [priority: int, uri: tstr]
-SUIT_Component_URI_List = [ + SUIT_Component_URI ]
-SUIT_Priority_Parameter = [priority: int, parameters: { + SUIT_Parameters }]
-SUIT_Priority_Parameter_List = [ + SUIT_Priority_Parameter ]
+SUIT_Component_URI_List = [ + [priority: int, uri: tstr] ]
 
 SUIT_Encryption_Info = COSE_Encrypt_Tagged/COSE_Encrypt0_Tagged
 SUIT_Compression_Info = {
@@ -232,6 +260,7 @@ SUIT_Unpack_Algorithm_Elf = 3
 
 SUIT_Text_Map = {int => tstr}
 
+suit-delegation = 0
 suit-authentication-wrapper = 1
 suit-manifest = 2
 
@@ -273,15 +302,15 @@ suit-condition-custom = 6
 suit-condition-device-identifier        = 24
 suit-condition-image-not-match          = 25
 suit-condition-minimum-battery          = 26
-suit-condition-update-authorised        = 27
+suit-condition-update-authorized        = 27
 suit-condition-version                  = 28
 
 suit-directive-set-component-index      = 12
 suit-directive-set-dependency-index     = 13
 suit-directive-abort                    = 14
 suit-directive-try-each                 = 15
-suit-directive-do-each                  = 16 ; TBD
-suit-directive-map-filter               = 17 ; TBD
+;suit-directive-do-each                  = 16 ; TBD
+;suit-directive-map-filter               = 17 ; TBD
 suit-directive-process-dependency       = 18
 suit-directive-set-parameters           = 19
 suit-directive-override-parameters      = 20
@@ -294,18 +323,19 @@ suit-directive-run-sequence             = 30
 suit-directive-run-with-arguments       = 31
 suit-directive-swap                     = 32
 
-suit-wait-event-argument-authorisation = 1
+suit-wait-event-argument-authorization = 1
 suit-wait-event-power = 2
 suit-wait-event-network = 3
 suit-wait-event-other-device-version = 4
 suit-wait-event-time = 5
 suit-wait-event-time-of-day = 6
 suit-wait-event-day-of-week = 7
-suit-wait-event-authorisation = 8
+suit-wait-event-authorization = 8
 
 suit-parameter-strict-order = 1
 suit-parameter-soft-failure = 2
 suit-parameter-vendor-id = 3
+
 suit-parameter-class-id = 4
 suit-parameter-device-id = 5
 suit-parameter-uri = 6
@@ -318,7 +348,7 @@ suit-parameter-image-size = 12
 
 suit-parameter-uri-list = 24
 suit-parameter-uri-list-append = 25
-suit-parameter-prioritised-parameters = 26
+suit-parameter-prioritized-parameters = 26
 
 suit-parameter-custom = nint
 

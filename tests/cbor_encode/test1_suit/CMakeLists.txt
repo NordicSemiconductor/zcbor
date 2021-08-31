@@ -13,7 +13,7 @@ set(BUILD_WITH_ZEPHYR ON)
 
 add_subdirectory(../../.. ${PROJECT_BINARY_DIR}/cddl_gen)
 
-target_cddl_source(app manifest3.cddl
+target_cddl_source(app ../../cases/manifest3.cddl
   ENTRY_TYPES
   SUIT_Outer_Wrapper
   SUIT_Command_Sequence
@@ -24,7 +24,7 @@ target_cddl_source(app manifest3.cddl
   TYPE_FILE_NAME manifest3_types.h
   )
 
-target_cddl_source(app manifest3.cddl
+target_cddl_source(app ../../cases/manifest3.cddl
   ENTRY_TYPES
   SUIT_Outer_Wrapper
   SUIT_Command_Sequence
