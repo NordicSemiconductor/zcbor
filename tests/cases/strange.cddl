@@ -52,15 +52,15 @@ Union = Group / MultiGroup / (3,4) / "\"hello\""
 Map = {
 	listkey: [5,6] => bool,
 	union: (7=>uint) / (-8=>uint),
-	twotothree: 2**3 nil => bstr,
+	twotothree: 2*3 nil => bstr,
 }
 
 NestedListMap = [*{?1 => 4}]
 NestedMapListMap = {+[] => [*{}]}
 
 Level1 = [Level2]
-Level2 = [2**3Level3]
-Level3 = [4**5Level4]
+Level2 = [2**3Level3] ; Use ** here to test backwards compatibility.
+Level3 = [4*5Level4]
 Level4 = [0]
 
 Range = [

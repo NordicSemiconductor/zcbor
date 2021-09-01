@@ -429,7 +429,7 @@ class CddlParser:
             (r"\?", lambda mo: (0, 1)),
             (r"\*", lambda mo: (0, None)),
             (r"\+", lambda mo: (1, None)),
-            (r"(\d*)\*\*(\d*)", lambda mo: (int(mo.groups()[0] or 0), int(mo.groups()[1] or 0))),
+            (r"(\d*)\*\*?(\d*)", lambda mo: (int(mo.groups()[0] or 0), int(mo.groups()[1] or 0))),
         ]
 
         self.quantifier = quantifier
@@ -590,7 +590,7 @@ class CddlParser:
              lambda key_str: self.set_key_or_label(keystr)),
             (r'([+*?])',
              self.set_quantifier),
-            (r'(\d*\*\*\d*)',
+            (r'(\d*\*\*?\d*)',
              self.set_quantifier),
             (r'uint(?!\w)',
              lambda _: self.type_and_value("UINT", lambda: None)),

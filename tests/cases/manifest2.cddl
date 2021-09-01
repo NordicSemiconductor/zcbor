@@ -110,7 +110,7 @@ SUIT_Component_Reference = {
 }
 
 SUIT_Command = (SUIT_Condition / SUIT_Directive / SUIT_Command_Custom)
-SUIT_Command_Sequence = [ 1**20 SUIT_Command ]
+SUIT_Command_Sequence = [ 1*20 SUIT_Command ]
 
 SUIT_Command_Custom = (nint, bstr)
 SUIT_Condition //= (suit-condition-vendor-identifier, nil)
