@@ -2322,7 +2322,8 @@ def parse_args():
 Can also generate C code for validation/encoding/decoding of CBOR.''')
 
     parser.add_argument(
-        "-c", "--cddl", required=True, type=FileType('r'), help="Path to input CDDL file.")
+        "-c", "--cddl", required=True, type=FileType('r'), action="append",
+        help="Path to one or more input CDDL file(s). Passing multiple files is equivalent to concatenating them.")
     parser.add_argument(
         "--default-max-qty", "--dq", required=False, type=int, default=3,
         help="""Default maximum number of repetitions when no maximum
@@ -2440,10 +2441,12 @@ def process_code(args):
     if args.decode == args.encode:
         args.error("Please specify exactly one of --decode or --encode.")
 
-    print("Parsing " + args.cddl.name)
+    print("Parsing files: " + ", ".join((c.name for c in args.cddl)))
+
+    cddl_contents = linesep.join((c.read() for c in args.cddl))
 
     my_types = CodeGenerator.from_cddl(
-        mode, args.cddl.read(), args.default_max_qty, mode, args.entry_types)
+        mode, cddl_contents, args.default_max_qty, mode, args.entry_types)
 
     # Parsing is done, pretty print the result.
     verbose_print(args.verbose, "Parsed CDDL types:")
@@ -2463,7 +2466,8 @@ def process_code(args):
 
 
 def process_convert(args):
-    my_types = DataTranslator.from_cddl(args.cddl.read(), args.default_max_qty)
+    cddl_contents = linesep.join((c.read() for c in args.cddl))
+    my_types = DataTranslator.from_cddl(cddl_contents, args.default_max_qty)
 
     # Parsing is done, pretty print the result.
     verbose_print(args.verbose, "Parsed CDDL types:")
