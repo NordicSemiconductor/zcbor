@@ -114,7 +114,7 @@ SUIT_Component_Reference = {
     suit-component-dependency-index => uint
 }
 
-SUIT_Command_Sequence = [ 1**6 (
+SUIT_Command_Sequence = [ 1*6 (
     SUIT_Condition // SUIT_Directive // SUIT_Command_Custom
 ) ]
 

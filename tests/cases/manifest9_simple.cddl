@@ -67,7 +67,7 @@ SUIT_Components           = [ + SUIT_Component_Identifier ]
 SUIT_Component_Identifier =  [* bstr]
 
 SUIT_Common_Sequence = [
-    1**10 ( SUIT_Condition // SUIT_Common_Commands )
+    1*10 ( SUIT_Condition // SUIT_Common_Commands )
 ]
 
 SUIT_Common_Commands //= (suit-directive-set-component-index,  uint/bool)
@@ -79,7 +79,7 @@ SUIT_Common_Commands //= (suit-condition-vendor-identifier, SUIT_Reporting_Polic
 SUIT_Common_Commands //= (suit-condition-class-identifier,  SUIT_Reporting_Policy)
 
 
-SUIT_Command_Sequence = [ 1**10 (
+SUIT_Command_Sequence = [ 1*10 (
     SUIT_Condition // SUIT_Directive
 ) ]
 
@@ -102,7 +102,7 @@ SUIT_Directive //= (suit-directive-fetch-uri-list,       SUIT_Reporting_Policy)
 
 SUIT_Reporting_Policy = uint
 
-SUIT_Parameters = {1**10 SUIT_Parameter}
+SUIT_Parameters = {1*10 SUIT_Parameter}
 
 SUIT_Parameter //= (suit-parameter-vendor-identifier => RFC4122_UUID)
 SUIT_Parameter //= (suit-parameter-class-identifier => RFC4122_UUID)

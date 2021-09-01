@@ -172,7 +172,7 @@ An element can be repeated:
  - `?`: 0 or 1 time. E.g. `Foo = [int, ?bstr]`, where Foo is a list with an int possibly followed by a bstr.
  - `*`: 0 or more times. E.g. `Foo = [*tstr]`, where Foo is a list containing 0 or more tstrs.
  - `+`: 1 or more times. E.g. `Foo = [+Bar]`.
- - `x**y`: Between x and y times, inclusive. E.g. `Foo = {4**8(int => bstr)}` where Foo is a map with 4 to 8 key/value pairs where each key is an int and each value is a bstr.
+ - `x*y`: Between x and y times, inclusive. E.g. `Foo = {4*8(int => bstr)}` where Foo is a map with 4 to 8 key/value pairs where each key is an int and each value is a bstr.
 
 Note that in the cddl_gen script and its generated code, the number of entries supported via `*` and `+` is affected by the default_max_qty value.
 
