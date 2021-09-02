@@ -18,6 +18,7 @@ from cbor2 import loads, dumps, CBORTag, load, CBORDecodeValueError, CBORDecodeE
 from yaml import safe_load as yaml_load, dump as yaml_dump
 from json import loads as json_load, dumps as json_dump
 from io import BytesIO
+from subprocess import Popen, PIPE
 import sys
 
 indentation = "\t"
@@ -2023,7 +2024,7 @@ __attribute__((unused)) static bool type_test_{self.xcode_func_name()}(
 
 
 class CodeRenderer():
-    def __init__(self, entry_types, mode, print_time, default_max_qty):
+    def __init__(self, entry_types, mode, print_time, default_max_qty, git_sha=''):
         self.entry_types = entry_types
         self.mode = mode
         self.print_time = print_time
@@ -2036,6 +2037,9 @@ class CodeRenderer():
         self.functions = self.unique_funcs()
         self.functions = self.used_funcs()
         self.type_defs = self.unique_types()
+
+        if git_sha:
+            self.version += f'-{git_sha}'
 
     def header_guard(self, file_name):
         return path.basename(file_name).replace(".", "_").replace("-", "_").upper() + "__"
@@ -2300,12 +2304,15 @@ This script requires 'regex' for lookaround functionality not present in 're'.''
         "-t", "--entry-types", required=True, type=str, nargs="+",
         help="Names of the types which should have their xcode functions exposed.")
     code_parser.add_argument(
-        "--time-header", required=False, action="store_true", default=False,
-        help="Put the current time in a comment in the generated files.")
-    code_parser.add_argument(
         "-d", "--decode", required=False, action="store_true", default=False, help="Generate decoding code.")
     code_parser.add_argument(
         "-e", "--encode", required=False, action="store_true", default=False, help="Generate encoding code.")
+    code_parser.add_argument(
+        "--time-header", required=False, action="store_true", default=False,
+        help="Put the current time in a comment in the generated files.")
+    code_parser.add_argument(
+        "--git-sha-header", required=False, action="store_true", default=False,
+        help="Put the current git sha of cddl_gen in a comment in the generated files.")
     code_parser.set_defaults(process=process_code)
 
     convert_parser = subparsers.add_parser(
@@ -2379,9 +2386,14 @@ def process_code(args):
     verbose_print(args.verbose, "Parsed CDDL types:")
     verbose_pprint(args.verbose, my_types)
 
+    git_sha = ''
+    if args.git_sha_header:
+        git_args = ['git', 'rev-parse', '--verify', '--short', 'HEAD']
+        git_sha = Popen(git_args, cwd=P_REPO_ROOT, stdout=PIPE).communicate()[0].decode('utf-8').strip()
+
     renderer = CodeRenderer(entry_types=[my_types[entry] for entry in args.entry_types], mode=mode,
                             print_time=args.time_header,
-                            default_max_qty=args.default_max_qty)
+                            default_max_qty=args.default_max_qty, git_sha=git_sha)
 
     renderer.render(args.output_h, args.output_c, args.output_h_types)
 
