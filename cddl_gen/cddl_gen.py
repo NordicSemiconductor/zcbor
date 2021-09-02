@@ -19,10 +19,17 @@ from yaml import safe_load as yaml_load, dump as yaml_dump
 from json import loads as json_load, dumps as json_dump
 from io import BytesIO
 from subprocess import Popen, PIPE
+from pathlib import Path
 import sys
 
 indentation = "\t"
 newl_ind = "\n" + indentation
+
+P_SCRIPT = Path(__file__).absolute().parents[0]
+P_REPO_ROOT = Path(__file__).absolute().parents[1]
+VERSION_path = Path(P_SCRIPT, "VERSION")
+
+__version__ = VERSION_path.read_text().strip()
 
 
 # Size of "additional" field if num is encoded as int
@@ -2115,6 +2122,8 @@ class CodeRenderer():
         self.functions = self.used_funcs()
         self.type_defs = self.unique_types()
 
+        self.version = __version__
+
         if git_sha:
             self.version += f'-{git_sha}'
 
@@ -2242,7 +2251,8 @@ static bool {xcoder.func_name}(
     # Render the entire generated C file contents.
     def render_c_file(self, header_file_name):
         return f"""/*
- * Generated with cddl_gen.py (https://github.com/NordicSemiconductor/cddl-gen){'''
+ * Generated using cddl_gen version {self.version}
+ * https://github.com/NordicSemiconductor/cddl-gen{'''
  * at: ''' + datetime.now().strftime('%Y-%m-%d %H:%M:%S') if self.print_time else ''}
  * Generated with a default_max_qty of {self.default_max_qty}
  */
@@ -2267,7 +2277,8 @@ static bool {xcoder.func_name}(
     def render_h_file(self, type_def_file, header_guard):
         return \
             f"""/*
- * Generated with cddl_gen.py (https://github.com/NordicSemiconductor/cddl-gen){'''
+ * Generated using cddl_gen version {self.version}
+ * https://github.com/NordicSemiconductor/cddl-gen{'''
  * at: ''' + datetime.now().strftime('%Y-%m-%d %H:%M:%S') if self.print_time else ''}
  * Generated with a default_max_qty of {self.default_max_qty}
  */
@@ -2295,7 +2306,8 @@ static bool {xcoder.func_name}(
     def render_type_file(self, header_guard):
         return \
             f"""/*
- * Generated with cddl_gen.py (https://github.com/NordicSemiconductor/cddl-gen){'''
+ * Generated using cddl_gen version {self.version}
+ * https://github.com/NordicSemiconductor/cddl-gen{'''
  * at: ''' + datetime.now().strftime('%Y-%m-%d %H:%M:%S') if self.print_time else ''}
  * Generated with a default_max_qty of {self.default_max_qty}
  */
@@ -2345,8 +2357,11 @@ def parse_args():
 Can also generate C code for validation/encoding/decoding of CBOR.''')
 
     parser.add_argument(
+        "--version", action="version", version=f"cddl-gen {__version__}")
+    parser.add_argument(
         "-c", "--cddl", required=True, type=FileType('r'), action="append",
-        help="Path to one or more input CDDL file(s). Passing multiple files is equivalent to concatenating them.")
+        help="""Path to one or more input CDDL file(s). Passing multiple files is equivalent to
+concatenating them.""")
     parser.add_argument(
         "--default-max-qty", "--dq", required=False, type=int, default=3,
         help="""Default maximum number of repetitions when no maximum
