@@ -273,8 +273,8 @@ bool bstrx_cbor_end_decode(cbor_state_t *state)
 	if (state->payload != state->payload_end) {
 		FAIL();
 	}
-	if (!restore_backup(state,
-			FLAG_RESTORE | FLAG_DISCARD | FLAG_TRANSFER_PAYLOAD,
+	if (!process_backup(state,
+			FLAG_RESTORE | FLAG_CONSUME | FLAG_TRANSFER_PAYLOAD,
 			0xFFFFFFFF)) {
 		FAIL();
 	}
@@ -378,8 +378,8 @@ bool map_start_decode(cbor_state_t *state)
 
 bool list_map_end_decode(cbor_state_t *state)
 {
-	if (!restore_backup(state,
-			FLAG_RESTORE | FLAG_DISCARD | FLAG_TRANSFER_PAYLOAD,
+	if (!process_backup(state,
+			FLAG_RESTORE | FLAG_CONSUME | FLAG_TRANSFER_PAYLOAD,
 			0)) {
 		FAIL();
 	}

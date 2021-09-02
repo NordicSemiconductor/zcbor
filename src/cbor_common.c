@@ -35,7 +35,7 @@ bool new_backup(cbor_state_t *state, uint32_t new_elem_count)
 }
 
 
-bool restore_backup(cbor_state_t *state, uint32_t flags,
+bool process_backup(cbor_state_t *state, uint32_t flags,
 		uint32_t max_elem_count)
 {
 	const uint8_t *payload = state->payload;
@@ -54,7 +54,7 @@ bool restore_backup(cbor_state_t *state, uint32_t flags,
 			sizeof(cbor_state_t));
 	}
 
-	if (flags & FLAG_DISCARD) {
+	if (flags & FLAG_CONSUME) {
 		state->backups->current_backup--;
 	}
 
@@ -83,7 +83,7 @@ bool union_start_code(cbor_state_t *state)
 
 bool union_elem_code(cbor_state_t *state)
 {
-	if (!restore_backup(state, FLAG_RESTORE, state->elem_count)) {
+	if (!process_backup(state, FLAG_RESTORE, state->elem_count)) {
 		FAIL();
 	}
 	return true;
@@ -91,7 +91,7 @@ bool union_elem_code(cbor_state_t *state)
 
 bool union_end_code(cbor_state_t *state)
 {
-	if (!restore_backup(state, FLAG_DISCARD, state->elem_count)) {
+	if (!process_backup(state, FLAG_CONSUME, state->elem_count)) {
 		FAIL();
 	}
 	return true;
