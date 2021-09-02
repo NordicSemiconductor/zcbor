@@ -2139,20 +2139,20 @@ static bool {xcoder.func_name}(
     def render_entry_function(self, xcoder):
         func_name, func_arg = (xcoder.xcode_func_name(), struct_ptr_name(self.mode))
         return f"""
-{xcoder.type_test_xcode_func_sig()}
-{{
-	/* This function should not be called, it is present only to test that
-	 * the types of the function and struct match, since this information
-	 * is lost with the casts in the entry function.
-	 */
-	return {func_name}(NULL, {func_arg});
-}}
-
 {xcoder.public_xcode_func_sig()}
 {{
-	return entry_function(payload, payload_len, (const void *){func_arg},
-		payload_len_out, (void *){func_name},
-		{xcoder.list_counts()[1]}, {xcoder.num_backups()});
+	cbor_state_t states[{xcoder.num_backups() + 2}];
+
+	new_state(states, sizeof(states) / sizeof(cbor_state_t), payload, payload_len, {xcoder.list_counts()[1]});
+
+	bool ret = {func_name}(states, {func_arg});
+
+	if (ret && (payload_len_out != NULL)) {{
+		*payload_len_out = MIN(payload_len,
+				(size_t)states[0].payload - (size_t)payload);
+	}}
+
+	return ret;
 }}"""
 
     # Render the entire generated C file contents.

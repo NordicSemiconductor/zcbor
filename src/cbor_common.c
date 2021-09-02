@@ -13,6 +13,9 @@
 _Static_assert((sizeof(size_t) == sizeof(void *)),
 	"This code needs size_t to be the same length as pointers.");
 
+_Static_assert((sizeof(cbor_state_t) >= sizeof(cbor_state_backups_t)),
+	"This code needs cbor_state_t to be at least as large as cbor_backups_t.");
+
 bool new_backup(cbor_state_t *state, uint32_t new_elem_count)
 {
 	if (!state->backups || ((state->backups->current_backup)
@@ -97,31 +100,18 @@ bool union_end_code(cbor_state_t *state)
 	return true;
 }
 
-bool entry_function(const uint8_t *payload, uint32_t payload_len,
-		const void *struct_ptr, uint32_t *payload_len_out,
-		cbor_encoder_t func, uint32_t elem_count, uint32_t num_backups)
+void new_state(cbor_state_t *state_array, uint32_t n_states,
+		const uint8_t *payload, uint32_t payload_len, uint32_t elem_count)
 {
-	cbor_state_t state = {
-		.payload = payload,
-		.payload_end = payload + payload_len,
-		.elem_count = elem_count,
-	};
-
-	cbor_state_t state_backups[num_backups];
-
-	cbor_state_backups_t backups = {
-		.backup_list = state_backups,
-		.current_backup = 0,
-		.num_backups = num_backups,
-	};
-
-	state.backups = &backups;
-
-	bool result = func(&state, struct_ptr);
-
-	if (result && (payload_len_out != NULL)) {
-		*payload_len_out = MIN(payload_len,
-				(size_t)state.payload - (size_t)payload);
+	state_array[0].payload = payload;
+	state_array[0].payload_end = payload + payload_len;
+	state_array[0].elem_count = elem_count;
+	state_array[0].backups = NULL;
+	if (n_states > 2) {
+		/* Use the last state as a cbor_state_backups_t object. */
+		state_array[0].backups = (cbor_state_backups_t *)&state_array[n_states - 1];
+		state_array[0].backups->backup_list = &state_array[1];
+		state_array[0].backups->num_backups = n_states - 2;
+		state_array[0].backups->current_backup = 0;
 	}
-	return result;
 }

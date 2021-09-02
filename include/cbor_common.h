@@ -133,8 +133,15 @@ bool union_elem_code(cbor_state_t *state);
 
 bool union_end_code(cbor_state_t *state);
 
-bool entry_function(const uint8_t *payload, uint32_t payload_len,
-		const void *struct_ptr, uint32_t *payload_len_out,
-		cbor_encoder_t func, uint32_t elem_count, uint32_t num_backups);
+/** Initialize a state with backups.
+ *  One of the states in the array is used as a cbor_state_backups_t object.
+ *  This means that you get a state with (n_states - 2) backups.
+ *  It also means that (n_states = 2) is an invalid input, which is handled as
+ *  if (n_states = 1).
+ *  payload, payload_len, and elem_count are used to initialize the first state.
+ *  in the array, which is the state that can be passed to cbor functions.
+ */
+void new_state(cbor_state_t *state_array, uint32_t n_states,
+		const uint8_t *payload, uint32_t payload_len, uint32_t elem_count);
 
 #endif /* CBOR_COMMON_H__ */
