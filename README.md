@@ -105,30 +105,18 @@ Note that the benefits of using the library directly is greater for encoding tha
 For decoding, the code generation will provide a number of checks that are tedious to write manually, and easy to forget.
 
 ```c
-cbor_state_t state = {
-  .payload = payload,
-  /* .payload_mut = payload, for encoding */
-  .payload_end = payload + payload_len,
-  .elem_count = elem_count, /** Initial elem_count. Must be 0 when encoding, or
-                              * the maximum expected number of elements when
-                              * decoding.
-                              */
-};
+/** The number of states must be at least equal to one more than the maximum
+ *  nested depth of the data.
+ */
+cbor_state_t states[n];
 
-/* and optionally: */
-
-cbor_state_t state_backups[num_backups]; /** The number of backups must be at
-                                           * least equal to the maximum nested
-                                           * depth of the data. */
-
-cbor_state_backups_t backups = {
-  .backup_list = state_backups,
-  .current_backup = 0,
-  .num_backups = num_backups,
-};
-
-state.backups = &backups;
-
+/** Initialize the states. After calling this, states[0] is ready to be used
+ *  with the encoding/decoding APIs.
+ *  elem_count must be the maximum expected number of top-level elements when
+ *  decoding (1 if the data is wrapped in a list).
+ *  When encoding, elem_count must be 0.
+ */
+new_state(states, n, payload, payload_len, elem_count);
 ```
 
 Introduction to CDDL
@@ -265,11 +253,8 @@ For encoding:
 #include <cbor_encode.h>
 
 uint8_t payload[100];
-cbor_state_t state = {
-  .payload_mut = payload,
-  .payload_end = payload + sizeof(payload),
-  .elem_count = 0,
-};
+cbor_state_t state;
+new_state(&state, 1, payload, sizeof(payload), 0);
 
 res = res && list_start_encode(&state, 0);
 res = res && tstrx_put(&state, "first");
