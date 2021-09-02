@@ -35,9 +35,14 @@ def get_dependencies():
     return l_dependencies
 
 
+def get_version():
+    p_version = Path(P_REPO_ROOT, 'cddl_gen', 'VERSION').absolute()
+    return p_version.read_text(encoding='utf-8').strip()
+
+
 setuptools.setup(
     name='cddl-gen',
-    version='0.2.0',
+    version=get_version(),
     description=get_description(title_only=True),
     long_description=get_description(),
     long_description_content_type='text/markdown',
@@ -55,5 +60,7 @@ setuptools.setup(
     install_requires=get_dependencies(),
     entry_points={
         'console_scripts': ['cddl-gen=cddl_gen.cddl_gen:main'],
-    }
+    },
+    include_package_data=True,
+    package_data={'': ['VERSION']},
 )

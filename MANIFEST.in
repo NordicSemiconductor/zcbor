@@ -1,1 +1,1 @@
-include LICENSE README.md scripts/requirements-base.txt
+include LICENSE README.md scripts/requirements-base.txt cddl_gen/VERSION
