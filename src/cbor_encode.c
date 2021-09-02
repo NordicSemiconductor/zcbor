@@ -218,7 +218,7 @@ bool bstrx_cbor_end_encode(cbor_state_t *state)
 {
 	const uint8_t *payload = state->payload;
 
-	if (!restore_backup(state, FLAG_RESTORE | FLAG_DISCARD, 0xFFFFFFFF)) {
+	if (!process_backup(state, FLAG_RESTORE | FLAG_CONSUME, 0xFFFFFFFF)) {
 		FAIL();
 	}
 	cbor_string_type_t value;
@@ -309,7 +309,7 @@ bool list_map_end_encode(cbor_state_t *state, uint32_t max_num,
 	uint32_t max_header_len = get_result_len(&max_num, 4);
 	uint32_t header_len = get_result_len(&list_count, 4);
 
-	if (!restore_backup(state, FLAG_RESTORE | FLAG_DISCARD, 0xFFFFFFFF)) {
+	if (!process_backup(state, FLAG_RESTORE | FLAG_CONSUME, 0xFFFFFFFF)) {
 		FAIL();
 	}
 

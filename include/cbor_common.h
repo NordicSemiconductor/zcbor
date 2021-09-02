@@ -118,19 +118,32 @@ do {\
 
 #define BOOL_TO_PRIM 20 ///! In CBOR, false/true have the values 20/21
 
-#define FLAG_RESTORE 1UL
-#define FLAG_DISCARD 2UL
-#define FLAG_TRANSFER_PAYLOAD 4UL
+#define FLAG_RESTORE 1UL ///! Restore from the backup.
+#define FLAG_CONSUME 2UL ///! Consume the backup.
+#define FLAG_TRANSFER_PAYLOAD 4UL ///! Keep the pre-restore payload after restoring.
 
+/** Take a backup of the current state. Overwrite the current elem_count. */
 bool new_backup(cbor_state_t *state, uint32_t new_elem_count);
 
-bool restore_backup(cbor_state_t *state, uint32_t flags,
-		uint32_t max_elem_count);
+/** Consult the most recent backup. In doing so, check whether elem_count is
+ *  within max_elem_count, and return the result.
+ *  Also, take action based on the flags (See FLAG_*).
+ */
+bool process_backup(cbor_state_t *state, uint32_t flags, uint32_t max_elem_count);
 
+/** Convenience function for starting encoding/decoding of a union.
+ *  Takes a new backup.
+ */
 bool union_start_code(cbor_state_t *state);
 
+/** Convenience function before encoding/decoding one element of a union.
+ *  Restores the backup, without consuming it.
+ */
 bool union_elem_code(cbor_state_t *state);
 
+/** Convenience function before encoding/decoding one element of a union.
+ *  Consumes the backup without restoring it.
+ */
 bool union_end_code(cbor_state_t *state);
 
 bool entry_function(const uint8_t *payload, uint32_t payload_len,
