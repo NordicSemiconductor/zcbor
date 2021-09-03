@@ -17,6 +17,10 @@ FILE(GLOB app_sources src/*.c)
 target_sources(app PRIVATE
   ${app_sources})
 
+if (TEST_INDETERMINATE_LENGTH_ARRAYS)
+  target_compile_definitions(app PUBLIC TEST_INDETERMINATE_LENGTH_ARRAYS)
+endif()
+
 target_cddl_source(app ../../cases/strange.cddl DECODE ENTRY_TYPES
   NestedListMap NestedMapListMap
   Numbers

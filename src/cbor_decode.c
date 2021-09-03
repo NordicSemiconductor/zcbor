@@ -33,6 +33,20 @@ static uint32_t additional_len(uint8_t additional)
 /** Extract the additional info, i.e. the last 5 bits of the header byte. */
 #define ADDITIONAL(header_byte) ((header_byte) & 0x1F)
 
+/** The value where the INDET_LEN bit (bit 31) is set, and elem_count is 0.
+ *  This represents the minimum value elem_count can have for indeterminate
+ *  length arrays. It also functions as a mask for the INDET_LEN bit.
+ */
+#define MIN_INDET_LEN_ELEM_COUNT 0x80000000
+
+/** Check the most significant bit to see if we are processing an indeterminate
+ *  length array.
+ */
+#define INDET_LEN(elem_count) (elem_count >= MIN_INDET_LEN_ELEM_COUNT)
+
+/** Initial value for elem_count for indeterminate length arrays. */
+#define INDET_LEN_ELEM_COUNT 0xFFFFFFF0
+
 
 #define FAIL_AND_DECR_IF(expr) \
 do {\
@@ -81,6 +95,7 @@ static bool value_extract(cbor_state_t *state,
 	cbor_assert(result != NULL, NULL);
 
 	FAIL_IF((state->elem_count == 0) \
+		|| (state->elem_count == MIN_INDET_LEN_ELEM_COUNT) \
 		|| (state->payload >= state->payload_end));
 
 	uint8_t *u8_result  = (uint8_t *)result;
@@ -347,8 +362,17 @@ static bool list_map_start_decode(cbor_state_t *state,
 		FAIL();
 	}
 
-	if (!uint32_decode(state, &new_elem_count)) {
-		FAIL();
+	if (ADDITIONAL(*state->payload) == 0x1F) {
+		/* Indeterminate length array. */
+		new_elem_count = INDET_LEN_ELEM_COUNT;
+		state->payload++;
+	} else {
+		if (!uint32_decode(state, &new_elem_count)) {
+			FAIL();
+		} else if (INDET_LEN(new_elem_count)) {
+			/* The new elem_count interferes with the INDET_LEN bit. */
+			FAIL_RESTORE();
+		}
 	}
 
 	if (!new_backup(state, new_elem_count)) {
@@ -369,18 +393,39 @@ bool map_start_decode(cbor_state_t *state)
 {
 	bool ret = list_map_start_decode(state, CBOR_MAJOR_TYPE_MAP);
 
-	if (ret) {
+	if (ret && !INDET_LEN(state->elem_count)) {
+		if (INDET_LEN(state->elem_count * 2)) {
+			/* The new elem_count interferes with the INDET_LEN bit. */
+			FAIL_RESTORE();
+		}
 		state->elem_count *= 2;
 	}
 	return ret;
 }
 
 
+static bool array_end_expect(cbor_state_t *state)
+{
+	FAIL_IF(state->payload >= state->payload_end);
+	FAIL_IF(*state->payload != 0xFF);
+
+	state->payload++;
+	return true;
+}
+
+
 bool list_map_end_decode(cbor_state_t *state)
 {
+	uint32_t max_elem_count = 0;
+	if (INDET_LEN(state->elem_count)) {
+		if (!array_end_expect(state)) {
+			FAIL();
+		}
+		max_elem_count = 0xFFFFFFFF;
+	}
 	if (!process_backup(state,
 			FLAG_RESTORE | FLAG_CONSUME | FLAG_TRANSFER_PAYLOAD,
-			0)) {
+			max_elem_count)) {
 		FAIL();
 	}
 
@@ -521,6 +566,7 @@ bool any_decode(cbor_state_t *state, void *result)
 
 	if (!value_extract(state, &value, sizeof(value))) {
 		/* Can happen because of elem_count (or payload_end) */
+		/* Note: Indeterminate length arrays are not supported in any_decode */
 		FAIL();
 	}
 

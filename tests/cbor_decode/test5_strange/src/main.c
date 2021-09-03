@@ -8,11 +8,24 @@
 #include "strange_decode.h"
 #include "cbor_debug.h" // Enables use of print functions when debugging tests.
 
+#define CONCAT_BYTE(a,b) a ## b
+
+#ifdef TEST_INDETERMINATE_LENGTH_ARRAYS
+#define LIST(num) 0x9F /* Use short count 31 (indefinite-length). Note that the 'num' argument is ignored */
+#define MAP(num) 0xBF  /* Use short count 31 (indefinite-length). Note that the 'num' argument is ignored */
+#define END 0xFF,
+#else
+#define LIST(num) CONCAT_BYTE(0x8, num)
+#define MAP(num) CONCAT_BYTE(0xA, num)
+#define END
+#endif
+
+
 void test_numbers(void)
 {
 	uint32_t decode_len = 0xFFFFFFFF;
 	const uint8_t payload_numbers1[] = {
-		0x8A, // List start
+		LIST(A),
 			0x01, // 1
 			0x21, // -2
 			0x05, // 5
@@ -22,7 +35,8 @@ void test_numbers(void)
 			0x1A, 0xEE, 0x6B, 0x28, 0x00, // 4000000000
 			0x3A, 0x7F, 0xFF, 0xFF, 0xFF, // -2^31
 			0x00, // 0
-			0xD9, 0xFF, 0xFF, 0x01 // 1 tagged (0xFFFF)
+			0xD9, 0xFF, 0xFF, 0x01, // 1 tagged (0xFFFF)
+		END
 	};
 
 	struct Numbers numbers;
@@ -47,8 +61,9 @@ void test_numbers2(void)
 {
 	uint32_t decode_len = 0xFFFFFFFF;
 	const uint8_t payload_numbers2[] = {
-		0x81, // List start
+		LIST(1),
 			0x1A, 0x00, 0x12, 0x34, 0x56, // 0x123456
+		END
 	};
 	uint32_t numbers2;
 
@@ -61,7 +76,7 @@ void test_numbers2(void)
 void test_strings(void)
 {
 	const uint8_t payload_strings1[] = {
-		0x86,
+		LIST(6),
 		0x65, 0x68, 0x65, 0x6c, 0x6c, 0x6f, // "hello"
 		0x59, 0x01, 0x2c, // 300 bytes
 		0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,
@@ -77,7 +92,7 @@ void test_strings(void)
 		0xC0, 0x78, 0x1E, // 30 bytes
 		0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,
 		0x58, 29, // Numbers (len: 29)
-			0x8A, // List start
+			LIST(A),
 				0x01, // 1
 				0x21, // -2
 				0x05, // 5
@@ -88,24 +103,28 @@ void test_strings(void)
 				0x3A, 0x7F, 0xFF, 0xFF, 0xFF, // -2^31
 				0x1A, 0xFF, 0xFF, 0xFF, 0xFF, // 0xFFFFFFFF
 				0xD9, 0xFF, 0xFF, 0x09, // 9, tagged (0xFFFF)
+			END
 		0x4F, // Primitives (len: 15)
-			0x84, // List start
+			LIST(4),
 				0xF5, // True
 				0xF4, // False
 				0xF4, // False
 				0xF6, // Nil
-			0x84, // List start
+			END
+			LIST(4),
 				0xF5, // True
 				0xF4, // False
 				0xF5, // True
 				0xF6, // Nil
-			0x84, // List start
+			END
+			LIST(4),
 				0xF5, // True
 				0xF4, // False
 				0xF4, // False
 				0xF6, // Nil
+			END
 		0x59, 0x01, 0x67, // Strings (len: 359)
-			0x85,
+			LIST(5),
 			0x65, 0x68, 0x65, 0x6c, 0x6c, 0x6f, // "hello"
 			0x59, 0x01, 0x2c, // 300 bytes
 			0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,
@@ -121,7 +140,7 @@ void test_strings(void)
 			0xC0, 0x6A, // 10 bytes
 			0,1,2,3,4,5,6,7,8,9,
 			0x58, 29, // Numbers (len: 29)
-				0x8A, // List start
+				LIST(A),
 					0x01, // 1
 					0x21, // -2
 					0x05, // 5
@@ -132,12 +151,16 @@ void test_strings(void)
 					0x3A, 0x7F, 0xFF, 0xFF, 0xFF, // -2^31
 					0x1A, 0xFF, 0xFF, 0xFF, 0xFF, // 0xFFFFFFFF
 					0xD9, 0xFF, 0xFF, 0x29, // -10, tagged (0xFFFF)
+				END
 			0x45, // Primitives (len: 5)
-				0x84, // List start
+				LIST(4),
 					0xF5, // True
 					0xF4, // False
 					0xF4, // False
 					0xF6, // Nil
+				END
+			END
+		END
 	};
 
 	struct Strings strings1;
@@ -192,37 +215,48 @@ void test_string_overflow(void)
 void test_optional(void)
 {
 	const uint8_t payload_optional1[] = {
-		0x83 /* List start */, 0xCA /* tag */, 0xF4 /* False */, 0x02, 0x03,
+		LIST(3), 0xCA /* tag */, 0xF4 /* False */, 0x02, 0x03,
+		END
 	};
 	const uint8_t payload_optional2[] = {
-		0x82 /* List start */, 0xCA /* tag */, 0xF4 /* False */, 0x03,
+		LIST(2), 0xCA /* tag */, 0xF4 /* False */, 0x03,
+		END
 	};
 	const uint8_t payload_optional3_inv[] = {
-		0x82 /* List start */, 0xCA /* tag */, 0xF4 /* False */, 0x02,
+		LIST(2), 0xCA /* tag */, 0xF4 /* False */, 0x02,
+		END
 	};
 	const uint8_t payload_optional4[] = {
-		0x83 /* List start */, 0xCA /* tag */, 0xF4 /* False */, 0x02, 0x01,
+		LIST(3), 0xCA /* tag */, 0xF4 /* False */, 0x02, 0x01,
+		END
 	};
 	const uint8_t payload_optional5[] = {
-		0x83 /* List start */, 0xCA /* tag */, 0xF5 /* True */, 0x02, 0x02,
+		LIST(3), 0xCA /* tag */, 0xF5 /* True */, 0x02, 0x02,
+		END
 	};
 	const uint8_t payload_optional6[] = {
-		0x84 /* List start */, 0xCA /* tag */, 0xF5 /* True */, 0xF4 /* False */, 0x02, 0x02,
+		LIST(4), 0xCA /* tag */, 0xF5 /* True */, 0xF4 /* False */, 0x02, 0x02,
+		END
 	};
 	const uint8_t payload_optional7_inv[] = {
-		0x82 /* List start */, 0xCB /* wrong tag */, 0xF4 /* False */, 0x03,
+		LIST(2), 0xCB /* wrong tag */, 0xF4 /* False */, 0x03,
+		END
 	};
 	const uint8_t payload_optional8_inv[] = {
-		0x82 /* List start */, 0xF4 /* False (no tag first) */, 0x03,
+		LIST(2), 0xF4 /* False (no tag first) */, 0x03,
+		END
 	};
 	const uint8_t payload_optional9[] = {
-		0x84 /* List start */, 0xCA /* tag */, 0xF4 /* False */, 0x02, 0x03, 0x08,
+		LIST(4), 0xCA /* tag */, 0xF4 /* False */, 0x02, 0x03, 0x08,
+		END
 	};
 	const uint8_t payload_optional10[] = {
-		0x86 /* List start */, 0xCA /* tag */, 0xF4 /* False */, 0x02, 0x03, 0x08, 0x08, 0x08,
+		LIST(6), 0xCA /* tag */, 0xF4 /* False */, 0x02, 0x03, 0x08, 0x08, 0x08,
+		END
 	};
 	const uint8_t payload_optional11_inv[] = {
-		0x86 /* List start */, 0xCA /* tag */, 0xF4 /* False */, 0x02, 0x03, 0x08, 0x08, 0x09,
+		LIST(6), 0xCA /* tag */, 0xF4 /* False */, 0x02, 0x03, 0x08, 0x08, 0x09,
+		END
 	};
 
 	struct Optional optional;
@@ -359,18 +393,20 @@ void test_union(void)
 void test_levels(void)
 {
 	const uint8_t payload_levels1[] = {
-		0x81, // Level1
-		0x82, // Level2
-		0x84, // Level3 no 1
-		0x81, 0x00, // Level4 no 1
-		0x81, 0x00, // Level4 no 2
-		0x81, 0x00, // Level4 no 3
-		0x81, 0x00, // Level4 no 4
-		0x84, // Level3 no 2
-		0x81, 0x00, // Level4 no 1
-		0x81, 0x00, // Level4 no 2
-		0x81, 0x00, // Level4 no 3
-		0x81, 0x00, // Level4 no 4
+		LIST(1), // Level1
+		LIST(2), // Level2
+		LIST(4), // Level3 no 1
+		LIST(1), 0x00, END // Level4 no 1
+		LIST(1), 0x00, END // Level4 no 2
+		LIST(1), 0x00, END // Level4 no 3
+		LIST(1), 0x00, END // Level4 no 4
+		END
+		LIST(4), // Level3 no 2
+		LIST(1), 0x00, END // Level4 no 1
+		LIST(1), 0x00, END // Level4 no 2
+		LIST(1), 0x00, END // Level4 no 3
+		LIST(1), 0x00, END // Level4 no 4
+		END END END
 	};
 
 	struct Level2 level1;
@@ -386,35 +422,40 @@ void test_levels(void)
 void test_map(void)
 {
 	const uint8_t payload_map1[] = {
-		0xa4, 0x82, 0x05, 0x06, 0xF4, // [5,6] => false
+		MAP(4), LIST(2), 0x05, 0x06, END 0xF4, // [5,6] => false
 		0x07, 0x01, // 7 => 1
 		0xf6, 0x45, 0x68, 0x65, 0x6c, 0x6c, 0x6f, // nil => "hello"
 		0xf6, 0x40, // nil => ""
+		END
 	};
 	const uint8_t payload_map2_inv[] = {
-		0xa4, 0x82, 0x05, 0x06, 0xF4, // [5,6] => false
+		MAP(4), LIST(2), 0x05, 0x06, END 0xF4, // [5,6] => false
 		0x07, 0x01, // 7 => 1
 		0xf6, 0x45, 0x68, 0x65, 0x6c, 0x6c, 0x6f, // nil => "hello"
+		END
 	};
 	const uint8_t payload_map3[] = {
-		0xa5, 0x82, 0x05, 0x06, 0xF5, // [5,6] => true
+		MAP(5), LIST(2), 0x05, 0x06, END 0xF5, // [5,6] => true
 		0x07, 0x01, // 7 => 1
 		0xf6, 0x45, 0x68, 0x65, 0x6c, 0x6c, 0x6f, // nil => "hello"
 		0xf6, 0x40, // nil => ""
 		0xf6, 0x40, // nil => ""
+		END
 	};
 	const uint8_t payload_map4_inv[] = {
-		0xa6, 0x82, 0x05, 0x06, 0xF4, // [5,6] => false
+		MAP(6), LIST(2), 0x05, 0x06, END 0xF4, // [5,6] => false
 		0x07, 0x01, // 7 => 1
 		0xf6, 0x45, 0x68, 0x65, 0x6c, 0x6c, 0x6f, // nil => "hello"
 		0xf6, 0x40, // nil => ""
 		0xf6, 0x40, // nil => ""
+		END
 	};
 	const uint8_t payload_map5[] = {
-		0xa4, 0x82, 0x05, 0x06, 0xF4, // [5,6] => false
+		MAP(4), LIST(2), 0x05, 0x06, END 0xF4, // [5,6] => false
 		0x27, 0x01, // -8 => 1
 		0xf6, 0x45, 0x68, 0x65, 0x6c, 0x6c, 0x6f, // nil => "hello"
-		0xf6, 0x40 // nil => ""
+		0xf6, 0x40, // nil => ""
+		END
 	};
 
 	struct Map map;
@@ -458,13 +499,13 @@ void test_map(void)
 
 void test_nested_list_map(void)
 {
-	const uint8_t payload_nested_lm1[] = {0x80};
-	const uint8_t payload_nested_lm2[] = {0x81, 0xa0};
-	const uint8_t payload_nested_lm3[] = {0x81, 0xa1, 0x01, 0x04};
-	const uint8_t payload_nested_lm4_inv[] = {0x81, 0xa2, 0x01, 0x04, 0x1, 0x4};
-	const uint8_t payload_nested_lm5[] = {0x82, 0xa0, 0xa1, 0x01, 0x04};
-	const uint8_t payload_nested_lm6_inv[] = {0x82, 0xa0, 0xa1, 0x04};
-	const uint8_t payload_nested_lm7[] = {0x83, 0xa0, 0xa0, 0xa0};
+	const uint8_t payload_nested_lm1[] = {LIST(0), END};
+	const uint8_t payload_nested_lm2[] = {LIST(1), MAP(0), END END};
+	const uint8_t payload_nested_lm3[] = {LIST(1), MAP(1), 0x01, 0x04, END END};
+	const uint8_t payload_nested_lm4_inv[] = {LIST(1), MAP(2), 0x01, 0x04, 0x1, 0x4, END END};
+	const uint8_t payload_nested_lm5[] = {LIST(2), MAP(0), END MAP(1), 0x01, 0x04, END END};
+	const uint8_t payload_nested_lm6_inv[] = {LIST(2), MAP(0), END MAP(1), 0x04, END END};
+	const uint8_t payload_nested_lm7[] = {LIST(3), MAP(0), END MAP(0), END MAP(0), END END};
 	struct NestedListMap listmap;
 
 	zassert_true(cbor_decode_NestedListMap(payload_nested_lm1,
@@ -498,12 +539,12 @@ void test_nested_list_map(void)
 
 void test_nested_map_list_map(void)
 {
-	const uint8_t payload_nested_mlm1[] = {0xa1, 0x80, 0x80};
-	const uint8_t payload_nested_mlm2[] = {0xa1, 0x80, 0x81, 0xa0};
-	const uint8_t payload_nested_mlm3[] = {0xa1, 0x80, 0x82, 0xa0, 0xa0};
-	const uint8_t payload_nested_mlm4_inv[] = {0xa1, 0x80, 0x81, 0xa1, 0xa0};
-	const uint8_t payload_nested_mlm5[] = {0xa2, 0x80, 0x80, 0x80, 0x80};
-	const uint8_t payload_nested_mlm6[] = {0xa3, 0x80, 0x80, 0x80, 0x80, 0x80, 0x82, 0xa0, 0xa0};
+	const uint8_t payload_nested_mlm1[] = {MAP(1), LIST(0), END LIST(0), END END};
+	const uint8_t payload_nested_mlm2[] = {MAP(1), LIST(0), END LIST(1), MAP(0), END END};
+	const uint8_t payload_nested_mlm3[] = {MAP(1), LIST(0), END LIST(2), MAP(0), END MAP(0), END END END};
+	const uint8_t payload_nested_mlm4_inv[] = {MAP(1), LIST(0), END LIST(1), MAP(1), MAP(0), END END END END};
+	const uint8_t payload_nested_mlm5[] = {MAP(2), LIST(0), END LIST(0), END LIST(0), END LIST(0), END END};
+	const uint8_t payload_nested_mlm6[] = {MAP(3), LIST(0), END LIST(0), END LIST(0), END LIST(0), END LIST(0), END LIST(2), MAP(0), END MAP(0), END END END};
 	struct NestedMapListMap maplistmap;
 
 	zassert_true(cbor_decode_NestedMapListMap(payload_nested_mlm1,
@@ -536,60 +577,68 @@ void test_nested_map_list_map(void)
 
 void test_range(void)
 {
-	const uint8_t payload_range1[] = {0x83,
+	const uint8_t payload_range1[] = {LIST(3),
 		0x08,
 		0x65, 0x68, 0x65, 0x6c, 0x6c, 0x6f, // "hello"
-		0x0
+		0x00,
+		END
 	};
 
-	const uint8_t payload_range2[] = {0x86,
+	const uint8_t payload_range2[] = {LIST(6),
 		0x05,
 		0x08, 0x08,
 		0x65, 0x68, 0x65, 0x6c, 0x6c, 0x6f, // "hello"
-		0x00, 0x0A
+		0x00, 0x0A,
+		END
 	};
 
-	const uint8_t payload_range3_inv[] = {0x84,
+	const uint8_t payload_range3_inv[] = {LIST(4),
 		0x06, // outside range
 		0x08,
 		0x65, 0x68, 0x65, 0x6c, 0x6c, 0x6f, // "hello"
-		0x00
+		0x00,
+		END
 	};
 
-	const uint8_t payload_range4_inv[] = {0x84,
+	const uint8_t payload_range4_inv[] = {LIST(4),
 		0x00,
 		0x08,
 		0x65, 0x68, 0x65, 0x6c, 0x6c, 0x6f, // "hello"
-		0x0B //outside range
+		0x0B, //outside range
+		END
 	};
 
-	const uint8_t payload_range5[] = {0x85,
+	const uint8_t payload_range5[] = {LIST(5),
 		0x65, 0x68, 0x65, 0x6c, 0x6c, 0x6f, // "hello"
 		0x08,
 		0x65, 0x68, 0x65, 0x6c, 0x6c, 0x6f, // "hello"
 		0x65, 0x68, 0x65, 0x6c, 0x6c, 0x6f, // "hello"
-		0x07
+		0x07,
+		END
 	};
 
-	const uint8_t payload_range6_inv[] = {0x84,
+	const uint8_t payload_range6_inv[] = {LIST(4),
 		0x67, 0x68, 0x65, 0x6c, 0x6c, 0x6f, 0x6f, 0x6f, // "hellooo" -> too long
 		0x08,
 		0x65, 0x68, 0x65, 0x6c, 0x6c, 0x6f, // "hello"
-		0x07
+		0x07,
+		END
 	};
 
-	const uint8_t payload_range7_inv[] = {0x85,
+	const uint8_t payload_range7_inv[] = {LIST(5),
 		0x22,
 		0x62, 0x68, 0x65, // "he" -> too short
 		0x08,
 		0x65, 0x68, 0x65, 0x6c, 0x6c, 0x6f, // "hello"
-		0x07
+		0x07,
+		END
 	};
 
-	const uint8_t payload_range8_inv[] = {0x85,
+	const uint8_t payload_range8_inv[] = {LIST(5),
 		0x08,
 		0x65, 0x68, 0x65, 0x6c, 0x6c, 0x6f, // "hello"
-		0x07, 0x08, 0x18 // Last too large
+		0x07, 0x08, 0x18, // Last too large
+		END
 	};
 
 	const uint8_t payload_range9[] = {0x84,
@@ -674,103 +723,114 @@ void test_range(void)
 
 void test_value_range(void)
 {
-	const uint8_t payload_value_range1[] = {0x86,
+	const uint8_t payload_value_range1[] = {LIST(6),
 		11,
 		0x19, 0x03, 0xe7, // 999
 		0x29, // -10
 		1,
 		0x18, 42, // 42
 		0x65, 'w', 'o', 'r', 'l', 'd', // "world"
+		END
 	};
 
-	const uint8_t payload_value_range2[] = {0x86,
+	const uint8_t payload_value_range2[] = {LIST(6),
 		0x18, 100, // 100
 		0x39, 0x03, 0xe8, // -1001
 		0x18, 100, // 100
 		0,
 		0x18, 42, // 42
 		0x65, 'w', 'o', 'r', 'l', 'd', // "world"
+		END
 	};
 
-	const uint8_t payload_value_range3_inv[] = {0x86,
+	const uint8_t payload_value_range3_inv[] = {LIST(6),
 		10,
 		0x19, 0x03, 0xe7, // 999
 		0x29, // -10
 		1,
 		0x18, 42, // 42
 		0x65, 'w', 'o', 'r', 'l', 'd', // "world"
+		END
 	};
 
-	const uint8_t payload_value_range4_inv[] = {0x86,
+	const uint8_t payload_value_range4_inv[] = {LIST(6),
 		11,
 		0x19, 0x03, 0xe8, // 1000
 		0x29, // -10
 		1,
 		0x18, 42, // 42
 		0x65, 'w', 'o', 'r', 'l', 'd', // "world"
+		END
 	};
 
-	const uint8_t payload_value_range5_inv[] = {0x86,
+	const uint8_t payload_value_range5_inv[] = {LIST(6),
 		11,
 		0x19, 0x03, 0xe7, // 999
 		0x2a, // -11
 		1,
 		0x18, 42, // 42
 		0x65, 'w', 'o', 'r', 'l', 'd', // "world"
+		END
 	};
 
-	const uint8_t payload_value_range6_inv[] = {0x86,
+	const uint8_t payload_value_range6_inv[] = {LIST(6),
 		11,
 		0x19, 0x03, 0xe7, // 999
 		0x29, // -10
 		2,
 		0x18, 42, // 42
 		0x65, 'w', 'o', 'r', 'l', 'd', // "world"
+		END
 	};
 
-	const uint8_t payload_value_range7_inv[] = {0x86,
+	const uint8_t payload_value_range7_inv[] = {LIST(6),
 		11,
 		0x19, 0x03, 0xe7, // 999
 		0x29, // -10
 		1,
 		0x18, 43, // 42
 		0x65, 'w', 'o', 'r', 'l', 'e', // "worle"
+		END
 	};
 
-	const uint8_t payload_value_range8_inv[] = {0x86,
+	const uint8_t payload_value_range8_inv[] = {LIST(6),
 		11,
 		0x19, 0x03, 0xe7, // 999
 		0x29, // -10
 		1,
 		0x18, 42, // 42
 		0x66, 'w', 'o', 'r', 'l', 'd', 'd', // "world"
+		END
 	};
 
-	const uint8_t payload_value_range9_inv[] = {0x86,
+	const uint8_t payload_value_range9_inv[] = {LIST(6),
 		11,
 		0x19, 0x03, 0xe7, // 999
 		0x29, // -10
 		1,
 		0x18, 42, // 42
 		0x64, 'w', 'o', 'r', 'l', // "worl"
+		END
 	};
 
-	const uint8_t payload_value_range10_inv[] = {0x86,
+	const uint8_t payload_value_range10_inv[] = {LIST(6),
 		11,
 		0x39, 0x03, 0xe6, // -999
 		0x39, // -10
 		1,
 		0x18, 42, // 42
 		0x65, 'w', 'o', 'r', 'l', 'd', // "world"
+		END
 	};
 
-	const uint8_t payload_value_range11_inv[] = {0x86,
+	const uint8_t payload_value_range11_inv[] = {LIST(6),
 		11,
 		0x1a, 0x10, 0x00, 0x00, 0x00, // 0x10000000
 		0x39, 0x03, 0xe8, // -1001
 		1,
 		0x18, 42, // 42
 		0x65, 'w', 'o', 'r', 'l', 'd', // "world"
+		END
 	};
 
 	struct ValueRange exp_output_value_range1 = {
@@ -863,10 +923,10 @@ void test_single(void)
 
 void test_unabstracted(void)
 {
-	uint8_t payload_unabstracted0[] = {0x82, 0x01, 0x03};
-	uint8_t payload_unabstracted1[] = {0x82, 0x02, 0x04};
-	uint8_t payload_unabstracted2_inv[] = {0x82, 0x03, 0x03};
-	uint8_t payload_unabstracted3_inv[] = {0x82, 0x01, 0x01};
+	uint8_t payload_unabstracted0[] = {LIST(2), 0x01, 0x03, END};
+	uint8_t payload_unabstracted1[] = {LIST(2), 0x02, 0x04, END};
+	uint8_t payload_unabstracted2_inv[] = {LIST(2), 0x03, 0x03, END};
+	uint8_t payload_unabstracted3_inv[] = {LIST(2), 0x01, 0x01, END};
 	struct Unabstracted result_unabstracted;
 	uint32_t out_len;
 
