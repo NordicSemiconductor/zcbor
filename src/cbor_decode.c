@@ -605,12 +605,12 @@ bool multi_decode(uint32_t min_decode,
 			if (i < min_decode) {
 				FAIL();
 			} else {
-				cbor_print("Found %zu elements.\n", i);
+				cbor_print("Found %d elements.\n", i);
 			}
 			return true;
 		}
 	}
-	cbor_print("Found %zu elements.\n", max_decode);
+	cbor_print("Found %d elements.\n", max_decode);
 	*num_decode = max_decode;
 	return true;
 }
