@@ -928,6 +928,31 @@ void test_quantity_range(void)
 					&result_qty_range, &out_len), NULL);
 }
 
+void test_doublemap(void)
+{
+	uint8_t payload_doublemap0[] = {0xA2, 0x01, 0xA1, 0x01, 0x01, 0x02, 0xA1, 0x02, 0x02};
+	uint8_t payload_doublemap1_inv[] = {0xA2, 0x01, 0xA1, 0x01, 0x01, 0x02, 0xA1, 0x03, 0x02};
+	struct DoubleMap result_doublemap;
+	uint32_t out_len;
+
+	zassert_true(cbor_decode_DoubleMap(payload_doublemap0,
+					sizeof(payload_doublemap0),
+					&result_doublemap, &out_len), NULL);
+	zassert_equal(result_doublemap._DoubleMap_uintmap_count, 2, NULL);
+	zassert_equal(result_doublemap._DoubleMap_uintmap[0]._DoubleMap_uintmap_key, 1, NULL);
+	zassert_true(result_doublemap._DoubleMap_uintmap[0]._DoubleMap_uintmap__MyKeys._MyKeys_uint1int_present, NULL);
+	zassert_equal(result_doublemap._DoubleMap_uintmap[0]._DoubleMap_uintmap__MyKeys._MyKeys_uint1int._MyKeys_uint1int, 1, NULL);
+	zassert_false(result_doublemap._DoubleMap_uintmap[0]._DoubleMap_uintmap__MyKeys._MyKeys_uint2int_present, NULL);
+	zassert_equal(result_doublemap._DoubleMap_uintmap[1]._DoubleMap_uintmap_key, 2, NULL);
+	zassert_false(result_doublemap._DoubleMap_uintmap[1]._DoubleMap_uintmap__MyKeys._MyKeys_uint1int_present, NULL);
+	zassert_true(result_doublemap._DoubleMap_uintmap[1]._DoubleMap_uintmap__MyKeys._MyKeys_uint2int_present, NULL);
+	zassert_equal(result_doublemap._DoubleMap_uintmap[1]._DoubleMap_uintmap__MyKeys._MyKeys_uint2int._MyKeys_uint2int, 2, NULL);
+
+	zassert_false(cbor_decode_DoubleMap(payload_doublemap1_inv,
+					sizeof(payload_doublemap1_inv),
+					&result_doublemap, &out_len), NULL);
+}
+
 void test_main(void)
 {
 	ztest_test_suite(cbor_decode_test5,
@@ -945,7 +970,9 @@ void test_main(void)
 			 ztest_unit_test(test_value_range),
 			 ztest_unit_test(test_single),
 			 ztest_unit_test(test_unabstracted),
-			 ztest_unit_test(test_quantity_range)
+			 ztest_unit_test(test_quantity_range),
+			 ztest_unit_test(test_unabstracted),
+			 ztest_unit_test(test_doublemap)
 	);
 	ztest_run_test_suite(cbor_decode_test5);
 }
