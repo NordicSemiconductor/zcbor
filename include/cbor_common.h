@@ -22,8 +22,8 @@ typedef struct
 
 #ifdef CDDL_CBOR_VERBOSE
 #include <sys/printk.h>
-#define cbor_trace() (printk("bytes left: %d, byte: 0x%x, elem_count: 0x%zx, %s:%d\n",\
-	(uint32_t)state->payload_end - (uint32_t)state->payload, *state->payload, state->elem_count,\
+#define cbor_trace() (printk("bytes left: %zu, byte: 0x%x, elem_count: 0x%x, %s:%d\n",\
+	(size_t)state->payload_end - (size_t)state->payload, *state->payload, state->elem_count,\
 	__FILE__, __LINE__))
 #define cbor_assert(expr, ...) \
 do { \
