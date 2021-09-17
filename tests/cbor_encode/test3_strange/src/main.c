@@ -1001,6 +1001,38 @@ void test_quantity_range(void)
 			&result_qty_range4_inv, &out_len), NULL);
 }
 
+void test_doublemap(void)
+{
+	uint8_t exp_payload_doublemap0[] = {MAP(2), 0x01, MAP(1), 0x01, 0x01, END 0x02, MAP(1), 0x02, 0x02, END END};
+	struct DoubleMap result_doublemap = {
+		._DoubleMap_uintmap_count = 2,
+		._DoubleMap_uintmap = {
+			{
+				._DoubleMap_uintmap_key = 1,
+				._DoubleMap_uintmap__MyKeys = {
+					._MyKeys_uint1int_present = true,
+					._MyKeys_uint1int = {._MyKeys_uint1int = 1},
+				}
+			},
+			{
+				._DoubleMap_uintmap_key = 2,
+				._DoubleMap_uintmap__MyKeys = {
+					._MyKeys_uint2int_present = true,
+					._MyKeys_uint2int = {._MyKeys_uint2int = 2},
+				}
+			},
+		}
+	};
+	uint8_t output[20];
+	uint32_t out_len;
+
+	zassert_true(cbor_encode_DoubleMap(output,
+					sizeof(output),
+					&result_doublemap, &out_len), NULL);
+	zassert_equal(out_len, sizeof(exp_payload_doublemap0), "%d != %d\n",
+			out_len, sizeof(exp_payload_doublemap0));
+	zassert_mem_equal(exp_payload_doublemap0, output, out_len, NULL);
+}
 
 void test_main(void)
 {
@@ -1019,7 +1051,9 @@ void test_main(void)
 			 ztest_unit_test(test_single),
 			 ztest_unit_test(test_unabstracted),
 			 ztest_unit_test(test_string_overflow),
-			 ztest_unit_test(test_quantity_range)
+			 ztest_unit_test(test_quantity_range),
+			 ztest_unit_test(test_unabstracted),
+			 ztest_unit_test(test_doublemap)
 	);
 	ztest_run_test_suite(cbor_encode_test3);
 }

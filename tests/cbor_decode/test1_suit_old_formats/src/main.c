@@ -298,6 +298,7 @@ zassert_equal(_SUIT_Parameters_SUIT_Parameter_URI_List,
 		      ._SUIT_Command_Sequence__SUIT_Command[1]
 		      ._SUIT_Command_union__SUIT_Directive
 		      ._SUIT_Directive_SUIT_Directive_Set_Parameters__SUIT_Parameters[0]
+		      ._SUIT_Directive_SUIT_Directive_Set_Parameters__SUIT_Parameters
 		      ._SUIT_Parameters_choice,
 		      "Expected uri list parameter");
 	zassert_equal(1,
@@ -309,6 +310,7 @@ zassert_equal(_SUIT_Parameters_SUIT_Parameter_URI_List,
 		      ._SUIT_Command_Sequence__SUIT_Command[1]
 		      ._SUIT_Command_union__SUIT_Directive
 		      ._SUIT_Directive_SUIT_Directive_Set_Parameters__SUIT_Parameters[0]
+		      ._SUIT_Directive_SUIT_Directive_Set_Parameters__SUIT_Parameters
 		      ._SUIT_Parameters_SUIT_Parameter_URI_List_cbor
 		      ._SUIT_URI_List__SUIT_Prioritized_URI_count,
 		      "Expected 1 uri");
@@ -321,6 +323,7 @@ zassert_equal(_SUIT_Parameters_SUIT_Parameter_URI_List,
 		      ._SUIT_Command_Sequence__SUIT_Command[1]
 		      ._SUIT_Command_union__SUIT_Directive
 		      ._SUIT_Directive_SUIT_Directive_Set_Parameters__SUIT_Parameters[0]
+		      ._SUIT_Directive_SUIT_Directive_Set_Parameters__SUIT_Parameters
 		      ._SUIT_Parameters_SUIT_Parameter_URI_List_cbor
 		      ._SUIT_URI_List__SUIT_Prioritized_URI[0]
 		      ._SUIT_Prioritized_URI_priority,
@@ -334,6 +337,7 @@ zassert_equal(_SUIT_Parameters_SUIT_Parameter_URI_List,
 		      ._SUIT_Command_Sequence__SUIT_Command[1]
 		      ._SUIT_Command_union__SUIT_Directive
 		      ._SUIT_Directive_SUIT_Directive_Set_Parameters__SUIT_Parameters[0]
+		      ._SUIT_Directive_SUIT_Directive_Set_Parameters__SUIT_Parameters
 		      ._SUIT_Parameters_SUIT_Parameter_URI_List_cbor
 		      ._SUIT_URI_List__SUIT_Prioritized_URI[0]
 		      ._SUIT_Prioritized_URI_uri.value,
