@@ -560,7 +560,6 @@ bool any_decode(cbor_state_t *state, void *result)
 	uint8_t major_type = MAJOR_TYPE(*state->payload);
 	uint32_t value;
 	uint32_t num_decode;
-	void *null_result = NULL;
 	uint32_t temp_elem_count;
 	uint8_t const *payload_bak;
 
@@ -573,6 +572,10 @@ bool any_decode(cbor_state_t *state, void *result)
 	switch (major_type) {
 		case CBOR_MAJOR_TYPE_BSTR:
 		case CBOR_MAJOR_TYPE_TSTR:
+			/* 'value' is the length of the BSTR or TSTR */
+			if (value > (state->payload_end - state->payload)) {
+				FAIL();
+			}
 			(state->payload) += value;
 			break;
 		case CBOR_MAJOR_TYPE_MAP:
@@ -584,7 +587,7 @@ bool any_decode(cbor_state_t *state, void *result)
 			state->elem_count = value;
 			if (!multi_decode(value, value, &num_decode,
 					(void *)any_decode, state,
-					&null_result, 0)) {
+					NULL, 0)) {
 				state->elem_count = temp_elem_count;
 				state->payload = payload_bak;
 				FAIL();
