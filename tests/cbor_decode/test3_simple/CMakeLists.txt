@@ -11,7 +11,8 @@ project(NONE)
 
 FILE(GLOB app_sources src/*.c)
 target_sources(app PRIVATE
-  ${app_sources})
+  ${app_sources}
+  ../../fuzz/fuzz_pet.c)
 
 set(py_command_pet
   cddl-gen
