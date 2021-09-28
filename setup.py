@@ -12,13 +12,13 @@ from pathlib import Path
 P_REPO_ROOT = Path(__file__).absolute().parents[0]
 
 
-def get_long_description():
+def get_description(title_only=False):
     """Use the README as the long description that appears on PyPI."""
     p_readme = Path(P_REPO_ROOT, 'README.md').absolute()
 
     if p_readme.is_file():
         with p_readme.open(encoding='utf-8') as f:
-            return f.read()
+            return f.readline() if title_only else f.read()
     return ''
 
 
@@ -38,8 +38,8 @@ def get_dependencies():
 setuptools.setup(
     name='cddl-gen',
     version='0.2.0',
-    description='Generate code from CDDL description',
-    long_description=get_long_description(),
+    description=get_description(title_only=True),
+    long_description=get_description(),
     long_description_content_type='text/markdown',
     url='https://github.com/NordicSemiconductor/cddl-gen',
     author='Nordic Semiconductor ASA',
