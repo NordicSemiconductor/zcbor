@@ -7,6 +7,10 @@
 
 pycodestyle ../cddl_gen/cddl_gen.py --max-line-length=100 --ignore=W191,E101,W503
 [[ $? -ne 0 ]] && exit 1
+pycodestyle ../cddl_gen/__init__.py --max-line-length=100
+[[ $? -ne 0 ]] && exit 1
+pycodestyle ../setup.py --max-line-length=100
+[[ $? -ne 0 ]] && exit 1
 pycodestyle scripts/run_tests.py --max-line-length=100 --ignore=W503,E501,E402
 [[ $? -ne 0 ]] && exit 1
 
