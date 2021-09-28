@@ -152,7 +152,7 @@ class Test5(Testn):
 
 class TestCLI(TestCase):
     def get_std_args(self, input):
-        return ["cddl_gen", "--cddl", p_manifest, "--default-max-qty", "16", "convert", "--input", input, "-t", "SUIT_Envelope_Tagged"]
+        return ["cddl-gen", "--cddl", p_manifest, "--default-max-qty", "16", "convert", "--input", input, "-t", "SUIT_Envelope_Tagged"]
 
     def do_testn(self, n):
         call0 = Popen(self.get_std_args(p_test_vectors[n]) + ["--output", "-", "--output-as", "cbor"], stdout=PIPE)

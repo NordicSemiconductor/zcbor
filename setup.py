@@ -54,6 +54,6 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     install_requires=get_dependencies(),
     entry_points={
-        'console_scripts': [ 'cddl_gen=cddl_gen.cddl_gen:main' ],
+        'console_scripts': ['cddl-gen=cddl_gen.cddl_gen:main'],
     }
 )
