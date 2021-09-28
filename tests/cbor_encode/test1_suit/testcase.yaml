@@ -1,0 +1,5 @@
+tests:
+  cddl_gen.cbor_encode.test1_suit.canonical:
+    platform_allow: native_posix native_posix_64
+    tags: cddl_gen cbor_encode canonical
+    extra_args: CANONICAL=CANONICAL

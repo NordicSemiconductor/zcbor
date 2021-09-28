@@ -1,0 +1,4 @@
+tests:
+  cddl_gen.cbor_decode.test2_suit:
+    platform_allow: native_posix native_posix_64
+    tags: cddl_gen cbor_decode
