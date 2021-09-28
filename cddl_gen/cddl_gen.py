@@ -19,17 +19,45 @@ from yaml import safe_load as yaml_load, dump as yaml_dump
 from json import loads as json_load, dumps as json_dump
 from io import BytesIO
 from subprocess import Popen, PIPE
-from pathlib import Path
+from pathlib import Path, PurePath
+from shutil import copyfile
 import sys
+from site import USER_BASE
 
 indentation = "\t"
 newl_ind = "\n" + indentation
 
-P_SCRIPT = Path(__file__).absolute().parents[0]
+P_SCRIPT = Path(__file__).absolute().parent
 P_REPO_ROOT = Path(__file__).absolute().parents[1]
 VERSION_path = Path(P_SCRIPT, "VERSION")
 
 __version__ = VERSION_path.read_text().strip()
+
+
+def is_relative_to(path1, path2):
+    try:
+        path1.relative_to(path2)
+    except ValueError:
+        return False
+    return True
+
+
+# The root of the non-generated c code (<c_code_root>/src and <c_code_root>/include)
+if Path(__file__).name in sys.argv[0]:
+    # Running the script directly in the repo.
+    c_code_root = P_REPO_ROOT
+elif is_relative_to(P_SCRIPT, (Path(sys.prefix, "local"))):
+    # Installed via pip as root.
+    c_code_root = Path(sys.prefix, "local", "lib", "cddl-gen")
+elif is_relative_to(P_SCRIPT, (Path(sys.prefix))):
+    # Installed via pip as root.
+    c_code_root = Path(sys.prefix, "lib", "cddl-gen")
+elif is_relative_to(P_SCRIPT, (Path(USER_BASE))):
+    # Installed via pip as user.
+    c_code_root = Path(USER_BASE, "lib", "cddl-gen")
+else:
+    # Don't know where the C code is. Assume we are in the repo.
+    c_code_root = P_REPO_ROOT
 
 
 # Size of "additional" field if num is encoded as int
@@ -2415,9 +2443,32 @@ static bool {xcoder.func_name}(
 #endif /* {header_guard} */
 """
 
-    def render(self, h_file, c_file, type_file_in):
-        h_dir, h_name = path.split(h_file.name)
-        type_file = type_file_in or open(path.join(h_dir, f"types_{h_name}"), 'w')
+    def render_cmake_file(self, target_name, h_file, c_file, type_file, output_c_dir, output_h_dir):
+        return \
+            f"""\
+#
+# Generated using cddl_gen version {self.version}
+# https://github.com/NordicSemiconductor/cddl-gen{'''
+# at: ''' + datetime.now().strftime('%Y-%m-%d %H:%M:%S') if self.print_time else ''}
+#
+
+add_library({target_name})
+target_sources({target_name} PRIVATE
+    {Path(output_c_dir, "cbor_decode.c")}
+    {Path(output_c_dir, "cbor_encode.c")}
+    {Path(output_c_dir, "cbor_common.c")}
+    {c_file.name}
+    )
+target_include_directories({target_name} PUBLIC
+    {Path(output_h_dir)}
+    {Path(type_file.name).absolute().parent}
+    {Path(h_file.name).absolute().parent}
+    )
+"""
+
+    def render(self, h_file, c_file, type_file, cmake_file=None, output_c_dir=None,
+               output_h_dir=None):
+        _, h_name = path.split(h_file.name)
 
         # Create and populate the generated c and h file.
         makedirs("./" + path.dirname(c_file.name), exist_ok=True)
@@ -2425,15 +2476,17 @@ static bool {xcoder.func_name}(
         print("Writing to " + c_file.name)
         c_file.write(self.render_c_file(header_file_name=h_name))
 
-        makedirs("./" + h_dir, exist_ok=True)
-        type_file_name = path.basename(type_file.name)
-
         print("Writing to " + h_file.name)
         h_file.write(self.render_h_file(
-            type_def_file=type_file_name, header_guard=self.header_guard(h_file.name)))
+            type_def_file=type_file.name, header_guard=self.header_guard(h_file.name)))
 
-        print("Writing to " + type_file_name)
-        type_file.write(self.render_type_file(header_guard=self.header_guard(type_file_name)))
+        print("Writing to " + type_file.name)
+        type_file.write(self.render_type_file(header_guard=self.header_guard(type_file.name)))
+
+        if cmake_file:
+            print("Writing to " + cmake_file.name)
+            cmake_file.write(self.render_cmake_file(
+                Path(cmake_file.name).stem, h_file, c_file, type_file, output_c_dir, output_h_dir))
 
 
 def parse_args():
@@ -2477,12 +2530,20 @@ This script requires 'regex' for lookaround functionality not present in 're'.''
         formatter_class=RawDescriptionHelpFormatter)
 
     code_parser.add_argument(
-        "--output-c", "--oc", required=True, type=FileType('w'), help="Path to output C file.")
+        "--output-c", "--oc", required=False, type=str, help="Path to output C file.")
     code_parser.add_argument(
-        "--output-h", "--oh", required=True, type=FileType('w'), help="Path to output header file.")
+        "--output-h", "--oh", required=False, type=str, help="Path to output header file.")
     code_parser.add_argument(
-        "--output-h-types", "--oht", required=False, type=FileType('w'),
+        "--output-h-types", "--oht", required=False, type=str,
         help="Path to output header file with typedefs (shared between decode and encode).")
+    code_parser.add_argument(
+        "--copy-sources", required=False, action="store_true", default=False,
+        help="""Copy the non generated source files into the same directories as the
+generated files.""")
+    code_parser.add_argument(
+        "--output-cmake", required=False, type=str,
+        help="""Path to output Cmake file. The filename of the Cmake file without '.cmake' is used
+as the name of the Cmake target in the file.""")
     code_parser.add_argument(
         "-t", "--entry-types", required=True, type=str, nargs="+",
         help="Names of the types which should have their xcode functions exposed.")
@@ -2577,15 +2638,58 @@ def process_code(args):
 
     git_sha = ''
     if args.git_sha_header:
-        git_args = ['git', 'rev-parse', '--verify', '--short', 'HEAD']
-        git_sha = Popen(
-            git_args, cwd=P_REPO_ROOT, stdout=PIPE).communicate()[0].decode('utf-8').strip()
+        if "cddl_gen.py" in sys.argv[0]:
+            git_args = ['git', 'rev-parse', '--verify', '--short', 'HEAD']
+            git_sha = Popen(
+                git_args, cwd=P_REPO_ROOT, stdout=PIPE).communicate()[0].decode('utf-8').strip()
+        else:
+            git_sha = __version__
+
+    def create_and_open(path, mode='w'):
+        Path(path).absolute().parent.mkdir(parents=True, exist_ok=True)
+        return Path(path).open(mode)
+
+    if args.output_cmake:
+        cmake_dir = Path(args.output_cmake).absolute().parent
+        output_cmake = create_and_open(args.output_cmake)
+        filenames = Path(args.output_cmake).parts[-1].replace(".cmake", "") \
+            + ("_decode" if args.decode else "_encode")
+    else:
+        output_cmake = None
+
+    output_c = create_and_open(args.output_c or Path(cmake_dir, 'src', f'{filenames}.c'))
+    output_h = create_and_open(args.output_h or Path(cmake_dir, 'include', f'{filenames}.h'))
+
+    out_c = Path(output_c.name).absolute()
+    out_h = Path(output_h.name).absolute()
+
+    output_h_types = create_and_open(
+        args.output_h_types
+        or (args.output_h and out_h.with_name(out_h.stem + "_types.h"))
+        or Path(cmake_dir, 'include', filenames + '_types.h'))
 
     renderer = CodeRenderer(entry_types=[cddl_res.my_types[entry] for entry in args.entry_types],
                             mode=mode, print_time=args.time_header,
-                            default_max_qty=args.default_max_qty, git_sha=git_sha)
+                            default_max_qty=args.default_max_qty, git_sha=git_sha,
+                            )
 
-    renderer.render(args.output_h, args.output_c, args.output_h_types)
+    c_code_dir = Path(c_code_root, "src")
+    h_code_dir = Path(c_code_root, "include")
+
+    if args.copy_sources:
+        new_c_code_dir = out_c.parent
+        new_h_code_dir = out_h.parent
+        copyfile(Path(c_code_dir, "cbor_decode.c"), Path(new_c_code_dir, "cbor_decode.c"))
+        copyfile(Path(c_code_dir, "cbor_encode.c"), Path(new_c_code_dir, "cbor_encode.c"))
+        copyfile(Path(c_code_dir, "cbor_common.c"), Path(new_c_code_dir, "cbor_common.c"))
+        copyfile(Path(h_code_dir, "cbor_decode.h"), Path(new_h_code_dir, "cbor_decode.h"))
+        copyfile(Path(h_code_dir, "cbor_encode.h"), Path(new_h_code_dir, "cbor_encode.h"))
+        copyfile(Path(h_code_dir, "cbor_common.h"), Path(new_h_code_dir, "cbor_common.h"))
+        copyfile(Path(h_code_dir, "cbor_debug.h"), Path(new_h_code_dir, "cbor_debug.h"))
+        c_code_dir = new_c_code_dir
+        h_code_dir = new_h_code_dir
+
+    renderer.render(output_h, output_c, output_h_types, output_cmake, c_code_dir, h_code_dir)
 
 
 def process_convert(args):

@@ -2,10 +2,10 @@ Schema based data manipulation and code generation
 ==================================================
 
 CDDL is a human-readable data description language defined in [IETF RFC 8610](https://datatracker.ietf.org/doc/rfc8610/).
-By calling the Python script [cddl_gen.py](cddl_gen/cddl_gen.py), you can generate C code that validates/encodes/decodes CBOR data conforming to a CDDL schema.
-`cddl_gen.py` can also validate, and convert CBOR data to and from JSON/YAML, either from the command line, or imported as a module.
+By invoking `cddl-gen` (when installed via Pip or setup.py), or the Python script [cddl_gen.py](cddl_gen/cddl_gen.py) directly, you can generate C code that validates/encodes/decodes CBOR data conforming to a CDDL schema.
+cddl-gen can also validate and convert CBOR data to and from JSON/YAML, either from the command line, or imported as a module.
 Finally, the package contains a light-weight CBOR encoding/decoding library in C.
-This library is used by the generated code, and can also be used directly.
+This library is used by the generated code, and can also be used directly in your own code.
 
 Features
 ========
@@ -33,13 +33,19 @@ It can also output the data to a C file formatted as a byte array.
 
 The following is a generalized example for converting (and validating) data from the command line.
 The script infers the data format from the file extension, but the format can also be specified explicitly.
-See `cddl_gen.py convert --help` for more information.
+See `cddl-gen convert --help` for more information.
 
 ```sh
 python3 <cddl-gen base>/cddl_gen/cddl_gen.py -c <CDDL description file> convert -t <which CDDL type to expect> -i <input data file> -o <output data file>
 ```
 
-Note that since CBOR supports more data types than YAML and JSON, cddl_gen uses an idiomatic format when converting to/from YAML/JSON.
+Or invoke its command line executable (if installed via `pip`):
+
+```sh
+cddl-gen -c <CDDL description file> convert -t <which CDDL type to expect> -i <input data file> -o <output data file>
+```
+
+Note that since CBOR supports more data types than YAML and JSON, cddl-gen uses an idiomatic format when converting to/from YAML/JSON.
 This is relevant when handling YAML/JSON conversions of data that uses the unsupported features.
 The following data types are supported by CBOR, but not by YAML (and JSON which is a subset of YAML):
 
@@ -77,14 +83,16 @@ The generated code will validate the input (i.e. the structure if encoding, or t
 The cbor libraries do most of the actual translation and moving of bytes, and the validation of values.
 
 There are tests for the code generation in [tests/](tests/).
-For now the tests require [Zephyr](https://github.com/zephyrproject-rtos/zephyr) (if your shell is set up to build Zephyr samples, the tests should also build).
+The tests require [Zephyr](https://github.com/zephyrproject-rtos/zephyr) (if your shell is set up to build Zephyr samples, the tests should also build).
 
 Build system
 ------------
 
-There is some CMake code available which requires Zephyr to run.
-When you call the [`target_cddl_source()`](cmake/extensions.cmake) CMake function, it sets up build steps necessary to call the script on the provided CDDL file, and adds the generated file as well as the cbor libraries to your project.
-As long as the `target_cddl_source()` function is called in your project, you should be able to #include the generated file and use it in your code.
+When calling cddl-gen with the argument `--output-cmake <file path>`, a cmake file will be created at that location.
+The cmake file creates a cmake target and adds the generated and non-generated source files, and the include directories to the header files.
+This cmake file can then be included in your project's `CMakeLists.txt` file, and the target can be linked into your project.
+This is demonstrated in the tests, e.g. at tests/cbor_decode/test3_simple/CMakeLists.txt.
+cddl-gen can be instructed to copy the non-generated sources to the same location as the generated sources with `--copy-sources`.
 
 CBOR decoding/encoding library
 ==============================
@@ -194,18 +202,8 @@ Call the Python script:
 
 ```sh
 python3 <cddl-gen base>/cddl_gen/cddl_gen.py -c pet.cddl code -d -t Pet --oc pet_decode.c --oh pet_decode.h
-```
-
-Or invoke its command line executable (if installed via `pip`):
-
-```sh
-cddl_gen -c pet.cddl code -d -t Pet --oc pet_decode.c --oh pet_decode.h
-```
-
-Or add the following line to your CMake code:
-
-```cmake
-target_cddl_source(app pet.cddl DECODE ENTRY_TYPES Pet)
+# or
+cddl-gen -c pet.cddl code -d -t Pet --oc pet_decode.c --oh pet_decode.h
 ```
 
 And use the generated code with
@@ -218,15 +216,14 @@ And use the generated code with
 /* ... */
 
 /* The following type and function refer to the Pet type in the CDDL, which
- * has been specified as an ENTRY_TYPE in the cmake call. */
+ * has been specified as an --entry-types (-t) when invoking cddl-gen. */
 Pet_t pet;
 uint32_t decode_len;
 bool success = cbor_decode_Pet(input, sizeof(input), &pet, &decode_len);
 ```
 
 The process is the same for encoding, except:
- - Change `-d` to `-e` when calling the script
- - Change `DECODE` to `ENCODE` in the Cmake call.
+ - Change `-d` to `-e` when invoking cddl-gen
  - Input parameters become output parameters and vice versa in the code:
 
 ```c
@@ -237,7 +234,7 @@ The process is the same for encoding, except:
 /* ... */
 
 /* The following type and function refer to the Pet type in the CDDL, which
- * has been specified as an ENTRY_TYPE in the cmake call. */
+ * has been specified as an --entry-types (-t) when invoking cddl-gen. */
 Pet_t pet = { /* Initialize with desired data. */ };
 uint8_t output[100]; /* 100 is an example. Must be large enough for data to fit. */
 uint32_t out_len;
@@ -277,7 +274,9 @@ Converting
 Here is an example call for converting from YAML to CBOR:
 
 ```sh
-cddl_gen -c pet.cddl convert -t Pet -i mypet.yaml -o mypet.cbor
+python3 <cddl-gen base>/cddl_gen/cddl_gen.py -c pet.cddl convert -t Pet -i mypet.yaml -o mypet.cbor
+# or
+cddl-gen -c pet.cddl convert -t Pet -i mypet.yaml -o mypet.cbor
 ```
 
 Which takes a yaml structure from mypet.yaml, validates it against the Pet type in the CDDL description in pet.cddl, and writes binary CBOR data to mypet.cbor.

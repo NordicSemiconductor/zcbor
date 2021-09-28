@@ -9,15 +9,18 @@ cmake_minimum_required(VERSION 3.13.1)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(NONE)
 
-set(BUILD_WITH_ZEPHYR ON)
-
-add_subdirectory(../../.. ${PROJECT_BINARY_DIR}/cddl_gen)
-
 FILE(GLOB app_sources src/*.c)
 target_sources(app PRIVATE
   ${app_sources})
 
-target_cddl_source(app ../../cases/strange.cddl ENCODE ENTRY_TYPES
+set(py_command
+  cddl-gen
+  -c ${CMAKE_CURRENT_LIST_DIR}/../../cases/strange.cddl
+  --default-max-qty 6
+  code
+  --output-cmake ${PROJECT_BINARY_DIR}/strange.cmake
+  --copy-sources
+  -t
   NestedListMap NestedMapListMap
   Numbers
   Numbers2
@@ -34,9 +37,21 @@ target_cddl_source(app ../../cases/strange.cddl ENCODE ENTRY_TYPES
   Unabstracted
   QuantityRange
   DoubleMap
-  DEFAULT_MAX_QTY 6
-  ${VERBOSE}
-  ${CANONICAL}
+  -e
   )
+
+execute_process(
+  COMMAND ${py_command}
+  COMMAND_ERROR_IS_FATAL ANY
+  )
+
+include(${PROJECT_BINARY_DIR}/strange.cmake)
+
+target_link_libraries(strange PRIVATE zephyr_interface)
+target_link_libraries(app PRIVATE strange)
+
+if (CANONICAL)
+  target_compile_definitions(strange PUBLIC CDDL_CBOR_CANONICAL)
+endif()
 
 zephyr_compile_options(-Werror)

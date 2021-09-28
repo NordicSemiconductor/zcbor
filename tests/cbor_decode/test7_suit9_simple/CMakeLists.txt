@@ -9,22 +9,31 @@ cmake_minimum_required(VERSION 3.13.1)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(NONE)
 
-set(BUILD_WITH_ZEPHYR ON)
-
-add_subdirectory(../../.. ${PROJECT_BINARY_DIR}/cddl_gen)
-
-target_cddl_source(app ../../cases/manifest9_simple.cddl
-  ENTRY_TYPES
+set(py_command
+  ${PYTHON_EXECUTABLE}
+  ${CMAKE_CURRENT_LIST_DIR}/../../../cddl_gen/cddl_gen.py
+  -c ${CMAKE_CURRENT_LIST_DIR}/../../cases/manifest9_simple.cddl
+  code
+  --output-cmake ${PROJECT_BINARY_DIR}/manifest9_simple.cmake
+  -t
   SUIT_Envelope
   SUIT_Manifest
-  DECODE
-  ${VERBOSE}
-  ${CANONICAL}
+  -d
   )
+
+execute_process(
+  COMMAND ${py_command}
+  COMMAND_ERROR_IS_FATAL ANY
+)
 
 FILE(GLOB app_sources src/*.c)
 target_sources(app PRIVATE
   ${app_sources}
   )
+
+include(${PROJECT_BINARY_DIR}/manifest9_simple.cmake)
+
+target_link_libraries(manifest9_simple PRIVATE zephyr_interface)
+target_link_libraries(app PRIVATE manifest9_simple)
 
 zephyr_compile_options(-Werror)
