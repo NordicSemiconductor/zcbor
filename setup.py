@@ -63,4 +63,9 @@ setuptools.setup(
     },
     include_package_data=True,
     package_data={'': ['VERSION']},
+    data_files=[
+        ("lib/cddl-gen/include",
+            ("include/cbor_decode.h", "include/cbor_encode.h", "include/cbor_common.h",
+                "include/cbor_debug.h")),
+        ("lib/cddl-gen/src", ("src/cbor_decode.c", "src/cbor_encode.c", "src/cbor_common.c"))],
 )
