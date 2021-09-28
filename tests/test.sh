@@ -19,10 +19,8 @@ python3 -m unittest run_tests
 [[ $? -ne 0 ]] && popd && exit 1
 popd
 
-for dir in 'cbor_decode/' 'cbor_encode/' ;
-do
-        pushd "$dir"
-        ./test.sh
-        [[ $? -ne 0 ]] && popd && exit 1
-        popd
-done
+if [[ -z "$ZEHPYR_BASE" ]]; then
+        ZEPHYR_BASE=$(west topdir)/zephyr
+fi
+
+$ZEPHYR_BASE/scripts/twister -M -v -T . -W --platform native_posix --platform native_posix_64

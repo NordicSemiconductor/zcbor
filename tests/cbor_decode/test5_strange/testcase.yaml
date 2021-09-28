@@ -1,0 +1,8 @@
+tests:
+  cddl_gen.cbor_decode.test5_strange:
+    platform_allow: native_posix native_posix_64
+    tags: cddl_gen cbor_decode
+  cddl_gen.cbor_decode.test5_strange.indeterminate_length_arrays:
+    platform_allow: native_posix native_posix_64
+    tags: cddl_gen cbor_decode
+    extra_args: TEST_INDETERMINATE_LENGTH_ARRAYS=1
