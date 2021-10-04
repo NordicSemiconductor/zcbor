@@ -20,7 +20,7 @@ SUIT_Envelope = {
   SUIT_Severable_Manifest_Members,
   *(suit-integrated-payload-key => bstr),
   *(suit-integrated-dependency-key => bstr .cbor SUIT_Envelope),
-  ;* $$SUIT_Envelope_Extensions,
+  * $$SUIT_Envelope_Extensions,
   * (int => bstr)
 }
 
@@ -36,7 +36,7 @@ SUIT_Authentication = [
 SUIT_Digest = [
   suit-digest-algorithm-id : suit-digest-algorithm-ids,
   suit-digest-bytes : bstr,
-  ;* $$SUIT_Digest-extensions
+  * $$SUIT_Digest-extensions
 ]
 
 ; Named Information Hash Algorithm Identifiers
@@ -80,7 +80,7 @@ SUIT_Severable_Manifest_Members = (
   ? suit-install => bstr .cbor SUIT_Command_Sequence,
   ? suit-text => bstr .cbor SUIT_Text_Map,
   ? suit-coswid => bstr .cbor concise-software-identity,
-  ;* $$SUIT_severable-members-extensions,
+  * $$SUIT_severable-members-extensions,
 )
 
 suit-integrated-payload-key = nint / uint .ge 24
@@ -103,7 +103,7 @@ SUIT_Unseverable_Members = (
   ? suit-validate => bstr .cbor SUIT_Command_Sequence,
   ? suit-load => bstr .cbor SUIT_Command_Sequence,
   ? suit-run => bstr .cbor SUIT_Command_Sequence,
-  ;* $$unserverble-manifest-member-extensions,
+  * $$unserverble-manifest-member-extensions,
 )
 
 SUIT_Severable_Members_Digests = (
@@ -113,14 +113,14 @@ SUIT_Severable_Members_Digests = (
   ? suit-text => SUIT_Digest,
   ? suit-coswid => SUIT_Digest,
 
-  ;* $$severable-manifest-members-digests-extensions
+  * $$severable-manifest-members-digests-extensions
 )
 
 SUIT_Common = {
     ? suit-dependencies           => SUIT_Dependencies,
     ? suit-components             => SUIT_Components,
     ? suit-common-sequence        => bstr .cbor SUIT_Common_Sequence,
-    ;* $$SUIT_Common-extensions,
+    * $$SUIT_Common-extensions,
 }
 
 SUIT_Dependencies         = [ + SUIT_Dependency ]
@@ -293,7 +293,7 @@ SUIT_Condition_Version_Comparison_Value = [+int]
 SUIT_Encryption_Info = COSE_Encrypt_Tagged/COSE_Encrypt0_Tagged
 SUIT_Compression_Info = {
     suit-compression-algorithm => SUIT_Compression_Algorithms,
-    ;* $$SUIT_Compression_Info-extensions,
+    * $$SUIT_Compression_Info-extensions,
 }
 
 SUIT_Compression_Algorithms /= SUIT_Compression_Algorithm_zlib
@@ -306,7 +306,7 @@ SUIT_Compression_Algorithm_zstd = 3
 
 SUIT_Unpack_Info = {
     suit-unpack-algorithm => SUIT_Unpack_Algorithms,
-    ;* $$SUIT_Unpack_Info-extensions,
+    * $$SUIT_Unpack_Info-extensions,
 }
 
 SUIT_Unpack_Algorithms /= SUIT_Unpack_Algorithm_Hex
@@ -336,7 +336,7 @@ SUIT_Text_Component_Keys = (
     ? suit-text-component-description => tstr,
     ? suit-text-component-version     => tstr,
     ? suit-text-version-required      => tstr,
-    ;* $$suit-text-component-key-extensions
+    * $$suit-text-component-key-extensions
 )
 
 SUIT_Text_Keys = (
@@ -344,7 +344,7 @@ SUIT_Text_Keys = (
     ? suit-text-update-description   => tstr,
     ? suit-text-manifest-json-source => tstr,
     ? suit-text-manifest-yaml-source => tstr,
-    ;* $$suit-text-key-extensions
+    * $$suit-text-key-extensions
 )
 
 suit-delegation = 1
