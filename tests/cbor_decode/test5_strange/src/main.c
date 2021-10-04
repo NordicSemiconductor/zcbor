@@ -467,8 +467,8 @@ void test_map(void)
 	zassert_true(cbor_decode_Map(payload_map1, sizeof(payload_map1),
 			&map, NULL), NULL);
 	zassert_false(map._Map_key, NULL);
-	zassert_equal(_Map_union_uint7uint, map._Map_union_choice, NULL);
-	zassert_equal(1, map._Map_union_uint7uint, NULL);
+	zassert_equal(_union_uint7uint, map._Map_union_choice, NULL);
+	zassert_equal(1, map._union_uint7uint, NULL);
 	zassert_equal(2, map._Map_twotothree_count, NULL);
 	zassert_equal(5, map._Map_twotothree[0]._Map_twotothree.len, NULL);
 	zassert_mem_equal("hello", map._Map_twotothree[0]._Map_twotothree.value,
@@ -481,8 +481,8 @@ void test_map(void)
 	zassert_true(cbor_decode_Map(payload_map3, sizeof(payload_map3),
 			&map, NULL), NULL);
 	zassert_true(map._Map_key, NULL);
-	zassert_equal(_Map_union_uint7uint, map._Map_union_choice, NULL);
-	zassert_equal(1, map._Map_union_uint7uint, NULL);
+	zassert_equal(_union_uint7uint, map._Map_union_choice, NULL);
+	zassert_equal(1, map._union_uint7uint, NULL);
 	zassert_equal(3, map._Map_twotothree_count, NULL);
 	zassert_equal(5, map._Map_twotothree[0]._Map_twotothree.len, NULL);
 	zassert_mem_equal("hello", map._Map_twotothree[0]._Map_twotothree.value,
@@ -501,8 +501,8 @@ void test_map(void)
 	zassert_true(cbor_decode_Map(payload_map5, sizeof(payload_map5),
 			&map, NULL), NULL);
 	zassert_false(map._Map_key, NULL);
-	zassert_equal(_Map_union_nintuint, map._Map_union_choice, NULL);
-	zassert_equal(1, map._Map_union_nintuint, NULL);
+	zassert_equal(_union_nintuint, map._Map_union_choice, NULL);
+	zassert_equal(1, map._union_nintuint, NULL);
 	zassert_equal(2, map._Map_twotothree_count, NULL);
 }
 
@@ -523,27 +523,27 @@ void test_nested_list_map(void)
 	zassert_true(cbor_decode_NestedListMap(payload_nested_lm2,
 			sizeof(payload_nested_lm2), &listmap, NULL), NULL);
 	zassert_equal(1, listmap._NestedListMap_map_count, NULL);
-	zassert_false(listmap._NestedListMap_map[0]._NestedListMap_map_uint4_present, NULL);
+	zassert_false(listmap._NestedListMap_map[0]._map_uint4_present, NULL);
 	zassert_true(cbor_decode_NestedListMap(payload_nested_lm3,
 			sizeof(payload_nested_lm3), &listmap, NULL), NULL);
 	zassert_equal(1, listmap._NestedListMap_map_count, NULL);
-	zassert_true(listmap._NestedListMap_map[0]._NestedListMap_map_uint4_present, NULL);
-	zassert_equal(1, listmap._NestedListMap_map[0]._NestedListMap_map_uint4_present, NULL);
+	zassert_true(listmap._NestedListMap_map[0]._map_uint4_present, NULL);
+	zassert_equal(1, listmap._NestedListMap_map[0]._map_uint4_present, NULL);
 	zassert_false(cbor_decode_NestedListMap(payload_nested_lm4_inv,
 			sizeof(payload_nested_lm4_inv), &listmap, NULL), NULL);
 	zassert_true(cbor_decode_NestedListMap(payload_nested_lm5,
 			sizeof(payload_nested_lm5), &listmap, NULL), NULL);
 	zassert_equal(2, listmap._NestedListMap_map_count, NULL);
-	zassert_false(listmap._NestedListMap_map[0]._NestedListMap_map_uint4_present, NULL);
-	zassert_true(listmap._NestedListMap_map[1]._NestedListMap_map_uint4_present, NULL);
+	zassert_false(listmap._NestedListMap_map[0]._map_uint4_present, NULL);
+	zassert_true(listmap._NestedListMap_map[1]._map_uint4_present, NULL);
 	zassert_false(cbor_decode_NestedListMap(payload_nested_lm6_inv,
 			sizeof(payload_nested_lm6_inv), &listmap, NULL), NULL);
 	zassert_true(cbor_decode_NestedListMap(payload_nested_lm7,
 			sizeof(payload_nested_lm7), &listmap, NULL), NULL);
 	zassert_equal(3, listmap._NestedListMap_map_count, NULL);
-	zassert_false(listmap._NestedListMap_map[0]._NestedListMap_map_uint4_present, NULL);
-	zassert_false(listmap._NestedListMap_map[1]._NestedListMap_map_uint4_present, NULL);
-	zassert_false(listmap._NestedListMap_map[2]._NestedListMap_map_uint4_present, NULL);
+	zassert_false(listmap._NestedListMap_map[0]._map_uint4_present, NULL);
+	zassert_false(listmap._NestedListMap_map[1]._map_uint4_present, NULL);
+	zassert_false(listmap._NestedListMap_map[2]._map_uint4_present, NULL);
 }
 
 void test_nested_map_list_map(void)

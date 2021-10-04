@@ -164,7 +164,7 @@ void test_5(void)
 	zassert_equal(2, sequence
 			._SUIT_Command_Sequence__SUIT_Command[0]
 			._SUIT_Command__SUIT_Directive
-			._SUIT_Directive___suit_directive_set_parameters_map__SUIT_Parameters_count,
+			.___suit_directive_set_parameters_map__SUIT_Parameters_count,
 			"Should be two vars (parameters).");
 	cbor_print("\r\n");
 

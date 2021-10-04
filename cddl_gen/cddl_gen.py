@@ -158,7 +158,8 @@ def ternary_if_chain(access, names, xcode_strings):
 #  - For "OTHER" types, one instance points to another type definition.
 #  - For "GROUP" and "UNION" types, there is no separate data item for the instance.
 class CddlParser:
-    def __init__(self, default_max_qty, my_types, my_control_groups, base_name=None):
+    def __init__(self, default_max_qty, my_types, my_control_groups, base_name=None,
+                 base_stem=''):
         self.id_prefix = "temp_" + str(counter())
         self.id_num = None  # Unique ID number. Only populated if needed.
         # The value of the data item. Has different meaning for different
@@ -203,6 +204,8 @@ class CddlParser:
         self.my_control_groups = my_control_groups
         self.default_max_qty = default_max_qty  # args.default_max_qty
         self.base_name = base_name  # Used as default for self.get_base_name()
+        # Stem which can be used when generating an id.
+        self.base_stem = base_stem.replace("-", "_")
 
     @classmethod
     def from_cddl(cddl_class, cddl_string, default_max_qty, *args, **kwargs):
@@ -220,7 +223,7 @@ class CddlParser:
         # CodeGenerator instance.
         for my_type, cddl_string in type_strings.items():
             parsed = cddl_class(*args, default_max_qty, my_types, my_control_groups, **kwargs,
-                                base_name=my_type)
+                                base_name=my_type, base_stem=my_type)
             parsed.get_value(cddl_string.replace("\n", " ").lstrip("&"))
             parsed = parsed.flatten()[0]
             if my_type in my_types:
@@ -274,7 +277,7 @@ class CddlParser:
 
     # Generate a (hopefully) unique and descriptive name
     def generate_base_name(self):
-        return ((
+        raw_name = ((
             self.label
             or (self.key.value if self.key and self.key.type in ["TSTR", "OTHER"] else None)
             or (f"{self.value.replace(self.backslash_quotation_mark, '')}_{self.type.lower()}"
@@ -286,9 +289,11 @@ class CddlParser:
             or ("_" + self.value if self.type == "OTHER" else None)
             or ("_" + self.value[0].get_base_name()
                 if self.type in ["LIST", "GROUP"] and self.value is not None else None)
-            or (self.cbor.value if self.cbor and self.cbor.type in ["TSTR", "OTHER"] else None)
+            or ((self.cbor.value + "_bstr")
+                if self.cbor and self.cbor.type in ["TSTR", "OTHER"] else None)
             or ((self.key.generate_base_name() + self.type.lower()) if self.key else None)
             or self.type.lower()).replace("-", "_"))
+        return raw_name
 
     # Base name used for functions, variables, and typedefs.
     def get_base_name(self):
@@ -301,8 +306,16 @@ class CddlParser:
 
     # Add uniqueness to the base name.
     def id(self):
-        return "%s%s" % ((self.id_prefix + "_")
-                         if self.id_prefix != "" else "", self.get_base_name())
+        raw_name = self.get_base_name()
+        if (self.id_prefix
+                and (f"{self.id_prefix}_" not in raw_name)
+                and (self.id_prefix != raw_name.strip("_"))):
+            return f"{self.id_prefix}_{raw_name}"
+        if (self.base_stem
+                and (f"{self.base_stem}_" not in raw_name)
+                and (self.base_stem != raw_name.strip("_"))):
+            return f"{self.base_stem}_{raw_name}"
+        return raw_name
 
     def init_args(self):
         return (self.default_max_qty,)
@@ -314,7 +327,10 @@ class CddlParser:
         self.id_prefix = id_prefix
         if self.type in ["LIST", "MAP", "GROUP", "UNION"]:
             for child in self.value:
-                child.set_id_prefix(self.child_base_id())
+                if child.single_func_impl_condition():
+                    child.set_id_prefix(self.generate_base_name())
+                else:
+                    child.set_id_prefix(self.child_base_id())
         if self.cbor:
             self.cbor.set_id_prefix(self.child_base_id())
         if self.key:
@@ -581,6 +597,7 @@ class CddlParser:
 
             self.base_name = convert_val.base_name
             convert_val.base_name = None
+            self.base_stem = convert_val.base_stem
 
             if not doubleslash:
                 self.label = convert_val.label
@@ -606,6 +623,7 @@ class CddlParser:
         self.max_qty = convert_val.max_qty
         self.min_qty = convert_val.min_qty
         self.base_name = convert_val.base_name
+        self.base_stem = convert_val.base_stem
 
         convert_val.label = None
         convert_val.quantifier = None
@@ -822,7 +840,7 @@ class CddlParser:
         instr = instr.strip()
         values = []
         while instr != '':
-            value = type(self)(*self.init_args(), **self.init_kwargs())
+            value = type(self)(*self.init_args(), **self.init_kwargs(), base_stem=self.base_stem)
             instr = value.get_value(instr)
             values.append(value)
         return values
