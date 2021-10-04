@@ -186,6 +186,8 @@ class CddlParser:
         # The CDDL string used to determine the min_qty and max_qty. Not used after
         # min_qty and max_qty are determined.
         self.quantifier = None
+        # Sockets are types starting with "$" or "$$". Do not fail if these aren't defined.
+        self.is_socket = False
         # The "type" of the element. This follows the CBOR types loosely, but are more related to
         # CDDL concepts. The possible types are "INT", "UINT", "NINT", "FLOAT", "BSTR", "TSTR",
         # "BOOL",  "NIL", "LIST", "MAP","GROUP", "UNION" and "OTHER". "OTHER" represents a CDDL type
@@ -349,6 +351,8 @@ class CddlParser:
 
     def flatten(self, allow_multi=False):
         self._flatten()
+        if self.type == "OTHER" and self.is_socket and self.value not in self.my_types:
+            return []
         if self.type in ["GROUP", "UNION"]\
                 and (len(self.value) == 1)\
                 and (not (self.key and self.value[0].key)):
@@ -389,6 +393,10 @@ class CddlParser:
     def set_value(self, value_generator):
         value = value_generator()
         self.value = value
+
+        if self.type == "OTHER" and self.value.startswith("$"):
+            self.value = self.value.lstrip("$")
+            self.is_socket = True
 
         if self.type in ["BSTR", "TSTR"]:
             if value is not None:
@@ -675,7 +683,7 @@ class CddlParser:
             (r'#6\.(?P<item>\d+)',
              self.add_tag),
             (r'(\$?\$?[\w-]+)',
-             lambda other_str: self.type_and_value("OTHER", lambda: other_str.strip("$"))),
+             lambda other_str: self.type_and_value("OTHER", lambda: other_str)),
             (r'\.size \(?(?P<item>' + match_int + r'\.\.' + match_int + r')\)?',
              lambda _range: self.set_size_range(*map(lambda num: int(num, 0), _range.split("..")))),
             (r'\.size \(?(?P<item>' + match_uint + r')\)?',
