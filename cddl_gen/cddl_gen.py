@@ -158,7 +158,7 @@ def ternary_if_chain(access, names, xcode_strings):
 #  - For "OTHER" types, one instance points to another type definition.
 #  - For "GROUP" and "UNION" types, there is no separate data item for the instance.
 class CddlParser:
-    def __init__(self, default_max_qty, my_types, base_name=None):
+    def __init__(self, default_max_qty, my_types, my_control_groups, base_name=None):
         self.id_prefix = "temp_" + str(counter())
         self.id_num = None  # Unique ID number. Only populated if needed.
         # The value of the data item. Has different meaning for different
@@ -188,6 +188,9 @@ class CddlParser:
         self.quantifier = None
         # Sockets are types starting with "$" or "$$". Do not fail if these aren't defined.
         self.is_socket = False
+        # If the type has a ".bits <group_name>", this will contain <group_name> which can be looked
+        # up in my_control_groups.
+        self.bits = None
         # The "type" of the element. This follows the CBOR types loosely, but are more related to
         # CDDL concepts. The possible types are "INT", "UINT", "NINT", "FLOAT", "BSTR", "TSTR",
         # "BOOL",  "NIL", "LIST", "MAP","GROUP", "UNION" and "OTHER". "OTHER" represents a CDDL type
@@ -197,6 +200,7 @@ class CddlParser:
         self.errors = list()
 
         self.my_types = my_types
+        self.my_control_groups = my_control_groups
         self.default_max_qty = default_max_qty  # args.default_max_qty
         self.base_name = base_name  # Used as default for self.get_base_name()
 
@@ -205,23 +209,36 @@ class CddlParser:
         my_types = dict()
 
         type_strings = cddl_class.get_types(cddl_string)
-        my_types = {my_type: None for my_type in type_strings.keys()}
+        # Separate type_strings as keys in two dicts, one dict for strings that start with &( which
+        # are special control operators for .bits, and one dict for all the regular types.
+        my_types = \
+            {my_type: None for my_type, val in type_strings.items() if not val.startswith("&(")}
+        my_control_groups = \
+            {my_cg: None for my_cg, val in type_strings.items() if val.startswith("&(")}
 
         # Parse the definitions, replacing the each string with a
         # CodeGenerator instance.
         for my_type, cddl_string in type_strings.items():
-            parsed = cddl_class(*args, default_max_qty, my_types, **kwargs, base_name=my_type)
-            parsed.get_value(cddl_string.replace("\n", " "))
-            my_types[my_type] = parsed.flatten()[0]
-            my_types[my_type].set_id_prefix("")
+            parsed = cddl_class(*args, default_max_qty, my_types, my_control_groups, **kwargs,
+                                base_name=my_type)
+            parsed.get_value(cddl_string.replace("\n", " ").lstrip("&"))
+            parsed = parsed.flatten()[0]
+            if my_type in my_types:
+                my_types[my_type] = parsed
+            elif my_type in my_control_groups:
+                my_control_groups[my_type] = parsed
 
         counter(True)
 
         # post_validate all the definitions.
         for my_type in my_types:
+            my_types[my_type].set_id_prefix()
             my_types[my_type].post_validate()
+        for my_control_group in my_control_groups:
+            my_control_groups[my_control_group].set_id_prefix()
+            my_control_groups[my_control_group].post_validate_control_group()
 
-        return my_types
+        return CddlTypes(my_types, my_control_groups)
 
     # Strip CDDL comments (';') from the string.
     @staticmethod
@@ -265,6 +282,7 @@ class CddlParser:
             or (f"{self.type.lower()}{self.value}"
                 if self.type in ["INT", "UINT"] and self.value is not None else None)
             or (next((key for key, value in self.my_types.items() if value == self), None))
+            or (next((key for key, value in self.my_control_groups.items() if value == self), None))
             or ("_" + self.value if self.type == "OTHER" else None)
             or ("_" + self.value[0].get_base_name()
                 if self.type in ["LIST", "GROUP"] and self.value is not None else None)
@@ -290,9 +308,9 @@ class CddlParser:
         return (self.default_max_qty,)
 
     def init_kwargs(self):
-        return {"my_types": self.my_types}
+        return {"my_types": self.my_types, "my_control_groups": self.my_control_groups}
 
-    def set_id_prefix(self, id_prefix):
+    def set_id_prefix(self, id_prefix=''):
         self.id_prefix = id_prefix
         if self.type in ["LIST", "MAP", "GROUP", "UNION"]:
             for child in self.value:
@@ -523,6 +541,11 @@ class CddlParser:
             self.cbor.max_qty = self.default_max_qty
         self.cbor.set_base_name("cbor")
 
+    def set_bits(self, bits):
+        if self.type != "UINT":
+            raise TypeError(".bits must be used with bstr.")
+        self.bits = bits
+
     # Set the self.key of this element. For use during CDDL parsing.
     def set_key(self, key):
         if self.key is not None:
@@ -703,7 +726,9 @@ class CddlParser:
             (r'\.cbor (?P<item>[\w-]+)',
              lambda type_str: self.set_cbor(self.parse(type_str)[0], False)),
             (r'\.cborseq (?P<item>[\w-]+)',
-             lambda type_str: self.set_cbor(self.parse(type_str)[0], True))
+             lambda type_str: self.set_cbor(self.parse(type_str)[0], True)),
+            (r'\.bits (?P<item>[\w-]+)',
+             lambda bits_str: self.set_bits(bits_str))
         ]
         all_type_regex = '|'.join([regex for (regex, _) in (types[:3] + types[5:])])
         for i in range(0, all_type_regex.count("item")):
@@ -976,6 +1001,8 @@ class CddlXcoder(CddlParser):
             return False
         if self.type in ["INT", "NINT", "UINT"] \
                 and (self.min_value is not None or self.max_value is not None):
+            return True
+        if self.type == "UINT" and self.bits:
             return True
         if self.type in ["BSTR", "TSTR"] \
                 and (self.min_size is not None or self.max_size is not None):
@@ -1502,6 +1529,11 @@ class XcoderTuple(NamedTuple):
     type_name: str
 
 
+class CddlTypes(NamedTuple):
+    my_types: dict
+    my_control_groups: dict
+
+
 # Class for generating C code that encode/decodes CBOR and validates it according
 # to the CDDL.
 class CodeGenerator(CddlXcoder):
@@ -1512,13 +1544,13 @@ class CodeGenerator(CddlXcoder):
 
     @classmethod
     def from_cddl(cddl_class, mode, *args, **kwargs):
-        my_types = super(CodeGenerator, cddl_class).from_cddl(*args, **kwargs)
+        cddl_res = super(CodeGenerator, cddl_class).from_cddl(*args, **kwargs)
 
         # set access prefix (struct access paths) for all the definitions.
-        for my_type in my_types:
-            my_types[my_type].set_access_prefix(f"(*{struct_ptr_name(mode)})")
+        for my_type in cddl_res.my_types:
+            cddl_res.my_types[my_type].set_access_prefix(f"(*{struct_ptr_name(mode)})")
 
-        return my_types
+        return cddl_res
 
     # Whether to include a "cbor" variable for this element.
     def is_cbor(self):
@@ -1538,20 +1570,17 @@ class CodeGenerator(CddlXcoder):
         return ["uint32_t %s;" % self.count_var_name()]
 
     # Declaration of the "choice" variable for this element.
-    def choice_var(self):
+    def anonymous_choice_var(self):
         var = self.enclose(
-            "enum", [val.enum_var_name(
-                self.all_children_uint_disambiguated()) + "," for val in self.value])
-        var[-1] += f" {self.choice_var_name()};"
+            "enum", [val.enum_var_name(self.all_children_uint_disambiguated())
+                     + "," for val in self.value])
         return var
 
-    # Name of the encoder/decoder function for this element.
-    def xcode_func_name(self):
-        return f"{self.mode}{self.var_name()}"
-
-    # Name of the encoder/decoder function for the repeated part of this element.
-    def repeated_xcode_func_name(self):
-        return f"{self.mode}_repeated{self.var_name()}"
+    # Declaration of the "choice" variable for this element.
+    def choice_var(self):
+        var = self.anonymous_choice_var()
+        var[-1] += f" {self.choice_var_name()};"
+        return var
 
     # Declaration of the variables of all children.
     def child_declarations(self):
@@ -1575,6 +1604,9 @@ class CodeGenerator(CddlXcoder):
     # Base name if this element needs to declare a type.
     def raw_type_name(self):
         return "struct %s" % self.id()
+
+    def enum_type_name(self):
+        return "enum %s" % self.id()
 
     # Name of the type of this element's actual value variable.
     def val_type_name(self):
@@ -1747,6 +1779,8 @@ class CodeGenerator(CddlXcoder):
             ret_val.extend(
                 [elem for typedef in [
                     child.type_def() for child in self.value] for elem in typedef])
+        if self.bits:
+            ret_val.extend(self.my_control_groups[self.bits].type_def_bits())
         if self.cbor_var_condition():
             ret_val.extend(self.cbor.type_def())
         if self.reduced_key_var_condition():
@@ -1758,6 +1792,10 @@ class CodeGenerator(CddlXcoder):
         if self.type_def_condition():
             ret_val.extend([(self.single_var_type(), self.type_name())])
         return ret_val
+
+    def type_def_bits(self):
+        tdef = self.anonymous_choice_var()
+        return [(tdef, self.enum_type_name())]
 
     def single_func_prim_prefix(self):
         if self.type == "OTHER":
@@ -2014,6 +2052,12 @@ class CodeGenerator(CddlXcoder):
                 range_checks.append(f"({access} >= {self.min_value})")
             if self.max_value is not None:
                 range_checks.append(f"({access} <= {self.max_value})")
+            if self.bits:
+                range_checks.append(
+                    f"({access} & ~("
+                    + ' | '.join([f'(1 << {c.enum_var_name()})'
+                                 for c in self.my_control_groups[self.bits].value])
+                    + "))")
         elif self.type in ["BSTR", "TSTR"]:
             if self.min_size is not None:
                 range_checks.append(f"({access}.len >= {self.min_size})")
@@ -2506,12 +2550,12 @@ def process_code(args):
 
     cddl_contents = linesep.join((c.read() for c in args.cddl))
 
-    my_types = CodeGenerator.from_cddl(
+    cddl_res = CodeGenerator.from_cddl(
         mode, cddl_contents, args.default_max_qty, mode, args.entry_types)
 
     # Parsing is done, pretty print the result.
     verbose_print(args.verbose, "Parsed CDDL types:")
-    verbose_pprint(args.verbose, my_types)
+    verbose_pprint(args.verbose, cddl_res.my_types)
 
     git_sha = ''
     if args.git_sha_header:
@@ -2519,8 +2563,8 @@ def process_code(args):
         git_sha = Popen(
             git_args, cwd=P_REPO_ROOT, stdout=PIPE).communicate()[0].decode('utf-8').strip()
 
-    renderer = CodeRenderer(entry_types=[my_types[entry] for entry in args.entry_types], mode=mode,
-                            print_time=args.time_header,
+    renderer = CodeRenderer(entry_types=[cddl_res.my_types[entry] for entry in args.entry_types],
+                            mode=mode, print_time=args.time_header,
                             default_max_qty=args.default_max_qty, git_sha=git_sha)
 
     renderer.render(args.output_h, args.output_c, args.output_h_types)
@@ -2528,13 +2572,13 @@ def process_code(args):
 
 def process_convert(args):
     cddl_contents = linesep.join((c.read() for c in args.cddl))
-    my_types = DataTranslator.from_cddl(cddl_contents, args.default_max_qty)
+    cddl_res = DataTranslator.from_cddl(cddl_contents, args.default_max_qty)
 
     # Parsing is done, pretty print the result.
     verbose_print(args.verbose, "Parsed CDDL types:")
-    verbose_pprint(args.verbose, my_types)
+    verbose_pprint(args.verbose, cddl_res.my_types)
 
-    cddl = my_types[args.entry_type]
+    cddl = cddl_res.my_types[args.entry_type]
     _, in_file_ext = path.splitext(args.input)
     in_file_format = args.input_as or in_file_ext.strip(".")
     if in_file_format in ["yaml", "yml"]:

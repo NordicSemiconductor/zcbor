@@ -26,8 +26,8 @@ p_optional = Path(p_tests, 'cases/optional.cddl')
 class Testn(TestCase):
     def decode(self, ccdl_path, data_path):
         with open(ccdl_path, 'r') as f:
-            my_types = cddl_gen.DataTranslator.from_cddl(f.read(), 16)
-        cddl = my_types["SUIT_Envelope_Tagged"]
+            cddl_res = cddl_gen.DataTranslator.from_cddl(f.read(), 16)
+        cddl = cddl_res.my_types["SUIT_Envelope_Tagged"]
         with open(data_path, 'r') as f:
             data = bytes.fromhex(f.read().replace("\n", ""))
         self.decoded = cddl.decode_str(data)
@@ -210,8 +210,8 @@ class TestCLI(TestCase):
 class TestOptional(TestCase):
     def test_0(self):
         with open(p_optional, 'r') as f:
-            my_types = cddl_gen.DataTranslator.from_cddl(f.read(), 16)
-        cddl = my_types['cfg']
+            cddl_res = cddl_gen.DataTranslator.from_cddl(f.read(), 16)
+        cddl = cddl_res.my_types['cfg']
         test_yaml = """
             mem_config:
                 - 0
