@@ -9,7 +9,11 @@ SUIT_Envelope = {
   * SUIT_Integrated_Payload,
   * SUIT_Integrated_Dependency,
   * $$SUIT_Envelope_Extensions,
-  * (int => bstr)
+
+  ; Comment out the following entry that interferes with testing SUIT_Integrated_Payload.
+  ; The entry is unnecessary together with $$SUIT_Envelope_Extensions.
+  ; It is optional, so removing it is still conformant.
+  ;* (int => bstr)
 }
 
 SUIT_Delegation = [ + [ + bstr .cbor CWT ] ]
