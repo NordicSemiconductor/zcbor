@@ -42,18 +42,18 @@ class Test0(Testn):
     def test_manifest_digest(self):
         self.assertEqual(
             bytes.fromhex("5c097ef64bf3bb9b494e71e1f2418eef8d466cc902f639a855ec9af3e9eddb99"),
-            self.decoded.suit_authentication_wrapper.SUIT_Digest.suit_digest_bytes)
+            self.decoded.suit_authentication_wrapper.SUIT_Digest_bstr.suit_digest_bytes)
 
     def test_signature(self):
         self.assertEqual(
             1,
-            self.decoded.suit_authentication_wrapper.SUIT_Authentication_Block[0].COSE_Sign1_Tagged.protected.uintint[0].uintint_key)
+            self.decoded.suit_authentication_wrapper.SUIT_Authentication_Block_bstr[0].COSE_Sign1_Tagged.protected.uintint[0].uintint_key)
         self.assertEqual(
             -7,
-            self.decoded.suit_authentication_wrapper.SUIT_Authentication_Block[0].COSE_Sign1_Tagged.protected.uintint[0].uintint)
+            self.decoded.suit_authentication_wrapper.SUIT_Authentication_Block_bstr[0].COSE_Sign1_Tagged.protected.uintint[0].uintint)
         self.assertEqual(
             bytes.fromhex("a19fd1f23b17beed321cece7423dfb48c457b8f1f6ac83577a3c10c6773f6f3a7902376b59540920b6c5f57bac5fc8543d8f5d3d974faa2e6d03daa534b443a7"),
-            self.decoded.suit_authentication_wrapper.SUIT_Authentication_Block[0].COSE_Sign1_Tagged.signature)
+            self.decoded.suit_authentication_wrapper.SUIT_Authentication_Block_bstr[0].COSE_Sign1_Tagged.signature)
 
     def test_validate_run(self):
         self.assertEqual(
@@ -116,10 +116,10 @@ class Test3(Testn):
     def test_A_B_offset(self):
         self.assertEqual(
             33792,
-            self.decoded.suit_manifest.suit_common.suit_common_sequence[0][1].SUIT_Common_Commands.suit_directive_try_each.SUIT_Directive_Try_Each_Argument.SUIT_Command_Sequence[0].union[0].SUIT_Directive.suit_directive_override_parameters.map[0].suit_parameter_component_offset)
+            self.decoded.suit_manifest.suit_common.suit_common_sequence[0][1].SUIT_Common_Commands.suit_directive_try_each.SUIT_Directive_Try_Each_Argument.SUIT_Command_Sequence_bstr[0].union[0].SUIT_Directive.suit_directive_override_parameters.map[0].suit_parameter_component_offset)
         self.assertEqual(
             541696,
-            self.decoded.suit_manifest.suit_common.suit_common_sequence[0][1].SUIT_Common_Commands.suit_directive_try_each.SUIT_Directive_Try_Each_Argument.SUIT_Command_Sequence[1].union[0].SUIT_Directive.suit_directive_override_parameters.map[0].suit_parameter_component_offset)
+            self.decoded.suit_manifest.suit_common.suit_common_sequence[0][1].SUIT_Common_Commands.suit_directive_try_each.SUIT_Directive_Try_Each_Argument.SUIT_Command_Sequence_bstr[1].union[0].SUIT_Directive.suit_directive_override_parameters.map[0].suit_parameter_component_offset)
 
 
 class Test4(Testn):

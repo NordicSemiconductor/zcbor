@@ -469,8 +469,8 @@ void test_map(void)
 	};
 
 	struct Map map1 = {
-		._Map_union_choice = _Map_union_uint7uint,
-		._Map_union_uint7uint = 1,
+		._Map_union_choice = _union_uint7uint,
+		._union_uint7uint = 1,
 		._Map_twotothree_count = 2,
 		._Map_twotothree = {
 			{._Map_twotothree = {.value = "hello", .len = 5}},
@@ -479,8 +479,8 @@ void test_map(void)
 	};
 	struct Map map2 = {
 		._Map_key = true,
-		._Map_union_choice = _Map_union_uint7uint,
-		._Map_union_uint7uint = 1,
+		._Map_union_choice = _union_uint7uint,
+		._union_uint7uint = 1,
 		._Map_twotothree_count = 3,
 		._Map_twotothree = {
 			{._Map_twotothree = {.value = "hello", .len = 5}},
@@ -489,8 +489,8 @@ void test_map(void)
 		}
 	};
 	struct Map map3 = {
-		._Map_union_choice = _Map_union_nintuint,
-		._Map_union_nintuint = 1,
+		._Map_union_choice = _union_nintuint,
+		._union_nintuint = 1,
 		._Map_twotothree_count = 2,
 		._Map_twotothree = {
 			{._Map_twotothree = {.value = "hello", .len = 5}},
@@ -530,28 +530,28 @@ void test_nested_list_map(void)
 	struct NestedListMap listmap2 = {
 		._NestedListMap_map_count = 1,
 		._NestedListMap_map = {
-			{._NestedListMap_map_uint4_present = false},
+			{._map_uint4_present = false},
 		}
 	};
 	struct NestedListMap listmap3 = {
 		._NestedListMap_map_count = 1,
 		._NestedListMap_map = {
-			{._NestedListMap_map_uint4_present = true},
+			{._map_uint4_present = true},
 		}
 	};
 	struct NestedListMap listmap4 = {
 		._NestedListMap_map_count = 2,
 		._NestedListMap_map = {
-			{._NestedListMap_map_uint4_present = false},
-			{._NestedListMap_map_uint4_present = true},
+			{._map_uint4_present = false},
+			{._map_uint4_present = true},
 		}
 	};
 	struct NestedListMap listmap5 = {
 		._NestedListMap_map_count = 3,
 		._NestedListMap_map = {
-			{._NestedListMap_map_uint4_present = false},
-			{._NestedListMap_map_uint4_present = false},
-			{._NestedListMap_map_uint4_present = false},
+			{._map_uint4_present = false},
+			{._map_uint4_present = false},
+			{._map_uint4_present = false},
 		}
 	};
 	uint8_t output[40];

@@ -275,7 +275,7 @@ void test_command_sequence(cbor_string_type_t *sequence_str,
 			== _SUIT_Command_Sequence_union__SUIT_Directive;
 
 		run_seq = &directive
-			->_SUIT_Directive___suit_directive_run_sequence_SUIT_Command_Sequence;
+			->_SUIT_Directive___suit_directive_run_sequence_SUIT_Command_Sequence_bstr;
 		run_seq_present = directive_present
 			&& directive
 			->_SUIT_Directive_choice
@@ -284,11 +284,11 @@ void test_command_sequence(cbor_string_type_t *sequence_str,
 
 		for (uint32_t j = 0; j < directive
 			->_SUIT_Directive___suit_directive_try_each__SUIT_Directive_Try_Each_Argument
-			._SUIT_Directive_Try_Each_Argument_SUIT_Command_Sequence_count; j++) {
+			._SUIT_Directive_Try_Each_Argument_SUIT_Command_Sequence_bstr_count; j++) {
 
 			try_each1 = &directive
 				->_SUIT_Directive___suit_directive_try_each__SUIT_Directive_Try_Each_Argument
-				._SUIT_Directive_Try_Each_Argument_SUIT_Command_Sequence[j];
+				._SUIT_Directive_Try_Each_Argument_SUIT_Command_Sequence_bstr[j];
 			try_each1_present = directive_present
 				&& directive->_SUIT_Directive_choice
 				== _SUIT_Directive___suit_directive_try_each;
@@ -297,14 +297,14 @@ void test_command_sequence(cbor_string_type_t *sequence_str,
 
 		try_each2 = &directive
 			->_SUIT_Directive___suit_directive_try_each__SUIT_Directive_Try_Each_Argument
-			._SUIT_Directive_Try_Each_Argument_union_SUIT_Command_Sequence;
+			._SUIT_Directive_Try_Each_Argument_union_SUIT_Command_Sequence_bstr;
 		try_each2_present = directive_present
 			&& directive->_SUIT_Directive_choice
 			== _SUIT_Directive___suit_directive_try_each
 			&& directive
 			->_SUIT_Directive___suit_directive_try_each__SUIT_Directive_Try_Each_Argument
 			._SUIT_Directive_Try_Each_Argument_union_choice
-			== _SUIT_Directive_Try_Each_Argument_union_SUIT_Command_Sequence;
+			== _SUIT_Directive_Try_Each_Argument_union_SUIT_Command_Sequence_bstr;
 		test_command_sequence(try_each2, try_each2_present, "try_each2");
 
 	}
@@ -384,35 +384,35 @@ void test_manifest(const uint8_t *input, uint32_t len)
 
 	dependency2 = &manifest
 		->_SUIT_Manifest_suit_dependency_resolution
-		._SUIT_Manifest_suit_dependency_resolution_SUIT_Command_Sequence;
+		._SUIT_Manifest_suit_dependency_resolution_SUIT_Command_Sequence_bstr;
 	dependency2_present = manifest
 		->_SUIT_Manifest_suit_dependency_resolution_present
 		&& manifest
 		->_SUIT_Manifest_suit_dependency_resolution
 		._SUIT_Manifest_suit_dependency_resolution_choice ==
-		_SUIT_Manifest_suit_dependency_resolution_SUIT_Command_Sequence;
+		_SUIT_Manifest_suit_dependency_resolution_SUIT_Command_Sequence_bstr;
 	test_command_sequence(dependency2, dependency2_present, "dependency2");
 
 	fetch2 = &manifest
 		->_SUIT_Manifest_suit_payload_fetch
-		._SUIT_Manifest_suit_payload_fetch_SUIT_Command_Sequence;
+		._SUIT_Manifest_suit_payload_fetch_SUIT_Command_Sequence_bstr;
 	fetch2_present = manifest
 		->_SUIT_Manifest_suit_payload_fetch_present
 		&& manifest
 		->_SUIT_Manifest_suit_payload_fetch
 		._SUIT_Manifest_suit_payload_fetch_choice ==
-		_SUIT_Manifest_suit_payload_fetch_SUIT_Command_Sequence;
+		_SUIT_Manifest_suit_payload_fetch_SUIT_Command_Sequence_bstr;
 	test_command_sequence(fetch2, fetch2_present, "fetch2");
 
 	install2 = &manifest
 		->_SUIT_Manifest_suit_install
-		._SUIT_Manifest_suit_install_SUIT_Command_Sequence;
+		._SUIT_Manifest_suit_install_SUIT_Command_Sequence_bstr;
 	install2_present = manifest
 		->_SUIT_Manifest_suit_install_present
 		&& manifest
 		->_SUIT_Manifest_suit_install
 		._SUIT_Manifest_suit_install_choice ==
-		_SUIT_Manifest_suit_install_SUIT_Command_Sequence;
+		_SUIT_Manifest_suit_install_SUIT_Command_Sequence_bstr;
 	test_command_sequence(install2, install2_present, "install2");
 
 	validate = &manifest
