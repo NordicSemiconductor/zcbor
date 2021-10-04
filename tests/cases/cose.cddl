@@ -22,7 +22,10 @@ Generic_Headers = (
 	? 4 => bstr,        ; key identifier
 	? 5 => bstr,        ; IV
 	? 6 => bstr,        ; Partial IV
-	? 7 => COSE_Signature / [+COSE_Signature] ; Counter signature
+
+	; Comment out the counter signature since it creates a circular type.
+	; It is optional, so commenting it out is still conformant.
+	;? 7 => COSE_Signature / [+COSE_Signature] ; Counter signature
 )
 
 COSE_Sign_Tagged = #6.98(COSE_Sign)
@@ -65,7 +68,10 @@ COSE_Encrypt = [
 COSE_recipient = [
 	Headers,
 	ciphertext : bstr / nil,
-	? recipients : [+COSE_recipient]
+
+	; Comment out the recipient list since it creates a circular type.
+	; It is optional, so commenting it out is still conformant.
+	;? recipients : [+COSE_recipient]
 ]
 
 COSE_Encrypt0_Tagged = #6.16(COSE_Encrypt0)
