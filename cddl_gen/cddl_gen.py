@@ -220,10 +220,15 @@ class CddlParser:
         comment_regex = r"\;.*?\n"
         return sub(comment_regex, '', instr)
 
+    @staticmethod
+    def resolve_backslashes(instr):
+        return sub(r"\\\n", " ", instr)
+
     # Returns a dict containing multiple typename=>string
     @classmethod
     def get_types(cls, cddl_string):
         instr = cls.strip_comments(cddl_string)
+        instr = cls.resolve_backslashes(instr)
         type_regex = \
             r"(\s*?\$?\$?([\w-]+)\s*(\/{0,2})=\s*(.*?)(?=(\Z|\s*\$?\$?[\w-]+\s*\/{0,2}=(?!\>))))"
         result = defaultdict(lambda: "")
