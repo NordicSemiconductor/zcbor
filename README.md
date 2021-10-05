@@ -199,7 +199,7 @@ python3 <cddl-gen base>/cddl_gen/cddl_gen.py -c pet.cddl code -d -t Pet --oc pet
 Or invoke its command line executable (if installed via `pip`):
 
 ```sh
-cddl_gen -c pet.cddl code -d -t Pet --oc pet_decode.c --oh pet_decode.h
+cddl-gen -c pet.cddl code -d -t Pet --oc pet_decode.c --oh pet_decode.h
 ```
 
 Or add the following line to your CMake code:
