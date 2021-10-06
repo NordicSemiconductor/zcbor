@@ -448,7 +448,13 @@ bool boolx_decode(cbor_state_t *state, bool *result)
 	if (!primx_decode(state, &tmp_result)) {
 		FAIL();
 	}
-	(*result) = tmp_result - BOOL_TO_PRIM;
+
+	tmp_result -= BOOL_TO_PRIM;
+
+	if (tmp_result > 1) {
+		FAIL_RESTORE();
+	}
+	(*result) = tmp_result;
 
 	cbor_print("boolval: %u\r\n", *result);
 	return true;
