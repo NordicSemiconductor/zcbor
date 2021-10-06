@@ -420,7 +420,7 @@ bool multi_encode(uint32_t min_encode,
 		const void *input,
 		uint32_t result_len)
 {
-	if (!PTR_VALUE_IN_RANGE(uint32_t, num_encode, NULL, &max_encode)) {
+	if (!PTR_VALUE_IN_RANGE(uint32_t, num_encode, &min_encode, &max_encode)) {
 		FAIL();
 	}
 	for (uint32_t i = 0; i < *num_encode; i++) {
