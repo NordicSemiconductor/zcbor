@@ -923,6 +923,47 @@ void test_string_overflow(void)
 	zassert_false(cbor_encode_SingleBstr(output, sizeof(output), &input_overflow0, &out_len), NULL);
 }
 
+void test_quantity_range(void)
+{
+	uint8_t exp_payload_qty_range1[] = {0xF5, 0xF5, 0xF5};
+	uint8_t exp_payload_qty_range2[] = {0xF6, 0xF6, 0xF6, 0xF6, 0xF5, 0xF5, 0xF5, 0xF5, 0xF5, 0xF5};
+	struct QuantityRange result_qty_range1 = {
+		._QuantityRange_upto4nils_count = 0,
+		._QuantityRange_from3true_count = 3,
+	};
+	struct QuantityRange result_qty_range2 = {
+		._QuantityRange_upto4nils_count = 4,
+		._QuantityRange_from3true_count = 6,
+	};
+	struct QuantityRange result_qty_range3_inv = {
+		._QuantityRange_upto4nils_count = 5,
+		._QuantityRange_from3true_count = 3
+	};
+	struct QuantityRange result_qty_range4_inv = {
+		._QuantityRange_upto4nils_count = 0,
+		._QuantityRange_from3true_count = 2
+	};
+	uint8_t output[12];
+	uint32_t out_len;
+
+	zassert_true(cbor_encode_QuantityRange(output, sizeof(output),
+			&result_qty_range1, &out_len), NULL);
+	zassert_equal(sizeof(exp_payload_qty_range1), out_len, "was %d\n", out_len);
+	zassert_mem_equal(exp_payload_qty_range1, output, sizeof(exp_payload_qty_range1), NULL);
+
+	zassert_true(cbor_encode_QuantityRange(output, sizeof(output),
+			&result_qty_range2, &out_len), NULL);
+	zassert_equal(sizeof(exp_payload_qty_range2), out_len, "was %d\n", out_len);
+	zassert_mem_equal(exp_payload_qty_range2, output, sizeof(exp_payload_qty_range2), NULL);
+
+	zassert_false(cbor_encode_QuantityRange(output, sizeof(output),
+			&result_qty_range3_inv, &out_len), NULL);
+
+	zassert_false(cbor_encode_QuantityRange(output, sizeof(output),
+			&result_qty_range4_inv, &out_len), NULL);
+}
+
+
 void test_main(void)
 {
 	ztest_test_suite(cbor_encode_test3,
@@ -938,8 +979,9 @@ void test_main(void)
 			 ztest_unit_test(test_range),
 			 ztest_unit_test(test_value_range),
 			 ztest_unit_test(test_single),
+			 ztest_unit_test(test_unabstracted),
 			 ztest_unit_test(test_string_overflow),
-			 ztest_unit_test(test_unabstracted)
+			 ztest_unit_test(test_quantity_range)
 	);
 	ztest_run_test_suite(cbor_encode_test3);
 }
