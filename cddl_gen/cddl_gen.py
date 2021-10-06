@@ -391,7 +391,9 @@ class CddlParser:
 
     # Set the self.type and self.minValue and self.max_value (or self.min_size and self.max_size
     # depending on the type) of this element. For use during CDDL parsing.
-    def type_and_range(self, new_type, min_val, max_val):
+    def type_and_range(self, new_type, min_val, max_val, triple_dot=False):
+        if triple_dot:
+            max_val -= 1  # Triple dot means excluding the max value.
         if new_type not in ["INT", "UINT", "NINT"]:
             raise TypeError(
                 "Only integers (not %s) can have range" %
@@ -625,6 +627,15 @@ class CddlParser:
             (match_nint + r'\.\.' + match_nint,
              lambda _range: self.type_and_range(
                  "NINT", *map(lambda num: int(num, 0), _range.split("..")))),
+            (match_uint + r'\.\.\.' + match_uint,
+             lambda _range: self.type_and_range(
+                 "UINT", *map(lambda num: int(num, 0), _range.split("...")), triple_dot=True)),
+            (match_nint + r'\.\.\.' + match_uint,
+             lambda _range: self.type_and_range(
+                 "INT", *map(lambda num: int(num, 0), _range.split("...")), triple_dot=True)),
+            (match_nint + r'\.\.\.' + match_nint,
+             lambda _range: self.type_and_range(
+                 "NINT", *map(lambda num: int(num, 0), _range.split("...")), triple_dot=True)),
             (match_nint,
              lambda num: self.type_and_value("NINT", lambda: int(num, 0))),
             (match_uint,

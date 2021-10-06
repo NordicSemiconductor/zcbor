@@ -686,10 +686,18 @@ void test_range(void)
 		0x07,
 		END
 	};
+	const uint8_t exp_payload_range4[] = {LIST(4),
+		0x28,
+		0x08,
+		0x65, 0x68, 0x65, 0x6c, 0x6c, 0x6f, // "hello"
+		0x0,
+		END
+	};
 
 	struct Range input1 = {
 		._Range_optMinus5to5_present = false,
 		._Range_optStr3to6_present = false,
+		._Range_optMinus9toMinus6excl_present = false,
 		._Range_multi8_count = 1,
 		._Range_multiHello_count = 1,
 		._Range_multi0to10_count = 1,
@@ -699,6 +707,7 @@ void test_range(void)
 		._Range_optMinus5to5_present = true,
 		._Range_optMinus5to5 = 5,
 		._Range_optStr3to6_present = false,
+		._Range_optMinus9toMinus6excl_present = false,
 		._Range_multi8_count = 2,
 		._Range_multiHello_count = 1,
 		._Range_multi0to10_count = 2,
@@ -711,10 +720,31 @@ void test_range(void)
 			.value = "hello",
 			.len = 5,
 		},
+		._Range_optMinus9toMinus6excl_present = false,
 		._Range_multi8_count = 1,
 		._Range_multiHello_count = 2,
 		._Range_multi0to10_count = 1,
 		._Range_multi0to10 = {7},
+	};
+	struct Range input4 = {
+		._Range_optMinus5to5_present = false,
+		._Range_optStr3to6_present = false,
+		._Range_optMinus9toMinus6excl_present = true,
+		._Range_optMinus9toMinus6excl = -9,
+		._Range_multi8_count = 1,
+		._Range_multiHello_count = 1,
+		._Range_multi0to10_count = 1,
+		._Range_multi0to10 = {0},
+	};
+	struct Range input5_inv = {
+		._Range_optMinus5to5_present = false,
+		._Range_optStr3to6_present = false,
+		._Range_optMinus9toMinus6excl_present = true,
+		._Range_optMinus9toMinus6excl = -6,
+		._Range_multi8_count = 1,
+		._Range_multiHello_count = 1,
+		._Range_multi0to10_count = 1,
+		._Range_multi0to10 = {0},
 	};
 
 	uint8_t output[25];
@@ -734,6 +764,14 @@ void test_range(void)
 				&out_len), NULL);
 	zassert_equal(sizeof(exp_payload_range3), out_len, NULL);
 	zassert_mem_equal(exp_payload_range3, output, sizeof(exp_payload_range3), NULL);
+
+	zassert_true(cbor_encode_Range(output, sizeof(output), &input4,
+				&out_len), NULL);
+	zassert_equal(sizeof(exp_payload_range4), out_len, NULL);
+	zassert_mem_equal(exp_payload_range4, output, sizeof(exp_payload_range4), NULL);
+
+	zassert_false(cbor_encode_Range(output, sizeof(output), &input5_inv,
+				&out_len), NULL);
 }
 
 void test_value_range(void)
