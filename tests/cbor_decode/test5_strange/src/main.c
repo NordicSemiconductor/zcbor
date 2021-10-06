@@ -592,12 +592,27 @@ void test_range(void)
 		0x07, 0x08, 0x18 // Last too large
 	};
 
+	const uint8_t payload_range9[] = {0x84,
+		0x28,
+		0x08,
+		0x65, 0x68, 0x65, 0x6c, 0x6c, 0x6f, // "hello"
+		0x0
+	};
+
+	const uint8_t payload_range10_inv[] = {0x84,
+		0x25,
+		0x08,
+		0x65, 0x68, 0x65, 0x6c, 0x6c, 0x6f, // "hello"
+		0x0
+	};
+
 	struct Range output;
 
 	zassert_true(cbor_decode_Range(payload_range1, sizeof(payload_range1),
 				&output, NULL), NULL);
 	zassert_false(output._Range_optMinus5to5_present, NULL);
 	zassert_false(output._Range_optStr3to6_present, NULL);
+	zassert_false(output._Range_optMinus9toMinus6excl_present, NULL);
 	zassert_equal(1, output._Range_multi8_count, NULL);
 	zassert_equal(1, output._Range_multiHello_count, NULL);
 	zassert_equal(1, output._Range_multi0to10_count, NULL);
@@ -608,6 +623,7 @@ void test_range(void)
 	zassert_true(output._Range_optMinus5to5_present, NULL);
 	zassert_equal(5, output._Range_optMinus5to5, "was %d", output._Range_optMinus5to5);
 	zassert_false(output._Range_optStr3to6_present, NULL);
+	zassert_false(output._Range_optMinus9toMinus6excl_present, NULL);
 	zassert_equal(2, output._Range_multi8_count, NULL);
 	zassert_equal(1, output._Range_multiHello_count, NULL);
 	zassert_equal(2, output._Range_multi0to10_count, NULL);
@@ -626,6 +642,7 @@ void test_range(void)
 	zassert_true(output._Range_optStr3to6_present, NULL);
 	zassert_equal(5, output._Range_optStr3to6.len, NULL);
 	zassert_mem_equal("hello", output._Range_optStr3to6.value, 5, NULL);
+	zassert_false(output._Range_optMinus9toMinus6excl_present, NULL);
 	zassert_equal(1, output._Range_multi8_count, NULL);
 	zassert_equal(2, output._Range_multiHello_count, NULL);
 	zassert_equal(1, output._Range_multi0to10_count, NULL);
@@ -638,6 +655,20 @@ void test_range(void)
 				&output, NULL), NULL);
 
 	zassert_false(cbor_decode_Range(payload_range8_inv, sizeof(payload_range8_inv),
+				&output, NULL), NULL);
+
+	zassert_true(cbor_decode_Range(payload_range9, sizeof(payload_range9),
+				&output, NULL), NULL);
+	zassert_false(output._Range_optMinus5to5_present, NULL);
+	zassert_false(output._Range_optStr3to6_present, NULL);
+	zassert_true(output._Range_optMinus9toMinus6excl_present, NULL);
+	zassert_equal(-9, output._Range_optMinus9toMinus6excl, NULL);
+	zassert_equal(1, output._Range_multi8_count, NULL);
+	zassert_equal(1, output._Range_multiHello_count, NULL);
+	zassert_equal(1, output._Range_multi0to10_count, NULL);
+	zassert_equal(0, output._Range_multi0to10[0], NULL);
+
+	zassert_false(cbor_decode_Range(payload_range10_inv, sizeof(payload_range10_inv),
 				&output, NULL), NULL);
 }
 

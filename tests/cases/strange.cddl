@@ -66,6 +66,7 @@ Level4 = [0]
 Range = [
 	?optMinus5to5: -5..5,
 	?optStr3to6: tstr .size 3..6,
+	?optMinus9toMinus6excl: -9...-6,
 	+multi8: 8,
 	+multiHello: "hello",
 	+multi0to10: 0..0x0A, ; Testing hexadecimal
