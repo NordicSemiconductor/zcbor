@@ -1950,7 +1950,7 @@ class CodeGenerator(CddlXcoder):
                 for tag in self.tags]
 
     def range_checks(self, access):
-        if self.value is not None:
+        if self.type != "OTHER" and self.value is not None:
             return []
 
         # return []
