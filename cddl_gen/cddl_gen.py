@@ -533,20 +533,21 @@ class CddlParser:
             self.__init__(*self.init_args(), **self.init_kwargs())
             self.type_and_value("UNION", lambda: [convert_val])
 
+            self.base_name = convert_val.base_name
+            convert_val.base_name = None
+
             if not doubleslash:
                 self.label = convert_val.label
                 self.key = convert_val.key
                 self.quantifier = convert_val.quantifier
                 self.max_qty = convert_val.max_qty
                 self.min_qty = convert_val.min_qty
-                self.base_name = convert_val.base_name
 
                 convert_val.label = None
                 convert_val.key = None
                 convert_val.quantifier = None
                 convert_val.max_qty = 1
                 convert_val.min_qty = 1
-                convert_val.base_name = None
         self.value.append(value)
 
     def convert_to_key(self):
