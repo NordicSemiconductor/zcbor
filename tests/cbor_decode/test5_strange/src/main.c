@@ -896,6 +896,38 @@ void test_unabstracted(void)
 					&result_unabstracted, &out_len), NULL);
 }
 
+void test_quantity_range(void)
+{
+	uint8_t payload_qty_range1[] = {0xF5, 0xF5, 0xF5};
+	uint8_t payload_qty_range2_inv[] = {0xF5, 0xF5};
+	uint8_t payload_qty_range3[] = {0xF6, 0xF6, 0xF6, 0xF6, 0xF5, 0xF5, 0xF5, 0xF5, 0xF5, 0xF5};
+	uint8_t payload_qty_range4_inv[] = {0xF6, 0xF6, 0xF6, 0xF6, 0xF6, 0xF5, 0xF5, 0xF5};
+	struct QuantityRange result_qty_range;
+	uint32_t out_len;
+
+	zassert_true(cbor_decode_QuantityRange(payload_qty_range1,
+					sizeof(payload_qty_range1),
+					&result_qty_range, &out_len), NULL);
+	zassert_equal(0, result_qty_range._QuantityRange_upto4nils_count, NULL);
+	zassert_equal(3, result_qty_range._QuantityRange_from3true_count, NULL);
+	zassert_equal(sizeof(payload_qty_range1), out_len, NULL);
+
+	zassert_false(cbor_decode_QuantityRange(payload_qty_range2_inv,
+					sizeof(payload_qty_range2_inv),
+					&result_qty_range, &out_len), NULL);
+
+	zassert_true(cbor_decode_QuantityRange(payload_qty_range3,
+					sizeof(payload_qty_range3),
+					&result_qty_range, &out_len), NULL);
+	zassert_equal(4, result_qty_range._QuantityRange_upto4nils_count, NULL);
+	zassert_equal(6, result_qty_range._QuantityRange_from3true_count, NULL);
+	zassert_equal(sizeof(payload_qty_range3), out_len, NULL);
+
+	zassert_false(cbor_decode_QuantityRange(payload_qty_range4_inv,
+					sizeof(payload_qty_range4_inv),
+					&result_qty_range, &out_len), NULL);
+}
+
 void test_main(void)
 {
 	ztest_test_suite(cbor_decode_test5,
@@ -912,7 +944,8 @@ void test_main(void)
 			 ztest_unit_test(test_range),
 			 ztest_unit_test(test_value_range),
 			 ztest_unit_test(test_single),
-			 ztest_unit_test(test_unabstracted)
+			 ztest_unit_test(test_unabstracted),
+			 ztest_unit_test(test_quantity_range)
 	);
 	ztest_run_test_suite(cbor_decode_test5);
 }

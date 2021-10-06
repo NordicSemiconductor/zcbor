@@ -91,3 +91,8 @@ Unabstracted = [
 	unabstractedunion1: (choice1: 1 // choice2: 2),
 	(unabstractedunion2: 3 / choice4: 4)
 ]
+
+QuantityRange = (
+	upto4nils: 0*0x04nil,
+	from3true: 3*true,
+)
