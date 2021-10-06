@@ -505,7 +505,7 @@ class CddlParser:
         if self.key is not None:
             raise TypeError("Cannot have two keys: " + key)
         if key.type == "GROUP":
-            raise TypeError("A key cannot be a group")
+            raise TypeError("A key cannot be a group because it might represent more than 1 type.")
         self.key = key
         self.key.set_base_name("key")
 
@@ -1312,6 +1312,7 @@ class DataTranslator(CddlXcoder):
                     it, retval = self._decode_obj(it)
                     retvals.append(retval if not self.is_unambiguous_repeated() else None)
             except CddlValidationError as c:
+                self.errors.append(str(c))
                 it = it_copy
             return it, retvals
         else:
@@ -1321,8 +1322,13 @@ class DataTranslator(CddlXcoder):
     # CBOR object => python object
     def decode_obj(self, obj):
         it = iter([obj])
-        _, decoded = self._decode_full(it)
-        self._iter_is_empty(it)
+        try:
+            _, decoded = self._decode_full(it)
+            self._iter_is_empty(it)
+        except CddlValidationError as e:
+            print("Errors:")
+            pprint(self.errors)
+            raise e
         return decoded
 
     # YAML => python object
@@ -1954,7 +1960,6 @@ class CodeGenerator(CddlXcoder):
         if self.type != "OTHER" and self.value is not None:
             return []
 
-        # return []
         range_checks = []
 
         if self.type in ["INT", "UINT", "NINT", "FLOAT", "BOOL"]:

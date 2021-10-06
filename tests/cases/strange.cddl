@@ -68,7 +68,7 @@ Range = [
 	?optStr3to6: tstr .size 3..6,
 	+multi8: 8,
 	+multiHello: "hello",
-	+multi0to10: 0..0x0A; Testing hexadecimal
+	+multi0to10: 0..0x0A, ; Testing hexadecimal
 ]
 
 ValueRange = [
