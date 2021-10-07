@@ -14,10 +14,12 @@
 #define LIST(num) 0x9F /* Use short count 31 (indefinite-length). Note that the 'num' argument is ignored */
 #define MAP(num) 0xBF  /* Use short count 31 (indefinite-length). Note that the 'num' argument is ignored */
 #define END 0xFF,
+#define STR_LEN(len, lists) (len + lists)
 #else
 #define LIST(num) CONCAT_BYTE(0x8, num)
 #define MAP(num) CONCAT_BYTE(0xA, num)
 #define END
+#define STR_LEN(len, lists) (len)
 #endif
 
 
@@ -91,7 +93,7 @@ void test_strings(void)
 		0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,
 		0xC0, 0x78, 0x1E, // 30 bytes
 		0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,
-		0x58, 29, // Numbers (len: 29)
+		0x58, STR_LEN(29, 1), // Numbers (len: 29)
 			LIST(A),
 				0x01, // 1
 				0x21, // -2
@@ -104,7 +106,7 @@ void test_strings(void)
 				0x1A, 0xFF, 0xFF, 0xFF, 0xFF, // 0xFFFFFFFF
 				0xD9, 0xFF, 0xFF, 0x09, // 9, tagged (0xFFFF)
 			END
-		0x4F, // Primitives (len: 15)
+		STR_LEN(0x4F, 3), // Primitives (len: 15)
 			LIST(4),
 				0xF5, // True
 				0xF4, // False
@@ -123,7 +125,7 @@ void test_strings(void)
 				0xF4, // False
 				0xF6, // Nil
 			END
-		0x59, 0x01, 0x67, // Strings (len: 359)
+		0x59, 0x01, STR_LEN(0x67, 3), // Strings (len: 359)
 			LIST(5),
 			0x65, 0x68, 0x65, 0x6c, 0x6c, 0x6f, // "hello"
 			0x59, 0x01, 0x2c, // 300 bytes
@@ -139,7 +141,7 @@ void test_strings(void)
 			0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,
 			0xC0, 0x6A, // 10 bytes
 			0,1,2,3,4,5,6,7,8,9,
-			0x58, 29, // Numbers (len: 29)
+			0x58, STR_LEN(29, 1), // Numbers (len: 29)
 				LIST(A),
 					0x01, // 1
 					0x21, // -2
@@ -152,7 +154,7 @@ void test_strings(void)
 					0x1A, 0xFF, 0xFF, 0xFF, 0xFF, // 0xFFFFFFFF
 					0xD9, 0xFF, 0xFF, 0x29, // -10, tagged (0xFFFF)
 				END
-			0x45, // Primitives (len: 5)
+			STR_LEN(0x45, 1), // Primitives (len: 5)
 				LIST(4),
 					0xF5, // True
 					0xF4, // False
@@ -181,7 +183,7 @@ void test_strings(void)
 	zassert_equal(0, strings1._Strings_threehundrebytebstr.value[0], NULL);
 	zassert_equal(9, strings1._Strings_threehundrebytebstr.value[299], NULL);
 	zassert_equal(30, strings1._Strings_tentothirtybytetstr.len, NULL);
-	zassert_equal(29, strings1._Strings_cborNumbers.len, NULL);
+	zassert_equal(STR_LEN(29, 1), strings1._Strings_cborNumbers.len, NULL);
 	zassert_equal(3, strings1._Strings_cborseqPrimitives_cbor_count, NULL);
 	zassert_false(strings1._Strings_cborseqPrimitives_cbor[0]._Primitives_boolval, NULL);
 	zassert_true(strings1._Strings_cborseqPrimitives_cbor[1]._Primitives_boolval, NULL);
@@ -442,6 +444,8 @@ void test_map(void)
 		0xf6, 0x40, // nil => ""
 		END
 	};
+
+	/* Wrong list length. Will not fail for indeterminate length arrays. */
 	const uint8_t payload_map4_inv[] = {
 		MAP(6), LIST(2), 0x05, 0x06, END 0xF4, // [5,6] => false
 		0x07, 0x01, // 7 => 1
@@ -486,7 +490,12 @@ void test_map(void)
 	zassert_equal(0, map._Map_twotothree[1]._Map_twotothree.len, NULL);
 	zassert_equal(0, map._Map_twotothree[2]._Map_twotothree.len, NULL);
 
-	zassert_false(cbor_decode_Map(payload_map4_inv, sizeof(payload_map4_inv),
+#ifdef TEST_INDETERMINATE_LENGTH_ARRAYS
+	zassert_true(
+#else
+	zassert_false(
+#endif
+		cbor_decode_Map(payload_map4_inv, sizeof(payload_map4_inv),
 			&map, NULL), NULL);
 
 	zassert_true(cbor_decode_Map(payload_map5, sizeof(payload_map5),
@@ -540,7 +549,7 @@ void test_nested_list_map(void)
 void test_nested_map_list_map(void)
 {
 	const uint8_t payload_nested_mlm1[] = {MAP(1), LIST(0), END LIST(0), END END};
-	const uint8_t payload_nested_mlm2[] = {MAP(1), LIST(0), END LIST(1), MAP(0), END END};
+	const uint8_t payload_nested_mlm2[] = {MAP(1), LIST(0), END LIST(1), MAP(0), END END END};
 	const uint8_t payload_nested_mlm3[] = {MAP(1), LIST(0), END LIST(2), MAP(0), END MAP(0), END END END};
 	const uint8_t payload_nested_mlm4_inv[] = {MAP(1), LIST(0), END LIST(1), MAP(1), MAP(0), END END END END};
 	const uint8_t payload_nested_mlm5[] = {MAP(2), LIST(0), END LIST(0), END LIST(0), END LIST(0), END END};
