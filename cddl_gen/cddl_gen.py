@@ -863,6 +863,13 @@ class CddlParser:
         if self.cbor:
             self.cbor.post_validate()
 
+    def post_validate_control_group(self):
+        if self.type != "GROUP":
+            raise TypeError("control groups must be of GROUP type.")
+        for c in self.value:
+            if c.type != "UINT" or c.value is None or c.value < 0:
+                raise TypeError("control group members must be literal positive integers.")
+
     # Parses entire instr and returns a list of instances.
     def parse(self, instr):
         instr = instr.strip()
@@ -1236,6 +1243,10 @@ class DataTranslator(CddlXcoder):
                 self._decode_assert(obj >= self.min_value, "Minimum value: " + str(self.min_value))
             if self.max_value is not None:
                 self._decode_assert(obj <= self.max_value, "Maximum value: " + str(self.max_value))
+        if self.type == "UINT":
+            if self.bits:
+                mask = sum(((1 << b.value) for b in self.my_control_groups[self.bits].value))
+                self._decode_assert(not (obj & ~mask), "Allowed bitmask: " + bin(mask))
         if self.type in ["TSTR", "BSTR"]:
             if self.min_size is not None:
                 self._decode_assert(
