@@ -2346,7 +2346,8 @@ Can also generate C code for validation/encoding/decoding of CBOR.''')
 
     parser.add_argument(
         "-c", "--cddl", required=True, type=FileType('r'), action="append",
-        help="Path to one or more input CDDL file(s). Passing multiple files is equivalent to concatenating them.")
+        help="""Path to one or more input CDDL file(s). Passing multiple files is equivalent to
+concatenating them.""")
     parser.add_argument(
         "--default-max-qty", "--dq", required=False, type=int, default=3,
         help="""Default maximum number of repetitions when no maximum
