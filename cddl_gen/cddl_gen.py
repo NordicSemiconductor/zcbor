@@ -2127,7 +2127,7 @@ class CodeGenerator(CddlXcoder):
                 range_checks.append(f"({access} <= {self.max_value})")
             if self.bits:
                 range_checks.append(
-                    f"({access} & ~("
+                    f"!({access} & ~("
                     + ' | '.join([f'(1 << {c.enum_var_name()})'
                                  for c in self.my_control_groups[self.bits].value])
                     + "))")
