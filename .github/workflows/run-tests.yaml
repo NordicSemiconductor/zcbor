@@ -69,11 +69,11 @@ jobs:
       run: |
         export ZEPHYR_BASE=$(pwd)/zephyr
         export ZEPHYR_TOOLCHAIN_VARIANT=host
-        $ZEPHYR_BASE/scripts/twister -T . -W --platform native_posix --platform native_posix_64 -t cbor_decode
+        $ZEPHYR_BASE/scripts/twister -i -T . -W --platform native_posix --platform native_posix_64 -t cbor_decode
 
     - name: Run cbor_encode tests
       working-directory: tests
       run: |
         export ZEPHYR_BASE=$(pwd)/zephyr
         export ZEPHYR_TOOLCHAIN_VARIANT=host
-        $ZEPHYR_BASE/scripts/twister -T . -W --platform native_posix --platform native_posix_64 -t cbor_encode
+        $ZEPHYR_BASE/scripts/twister -i -T . -W --platform native_posix --platform native_posix_64 -t cbor_encode
