@@ -1198,12 +1198,20 @@ class DataTranslator(CddlXcoder):
 
     # Check that no unexpected tags are attached to this data. Return whether a tag was present.
     def _check_tag(self, obj):
-        if isinstance(obj, CBORTag):
-            self._decode_assert(
-                obj.tag in self.tags or self.type == "ANY",
-                f"Tag ({obj.tag}) not expected for {self}")
-            return True
-        return False
+        tags = copy(self.tags)  # All expected tags
+        # Process all tags present in obj
+        while isinstance(obj, CBORTag):
+            if obj.tag in tags or self.type == "ANY":
+                if obj.tag in tags:
+                    tags.remove(obj.tag)
+                obj = obj.value
+                continue
+            elif self.type in ["OTHER", "GROUP", "UNION"]:
+                break
+            self._decode_assert(False, f"Tag ({obj.tag}) not expected for {self}")
+        # Check that all expected tags were found in obj.
+        self._decode_assert(not tags, f"Expected tags ({tags}), but none present.")
+        return obj
 
     # Return our expected python type as returned by cbor2.
     def _expected_type(self):
@@ -1219,17 +1227,15 @@ class DataTranslator(CddlXcoder):
             "BOOL": lambda: bool,
             "LIST": lambda: (tuple, list),
             "MAP": lambda: dict,
-            "UNION": lambda: tuple((child._expected_type() for child in self.value)),
-            "GROUP": lambda: self.value[0]._expected_type(),
-            "OTHER": lambda: self.my_types[self.value]._expected_type(),
         }[self.type]()
 
     # Check that the decoded object has the correct type.
     def _check_type(self, obj):
-        exp_type = self._expected_type()
-        self._decode_assert(
-            isinstance(
-                obj, exp_type), f"{str(self)}: Wrong type of {str(obj)}, expected {str(exp_type)}")
+        if self.type not in ["OTHER", "GROUP", "UNION"]:
+            exp_type = self._expected_type()
+            self._decode_assert(
+                isinstance(obj, exp_type),
+                f"{str(self)}: Wrong type of {str(obj)}, expected {str(exp_type)}")
 
     # Check that the decode value conforms to the restrictions in the CDDL.
     def _check_value(self, obj):
@@ -1331,8 +1337,7 @@ class DataTranslator(CddlXcoder):
     # Decode single CDDL value, excluding repetitions
     def _decode_single_obj(self, obj):
         self._check_key(obj)
-        if self._check_tag(obj):
-            return self._decode_single_obj(obj.value)
+        obj = self._check_tag(obj)
         self._check_type(obj)
         self._check_value(obj)
         if self.type == "BSTR" and self.cbor_var_condition():
