@@ -60,13 +60,13 @@ class Test0(Testn):
     def test_validate_run(self):
         self.assertEqual(
             "suit_condition_image_match",
-            self.decoded.suit_manifest.SUIT_Unseverable_Members.suit_validate[0][0].SUIT_Condition.union_choice)
+            self.decoded.suit_manifest.SUIT_Unseverable_Members.suit_validate[0].suit_validate.union[0].SUIT_Condition.union_choice)
         self.assertEqual(
             "suit_directive_run",
-            self.decoded.suit_manifest.SUIT_Unseverable_Members.suit_run[0][0].SUIT_Directive.union_choice)
+            self.decoded.suit_manifest.SUIT_Unseverable_Members.suit_run[0].suit_run.union[0].SUIT_Directive.union_choice)
 
     def test_image_size(self):
-        self.assertEqual(34768, self.decoded.suit_manifest.suit_common.suit_common_sequence[0][0].SUIT_Common_Commands.suit_directive_override_parameters.map[3].suit_parameter_image_size)
+        self.assertEqual(34768, self.decoded.suit_manifest.suit_common.suit_common_sequence[0].suit_common_sequence.union[0].SUIT_Common_Commands.suit_directive_override_parameters.map[3].suit_parameter_image_size)
 
 
 class Test1(Testn):
@@ -82,7 +82,7 @@ class Test1(Testn):
     def test_uri(self):
         self.assertEqual(
             "http://example.com/file.bin",
-            self.decoded.suit_manifest.SUIT_Severable_Manifest_Members.suit_install[0][0].SUIT_Directive.suit_directive_set_parameters.map[0].suit_parameter_uri)
+            self.decoded.suit_manifest.SUIT_Severable_Manifest_Members.suit_install[0].suit_install.union[0].SUIT_Directive.suit_directive_set_parameters.map[0].suit_parameter_uri)
 
 
 class Test2(Testn):
@@ -93,21 +93,21 @@ class Test2(Testn):
     def test_severed_uri(self):
         self.assertEqual(
             "http://example.com/very/long/path/to/file/file.bin",
-            self.decoded.SUIT_Severable_Manifest_Members.suit_install[0][0].SUIT_Directive.suit_directive_set_parameters.map[0].suit_parameter_uri)
+            self.decoded.SUIT_Severable_Manifest_Members.suit_install[0].suit_install.union[0].SUIT_Directive.suit_directive_set_parameters.map[0].suit_parameter_uri)
 
     def test_severed_text(self):
         self.assertIn(
             "Example 2",
-            self.decoded.SUIT_Severable_Manifest_Members.suit_text[0].SUIT_Text_Keys.suit_text_manifest_description[0])
+            self.decoded.SUIT_Severable_Manifest_Members.suit_text[0].suit_text.SUIT_Text_Keys.suit_text_manifest_description[0])
         self.assertEqual(
             [b'\x00'],
-            self.decoded.SUIT_Severable_Manifest_Members.suit_text[0].SUIT_Component_Identifier[0].SUIT_Component_Identifier_key.bstr)
+            self.decoded.SUIT_Severable_Manifest_Members.suit_text[0].suit_text.SUIT_Component_Identifier[0].SUIT_Component_Identifier_key.bstr)
         self.assertEqual(
             "arm.com",
-            self.decoded.SUIT_Severable_Manifest_Members.suit_text[0].SUIT_Component_Identifier[0].SUIT_Component_Identifier.SUIT_Text_Component_Keys.suit_text_vendor_domain[0])
+            self.decoded.SUIT_Severable_Manifest_Members.suit_text[0].suit_text.SUIT_Component_Identifier[0].SUIT_Component_Identifier.SUIT_Text_Component_Keys.suit_text_vendor_domain[0])
         self.assertEqual(
             "This component is a demonstration. The digest is a sample pattern, not a real one.",
-            self.decoded.SUIT_Severable_Manifest_Members.suit_text[0].SUIT_Component_Identifier[0].SUIT_Component_Identifier.SUIT_Text_Component_Keys.suit_text_component_description[0])
+            self.decoded.SUIT_Severable_Manifest_Members.suit_text[0].suit_text.SUIT_Component_Identifier[0].SUIT_Component_Identifier.SUIT_Text_Component_Keys.suit_text_component_description[0])
 
 
 class Test3(Testn):
@@ -118,10 +118,10 @@ class Test3(Testn):
     def test_A_B_offset(self):
         self.assertEqual(
             33792,
-            self.decoded.suit_manifest.suit_common.suit_common_sequence[0][1].SUIT_Common_Commands.suit_directive_try_each.SUIT_Directive_Try_Each_Argument.SUIT_Command_Sequence_bstr[0].union[0].SUIT_Directive.suit_directive_override_parameters.map[0].suit_parameter_component_offset)
+            self.decoded.suit_manifest.suit_common.suit_common_sequence[0].suit_common_sequence.union[1].SUIT_Common_Commands.suit_directive_try_each.SUIT_Directive_Try_Each_Argument.SUIT_Command_Sequence_bstr[0].union[0].SUIT_Directive.suit_directive_override_parameters.map[0].suit_parameter_component_offset)
         self.assertEqual(
             541696,
-            self.decoded.suit_manifest.suit_common.suit_common_sequence[0][1].SUIT_Common_Commands.suit_directive_try_each.SUIT_Directive_Try_Each_Argument.SUIT_Command_Sequence_bstr[1].union[0].SUIT_Directive.suit_directive_override_parameters.map[0].suit_parameter_component_offset)
+            self.decoded.suit_manifest.suit_common.suit_common_sequence[0].suit_common_sequence.union[1].SUIT_Common_Commands.suit_directive_try_each.SUIT_Directive_Try_Each_Argument.SUIT_Command_Sequence_bstr[1].union[0].SUIT_Directive.suit_directive_override_parameters.map[0].suit_parameter_component_offset)
 
 
 class Test4(Testn):
@@ -132,10 +132,10 @@ class Test4(Testn):
     def test_load_decompress(self):
         self.assertEqual(
             0,
-            self.decoded.suit_manifest.SUIT_Unseverable_Members.suit_load[0][1].SUIT_Directive.suit_directive_set_parameters.map[3].suit_parameter_source_component)
+            self.decoded.suit_manifest.SUIT_Unseverable_Members.suit_load[0].suit_load.union[1].SUIT_Directive.suit_directive_set_parameters.map[3].suit_parameter_source_component)
         self.assertEqual(
             "SUIT_Compression_Algorithm_zlib",
-            self.decoded.suit_manifest.SUIT_Unseverable_Members.suit_load[0][1].SUIT_Directive.suit_directive_set_parameters.map[2].suit_parameter_compression_info.suit_compression_algorithm)
+            self.decoded.suit_manifest.SUIT_Unseverable_Members.suit_load[0].suit_load.union[1].SUIT_Directive.suit_directive_set_parameters.map[2].suit_parameter_compression_info.suit_compression_algorithm)
 
 
 class Test5(Testn):
@@ -146,10 +146,10 @@ class Test5(Testn):
     def test_two_image_match(self):
         self.assertEqual(
             "suit_condition_image_match",
-            self.decoded.suit_manifest.SUIT_Severable_Manifest_Members.suit_install[0][3].SUIT_Condition.union_choice)
+            self.decoded.suit_manifest.SUIT_Severable_Manifest_Members.suit_install[0].suit_install.union[3].SUIT_Condition.union_choice)
         self.assertEqual(
             "suit_condition_image_match",
-            self.decoded.suit_manifest.SUIT_Severable_Manifest_Members.suit_install[0][7].SUIT_Condition.union_choice)
+            self.decoded.suit_manifest.SUIT_Severable_Manifest_Members.suit_install[0].suit_install.union[7].SUIT_Condition.union_choice)
 
 
 class TestCLI(TestCase):

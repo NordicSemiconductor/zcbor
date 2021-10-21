@@ -1308,12 +1308,25 @@ class DataTranslator(CddlXcoder):
                     retvals = list()
                     self._add_if(retvals, obj[i])
                     obj[i] = self._construct_obj(retvals)
-
-            # obj = self._flatten_list(obj)
+                if self.type == "BSTR" and self.cbor_var_condition() and isinstance(obj[i], bytes):
+                    assert all((isinstance(o, bytes) for o in obj)), \
+                           """Unsupported configuration for cbor bstr. If a list contains a
+CBOR-formatted bstr, all elements must be bstrs. If not, it is a programmer error."""
         if isinstance(obj, KeyTuple):
             key, obj = obj
             if key is not None:
                 self.key._add_if(my_list, key, name=self.var_name() + "_key")
+        if self.type == "BSTR" and self.cbor_var_condition():
+            # If a bstr is CBOR-formatted, add both the string and the decoding of the string here
+            if isinstance(obj, list) and all((isinstance(o, bytes) for o in obj)):
+                # One or more bstr in a list (i.e. it is optional or repeated)
+                my_list.append((name or self.var_name(), [self.cbor.decode_str(o) for o in obj]))
+                my_list.append(((name or self.var_name()) + "_bstr", obj))
+                return
+            if isinstance(obj, bytes):
+                my_list.append((name or self.var_name(), self.cbor.decode_str(obj)))
+                my_list.append(((name or self.var_name()) + "_bstr", obj))
+                return
         my_list.append((name or self.var_name(), obj))
 
     # Throw CddlValidationError if iterator is not empty. This consumes one element if present.
@@ -1340,10 +1353,7 @@ class DataTranslator(CddlXcoder):
         obj = self._check_tag(obj)
         self._check_type(obj)
         self._check_value(obj)
-        if self.type == "BSTR" and self.cbor_var_condition():
-            decoded = self.cbor.decode_str(obj)
-            return decoded
-        elif self.type in ["UINT", "INT", "NINT", "FLOAT", "TSTR", "BSTR", "BOOL", "NIL", "ANY"]:
+        if self.type in ["UINT", "INT", "NINT", "FLOAT", "TSTR", "BSTR", "BOOL", "NIL", "ANY"]:
             return obj
         elif self.type == "OTHER":
             return self.my_types[self.value]._decode_single_obj(obj)
