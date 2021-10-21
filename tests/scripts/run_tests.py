@@ -25,20 +25,21 @@ p_cose = Path(p_tests, 'cases', 'cose.cddl')
 
 
 class Testn(TestCase):
-    def decode(self, data_path, *cddl_paths):
+    def decode_file(self, data_path, *cddl_paths):
+        data = bytes.fromhex(data_path.read_text().replace("\n", ""))
+        self.decode_string(data, *cddl_paths)
+
+    def decode_string(self, data_string, *cddl_paths):
         cddl_str = " ".join((Path(p).read_text() for p in cddl_paths))
         self.my_types = cddl_gen.DataTranslator.from_cddl(cddl_str, 16).my_types
         cddl = self.my_types["SUIT_Envelope_Tagged"]
-        with open(data_path, 'r') as f:
-            data = bytes.fromhex(f.read().replace("\n", ""))
-        self.decoded = cddl.decode_str(data)
-        return
+        self.decoded = cddl.decode_str(data_string)
 
 
 class Test0(Testn):
     def __init__(self, *args, **kwargs):
         super(Test0, self).__init__(*args, **kwargs)
-        self.decode(p_test_vectors12[0], p_manifest12)
+        self.decode_file(p_test_vectors12[0], p_manifest12)
 
     def test_manifest_digest(self):
         self.assertEqual(
@@ -71,7 +72,7 @@ class Test0(Testn):
 class Test1(Testn):
     def __init__(self, *args, **kwargs):
         super(Test1, self).__init__(*args, **kwargs)
-        self.decode(p_test_vectors12[1], p_manifest12)
+        self.decode_file(p_test_vectors12[1], p_manifest12)
 
     def test_components(self):
         self.assertEqual(
@@ -87,7 +88,7 @@ class Test1(Testn):
 class Test2(Testn):
     def __init__(self, *args, **kwargs):
         super(Test2, self).__init__(*args, **kwargs)
-        self.decode(p_test_vectors12[2], p_manifest12)
+        self.decode_file(p_test_vectors12[2], p_manifest12)
 
     def test_severed_uri(self):
         self.assertEqual(
@@ -112,7 +113,7 @@ class Test2(Testn):
 class Test3(Testn):
     def __init__(self, *args, **kwargs):
         super(Test3, self).__init__(*args, **kwargs)
-        self.decode(p_test_vectors12[3], p_manifest12)
+        self.decode_file(p_test_vectors12[3], p_manifest12)
 
     def test_A_B_offset(self):
         self.assertEqual(
@@ -126,7 +127,7 @@ class Test3(Testn):
 class Test4(Testn):
     def __init__(self, *args, **kwargs):
         super(Test4, self).__init__(*args, **kwargs)
-        self.decode(p_test_vectors12[4], p_manifest12)
+        self.decode_file(p_test_vectors12[4], p_manifest12)
 
     def test_load_decompress(self):
         self.assertEqual(
@@ -140,7 +141,7 @@ class Test4(Testn):
 class Test5(Testn):
     def __init__(self, *args, **kwargs):
         super(Test5, self).__init__(*args, **kwargs)
-        self.decode(p_test_vectors12[5], p_manifest12)
+        self.decode_file(p_test_vectors12[5], p_manifest12)
 
     def test_two_image_match(self):
         self.assertEqual(
