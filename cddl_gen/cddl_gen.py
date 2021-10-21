@@ -1456,8 +1456,9 @@ class DataTranslator(CddlXcoder):
             _, decoded = self._decode_full(it)
             self._iter_is_empty(it)
         except CddlValidationError as e:
-            print("Errors:")
-            pprint(self.errors)
+            if self.errors:
+                print("Errors:")
+                pprint(self.errors)
             raise e
         return decoded
 
