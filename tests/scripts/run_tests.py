@@ -2,6 +2,10 @@ from unittest import TestCase, main
 from subprocess import Popen, PIPE
 from re import sub
 from pathlib import Path
+from pprint import pprint
+# from ecdsa import VerifyingKey
+from hashlib import sha256
+import cbor2
 
 
 try:
@@ -19,9 +23,13 @@ that picks up changes in the files without having to reinstall.
 p_root = Path(__file__).absolute().parents[2]
 p_tests = Path(p_root, 'tests')
 p_manifest12 = Path(p_tests, 'cases', 'manifest12.cddl')
+p_manifest14 = Path(p_tests, 'cases', 'manifest14.cddl')
 p_test_vectors12 = tuple(Path(p_tests, 'cases', f'manifest12_example{i}.cborhex') for i in range(6))
+p_test_vectors14 = tuple(Path(p_tests, 'cases', f'manifest14_example{i}.cborhex') for i in range(6))
 p_optional = Path(p_tests, 'cases', 'optional.cddl')
 p_cose = Path(p_tests, 'cases', 'cose.cddl')
+p_manifest14_priv = Path(p_tests, 'cases', 'manifest14.priv')
+p_manifest14_pub = Path(p_tests, 'cases', 'manifest14.pub')
 
 
 class Testn(TestCase):
@@ -150,6 +158,246 @@ class Test5(Testn):
         self.assertEqual(
             "suit_condition_image_match",
             self.decoded.suit_manifest.SUIT_Severable_Manifest_Members.suit_install[0].suit_install.union[7].SUIT_Condition.union_choice)
+
+
+def dumps(obj):
+    return cbor2.dumps(obj, canonical=True)
+
+
+def loads(string):
+    return cbor2.loads(string)
+
+
+class Test6(Testn):
+    def __init__(self, *args, **kwargs):
+        super(Test6, self).__init__(*args, **kwargs)
+        self.decode_file(p_test_vectors14[0], p_manifest14, p_cose)
+
+    def test_authentication(self):
+        digest = bytes.fromhex("a6c4590ac53043a98e8c4106e1e31b305516d7cf0a655eddfac6d45c810e036a")
+        signature = bytes.fromhex("d11a2dd9610fb62a707335f584079225709f96e8117e7eeed98a2f207d05c8ecfba1755208f6abea977b8a6efe3bc2ca3215e1193be201467d052b42db6b7287")
+        sig_struct = bytes.fromhex("846a5369676e61747572653143a10126405820a6c4590ac53043a98e8c4106e1e31b305516d7cf0a655eddfac6d45c810e036a")
+        # key = VerifyingKey.from_pem(p_manifest14_pub.read_text())
+        # key.verify_digest(signature, digest)
+        # key.verify(signature, digest, hashfunc=sha256)
+        # key.verify(signature, sig_struct, hashfunc=sha256)
+
+        self.assertEqual("COSE_Sign1_Tagged", self.decoded.suit_authentication_wrapper.SUIT_Authentication_Block_bstr[0].union_choice)
+        self.assertEqual(-7, self.decoded.suit_authentication_wrapper.SUIT_Authentication_Block_bstr[0].COSE_Sign1_Tagged.Headers.protected.header_map_bstr.Generic_Headers.uint1union[0].int)
+        manifest_signature = self.decoded.suit_authentication_wrapper.SUIT_Authentication_Block_bstr[0].COSE_Sign1_Tagged.signature
+        sig_struct = ["Signature", self.decoded.suit_authentication_wrapper.SUIT_Authentication_Block_bstr[0].COSE_Sign1_Tagged.Headers.protected.header_map_bstr_bstr, b'', b'', b'']
+        sig_struct_encoded = dumps(sig_struct)
+        # self.assertEqual(dumps(self.decoded.suit_manifest.orig_obj), self.decoded.orig_obj[3])
+        manifest_str = dumps(self.decoded.suit_manifest_bstr)
+        # manifest_hash = sha256(manifest_str).digest()
+        manifest_hash = dumps(sha256(manifest_str).digest())
+        manifest_suit_digest = self.decoded.suit_authentication_wrapper.SUIT_Digest_bstr_bstr
+        # manifest_suit_digest = dumps(dumps(self.decoded.suit_authentication_wrapper.SUIT_Digest_bstr.orig_obj))
+        sig_struct_encoded = sig_struct_encoded[:-1] + manifest_hash
+        # sig_struct_encoded = sig_struct_encoded[:-1] + dumps(manifest_hash)
+        # sig_struct_encoded = sig_struct_encoded[:-1] + dumps(manifest_suit_digest)
+        # sig_struct_encoded = sig_struct_encoded[:-1] + dumps(dumps(manifest_suit_digest))
+        # res = self.my_types["Sig_structure"].validate_str(sig_struct_encoded)
+        # print (sig_struct_encoded.hex())
+        loaded = loads(sig_struct_encoded)
+        # key = VerifyingKey.from_pem(p_manifest14_pub.read_text())
+        # print(sig_struct_encoded.hex())
+        # print(key.to_string().hex())
+        # print(manifest_signature.hex())
+        # res = key.verify(manifest_signature, dumps(self.decoded.orig_obj[3]), hashfunc=sha256)
+        # res = key.verify_digest(manifest_signature, manifest_hash)
+        # res = key.verify(manifest_signature, manifest_hash, hashfunc=sha256)
+        # res = key.verify(manifest_signature, dumps(manifest_hash), hashfunc=sha256)
+        # res = key.verify(manifest_signature, manifest_suit_digest, hashfunc=sha256)
+        # res = key.verify(manifest_signature, dumps(manifest_suit_digest), hashfunc=sha256)
+        # res = key.verify(manifest_signature, dumps(sig_struct_encoded), hashfunc=sha256)
+        # res = key.verify(manifest_signature, sig_struct_encoded, hashfunc=sha256)
+        # print(res)
+
+
+class Test7(Testn):
+    def __init__(self, *args, **kwargs):
+        super(Test7, self).__init__(*args, **kwargs)
+        self.decode_file(p_test_vectors14[1], p_manifest14, p_cose)
+
+    def test_structure(self):
+        self.assertEqual("COSE_Sign1_Tagged", self.decoded.suit_authentication_wrapper.SUIT_Authentication_Block_bstr[0].union_choice)
+        self.assertEqual(-7, self.decoded.suit_authentication_wrapper.SUIT_Authentication_Block_bstr[0].COSE_Sign1_Tagged.Headers.protected.header_map_bstr.Generic_Headers.uint1union[0].int)
+        self.assertEqual(bytes.fromhex("60c61d6eb7a1aaeddc49ce8157a55cff0821537eeee77a4ded44155b03045132"), self.decoded.suit_authentication_wrapper.SUIT_Digest_bstr.suit_digest_bytes)
+        self.assertEqual(1, self.decoded.suit_manifest.suit_manifest_sequence_number)
+        self.assertEqual(bytes.fromhex("fa6b4a53d5ad5fdfbe9de663e4d41ffe"), self.decoded.suit_manifest.suit_common.suit_common_sequence[0].suit_common_sequence.union[0].SUIT_Common_Commands.suit_directive_override_parameters.map[0].suit_parameter_vendor_identifier.RFC4122_UUID)
+        self.assertEqual(bytes.fromhex("1492af1425695e48bf429b2d51f2ab45"), self.decoded.suit_manifest.suit_common.suit_common_sequence[0].suit_common_sequence.union[0].SUIT_Common_Commands.suit_directive_override_parameters.map[1].suit_parameter_class_identifier)
+        self.assertEqual(bytes.fromhex("00112233445566778899aabbccddeeff0123456789abcdeffedcba9876543210"), self.decoded.suit_manifest.suit_common.suit_common_sequence[0].suit_common_sequence.union[0].SUIT_Common_Commands.suit_directive_override_parameters.map[2].suit_parameter_image_digest.suit_digest_bytes)
+        self.assertEqual('cose_alg_sha_256', self.decoded.suit_manifest.suit_common.suit_common_sequence[0].suit_common_sequence.union[0].SUIT_Common_Commands.suit_directive_override_parameters.map[2].suit_parameter_image_digest.suit_digest_algorithm_id.union_choice)
+        self.assertEqual(34768, self.decoded.suit_manifest.suit_common.suit_common_sequence[0].suit_common_sequence.union[0].SUIT_Common_Commands.suit_directive_override_parameters.map[3].suit_parameter_image_size)
+        self.assertEqual(4, len(self.decoded.suit_manifest.suit_common.suit_common_sequence[0].suit_common_sequence.union[0].SUIT_Common_Commands.suit_directive_override_parameters.map))
+        self.assertEqual(15, self.decoded.suit_manifest.suit_common.suit_common_sequence[0].suit_common_sequence.union[1].SUIT_Condition.suit_condition_vendor_identifier.SUIT_Rep_Policy)
+        self.assertEqual(15, self.decoded.suit_manifest.suit_common.suit_common_sequence[0].suit_common_sequence.union[2].SUIT_Condition.suit_condition_class_identifier.SUIT_Rep_Policy)
+        self.assertEqual(3, len(self.decoded.suit_manifest.suit_common.suit_common_sequence[0].suit_common_sequence.union))
+        self.assertEqual(2, len(self.decoded.suit_manifest.suit_common.suit_common_sequence[0].suit_common_sequence.union[0]))
+        self.assertEqual(2, len(self.decoded.suit_manifest.suit_common.suit_common_sequence[0].suit_common_sequence.union[0].SUIT_Common_Commands))
+        self.assertEqual(1, len(self.decoded.suit_manifest.suit_common.suit_common_sequence[0].suit_common_sequence.union[0].SUIT_Common_Commands.suit_directive_override_parameters))
+        self.assertEqual(4, len(self.decoded.suit_manifest.suit_common.suit_common_sequence[0].suit_common_sequence.union[0].SUIT_Common_Commands.suit_directive_override_parameters.map))
+        self.assertEqual(2, len(self.decoded.suit_manifest.suit_common.suit_common_sequence[0].suit_common_sequence.union[0].SUIT_Common_Commands.suit_directive_override_parameters.map[0]))
+
+    def test_cbor_pen(self):
+        data = bytes.fromhex(p_test_vectors14[1].read_text().replace("\n", ""))
+        struct = loads(data)
+        struct2 = loads(struct.value[3])  # manifest
+        struct3 = loads(struct2[3])  # common sequence
+        struct4 = loads(struct3[4])  # override params
+        self.assertEqual(struct4[0], 20)
+        self.assertTrue(isinstance(struct4[1][1], bytes))
+        struct4[1][1] = cbor2.CBORTag(112, struct4[1][1])  # Add the tag for cbor-pen
+        struct3[4] = dumps(struct4)
+        struct2[3] = dumps(struct3)
+        struct.value[3] = dumps(struct2)
+        data = dumps(struct)
+        self.decode_string(data, p_manifest14, p_cose)
+
+
+class Test7Inv(Testn):
+    def test_inv0(self):
+        data = bytes.fromhex(p_test_vectors14[1].read_text().replace("\n", ""))
+        struct = loads(data)
+        struct2 = loads(struct.value[2])  # authentication
+        struct3 = loads(struct2[1])
+        struct3.tag = 99999  # invalid tag for COSE_Sign1
+        struct2[1] = dumps(struct3)
+        struct.value[2] = dumps(struct2)
+        data = dumps(struct)
+        try:
+            self.decode_string(data, p_manifest14, p_cose)
+        except cddl_gen.CddlValidationError as e:
+            return
+        else:
+            assert False, "Should have failed validation"
+
+    def test_inv1(self):
+        data = bytes.fromhex(p_test_vectors14[1].read_text().replace("\n", ""))
+        struct = loads(data)
+        struct2 = loads(struct.value[3])  # manifest
+        struct2[1] += 1  # invalid manifest version
+        struct.value[3] = dumps(struct2)
+        data = dumps(struct)
+        try:
+            self.decode_string(data, p_manifest14, p_cose)
+        except cddl_gen.CddlValidationError as e:
+            return
+        else:
+            assert False, "Should have failed validation"
+
+    def test_inv2(self):
+        data = bytes.fromhex(p_test_vectors14[1].read_text().replace("\n", ""))
+        struct = loads(data)
+        struct.value[23] = b''  # Invalid integrated payload key
+        data = dumps(struct)
+        try:
+            self.decode_string(data, p_manifest14, p_cose)
+        except (cddl_gen.CddlValidationError, cbor2.CBORDecodeEOF) as e:
+            return
+        else:
+            assert False, "Should have failed validation"
+
+    def test_inv3(self):
+        data = bytes.fromhex(p_test_vectors14[1].read_text().replace("\n", ""))
+        struct = loads(data)
+        struct2 = loads(struct.value[3])  # manifest
+        struct3 = loads(struct2[3])  # common sequence
+        struct4 = loads(struct3[4])  # override params
+        self.assertEqual(struct4[0], 20)
+        self.assertTrue(isinstance(struct4[1][1], bytes))
+        struct4[1][1] += b'x'  # vendor ID: wrong length
+        struct3[4] = dumps(struct4)
+        struct2[3] = dumps(struct3)
+        struct.value[3] = dumps(struct2)
+        data = dumps(struct)
+        try:
+            self.decode_string(data, p_manifest14, p_cose)
+        except cddl_gen.CddlValidationError as e:
+            return
+        else:
+            assert False, "Should have failed validation"
+
+
+class Test8(Testn):
+    def __init__(self, *args, **kwargs):
+        super(Test8, self).__init__(*args, **kwargs)
+        self.decode_file(p_test_vectors14[2], p_manifest14, p_cose)
+
+    def test_text(self):
+        self.assertEqual(
+            bytes.fromhex('2bfc4d0cc6680be7dd9f5ca30aa2bb5d1998145de33d54101b80e2ca49faf918'),
+            self.decoded.suit_manifest.SUIT_Severable_Members_Choice.suit_text[0].SUIT_Digest.suit_digest_bytes)
+        self.assertEqual(
+            bytes.fromhex('2bfc4d0cc6680be7dd9f5ca30aa2bb5d1998145de33d54101b80e2ca49faf918'),
+            sha256(dumps(self.decoded.SUIT_Severable_Manifest_Members.suit_text[0].suit_text_bstr)).digest())
+        self.assertEqual('arm.com', self.decoded.SUIT_Severable_Manifest_Members.suit_text[0].suit_text.SUIT_Component_Identifier[0].SUIT_Component_Identifier.SUIT_Text_Component_Keys.suit_text_vendor_domain[0])
+        self.assertEqual('This component is a demonstration. The digest is a sample pattern, not a real one.', self.decoded.SUIT_Severable_Manifest_Members.suit_text[0].suit_text.SUIT_Component_Identifier[0].SUIT_Component_Identifier.SUIT_Text_Component_Keys.suit_text_component_description[0])
+
+        # Check manifest description. The concatenation and .replace() call are there to add
+        # trailing whitespace to all blank lines except the first.
+        # This is done in this way to avoid editors automatically removing the whitespace.
+        self.assertEqual('''## Example 2: Simultaneous Download, Installation, Secure Boot, Severed Fields
+''' + '''
+    This example covers the following templates:
+
+    * Compatibility Check ({{template-compatibility-check}})
+    * Secure Boot ({{template-secure-boot}})
+    * Firmware Download ({{firmware-download-template}})
+
+    This example also demonstrates severable elements ({{ovr-severable}}), and text ({{manifest-digest-text}}).'''.replace("\n\n", "\n    \n"), self.decoded.SUIT_Severable_Manifest_Members.suit_text[0].suit_text.SUIT_Text_Keys.suit_text_manifest_description[0])
+
+
+class Test9(Testn):
+    def __init__(self, *args, **kwargs):
+        super(Test9, self).__init__(*args, **kwargs)
+        self.decode_file(p_test_vectors14[3], p_manifest14, p_cose)
+
+    def test_try_each(self):
+        self.assertEqual(2, len(self.decoded.suit_manifest.SUIT_Severable_Members_Choice.suit_install[0].SUIT_Command_Sequence_bstr.union[0].SUIT_Directive.suit_directive_try_each.SUIT_Directive_Try_Each_Argument.SUIT_Command_Sequence_bstr))
+        self.assertEqual(33792, self.decoded.suit_manifest.SUIT_Severable_Members_Choice.suit_install[0].SUIT_Command_Sequence_bstr.union[0].SUIT_Directive.suit_directive_try_each.SUIT_Directive_Try_Each_Argument.SUIT_Command_Sequence_bstr[0].union[0].SUIT_Directive.suit_directive_set_parameters.map[0].suit_parameter_component_slot)
+        self.assertEqual(541696, self.decoded.suit_manifest.SUIT_Severable_Members_Choice.suit_install[0].SUIT_Command_Sequence_bstr.union[0].SUIT_Directive.suit_directive_try_each.SUIT_Directive_Try_Each_Argument.SUIT_Command_Sequence_bstr[1].union[0].SUIT_Directive.suit_directive_set_parameters.map[0].suit_parameter_component_slot)
+
+
+class Test10(Testn):
+    def __init__(self, *args, **kwargs):
+        super(Test10, self).__init__(*args, **kwargs)
+        self.decode_file(p_test_vectors14[4], p_manifest14, p_cose)
+
+    def test_components(self):
+        self.assertEqual(3, len(self.decoded.suit_manifest.suit_common.suit_components[0]))
+        self.assertEqual(b'\x00', self.decoded.suit_manifest.suit_common.suit_components[0][0].bstr[0])
+        self.assertEqual(b'\x02', self.decoded.suit_manifest.suit_common.suit_components[0][1].bstr[0])
+        self.assertEqual(b'\x01', self.decoded.suit_manifest.suit_common.suit_components[0][2].bstr[0])
+
+
+class Test11(Testn):
+    def __init__(self, *args, **kwargs):
+        super(Test11, self).__init__(*args, **kwargs)
+        self.decode_file(p_test_vectors14[5], p_manifest14, p_cose)
+
+    def test_validate(self):
+        self.assertEqual(4, len(self.decoded.suit_manifest.SUIT_Unseverable_Members.suit_validate[0].suit_validate.union))
+        self.assertEqual(15, self.decoded.suit_manifest.SUIT_Unseverable_Members.suit_validate[0].suit_validate.union[1].SUIT_Condition.suit_condition_image_match.SUIT_Rep_Policy)
+
+
+class Test11Inv(Testn):
+    def test_invalid_rep_policy(self):
+        data = bytes.fromhex(p_test_vectors14[5].read_text().replace("\n", ""))
+        struct = loads(data)
+        struct2 = loads(struct.value[3])  # manifest
+        struct3 = loads(struct2[10])  # suit_validate
+        struct3[3] += 16  # invalid Rep_Policy
+        struct2[10] = dumps(struct3)
+        struct.value[3] = dumps(struct2)
+        data = dumps(struct)
+        try:
+            self.decode_string(data, p_manifest14, p_cose)
+        except cddl_gen.CddlValidationError as e:
+            return
+        else:
+            assert False, "Should have failed validation"
 
 
 class TestCLI(TestCase):
