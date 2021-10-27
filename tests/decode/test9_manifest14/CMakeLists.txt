@@ -8,14 +8,18 @@ cmake_minimum_required(VERSION 3.13.1)
 
 include(../../cmake/test_template.cmake)
 
+if (NOT MANIFEST)
+  set(MANIFEST manifest14)
+endif()
+
 set(py_command
   ${PYTHON_EXECUTABLE}
   ${CMAKE_CURRENT_LIST_DIR}/../../../zcbor/zcbor.py
-  -c ${CMAKE_CURRENT_LIST_DIR}/../../cases/manifest14.cddl
+  -c ${CMAKE_CURRENT_LIST_DIR}/../../cases/${MANIFEST}.cddl
   -c ${CMAKE_CURRENT_LIST_DIR}/../../cases/cose.cddl
   --default-max-qty 4
   code
-  --output-cmake ${PROJECT_BINARY_DIR}/manifest14.cmake
+  --output-cmake ${PROJECT_BINARY_DIR}/${MANIFEST}.cmake
   -t
   SUIT_Envelope_Tagged
   SUIT_Envelope
@@ -31,8 +35,12 @@ execute_process(
   COMMAND_ERROR_IS_FATAL ANY
 )
 
-include(${PROJECT_BINARY_DIR}/manifest14.cmake)
+include(${PROJECT_BINARY_DIR}/${MANIFEST}.cmake)
 
-target_link_libraries(manifest14 PRIVATE zephyr_interface)
-target_link_libraries(app PRIVATE manifest14)
+target_link_libraries(${MANIFEST} PRIVATE zephyr_interface)
+target_link_libraries(app PRIVATE ${MANIFEST})
+
+if (${MANIFEST} STREQUAL "manifest16")
+  target_compile_definitions(app PRIVATE MANIFEST16)
+endif()
 

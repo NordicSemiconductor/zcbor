@@ -5,7 +5,11 @@
  */
 
 #include <ztest.h>
-#include "manifest14_decode.h"
+#ifdef MANIFEST16
+	#include "manifest16_decode.h"
+#else
+	#include "manifest14_decode.h"
+#endif
 #include "zcbor_debug.h" // Enables use of print functions when debugging tests.
 
 
@@ -127,7 +131,6 @@ void test_suit14_ex0_common_sequence(void)
 	zassert_true(cbor_decode_SUIT_Manifest(envelope._SUIT_Envelope_suit_manifest.value,
 		envelope._SUIT_Envelope_suit_manifest.len, &manifest, &out_len), NULL);
 	zassert_equal(envelope._SUIT_Envelope_suit_manifest.len, out_len, NULL);
-	zassert_false(manifest._SUIT_Manifest_suit_common_cbor._SUIT_Common_suit_dependencies_present, NULL);
 	zassert_true(manifest._SUIT_Manifest_suit_common_cbor._SUIT_Common_suit_components_present, NULL);
 	zassert_true(manifest._SUIT_Manifest_suit_common_cbor._SUIT_Common_suit_common_sequence_present, NULL);
 	zassert_true(cbor_decode_SUIT_Common_Sequence(
@@ -244,7 +247,6 @@ void test_suit14_ex0_common_sequence_as_command_sequence(void)
 	zassert_true(cbor_decode_SUIT_Manifest(envelope._SUIT_Envelope_suit_manifest.value,
 		envelope._SUIT_Envelope_suit_manifest.len, &manifest, &out_len), NULL);
 	zassert_equal(envelope._SUIT_Envelope_suit_manifest.len, out_len, NULL);
-	zassert_false(manifest._SUIT_Manifest_suit_common_cbor._SUIT_Common_suit_dependencies_present, NULL);
 	zassert_true(manifest._SUIT_Manifest_suit_common_cbor._SUIT_Common_suit_components_present, NULL);
 	zassert_true(manifest._SUIT_Manifest_suit_common_cbor._SUIT_Common_suit_common_sequence_present, NULL);
 	zassert_true(cbor_decode_SUIT_Common_Sequence(
