@@ -1,4 +1,8 @@
 tests:
   zcbor.decode.test9_manifest14:
     platform_allow: native_posix native_posix_64
-    tags: zcbor decode
+    tags: zcbor decode manifest14
+  zcbor.cbor_decode.test9_manifest16:
+    platform_allow: native_posix native_posix_64
+    tags: zcbor decode manifest16
+    extra_args: MANIFEST=manifest16

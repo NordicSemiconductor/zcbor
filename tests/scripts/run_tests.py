@@ -31,6 +31,7 @@ p_root = Path(__file__).absolute().parents[2]
 p_tests = Path(p_root, 'tests')
 p_manifest12 = Path(p_tests, 'cases', 'manifest12.cddl')
 p_manifest14 = Path(p_tests, 'cases', 'manifest14.cddl')
+p_manifest16 = Path(p_tests, 'cases', 'manifest16.cddl')
 p_test_vectors12 = tuple(Path(p_tests, 'cases', f'manifest12_example{i}.cborhex') for i in range(6))
 p_test_vectors14 = tuple(Path(p_tests, 'cases', f'manifest14_example{i}.cborhex') for i in range(6))
 p_optional = Path(p_tests, 'cases', 'optional.cddl')
@@ -192,15 +193,16 @@ class Test6(Testn):
         self.assertEqual("COSE_Sign1_Tagged", self.decoded.suit_authentication_wrapper.SUIT_Authentication_Block_bstr[0].union_choice)
         self.assertEqual(-7, self.decoded.suit_authentication_wrapper.SUIT_Authentication_Block_bstr[0].COSE_Sign1_Tagged.Headers.protected.header_map_bstr.Generic_Headers.uint1union[0].int)
         manifest_signature = self.decoded.suit_authentication_wrapper.SUIT_Authentication_Block_bstr[0].COSE_Sign1_Tagged.signature
-        sig_struct = ["Signature", self.decoded.suit_authentication_wrapper.SUIT_Authentication_Block_bstr[0].COSE_Sign1_Tagged.Headers.protected.header_map_bstr_bstr, b'', b'', b'']
+        sig_struct = ["Signature", self.decoded.suit_authentication_wrapper.SUIT_Authentication_Block_bstr[0].COSE_Sign1_Tagged.Headers.protected.header_map_bstr_bstr, b'', b'']
         sig_struct_encoded = dumps(sig_struct)
         # self.assertEqual(dumps(self.decoded.suit_manifest.orig_obj), self.decoded.orig_obj[3])
-        manifest_str = dumps(self.decoded.suit_manifest_bstr)
+        # manifest_str = dumps(self.decoded.suit_manifest_bstr)
         # manifest_hash = sha256(manifest_str).digest()
-        manifest_hash = dumps(sha256(manifest_str).digest())
+        # manifest_hash = dumps(sha256(manifest_str).digest())
+        # manifest_suit_digest = self.decoded.suit_authentication_wrapper.SUIT_Digest_bstr_bstr
         manifest_suit_digest = self.decoded.suit_authentication_wrapper.SUIT_Digest_bstr_bstr
-        # manifest_suit_digest = dumps(dumps(self.decoded.suit_authentication_wrapper.SUIT_Digest_bstr.orig_obj))
-        sig_struct_encoded = sig_struct_encoded[:-1] + manifest_hash
+        sig_struct_encoded = sig_struct_encoded[:-1] + (manifest_suit_digest)
+        # sig_struct_encoded = sig_struct_encoded[:-1] + dumps(manifest_suit_digest)
         # sig_struct_encoded = sig_struct_encoded[:-1] + dumps(manifest_hash)
         # sig_struct_encoded = sig_struct_encoded[:-1] + dumps(manifest_suit_digest)
         # sig_struct_encoded = sig_struct_encoded[:-1] + dumps(dumps(manifest_suit_digest))
@@ -363,8 +365,8 @@ class Test9(Testn):
 
     def test_try_each(self):
         self.assertEqual(2, len(self.decoded.suit_manifest.SUIT_Severable_Members_Choice.suit_install[0].SUIT_Command_Sequence_bstr.union[0].SUIT_Directive.suit_directive_try_each.SUIT_Directive_Try_Each_Argument.SUIT_Command_Sequence_bstr))
-        self.assertEqual(33792, self.decoded.suit_manifest.SUIT_Severable_Members_Choice.suit_install[0].SUIT_Command_Sequence_bstr.union[0].SUIT_Directive.suit_directive_try_each.SUIT_Directive_Try_Each_Argument.SUIT_Command_Sequence_bstr[0].union[0].SUIT_Directive.suit_directive_set_parameters.map[0].suit_parameter_component_slot)
-        self.assertEqual(541696, self.decoded.suit_manifest.SUIT_Severable_Members_Choice.suit_install[0].SUIT_Command_Sequence_bstr.union[0].SUIT_Directive.suit_directive_try_each.SUIT_Directive_Try_Each_Argument.SUIT_Command_Sequence_bstr[1].union[0].SUIT_Directive.suit_directive_set_parameters.map[0].suit_parameter_component_slot)
+        self.assertEqual(33792, self.decoded.suit_manifest.SUIT_Severable_Members_Choice.suit_install[0].SUIT_Command_Sequence_bstr.union[0].SUIT_Directive.suit_directive_try_each.SUIT_Directive_Try_Each_Argument.SUIT_Command_Sequence_bstr[0].union[0].SUIT_Directive.suit_directive_override_parameters.map[0].suit_parameter_component_slot)
+        self.assertEqual(541696, self.decoded.suit_manifest.SUIT_Severable_Members_Choice.suit_install[0].SUIT_Command_Sequence_bstr.union[0].SUIT_Directive.suit_directive_try_each.SUIT_Directive_Try_Each_Argument.SUIT_Command_Sequence_bstr[1].union[0].SUIT_Directive.suit_directive_override_parameters.map[0].suit_parameter_component_slot)
 
 
 class Test10(Testn):
@@ -405,6 +407,55 @@ class Test11Inv(Testn):
             return
         else:
             assert False, "Should have failed validation"
+
+
+class Test12(Test6):
+    def __init__(self, *args, **kwargs):
+        super(Test6, self).__init__(*args, **kwargs)
+        self.decode_file(p_test_vectors14[0], p_manifest16, p_cose)
+
+
+class Test13(Test7):
+    def __init__(self, *args, **kwargs):
+        super(Test7, self).__init__(*args, **kwargs)
+        self.decode_file(p_test_vectors14[1], p_manifest16, p_cose)
+
+
+class Test13Inv(Test7Inv):
+    def __init__(self, *args, **kwargs):
+        super(Test7Inv, self).__init__(*args, **kwargs)
+        self.decode_file(p_test_vectors14[1], p_manifest16, p_cose)
+
+
+class Test14(Test8):
+    def __init__(self, *args, **kwargs):
+        super(Test8, self).__init__(*args, **kwargs)
+        self.decode_file(p_test_vectors14[2], p_manifest16, p_cose)
+
+
+class Test15(Test9):
+    def __init__(self, *args, **kwargs):
+        super(Test9, self).__init__(*args, **kwargs)
+        self.decode_file(p_test_vectors14[3], p_manifest16, p_cose)
+
+
+# Comment out because example 4 uses compression which is unsupported in manifest16
+# class Test16(Test10):
+#     def __init__(self, *args, **kwargs):
+#         super(Test10, self).__init__(*args, **kwargs)
+#         self.decode_file(p_test_vectors14[4], p_manifest16, p_cose)
+
+
+class Test17(Test11):
+    def __init__(self, *args, **kwargs):
+        super(Test11, self).__init__(*args, **kwargs)
+        self.decode_file(p_test_vectors14[5], p_manifest16, p_cose)
+
+
+class Test17Inv(Test11Inv):
+    def __init__(self, *args, **kwargs):
+        super(Test11Inv, self).__init__(*args, **kwargs)
+        self.decode_file(p_test_vectors14[5], p_manifest16, p_cose)
 
 
 class TestCLI(TestCase):
