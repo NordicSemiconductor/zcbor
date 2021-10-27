@@ -2,13 +2,18 @@
 
 SUIT_Envelope_Tagged = #6.107(SUIT_Envelope)
 SUIT_Envelope = {
-  ? suit-delegation => bstr .cbor SUIT_Delegation,
+  ; Comment out since it depends on deleted types (was probably meant to be deleted)
+  ;? suit-delegation => bstr .cbor SUIT_Delegation,
   suit-authentication-wrapper => bstr .cbor SUIT_Authentication,
   suit-manifest  => bstr .cbor SUIT_Manifest,
   SUIT_Severable_Manifest_Members,
   * SUIT_Integrated_Payload,
   * $$SUIT_Envelope_Extensions,
-  * (int => bstr)
+
+  ; Comment out the following entry that interferes with testing SUIT_Integrated_Payload.
+  ; The entry is unnecessary together with $$SUIT_Envelope_Extensions.
+  ; It is optional, so removing it is still conformant.
+  ;* (int => bstr)
   }
 
 SUIT_Authentication = [
@@ -72,11 +77,12 @@ SUIT_Common = {
 
 SUIT_Components           = [ + SUIT_Component_Identifier ]
 
-SUIT_Dependency = {
-  suit-dependency-digest => SUIT_Digest,
-  ? suit-dependency-prefix => SUIT_Component_Identifier,
-  * $$SUIT_Dependency-extensions,
-}
+; Comment out since it depends on deleted types (was probably meant to be deleted)
+;SUIT_Dependency = {
+;  suit-dependency-digest => SUIT_Digest,
+;  ? suit-dependency-prefix => SUIT_Component_Identifier,
+;  * $$SUIT_Dependency-extensions,
+;}
 
 ;REQUIRED to implement:
 suit-cose-hash-algs /= cose-alg-sha-256
@@ -122,7 +128,9 @@ SUIT_Directive //= (suit-directive-run-sequence,
     bstr .cbor SUIT_Command_Sequence)
 SUIT_Directive //= (suit-directive-try-each,
     SUIT_Directive_Try_Each_Argument)
-SUIT_Directive //= (suit-directive-process-dependency, SUIT_Rep_Policy)
+
+; Comment out since it depends on deleted types (was probably meant to be deleted)
+;SUIT_Directive //= (suit-directive-process-dependency, SUIT_Rep_Policy)
 SUIT_Directive //= (suit-directive-override-parameters,
     {+ SUIT_Parameters})
 SUIT_Directive //= (suit-directive-fetch,             SUIT_Rep_Policy)
