@@ -1,3 +1,8 @@
+# cddl-gen v. 0.3.1
+
+__cddl-gen has been renamed to [zcbor](https://pypi.org/project/zcbor/)__
+This version of the pip package is deprecated.
+
 # cddl-gen v. 0.3.0
 
 Any new bugs, requests, or missing features should be reported as [Github issues](https://github.com/NordicSemiconductor/cddl-gen/issues).

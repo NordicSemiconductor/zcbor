@@ -43,8 +43,11 @@ def get_version():
 setuptools.setup(
     name='cddl-gen',
     version=get_version(),
-    description=get_description(title_only=True),
-    long_description=get_description(),
+    description="cddl-gen has been renamed to zcbor!",
+    long_description=f"""__cddl-gen has been renamed to [zcbor](https://pypi.org/project/zcbor/)!__
+This package is deprecated.
+
+{get_description()}""",
     long_description_content_type='text/markdown',
     url='https://github.com/NordicSemiconductor/cddl-gen',
     author='Nordic Semiconductor ASA',

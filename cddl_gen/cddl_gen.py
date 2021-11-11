@@ -24,6 +24,16 @@ from shutil import copyfile
 import sys
 from site import USER_BASE
 
+
+from warnings import warn
+
+DEPRECATION_TEXT = """cddl-gen has been renamed to zcbor.
+The cddl-gen package is deprecated in favor of zcbor.
+
+"""
+
+warn(DEPRECATION_TEXT, DeprecationWarning)
+
 indentation = "\t"
 newl_ind = "\n" + indentation
 
@@ -2518,7 +2528,8 @@ target_include_directories({target_name} PUBLIC
 
 def parse_args():
     parser = ArgumentParser(
-        description='''Parse a CDDL file and validate/convert between YAML, JSON, and CBOR.
+        description=f'''! {DEPRECATION_TEXT} !
+Parse a CDDL file and validate/convert between YAML, JSON, and CBOR.
 Can also generate C code for validation/encoding/decoding of CBOR.''')
 
     parser.add_argument(
