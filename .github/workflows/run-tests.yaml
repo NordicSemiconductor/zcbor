@@ -3,7 +3,7 @@ name: Run tests
 on: [pull_request]
 
 jobs:
-  test:
+  merge-test:
     runs-on: ubuntu-latest
     name: Run tests
 
@@ -17,7 +17,7 @@ jobs:
         pip3 install -U setuptools
         pip3 install -U -r scripts/requirements.txt
 
-    - name: Install cddl-gen package
+    - name: Generate and install cddl-gen package
       run: |
         python3 setup.py sdist bdist_wheel
         pip3 install dist/cddl-gen-*.tar.gz
@@ -25,10 +25,10 @@ jobs:
         pip3 install dist/cddl_gen-*.whl
 
     - name: Run pycodestyle
-      working-directory:
       run: |
         pycodestyle cddl_gen/cddl_gen.py --max-line-length=100 --ignore=W191,E101,W503
         pycodestyle tests/scripts/run_tests.py --max-line-length=100 --ignore=W503,E501,E402
+        pycodestyle tests/scripts/release_test.py --max-line-length=100
         pycodestyle cddl_gen/__init__.py --max-line-length=100
         pycodestyle setup.py --max-line-length=100
 
@@ -75,3 +75,54 @@ jobs:
         export ZEPHYR_BASE=$(pwd)/zephyr
         export ZEPHYR_TOOLCHAIN_VARIANT=host
         $ZEPHYR_BASE/scripts/twister -i -T . -W --platform native_posix --platform native_posix_64 -t cbor_encode
+
+  release-test:
+    runs-on: ubuntu-latest
+    name: Run tests
+    needs: merge-test
+    if: "startswith(github.head_ref, 'release/')"
+
+    steps:
+    - name: Checkout the code
+      uses: actions/checkout@v2
+
+    - name: Install dependencies
+      run: |
+        pip3 install -U pip
+        pip3 install -U setuptools
+        pip3 install -U -r scripts/requirements-base.txt
+
+    - name: Generate and install cddl-gen package
+      run: |
+        python3 setup.py sdist bdist_wheel
+        pip3 install dist/cddl-gen-*.tar.gz
+        pip3 uninstall -y cddl-gen
+        pip3 install dist/cddl_gen-*.whl
+
+    - name: Run python release tests
+      working-directory: tests/scripts
+      run: |
+        echo -n ${{ github.head_ref }} > HEAD_REF
+        python3 -m unittest release_test
+        rm HEAD_REF
+
+    - name: Install packages
+      run: |
+        sudo apt update
+        sudo apt install -y gcc-multilib afl++
+
+    - name: Run manifest12 fuzz tests
+      working-directory: tests/fuzz
+      run: |
+        ./test-afl.sh 3200 32 manifest12
+
+    - name: Run pet fuzz tests
+      working-directory: tests/fuzz
+      run: |
+        ./test-afl.sh 400 32 pet
+
+    - name: Upload release files
+      uses: actions/upload-artifact@v2
+      with:
+        name: cddl-gen-release
+        path: dist/*
