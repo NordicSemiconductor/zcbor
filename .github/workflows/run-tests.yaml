@@ -24,15 +24,13 @@ jobs:
         pip3 uninstall -y cddl-gen
         pip3 install dist/cddl_gen-*.whl
 
-    - name: Run pycodestyle cddl_gen.py
-      working-directory: tests
+    - name: Run pycodestyle
+      working-directory:
       run: |
-        pycodestyle ../cddl_gen/cddl_gen.py --max-line-length=120 --ignore=W191,E101,W503
-
-    - name: Run pycodestyle run_tests.py
-      working-directory: tests
-      run: |
-        pycodestyle scripts/run_tests.py --max-line-length=120 --ignore=W503,E501,E402
+        pycodestyle cddl_gen/cddl_gen.py --max-line-length=100 --ignore=W191,E101,W503
+        pycodestyle tests/scripts/run_tests.py --max-line-length=100 --ignore=W503,E501,E402
+        pycodestyle cddl_gen/__init__.py --max-line-length=100
+        pycodestyle setup.py --max-line-length=100
 
     - name: Run python tests
       working-directory: tests/scripts
