@@ -11,6 +11,10 @@ jobs:
     - name: Checkout the code
       uses: actions/checkout@v2
 
+    - name: foo
+      run: |
+        echo ${{ github.repository }}
+
     - name: Install west and dependencies
       run: |
         pip3 install -U pip
