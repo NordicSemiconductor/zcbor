@@ -1,3 +1,10 @@
+#!/usr/bin/env python3
+#
+# Copyright (c) 2021 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
 from unittest import TestCase, main
 from subprocess import Popen, PIPE
 from re import sub
