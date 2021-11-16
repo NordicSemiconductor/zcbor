@@ -18,7 +18,7 @@ def get_description(title_only=False):
 
     if p_readme.is_file():
         with p_readme.open(encoding='utf-8') as f:
-            return f.readline() if title_only else f.read()
+            return f.readline().strip() if title_only else f.read()
     return ''
 
 
