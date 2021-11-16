@@ -2487,9 +2487,9 @@ target_sources({target_name} PRIVATE
     {c_file.name}
     )
 target_include_directories({target_name} PUBLIC
-    {Path(output_h_dir)}
-    {Path(type_file.name).absolute().parent}
-    {Path(h_file.name).absolute().parent}
+    {(linesep + "    ").join(set((str(Path(output_h_dir)),
+                                  str(Path(type_file.name).parent),
+                                  str(Path(h_file.name).parent))))}
     )
 """
 
@@ -2677,7 +2677,7 @@ def process_code(args):
         return Path(path).open(mode)
 
     if args.output_cmake:
-        cmake_dir = Path(args.output_cmake).absolute().parent
+        cmake_dir = Path(args.output_cmake).parent
         output_cmake = create_and_open(args.output_cmake)
         filenames = Path(args.output_cmake).parts[-1].replace(".cmake", "") \
             + ("_decode" if args.decode else "_encode")
@@ -2687,8 +2687,8 @@ def process_code(args):
     output_c = create_and_open(args.output_c or Path(cmake_dir, 'src', f'{filenames}.c'))
     output_h = create_and_open(args.output_h or Path(cmake_dir, 'include', f'{filenames}.h'))
 
-    out_c = Path(output_c.name).absolute()
-    out_h = Path(output_h.name).absolute()
+    out_c = Path(output_c.name)
+    out_h = Path(output_h.name)
 
     output_h_types = create_and_open(
         args.output_h_types
