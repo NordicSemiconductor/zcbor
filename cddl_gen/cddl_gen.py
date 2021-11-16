@@ -130,9 +130,9 @@ def tmp_val_or_null(value):
 
 # Assign the min_value variable.
 def tmp_str_or_null(value):
-    return \
-        f"""(tmp_str.value = {f'"{value}"' if value is not None else 'NULL'},
-    tmp_str.len = sizeof({f'"{value}"'}) - 1, &tmp_str)"""
+    value_str = f'"{value}"' if value is not None else 'NULL'
+    len_str = f"""sizeof({f'"{value}"'}) - 1, &tmp_str)"""
+    return f"(tmp_str.value = {value_str}, tmp_str.len = {len_str}"
 
 
 # Assign the max_value variable.
