@@ -2464,7 +2464,7 @@ static bool {xcoder.func_name}(
 #define DEFAULT_MAX_QTY {self.default_max_qty}
 
 {(linesep+linesep).join(
-    [f"{typedef[1]} {{{linesep} {linesep.join(typedef[0][1:])};" for typedef in self.type_defs])}
+    [f"{typedef[1]} {{{linesep}{linesep.join(typedef[0][1:])};" for typedef in self.type_defs])}
 
 
 #endif /* {header_guard} */
