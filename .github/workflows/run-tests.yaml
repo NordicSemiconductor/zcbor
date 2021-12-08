@@ -5,7 +5,7 @@ on: [pull_request]
 jobs:
   merge-test:
     runs-on: ubuntu-latest
-    name: Run tests
+    name: Merge tests
 
     steps:
     - name: Checkout the code
@@ -78,7 +78,7 @@ jobs:
 
   release-test:
     runs-on: ubuntu-latest
-    name: Run tests
+    name: Release tests
     needs: merge-test
     if: "startswith(github.head_ref, 'release/')"
 
