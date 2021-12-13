@@ -36,17 +36,17 @@ def get_dependencies():
 
 
 def get_version():
-    p_version = Path(P_REPO_ROOT, 'cddl_gen', 'VERSION').absolute()
+    p_version = Path(P_REPO_ROOT, 'zcbor', 'VERSION').absolute()
     return p_version.read_text(encoding='utf-8').strip()
 
 
 setuptools.setup(
-    name='cddl-gen',
+    name='zcbor',
     version=get_version(),
     description=get_description(title_only=True),
     long_description=get_description(),
     long_description_content_type='text/markdown',
-    url='https://github.com/NordicSemiconductor/cddl-gen',
+    url='https://github.com/NordicSemiconductor/zcbor',
     author='Nordic Semiconductor ASA',
     license='Apache Software License',
     classifiers=[
@@ -59,13 +59,13 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     install_requires=get_dependencies(),
     entry_points={
-        'console_scripts': ['cddl-gen=cddl_gen.cddl_gen:main'],
+        'console_scripts': ['zcbor=zcbor.zcbor:main'],
     },
     include_package_data=True,
     package_data={'': ['VERSION']},
     data_files=[
-        ("lib/cddl-gen/include",
+        ("lib/zcbor/include",
             ("include/cbor_decode.h", "include/cbor_encode.h", "include/cbor_common.h",
                 "include/cbor_debug.h")),
-        ("lib/cddl-gen/src", ("src/cbor_decode.c", "src/cbor_encode.c", "src/cbor_common.c"))],
+        ("lib/zcbor/src", ("src/cbor_decode.c", "src/cbor_encode.c", "src/cbor_common.c"))],
 )

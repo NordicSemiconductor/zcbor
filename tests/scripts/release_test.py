@@ -12,7 +12,7 @@ from subprocess import Popen, PIPE
 
 p_script_dir = Path(__file__).absolute().parents[0]
 p_root = p_script_dir.parents[1]
-p_VERSION = Path(p_root, "cddl_gen", "VERSION")
+p_VERSION = Path(p_root, "zcbor", "VERSION")
 p_RELEASE_NOTES = Path(p_root, "RELEASE_NOTES.md")
 p_HEAD_REF = Path(p_script_dir, "HEAD_REF")
 
@@ -35,7 +35,7 @@ class ReleaseTest(TestCase):
             version_number, p_VERSION.read_text(),
             f"{p_VERSION} has not been updated to the correct version number.")
         self.assertEqual(
-            p_RELEASE_NOTES.read_text().splitlines()[0], r"# cddl-gen v. " + version_number,
+            p_RELEASE_NOTES.read_text().splitlines()[0], r"# zcbor v. " + version_number,
             f"{p_RELEASE_NOTES} has not been updated with the correct version number.")
 
         tags_stdout, _ = Popen(['git', 'tag'], stdout=PIPE).communicate()

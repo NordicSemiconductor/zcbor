@@ -14,7 +14,7 @@ target_sources(app PRIVATE
   ${app_sources})
 
 set(py_command3
-  cddl-gen
+  zcbor
   -c ${CMAKE_CURRENT_LIST_DIR}/../../cases/manifest-moran3.cddl
   --default-max-qty 6
   code
@@ -24,7 +24,7 @@ set(py_command3
   )
 
 set(py_command4
-  cddl-gen
+  zcbor
   -c ${CMAKE_CURRENT_LIST_DIR}/../../cases/manifest-moran4.cddl
   --default-max-qty 6
   code

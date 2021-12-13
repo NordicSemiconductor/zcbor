@@ -17,19 +17,19 @@ jobs:
         pip3 install -U setuptools
         pip3 install -U -r scripts/requirements.txt
 
-    - name: Generate and install cddl-gen package
+    - name: Generate and install zcbor package
       run: |
         python3 setup.py sdist bdist_wheel
-        pip3 install dist/cddl-gen-*.tar.gz
-        pip3 uninstall -y cddl-gen
-        pip3 install dist/cddl_gen-*.whl
+        pip3 install dist/zcbor-*.tar.gz
+        pip3 uninstall -y zcbor
+        pip3 install dist/zcbor-*.whl
 
     - name: Run pycodestyle
       run: |
-        pycodestyle cddl_gen/cddl_gen.py --max-line-length=100 --ignore=W191,E101,W503
+        pycodestyle zcbor/zcbor.py --max-line-length=100 --ignore=W191,E101,W503
         pycodestyle tests/scripts/run_tests.py --max-line-length=100 --ignore=W503,E501,E402
         pycodestyle tests/scripts/release_test.py --max-line-length=100
-        pycodestyle cddl_gen/__init__.py --max-line-length=100
+        pycodestyle zcbor/__init__.py --max-line-length=100
         pycodestyle setup.py --max-line-length=100
 
     - name: Run python tests
@@ -92,12 +92,12 @@ jobs:
         pip3 install -U setuptools
         pip3 install -U -r scripts/requirements-base.txt
 
-    - name: Generate and install cddl-gen package
+    - name: Generate and install zcbor package
       run: |
         python3 setup.py sdist bdist_wheel
-        pip3 install dist/cddl-gen-*.tar.gz
-        pip3 uninstall -y cddl-gen
-        pip3 install dist/cddl_gen-*.whl
+        pip3 install dist/zcbor-*.tar.gz
+        pip3 uninstall -y zcbor
+        pip3 install dist/zcbor-*.whl
 
     - name: Run python release tests
       working-directory: tests/scripts
@@ -124,5 +124,5 @@ jobs:
     - name: Upload release files
       uses: actions/upload-artifact@v2
       with:
-        name: cddl-gen-release
+        name: zcbor-release
         path: dist/*

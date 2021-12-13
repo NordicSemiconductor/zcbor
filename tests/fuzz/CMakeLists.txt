@@ -18,7 +18,7 @@ set(TEST_CASE "pet"  CACHE STRING  "Test case (pet or manifest12)")
 
 if (${TEST_CASE} STREQUAL pet)
     execute_process(
-        COMMAND cddl-gen
+        COMMAND zcbor
         -c ${CMAKE_CURRENT_LIST_DIR}/../cases/pet.cddl
         code
         --output-cmake ${PROJECT_BINARY_DIR}/pet.cmake
@@ -27,7 +27,7 @@ if (${TEST_CASE} STREQUAL pet)
         )
 
     execute_process(
-        COMMAND python3 ../../../cddl_gen/cddl_gen.py
+        COMMAND python3 ../../../zcbor/zcbor.py
         --cddl ../../cases/pet.cddl
         convert
         --input ../../cases/pet0.yaml
@@ -42,7 +42,7 @@ if (${TEST_CASE} STREQUAL pet)
 
 elseif (${TEST_CASE} STREQUAL manifest12)
     execute_process(
-        COMMAND cddl-gen
+        COMMAND zcbor
         -c ${CMAKE_CURRENT_LIST_DIR}/../cases/manifest12.cddl
         code
         --output-cmake ${PROJECT_BINARY_DIR}/manifest12.cmake
@@ -52,7 +52,7 @@ elseif (${TEST_CASE} STREQUAL manifest12)
 
     foreach(n RANGE 0 5)
         execute_process(
-        COMMAND python3 ../../../cddl_gen/cddl_gen.py
+        COMMAND python3 ../../../zcbor/zcbor.py
         --cddl ../../cases/manifest12.cddl
         --default-max-qty 16
         convert

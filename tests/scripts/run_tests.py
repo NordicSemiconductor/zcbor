@@ -16,10 +16,10 @@ import cbor2
 
 
 try:
-    import cddl_gen
+    import zcbor
 except ImportError:
     print("""
-The cddl_gen package must be installed to run these tests.
+The zcbor package must be installed to run these tests.
 During development, install with `python3 setup.py develop` to install in a way
 that picks up changes in the files without having to reinstall.
 """)
@@ -46,7 +46,7 @@ class Testn(TestCase):
 
     def decode_string(self, data_string, *cddl_paths):
         cddl_str = " ".join((Path(p).read_text() for p in cddl_paths))
-        self.my_types = cddl_gen.DataTranslator.from_cddl(cddl_str, 16).my_types
+        self.my_types = zcbor.DataTranslator.from_cddl(cddl_str, 16).my_types
         cddl = self.my_types["SUIT_Envelope_Tagged"]
         self.decoded = cddl.decode_str(data_string)
 
@@ -275,7 +275,7 @@ class Test7Inv(Testn):
         data = dumps(struct)
         try:
             self.decode_string(data, p_manifest14, p_cose)
-        except cddl_gen.CddlValidationError as e:
+        except zcbor.CddlValidationError as e:
             return
         else:
             assert False, "Should have failed validation"
@@ -289,7 +289,7 @@ class Test7Inv(Testn):
         data = dumps(struct)
         try:
             self.decode_string(data, p_manifest14, p_cose)
-        except cddl_gen.CddlValidationError as e:
+        except zcbor.CddlValidationError as e:
             return
         else:
             assert False, "Should have failed validation"
@@ -301,7 +301,7 @@ class Test7Inv(Testn):
         data = dumps(struct)
         try:
             self.decode_string(data, p_manifest14, p_cose)
-        except (cddl_gen.CddlValidationError, cbor2.CBORDecodeEOF) as e:
+        except (zcbor.CddlValidationError, cbor2.CBORDecodeEOF) as e:
             return
         else:
             assert False, "Should have failed validation"
@@ -321,7 +321,7 @@ class Test7Inv(Testn):
         data = dumps(struct)
         try:
             self.decode_string(data, p_manifest14, p_cose)
-        except cddl_gen.CddlValidationError as e:
+        except zcbor.CddlValidationError as e:
             return
         else:
             assert False, "Should have failed validation"
@@ -401,7 +401,7 @@ class Test11Inv(Testn):
         data = dumps(struct)
         try:
             self.decode_string(data, p_manifest14, p_cose)
-        except cddl_gen.CddlValidationError as e:
+        except zcbor.CddlValidationError as e:
             return
         else:
             assert False, "Should have failed validation"
@@ -409,7 +409,7 @@ class Test11Inv(Testn):
 
 class TestCLI(TestCase):
     def get_std_args(self, input):
-        return ["cddl-gen", "--cddl", p_manifest12, "--default-max-qty", "16", "convert", "--input", input, "-t", "SUIT_Envelope_Tagged"]
+        return ["zcbor", "--cddl", p_manifest12, "--default-max-qty", "16", "convert", "--input", input, "-t", "SUIT_Envelope_Tagged"]
 
     def do_testn(self, n):
         call0 = Popen(self.get_std_args(p_test_vectors12[n]) + ["--output", "-", "--output-as", "cbor"], stdout=PIPE)
@@ -467,7 +467,7 @@ class TestCLI(TestCase):
 class TestOptional(TestCase):
     def test_0(self):
         with open(p_optional, 'r') as f:
-            cddl_res = cddl_gen.DataTranslator.from_cddl(f.read(), 16)
+            cddl_res = zcbor.DataTranslator.from_cddl(f.read(), 16)
         cddl = cddl_res.my_types['cfg']
         test_yaml = """
             mem_config:
