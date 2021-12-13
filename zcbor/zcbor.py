@@ -1693,8 +1693,8 @@ class CodeGenerator(CddlXcoder):
             "UINT": lambda: "uint32_t",
             "NINT": lambda: "int32_t",
             "FLOAT": lambda: "float_t",
-            "BSTR": lambda: "cbor_string_type_t",
-            "TSTR": lambda: "cbor_string_type_t",
+            "BSTR": lambda: "zcbor_string_type_t",
+            "TSTR": lambda: "zcbor_string_type_t",
             "BOOL": lambda: "bool",
             "NIL": lambda: None,
             "ANY": lambda: None,
@@ -1874,15 +1874,15 @@ class CodeGenerator(CddlXcoder):
         if self.type == "OTHER":
             return self.my_types[self.value].single_func_prim_prefix()
         return ({
-            "INT": f"intx32",
-            "UINT": f"uintx32",
-            "NINT": f"intx32",
-            "FLOAT": f"float",
-            "BSTR": f"bstrx",
-            "TSTR": f"tstrx",
-            "BOOL": f"boolx",
-            "NIL": f"nilx",
-            "ANY": f"any",
+            "INT": f"zcbor_int32",
+            "UINT": f"zcbor_uint32",
+            "NINT": f"zcbor_int32",
+            "FLOAT": f"zcbor_float",
+            "BSTR": f"zcbor_bstr",
+            "TSTR": f"zcbor_tstr",
+            "BOOL": f"zcbor_bool",
+            "NIL": f"zcbor_nil",
+            "ANY": f"zcbor_any",
         }[self.type])
 
     # Name of the encoder/decoder function for this element.
@@ -2034,12 +2034,14 @@ class CodeGenerator(CddlXcoder):
 
     # Return the full code needed to encode/decode a "LIST" or "MAP" element with children.
     def xcode_list(self):
-        start_func = f"{self.type.lower()}_start_{self.mode}"
-        end_func = f"{self.type.lower()}_end_{self.mode}"
+        start_func = f"zcbor_{self.type.lower()}_start_{self.mode}"
+        end_func = f"zcbor_{self.type.lower()}_end_{self.mode}"
         assert start_func in [
-            "list_start_decode", "list_start_encode", "map_start_decode", "map_start_encode"]
+            "zcbor_list_start_decode", "zcbor_list_start_encode",
+            "zcbor_map_start_decode", "zcbor_map_start_encode"]
         assert end_func in [
-            "list_end_decode", "list_end_encode", "map_end_decode", "map_end_encode"]
+            "zcbor_list_end_decode", "zcbor_list_end_encode",
+            "zcbor_map_end_decode", "zcbor_map_end_encode"]
         assert self.type in ["LIST", "MAP"], \
             "Expected LIST or MAP type, was %s." % self.type
         min_counts, max_counts = zip(
@@ -2073,7 +2075,7 @@ class CodeGenerator(CddlXcoder):
                             child.full_xcode(union_uint="DROP"))
                         for child in self.value])
                 return "((%s) && (%s))" % (
-                    f"(uintx32_{self.mode}(state, (uint32_t *)&{self.choice_var_access()}))",
+                    f"(zcbor_uint32_{self.mode}(state, (uint32_t *)&{self.choice_var_access()}))",
                     f"{newl_ind}|| ".join(lines), )
             child_values = ["(%s && ((%s = %s) || 1))" %
                             (child.full_xcode(
@@ -2086,12 +2088,12 @@ class CodeGenerator(CddlXcoder):
                 if ((not self.value[i].is_uint_disambiguated())
                         and (self.value[i].simple_func_condition()
                              or self.value[i - 1].simple_func_condition())):
-                    child_values[i] = f"(union_elem_code(state) && {child_values[i]})"
+                    child_values[i] = f"(zcbor_union_elem_code(state) && {child_values[i]})"
 
             return "(%s && (int_res = (%s), %s, int_res))" \
-                % ("union_start_code(state)",
+                % ("zcbor_union_start_code(state)",
                    f"{newl_ind}|| ".join(child_values),
-                   "union_end_code(state)")
+                   "zcbor_union_end_code(state)")
         else:
             return ternary_if_chain(
                 self.choice_var_access(),
@@ -2101,8 +2103,8 @@ class CodeGenerator(CddlXcoder):
     def xcode_bstr(self):
         if self.cbor_var_condition():
             xcode_cbor = "(%s)" % ((newl_ind + "&& ").join(
-                [f"(int_res = (bstrx_cbor_start_{self.mode}(state, &{self.val_access()})",
-                 f"{self.cbor.full_xcode()})), bstrx_cbor_end_{self.mode}(state), int_res"]))
+                [f"(int_res = (zcbor_bstr_start_{self.mode}(state, &{self.val_access()})",
+                 f"{self.cbor.full_xcode()})), zcbor_bstr_end_{self.mode}(state), int_res"]))
             if self.mode == "decode":
                 return xcode_cbor
             else:
@@ -2111,7 +2113,7 @@ class CodeGenerator(CddlXcoder):
         return self.xcode_single_func_prim()
 
     def xcode_tags(self):
-        return [f"tag_{self.mode if (self.mode == 'encode') else 'expect'}(state, {tag})"
+        return [f"zcbor_tag_{self.mode if (self.mode == 'encode') else 'expect'}(state, {tag})"
                 for tag in self.tags]
 
     def range_checks(self, access):
@@ -2188,14 +2190,14 @@ class CodeGenerator(CddlXcoder):
         if self.present_var_condition():
             func, *arguments = self.repeated_single_func(ptr_result=True)
             return (
-                f"present_{self.mode}(&(%s), (void *)%s, %s)" %
+                f"zcbor_present_{self.mode}(&(%s), (void *)%s, %s)" %
                 (self.present_var_access(),
                  func,
                  xcode_args(*arguments),))
         elif self.count_var_condition():
             func, *arguments = self.repeated_single_func(ptr_result=True)
             return (
-                f"multi_{self.mode}(%s, %s, &%s, (void *)%s, %s, %s)" %
+                f"zcbor_multi_{self.mode}(%s, %s, &%s, (void *)%s, %s, %s)" %
                 (self.min_qty,
                  self.max_qty,
                  self.count_var_access(),
@@ -2344,24 +2346,24 @@ class CodeRenderer():
         temp_count = body.count('temp_elem_count')
         return f"""
 static bool {xcoder.func_name}(
-		cbor_state_t *state, {"" if self.mode == "decode" else "const "}{
+		zcbor_state_t *state, {"" if self.mode == "decode" else "const "}{
             xcoder.type_name
             if struct_ptr_name(self.mode) in body else "void"} *{struct_ptr_name(self.mode)})
 {{
-	cbor_print("%s\\n", __func__);
+	zcbor_print("%s\\n", __func__);
 	{f"uint32_t temp_elem_counts[{temp_count}];" if "temp_elem_count" in body else ""}
 	{"uint32_t *temp_elem_count = temp_elem_counts;" if "temp_elem_count" in body else ""}
 	{"uint32_t current_list_num;" if "current_list_num" in body else ""}
 	{"uint8_t const *payload_bak;" if "payload_bak" in body else ""}
 	{"uint32_t elem_count_bak;" if "elem_count_bak" in body else ""}
 	{"uint32_t tmp_value;" if "tmp_value" in body else ""}
-	{"cbor_string_type_t tmp_str;" if "tmp_str" in body else ""}
+	{"zcbor_string_type_t tmp_str;" if "tmp_str" in body else ""}
 	{"bool int_res;" if "int_res" in body else ""}
 
 	bool tmp_result = ({ body });
 
 	if (!tmp_result)
-		cbor_trace();
+		zcbor_trace();
 
 	{"state->elem_count = temp_elem_counts[0];" if "temp_elem_count" in body else ""}
 	return tmp_result;
@@ -2373,9 +2375,9 @@ static bool {xcoder.func_name}(
         return f"""
 {xcoder.public_xcode_func_sig()}
 {{
-	cbor_state_t states[{xcoder.num_backups() + 2}];
+	zcbor_state_t states[{xcoder.num_backups() + 2}];
 
-	new_state(states, sizeof(states) / sizeof(cbor_state_t), payload, payload_len, {
+	zcbor_new_state(states, sizeof(states) / sizeof(zcbor_state_t), payload, payload_len, {
         xcoder.list_counts()[1]});
 
 	bool ret = {func_name}(states, {func_arg});

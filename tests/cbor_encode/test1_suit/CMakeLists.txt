@@ -63,7 +63,7 @@ target_link_libraries(manifest3_decode PRIVATE zephyr_interface)
 target_link_libraries(app PRIVATE manifest3_encode manifest3_decode)
 
 if (CANONICAL)
-  target_compile_definitions(manifest3_encode PUBLIC CDDL_CBOR_CANONICAL)
+  target_compile_definitions(manifest3_encode PUBLIC ZCBOR_CANONICAL)
 endif()
 
 zephyr_compile_options(-Werror)

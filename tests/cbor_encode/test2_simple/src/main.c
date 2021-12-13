@@ -128,11 +128,11 @@ uint8_t serial_rec_input2[] = {
  * MAP() does the same, but for a map.
  * END adds an end byte for the list/map.
  *
- * With CDDL_CBOR_CANONINCAL, the start byte contains the list, so no end byte is
- * needed. Without CDDL_CBOR_CANONINCAL, the start byte is the same no matter
+ * With ZCBOR_CANONICAL, the start byte contains the list, so no end byte is
+ * needed. Without ZCBOR_CANONICAL, the start byte is the same no matter
  * the number of elements, so it needs an explicit end byte.
  */
-#ifndef CDDL_CBOR_CANONICAL
+#ifndef ZCBOR_CANONICAL
 #define LIST(num) 0x9F
 #define MAP(num) 0xBF
 #define END 0xFF,
@@ -182,7 +182,7 @@ void test_pet(void)
 
 /* This test uses the CBOR encoding library directly, i.e. no generated code.
  * It has no checking against a CDDL schema, but follows the "Pet" structure.
- * It sets up the cbor_state_t variable, and for canonical encoding it adds
+ * It sets up the zcbor_state_t variable, and for canonical encoding it adds
  * backups (for entering containers).
  * It then makes a number of calls to functions in zcbor_encode.h and checks the
  * resulting payload agains the expected output.
@@ -190,16 +190,16 @@ void test_pet(void)
 void test_pet_raw(void)
 {
 	uint8_t payload[100];
-	cbor_state_t state = {
+	zcbor_state_t state = {
 		.payload_mut = payload,
 		.payload_end = payload + sizeof(payload),
 		.elem_count = 0,
 	};
 
-#ifdef CDDL_CBOR_CANONICAL
-	cbor_state_t state_backups[2];
+#ifdef ZCBOR_CANONICAL
+	zcbor_state_t state_backups[2];
 
-	cbor_state_backups_t backups = {
+	zcbor_state_backups_t backups = {
 	.backup_list = state_backups,
 	.current_backup = 0,
 	.num_backups = 2,
@@ -219,27 +219,27 @@ void test_pet_raw(void)
 		END
 	};
 
-	bool res = list_start_encode(&state, 0);
+	bool res = zcbor_list_start_encode(&state, 0);
 	zassert_true(res, NULL);
 
-	res = res && list_start_encode(&state, 0);
+	res = res && zcbor_list_start_encode(&state, 0);
 	zassert_true(res, NULL);
-	res = res && tstrx_put(&state, "first");
+	res = res && zcbor_tstr_put(&state, "first");
 	zassert_true(res, NULL);
-	res = res && tstrx_put(&state, "second");
+	res = res && zcbor_tstr_put(&state, "second");
 	zassert_true(res, NULL);
-	res = res && list_end_encode(&state, 0);
+	res = res && zcbor_list_end_encode(&state, 0);
 	zassert_true(res, NULL);
 	uint8_t timestamp[8] = {1, 2, 3, 4, 5, 6, 7, 8};
-	cbor_string_type_t timestamp_str = {
+	zcbor_string_type_t timestamp_str = {
 		.value = timestamp,
 		.len = sizeof(timestamp),
 	};
-	res = res && bstrx_encode(&state, &timestamp_str);
+	res = res && zcbor_bstr_encode(&state, &timestamp_str);
 	zassert_true(res, NULL);
-	res = res && uintx32_put(&state, 2 /* dog */);
+	res = res && zcbor_uint32_put(&state, 2 /* dog */);
 	zassert_true(res, NULL);
-	res = res && list_end_encode(&state, 0);
+	res = res && zcbor_list_end_encode(&state, 0);
 
 	/* Check that encoding succeeded. */
 	zassert_true(res, NULL);

@@ -20,12 +20,12 @@
  * @retval true   Everything is ok.
  * @retval false  If the payload is exhausted.
  */
-bool intx32_encode(cbor_state_t *state, const int32_t *input);
-bool intx32_put(cbor_state_t *state, int32_t result);
+bool zcbor_int32_encode(zcbor_state_t *state, const int32_t *input);
+bool zcbor_int32_put(zcbor_state_t *state, int32_t result);
 
 /** Encode a PINT into a uint32_t. */
-bool uintx32_encode(cbor_state_t *state, const uint32_t *result);
-bool uintx32_put(cbor_state_t *state, uint32_t result);
+bool zcbor_uint32_encode(zcbor_state_t *state, const uint32_t *result);
+bool zcbor_uint32_put(zcbor_state_t *state, uint32_t result);
 
 /** Encode a BSTR header.
  *
@@ -35,58 +35,58 @@ bool uintx32_put(cbor_state_t *state, uint32_t result);
  * @retval true   Header encoded correctly
  * @retval false  Header encoded incorrectly, or backup failed.
  */
-bool bstrx_cbor_start_encode(cbor_state_t *state, const cbor_string_type_t *result);
+bool zcbor_bstr_start_encode(zcbor_state_t *state, const zcbor_string_type_t *result);
 
 /** Finalize encoding a CBOR-encoded BSTR.
  *
  * Restore element count from backup.
  */
-bool bstrx_cbor_end_encode(cbor_state_t *state);
+bool zcbor_bstr_end_encode(zcbor_state_t *state);
 
 /** Encode a BSTR, */
-bool bstrx_encode(cbor_state_t *state, const cbor_string_type_t *result);
+bool zcbor_bstr_encode(zcbor_state_t *state, const zcbor_string_type_t *result);
 
 /** Encode a TSTR. */
-bool tstrx_encode(cbor_state_t *state, const cbor_string_type_t *result);
+bool zcbor_tstr_encode(zcbor_state_t *state, const zcbor_string_type_t *result);
 
-#define tstrx_put(state, string) \
-	tstrx_encode(state, &(cbor_string_type_t){.value = string, .len = (sizeof(string) - 1)})
+#define zcbor_tstr_put(state, string) \
+	zcbor_tstr_encode(state, &(zcbor_string_type_t){.value = string, .len = (sizeof(string) - 1)})
 
-#define tstrx_put_term(state, string) \
-	tstrx_encode(state, &(cbor_string_type_t){.value = string, .len = strlen(string)})
+#define zcbor_tstr_put_term(state, string) \
+	zcbor_tstr_encode(state, &(zcbor_string_type_t){.value = string, .len = strlen(string)})
 
 /** Encode a LIST header.
  *
  * The contents of the list can be decoded via subsequent function calls.
  * A state backup is created to keep track of the element count.
  */
-bool list_start_encode(cbor_state_t *state, uint32_t max_num);
+bool zcbor_list_start_encode(zcbor_state_t *state, uint32_t max_num);
 
 /** Encode a MAP header. */
-bool map_start_encode(cbor_state_t *state, uint32_t max_num);
+bool zcbor_map_start_encode(zcbor_state_t *state, uint32_t max_num);
 
 /** Encode end of a LIST. Do some checks and deallocate backup. */
-bool list_end_encode(cbor_state_t *state, uint32_t max_num);
+bool zcbor_list_end_encode(zcbor_state_t *state, uint32_t max_num);
 
 /** Encode end of a MAP. Do some checks and deallocate backup. */
-bool map_end_encode(cbor_state_t *state, uint32_t max_num);
+bool zcbor_map_end_encode(zcbor_state_t *state, uint32_t max_num);
 
 /** Encode a "nil" primitive value. result should be NULL. */
-bool nilx_put(cbor_state_t *state, const void *result);
+bool zcbor_nil_put(zcbor_state_t *state, const void *result);
 
 /** Encode a boolean primitive value. */
-bool boolx_encode(cbor_state_t *state, const bool *result);
-bool boolx_put(cbor_state_t *state, bool result);
+bool zcbor_bool_encode(zcbor_state_t *state, const bool *result);
+bool zcbor_bool_put(zcbor_state_t *state, bool result);
 
 /** Encode a float */
-bool float_encode(cbor_state_t *state, double *result);
-bool float_put(cbor_state_t *state, double result);
+bool zcbor_float_encode(zcbor_state_t *state, double *result);
+bool zcbor_float_put(zcbor_state_t *state, double result);
 
 /** Dummy encode "any": Encode a "nil". input should be NULL. */
-bool any_encode(cbor_state_t *state, void *input);
+bool zcbor_any_encode(zcbor_state_t *state, void *input);
 
 /** Encode a tag. */
-bool tag_encode(cbor_state_t *state, uint32_t tag);
+bool zcbor_tag_encode(zcbor_state_t *state, uint32_t tag);
 
 /** Encode 0 or more elements with the same type and constraints.
  *
@@ -99,18 +99,18 @@ bool tag_encode(cbor_state_t *state, uint32_t tag);
  *              uint32_t int_max = 100;
  *              uint32_t bstr_size = 8;
  *              uint32_t ints[3];
- *              cbor_string_type_t bstrs[2] = <initialize here>;
+ *              zcbor_string_type_t bstrs[2] = <initialize here>;
  *              bool res;
  *
- *              res = list_start_encode(state, 5);
+ *              res = zcbor_list_start_encode(state, 5);
  *              // check res
- *              res = multi_encode(3, 3, &num_encode, uintx32_encode, state,
+ *              res = zcbor_multi_encode(3, 3, &num_encode, zcbor_uint32_encode, state,
  *                           ints, 4);
  *              // check res
- *              res = multi_encode(0, 2, &num_encode, strx_encode, state,
- *                           bstrs, sizeof(cbor_string_type_t));
+ *              res = zcbor_multi_encode(0, 2, &num_encode, strx_encode, state,
+ *                           bstrs, sizeof(zcbor_string_type_t));
  *              // check res
- *              res = list_end_encode(state, 5);
+ *              res = zcbor_list_end_encode(state, 5);
  *              // check res
  *          @endcode
  *
@@ -133,13 +133,13 @@ bool tag_encode(cbor_state_t *state, uint32_t tag);
  * @retval false  If @p encoder failed before having encoded @p min_encode
  *                values.
  */
-bool multi_encode(uint32_t min_encode, uint32_t max_encode, const uint32_t *num_encode,
-		cbor_encoder_t encoder, cbor_state_t *state, const void *input,
+bool zcbor_multi_encode(uint32_t min_encode, uint32_t max_encode, const uint32_t *num_encode,
+		zcbor_encoder_t encoder, zcbor_state_t *state, const void *input,
 		uint32_t result_len);
 
-bool present_encode(const uint32_t *present,
-		cbor_encoder_t encoder,
-		cbor_state_t *state,
+bool zcbor_present_encode(const uint32_t *present,
+		zcbor_encoder_t encoder,
+		zcbor_state_t *state,
 		const void *input);
 
 #endif /* CBOR_ENCODE_H__ */
