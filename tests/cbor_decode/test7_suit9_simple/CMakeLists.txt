@@ -11,7 +11,7 @@ project(NONE)
 
 set(py_command
   ${PYTHON_EXECUTABLE}
-  ${CMAKE_CURRENT_LIST_DIR}/../../../cddl_gen/cddl_gen.py
+  ${CMAKE_CURRENT_LIST_DIR}/../../../zcbor/zcbor.py
   -c ${CMAKE_CURRENT_LIST_DIR}/../../cases/manifest9_simple.cddl
   code
   --output-cmake ${PROJECT_BINARY_DIR}/manifest9_simple.cmake

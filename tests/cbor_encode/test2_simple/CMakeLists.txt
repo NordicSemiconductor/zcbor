@@ -14,7 +14,7 @@ target_sources(app PRIVATE
   ${app_sources})
 
 set(py_command
-  cddl-gen
+  zcbor
   -c ${CMAKE_CURRENT_LIST_DIR}/../../cases/pet.cddl
   code
   --output-cmake ${PROJECT_BINARY_DIR}/pet.cmake

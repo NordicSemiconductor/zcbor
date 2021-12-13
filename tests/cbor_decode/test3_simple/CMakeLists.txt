@@ -15,7 +15,7 @@ target_sources(app PRIVATE
   ../../fuzz/fuzz_pet.c)
 
 set(py_command_pet
-  cddl-gen
+  zcbor
   -c ${CMAKE_CURRENT_LIST_DIR}/../../cases/pet.cddl
   code
   --output-cmake ${PROJECT_BINARY_DIR}/pet.cmake
@@ -23,7 +23,7 @@ set(py_command_pet
   -d
   )
 set(py_command_serial_recovery
-  cddl-gen
+  zcbor
   -c ${CMAKE_CURRENT_LIST_DIR}/../../cases/serial_recovery.cddl
   code
   --output-cmake ${PROJECT_BINARY_DIR}/serial_recovery.cmake

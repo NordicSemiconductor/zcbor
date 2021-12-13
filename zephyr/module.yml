@@ -1,4 +1,4 @@
-name: cddl-gen
+name: zcbor
 
 build:
   cmake-ext: True

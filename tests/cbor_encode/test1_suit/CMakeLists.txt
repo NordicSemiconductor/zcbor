@@ -10,7 +10,7 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(NONE)
 
 set(py_command_e
-  cddl-gen
+  zcbor
   -c ${CMAKE_CURRENT_LIST_DIR}/../../cases/manifest3.cddl
   code
   --output-cmake ${PROJECT_BINARY_DIR}/manifest3_encode.cmake
@@ -26,7 +26,7 @@ set(py_command_e
   )
 
 set(py_command_d
-  cddl-gen
+  zcbor
   -c ${CMAKE_CURRENT_LIST_DIR}/../../cases/manifest3.cddl
   code
   --output-cmake ${PROJECT_BINARY_DIR}/manifest3_decode.cmake

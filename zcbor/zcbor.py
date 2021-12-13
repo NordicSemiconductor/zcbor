@@ -48,13 +48,13 @@ if Path(__file__).name in sys.argv[0]:
     c_code_root = P_REPO_ROOT
 elif is_relative_to(P_SCRIPT, (Path(sys.prefix, "local"))):
     # Installed via pip as root.
-    c_code_root = Path(sys.prefix, "local", "lib", "cddl-gen")
+    c_code_root = Path(sys.prefix, "local", "lib", "zcbor")
 elif is_relative_to(P_SCRIPT, (Path(sys.prefix))):
     # Installed via pip as root.
-    c_code_root = Path(sys.prefix, "lib", "cddl-gen")
+    c_code_root = Path(sys.prefix, "lib", "zcbor")
 elif is_relative_to(P_SCRIPT, (Path(USER_BASE))):
     # Installed via pip as user.
-    c_code_root = Path(USER_BASE, "lib", "cddl-gen")
+    c_code_root = Path(USER_BASE, "lib", "zcbor")
 else:
     # Don't know where the C code is. Assume we are in the repo.
     c_code_root = P_REPO_ROOT
@@ -2391,8 +2391,8 @@ static bool {xcoder.func_name}(
     # Render the entire generated C file contents.
     def render_c_file(self, header_file_name):
         return f"""/*
- * Generated using cddl_gen version {self.version}
- * https://github.com/NordicSemiconductor/cddl-gen{'''
+ * Generated using zcbor version {self.version}
+ * https://github.com/NordicSemiconductor/zcbor{'''
  * at: ''' + datetime.now().strftime('%Y-%m-%d %H:%M:%S') if self.print_time else ''}
  * Generated with a default_max_qty of {self.default_max_qty}
  */
@@ -2417,8 +2417,8 @@ static bool {xcoder.func_name}(
     def render_h_file(self, type_def_file, header_guard):
         return \
             f"""/*
- * Generated using cddl_gen version {self.version}
- * https://github.com/NordicSemiconductor/cddl-gen{'''
+ * Generated using zcbor version {self.version}
+ * https://github.com/NordicSemiconductor/zcbor{'''
  * at: ''' + datetime.now().strftime('%Y-%m-%d %H:%M:%S') if self.print_time else ''}
  * Generated with a default_max_qty of {self.default_max_qty}
  */
@@ -2446,8 +2446,8 @@ static bool {xcoder.func_name}(
     def render_type_file(self, header_guard):
         return \
             f"""/*
- * Generated using cddl_gen version {self.version}
- * https://github.com/NordicSemiconductor/cddl-gen{'''
+ * Generated using zcbor version {self.version}
+ * https://github.com/NordicSemiconductor/zcbor{'''
  * at: ''' + datetime.now().strftime('%Y-%m-%d %H:%M:%S') if self.print_time else ''}
  * Generated with a default_max_qty of {self.default_max_qty}
  */
@@ -2474,8 +2474,8 @@ static bool {xcoder.func_name}(
         return \
             f"""\
 #
-# Generated using cddl_gen version {self.version}
-# https://github.com/NordicSemiconductor/cddl-gen{'''
+# Generated using zcbor version {self.version}
+# https://github.com/NordicSemiconductor/zcbor{'''
 # at: ''' + datetime.now().strftime('%Y-%m-%d %H:%M:%S') if self.print_time else ''}
 #
 
@@ -2522,7 +2522,7 @@ def parse_args():
 Can also generate C code for validation/encoding/decoding of CBOR.''')
 
     parser.add_argument(
-        "--version", action="version", version=f"cddl-gen {__version__}")
+        "--version", action="version", version=f"zcbor {__version__}")
     parser.add_argument(
         "-c", "--cddl", required=True, type=FileType('r'), action="append",
         help="""Path to one or more input CDDL file(s). Passing multiple files is equivalent to
@@ -2585,7 +2585,7 @@ as the name of the Cmake target in the file.""")
         help="Put the current time in a comment in the generated files.")
     code_parser.add_argument(
         "--git-sha-header", required=False, action="store_true", default=False,
-        help="Put the current git sha of cddl_gen in a comment in the generated files.")
+        help="Put the current git sha of zcbor in a comment in the generated files.")
     code_parser.set_defaults(process=process_code)
 
     convert_parser = subparsers.add_parser(
@@ -2665,7 +2665,7 @@ def process_code(args):
 
     git_sha = ''
     if args.git_sha_header:
-        if "cddl_gen.py" in sys.argv[0]:
+        if "zcbor.py" in sys.argv[0]:
             git_args = ['git', 'rev-parse', '--verify', '--short', 'HEAD']
             git_sha = Popen(
                 git_args, cwd=P_REPO_ROOT, stdout=PIPE).communicate()[0].decode('utf-8').strip()
