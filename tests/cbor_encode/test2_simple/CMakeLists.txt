@@ -33,7 +33,7 @@ target_link_libraries(pet PRIVATE zephyr_interface)
 target_link_libraries(app PRIVATE pet)
 
 if (CANONICAL)
-  target_compile_definitions(pet PUBLIC CDDL_CBOR_CANONICAL)
+  target_compile_definitions(pet PUBLIC ZCBOR_CANONICAL)
 endif()
 
 zephyr_compile_options(-Werror)

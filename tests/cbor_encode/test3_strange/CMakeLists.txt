@@ -51,7 +51,7 @@ target_link_libraries(strange PRIVATE zephyr_interface)
 target_link_libraries(app PRIVATE strange)
 
 if (CANONICAL)
-  target_compile_definitions(strange PUBLIC CDDL_CBOR_CANONICAL)
+  target_compile_definitions(strange PUBLIC ZCBOR_CANONICAL)
 endif()
 
 zephyr_compile_options(-Werror)

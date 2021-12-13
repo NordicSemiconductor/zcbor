@@ -228,15 +228,15 @@ uint32_t num_test_vectors = sizeof(test_vector)/sizeof(uint8_t*);
 
 static uint8_t output[2000];
 
-void test_command_sequence(cbor_string_type_t *sequence_str,
+void test_command_sequence(zcbor_string_type_t *sequence_str,
 			bool present, char *name)
 {
 	struct SUIT_Command_Sequence sequence1;
-	cbor_string_type_t *run_seq;
+	zcbor_string_type_t *run_seq;
 	bool run_seq_present;
-	cbor_string_type_t *try_each1;
+	zcbor_string_type_t *try_each1;
 	bool try_each1_present;
-	cbor_string_type_t *try_each2;
+	zcbor_string_type_t *try_each2;
 	bool try_each2_present;
 	uint32_t out_len;
 
@@ -244,7 +244,7 @@ void test_command_sequence(cbor_string_type_t *sequence_str,
 		return;
 	}
 
-	cbor_print("\r\ntest %s\r\n", name);
+	zcbor_print("\r\ntest %s\r\n", name);
 
 	memset(&sequence1, 0, sizeof(sequence1));
 	bool res = cbor_decode_SUIT_Command_Sequence(sequence_str->value,
@@ -315,31 +315,31 @@ void test_manifest(const uint8_t *input, uint32_t len)
 	struct SUIT_Outer_Wrapper outerwrapper1 = {0};
 	struct SUIT_Manifest *manifest;
 	// struct SUIT_Component_Identifier *component;
-	cbor_string_type_t *dependency1;
+	zcbor_string_type_t *dependency1;
 	bool dependency1_present;
-	cbor_string_type_t *fetch1;
+	zcbor_string_type_t *fetch1;
 	bool fetch1_present;
-	cbor_string_type_t *install1;
+	zcbor_string_type_t *install1;
 	bool install1_present;
-	cbor_string_type_t *common_seq;
+	zcbor_string_type_t *common_seq;
 	bool common_seq_present;
-	cbor_string_type_t *dependency2;
+	zcbor_string_type_t *dependency2;
 	bool dependency2_present;
-	cbor_string_type_t *fetch2;
+	zcbor_string_type_t *fetch2;
 	bool fetch2_present;
-	cbor_string_type_t *install2;
+	zcbor_string_type_t *install2;
 	bool install2_present;
-	cbor_string_type_t *validate;
+	zcbor_string_type_t *validate;
 	bool validate_present;
-	cbor_string_type_t *load;
+	zcbor_string_type_t *load;
 	bool load_present;
-	cbor_string_type_t *run;
+	zcbor_string_type_t *run;
 	bool run_present;
 	bool res;
 	uint32_t out_len;
 
-	cbor_print("test_vector at: 0x%x\r\n", (uint32_t)input);
-	cbor_print("test_vector end at: 0x%x\r\n",
+	zcbor_print("test_vector at: 0x%x\r\n", (uint32_t)input);
+	zcbor_print("test_vector end at: 0x%x\r\n",
 				((uint32_t)input) + len);
 	res = cbor_decode_SUIT_Outer_Wrapper(input, len, &outerwrapper1, NULL);
 	zassert_true(res, "top-level decoding failed.");

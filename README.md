@@ -97,7 +97,7 @@ CBOR decoding/encoding library
 ==============================
 
 The CBOR library found at [headers](include) and [source](src) is used by the generated code, but can also be used directly.
-If so, you must instantiate a `cbor_state_t` object as well as a `cbor_state_backups_t` object (backups can be NULL in simple use cases).
+If so, you must instantiate a `zcbor_state_t` object as well as a `zcbor_state_backups_t` object (backups can be NULL in simple use cases).
 
 The elem_count member refers to the number of encoded objects in the current list or map.
 elem_count starts again when entering a nested list or map, and is restored when exiting.
@@ -105,7 +105,7 @@ elem_count starts again when entering a nested list or map, and is restored when
 elem_count is one reason for needing "backup" states (the other is to allow rollback of the payload).
 You need a number of backups corresponding to the maximum number of nested levels in your data.
 
-Backups are needed for encoding if you are using canonical encoding (CDDL_CBOR_CANONICAL), or using the bstrx_cbor_* functions.
+Backups are needed for encoding if you are using canonical encoding (ZCBOR_CANONICAL), or using the bstrx_cbor_* functions.
 Backups are needed for decoding if there are any lists, maps, or CBOR-encoded strings in the data.
 
 Note that the benefits of using the library directly is greater for encoding than for decoding.
@@ -115,7 +115,7 @@ For decoding, the code generation will provide a number of checks that are tedio
 /** The number of states must be at least equal to one more than the maximum
  *  nested depth of the data.
  */
-cbor_state_t states[n];
+zcbor_state_t states[n];
 
 /** Initialize the states. After calling this, states[0] is ready to be used
  *  with the encoding/decoding APIs.
@@ -123,7 +123,7 @@ cbor_state_t states[n];
  *  decoding (1 if the data is wrapped in a list).
  *  When encoding, elem_count must be 0.
  */
-new_state(states, n, payload, payload_len, elem_count);
+zcbor_new_state(states, n, payload, payload_len, elem_count);
 ```
 
 Introduction to CDDL
@@ -249,21 +249,21 @@ For encoding:
 #include <zcbor_encode.h>
 
 uint8_t payload[100];
-cbor_state_t state;
-new_state(&state, 1, payload, sizeof(payload), 0);
+zcbor_state_t state;
+zcbor_new_state(&state, 1, payload, sizeof(payload), 0);
 
-res = res && list_start_encode(&state, 0);
-res = res && tstrx_put(&state, "first");
-res = res && tstrx_put(&state, "second");
-res = res && list_end_encode(&state, 0);
+res = res && zcbor_list_start_encode(&state, 0);
+res = res && zcbor_tstr_put(&state, "first");
+res = res && zcbor_tstr_put(&state, "second");
+res = res && zcbor_list_end_encode(&state, 0);
 uint8_t timestamp[8] = {1, 2, 3, 4, 5, 6, 7, 8};
-cbor_string_type_t timestamp_str = {
+zcbor_string_type_t timestamp_str = {
   .value = timestamp,
   .len = sizeof(timestamp),
 };
-res = res && bstrx_encode(&state, &timestamp_str);
-res = res && uintx32_put(&state, 2 /* dog */);
-res = res && list_end_encode(&state, 0);
+res = res && zcbor_bstr_encode(&state, &timestamp_str);
+res = res && zcbor_uint32_put(&state, 2 /* dog */);
+res = res && zcbor_list_end_encode(&state, 0);
 
 ```
 

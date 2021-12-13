@@ -10,7 +10,7 @@
 
 #define CONCAT_BYTE(a,b) a ## b
 
-#ifndef CDDL_CBOR_CANONICAL
+#ifndef ZCBOR_CANONICAL
 #define LIST(num) 0x9F
 #define MAP(num) 0xBF
 #define END 0xFF,
@@ -120,7 +120,7 @@ void test_strings(void)
 		0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,
 		0xC0, 0x78, 0x1E, // 30 bytes
 		0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,
-#ifndef CDDL_CBOR_CANONICAL
+#ifndef ZCBOR_CANONICAL
 		0x58, 30, // Numbers (len: 30)
 #else
 		0x58, 29, // Numbers (len: 29)
@@ -137,7 +137,7 @@ void test_strings(void)
 				0x1A, 0xFF, 0xFF, 0xFF, 0xFF, // 0xFFFFFFFF
 				0xD9, 0xFF, 0xFF, 9, // 9
 				END
-#ifndef CDDL_CBOR_CANONICAL
+#ifndef ZCBOR_CANONICAL
 		0x52, // Primitives (len: 17)
 #else
 		0x4f, // Primitives (len: 15)
@@ -160,7 +160,7 @@ void test_strings(void)
 				0xF4, // False
 				0xF6, // Nil
 				END
-#ifndef CDDL_CBOR_CANONICAL
+#ifndef ZCBOR_CANONICAL
 		0x59, 0x01, 0x6A, // Strings (len: 362)
 #else
 		0x59, 0x01, 0x67, // Strings (len: 359)
@@ -180,7 +180,7 @@ void test_strings(void)
 			0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,
 			0xC0, 0x6A, // 10 bytes
 			0,1,2,3,4,5,6,7,8,9,
-#ifndef CDDL_CBOR_CANONICAL
+#ifndef ZCBOR_CANONICAL
 			0x58, 30, // Numbers (len: 30)
 #else
 			0x58, 29, // Numbers (len: 29)
@@ -197,7 +197,7 @@ void test_strings(void)
 					0x1A, 0xFF, 0xFF, 0xFF, 0xFF, // 0xFFFFFFFF
 					0xD9, 0xFF, 0xFF, 0x29, // -10
 					END
-#ifndef CDDL_CBOR_CANONICAL
+#ifndef ZCBOR_CANONICAL
 			0x46, // Primitives (len: 5)
 #else
 			0x45, // Primitives (len: 5)
@@ -895,7 +895,7 @@ void test_single(void)
 	uint8_t exp_payload_single2[] = {9};
 	uint8_t output[10];
 	uint32_t out_len;
-	cbor_string_type_t input_single0 = {
+	zcbor_string_type_t input_single0 = {
 		.value = "hello",
 		.len = 5
 	};
@@ -951,7 +951,7 @@ void test_unabstracted(void)
 
 void test_string_overflow(void)
 {
-	cbor_string_type_t input_overflow0 = {
+	zcbor_string_type_t input_overflow0 = {
 		.value = "",
 		.len = 0xFFFFFF00, /* overflows to before this object. */
 	};

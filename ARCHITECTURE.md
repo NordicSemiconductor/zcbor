@@ -153,7 +153,7 @@ For example:
 A CodeGenerator object operates in one of two modes: `"encode"` or `"decode"`.
 The generated code for the two is not very different, but they call into different libraries.
 
-Base types, like `"UINT"`, `"BOOL"`, `"FLOAT"` are represented by native C types. `"BSTR"`s and `"TSTR"`s are represented by a proprietary `cbor_string_type_t` which is just a `uint8_t` pointer and length.
+Base types, like `"UINT"`, `"BOOL"`, `"FLOAT"` are represented by native C types. `"BSTR"`s and `"TSTR"`s are represented by a proprietary `zcbor_string_type_t` which is just a `uint8_t` pointer and length.
 These types are decoded/encoded with C code that is not generated.
 More on this in the Architecture of the generated C code below.
 
@@ -166,7 +166,7 @@ These types are called "entry types" and they are typically the "outermost" type
 The user can also use entry types when there are `"BSTR"`s that are CBOR encoded, specified as `Foo = bstr .cbor Bar`.
 Usually such strings are automatically decoded/encoded by the generated code, and the objects part of the encompassing struct.
 However, if the user instead wants to manually decode/encode such strings, they can add them to `self.entry_types`.
-In this case, the strings will be stored as a regular `cbor_string_type_t` instead of being decoded/encoded.
+In this case, the strings will be stored as a regular `zcbor_string_type_t` instead of being decoded/encoded.
 
 CodeRenderer
 ------------
@@ -188,7 +188,7 @@ In the generated C file, each type from the CDDL file gets its own decoding/enco
 These functions are all `static`.
 In addition, all entry types get public wrapper functions.
 
-All decoding/encoding functions operate on a state variable of type `cbor_state_t` which keeps track of:
+All decoding/encoding functions operate on a state variable of type `zcbor_state_t` which keeps track of:
 
 - The current position in the payload, and the end of the payload.
 - The current position in a list or map, and the maximum expected number of elements.
@@ -209,10 +209,10 @@ This if statement performs boolean algebra on statements depending on the childr
 The assignment of values in the structs mostly happens in the non-generated code.
 The generated code mostly combines and validates calls into the non-generated code or other generated functions.
 
-All functions (generated and not) have the same API structure: `bool <name>(cbor_state_t *state, <type> *result)`.
+All functions (generated and not) have the same API structure: `bool <name>(zcbor_state_t *state, <type> *result)`.
 The number of arguments is kept to a minimum to reduce code size.
 
-The exceptions to the API structure are `multi_decode`/`multi_encode` and `present_decode`/`present_encode`.
+The exceptions to the API structure are `zcbor_multi_decode`/`zcbor_multi_encode` and `zcbor_present_decode`/`zcbor_present_encode`.
 These functions accept function pointers with the above API and run them multiple times.
 When this happens, the function pointers are cast to a generic function pointer type, and processed without knowledge of the type.
 

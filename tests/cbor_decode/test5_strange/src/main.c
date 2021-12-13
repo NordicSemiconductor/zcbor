@@ -208,7 +208,7 @@ void test_string_overflow(void)
 		0x5A, 0xFF, 0xFF, 0xF0, 0x00, /* overflows to before this string. */
 	};
 
-	cbor_string_type_t result_overflow;
+	zcbor_string_type_t result_overflow;
 	uint32_t out_len;
 
 	zassert_false(cbor_decode_SingleBstr(payload_overflow, sizeof(payload_overflow), &result_overflow, &out_len), NULL);
@@ -909,7 +909,7 @@ void test_single(void)
 	uint8_t payload_single2_inv[] = {0x18, 53};
 	uint8_t payload_single3[] = {9};
 	uint8_t payload_single4_inv[] = {10};
-	cbor_string_type_t result_bstr;
+	zcbor_string_type_t result_bstr;
 	uint32_t result_int;
 	uint32_t out_len;
 

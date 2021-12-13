@@ -18,14 +18,14 @@ typedef struct
 {
 	const uint8_t *value;
 	uint32_t len;
-} cbor_string_type_t;
+} zcbor_string_type_t;
 
-#ifdef CDDL_CBOR_VERBOSE
+#ifdef ZCBOR_VERBOSE
 #include <sys/printk.h>
-#define cbor_trace() (printk("bytes left: %zu, byte: 0x%x, elem_count: 0x%x, %s:%d\n",\
+#define zcbor_trace() (printk("bytes left: %zu, byte: 0x%x, elem_count: 0x%x, %s:%d\n",\
 	(size_t)state->payload_end - (size_t)state->payload, *state->payload, state->elem_count,\
 	__FILE__, __LINE__))
-#define cbor_assert(expr, ...) \
+#define zcbor_assert(expr, ...) \
 do { \
 	if (!(expr)) { \
 		printk("ASSERTION \n  \"" #expr \
@@ -35,11 +35,11 @@ do { \
 		return false; \
 	} \
 } while(0)
-#define cbor_print(...) printk(__VA_ARGS__)
+#define zcbor_print(...) printk(__VA_ARGS__)
 #else
-#define cbor_trace() ((void)state)
-#define cbor_assert(...)
-#define cbor_print(...)
+#define zcbor_trace() ((void)state)
+#define zcbor_assert(...)
+#define zcbor_print(...)
 #endif
 
 #ifndef MIN
@@ -47,9 +47,9 @@ do { \
 #endif
 
 
-struct cbor_state_backups_s;
+struct zcbor_state_backups_s;
 
-typedef struct cbor_state_backups_s cbor_state_backups_t;
+typedef struct zcbor_state_backups_s zcbor_state_backups_t;
 
 typedef struct{
 union {
@@ -67,22 +67,22 @@ union {
 	uint8_t const *payload_end; /**< The end of the payload. This will be
 	                                 checked against payload before
 	                                 processing each element. */
-	cbor_state_backups_t *backups;
-} cbor_state_t;
+	zcbor_state_backups_t *backups;
+} zcbor_state_t;
 
-struct cbor_state_backups_s{
-	cbor_state_t *backup_list;
+struct zcbor_state_backups_s{
+	zcbor_state_t *backup_list;
 	uint32_t current_backup;
 	uint32_t num_backups;
 };
 
-/** Function pointer type used with multi_decode.
+/** Function pointer type used with zcbor_multi_decode.
  *
  * This type is compatible with all decoding functions here and in the generated
- * code, except for multi_decode.
+ * code, except for zcbor_multi_decode.
  */
-typedef bool(cbor_encoder_t)(cbor_state_t *, const void *);
-typedef bool(cbor_decoder_t)(cbor_state_t *, void *);
+typedef bool(zcbor_encoder_t)(zcbor_state_t *, const void *);
+typedef bool(zcbor_decoder_t)(zcbor_state_t *, void *);
 
 /** Enumeration representing the major types available in CBOR.
  *
@@ -90,71 +90,65 @@ typedef bool(cbor_decoder_t)(cbor_state_t *, void *);
  */
 typedef enum
 {
-	CBOR_MAJOR_TYPE_PINT = 0, ///! Positive Integer
-	CBOR_MAJOR_TYPE_NINT = 1, ///! Negative Integer
-	CBOR_MAJOR_TYPE_BSTR = 2, ///! Byte String
-	CBOR_MAJOR_TYPE_TSTR = 3, ///! Text String
-	CBOR_MAJOR_TYPE_LIST = 4, ///! List
-	CBOR_MAJOR_TYPE_MAP  = 5, ///! Map
-	CBOR_MAJOR_TYPE_TAG  = 6, ///! Semantic Tag
-	CBOR_MAJOR_TYPE_PRIM = 7, ///! Primitive Type
-} cbor_major_type_t;
+	ZCBOR_MAJOR_TYPE_PINT = 0, ///! Positive Integer
+	ZCBOR_MAJOR_TYPE_NINT = 1, ///! Negative Integer
+	ZCBOR_MAJOR_TYPE_BSTR = 2, ///! Byte String
+	ZCBOR_MAJOR_TYPE_TSTR = 3, ///! Text String
+	ZCBOR_MAJOR_TYPE_LIST = 4, ///! List
+	ZCBOR_MAJOR_TYPE_MAP  = 5, ///! Map
+	ZCBOR_MAJOR_TYPE_TAG  = 6, ///! Semantic Tag
+	ZCBOR_MAJOR_TYPE_PRIM = 7, ///! Primitive Type
+} zcbor_major_type_t;
 
-/** Shorthand macro to check if a result is within min/max constraints.
- */
-#define PTR_VALUE_IN_RANGE(type, res, min, max) \
-		(((min == NULL) || (*(type *)res >= *(type *)min)) \
-		&& ((max == NULL) || (*(type *)res <= *(type *)max)))
 
-#define FAIL() \
+#define ZCBOR_FAIL() \
 do {\
-	cbor_trace(); \
+	zcbor_trace(); \
 	return false; \
 } while(0)
 
 
-#define VALUE_IN_HEADER 23 /**! For values below this, the value is encoded
-                                directly in the header. */
+#define ZCBOR_VALUE_IN_HEADER 23 ///! Values below this are encoded directly in the header.
 
-#define BOOL_TO_PRIM 20 ///! In CBOR, false/true have the values 20/21
+#define ZCBOR_BOOL_TO_PRIM 20 ///! In CBOR, false/true have the values 20/21
 
-#define FLAG_RESTORE 1UL ///! Restore from the backup.
-#define FLAG_CONSUME 2UL ///! Consume the backup.
-#define FLAG_TRANSFER_PAYLOAD 4UL ///! Keep the pre-restore payload after restoring.
+#define ZCBOR_FLAG_RESTORE 1UL ///! Restore from the backup.
+#define ZCBOR_FLAG_CONSUME 2UL ///! Consume the backup.
+#define ZCBOR_FLAG_TRANSFER_PAYLOAD 4UL ///! Keep the pre-restore payload after restoring.
 
 /** Take a backup of the current state. Overwrite the current elem_count. */
-bool new_backup(cbor_state_t *state, uint32_t new_elem_count);
+bool zcbor_new_backup(zcbor_state_t *state, uint32_t new_elem_count);
 
 /** Consult the most recent backup. In doing so, check whether elem_count is
  *  within max_elem_count, and return the result.
- *  Also, take action based on the flags (See FLAG_*).
+ *  Also, take action based on the flags (See ZCBOR_FLAG_*).
  */
-bool process_backup(cbor_state_t *state, uint32_t flags, uint32_t max_elem_count);
+bool zcbor_process_backup(zcbor_state_t *state, uint32_t flags, uint32_t max_elem_count);
 
 /** Convenience function for starting encoding/decoding of a union.
  *  Takes a new backup.
  */
-bool union_start_code(cbor_state_t *state);
+bool zcbor_union_start_code(zcbor_state_t *state);
 
 /** Convenience function before encoding/decoding one element of a union.
  *  Restores the backup, without consuming it.
  */
-bool union_elem_code(cbor_state_t *state);
+bool zcbor_union_elem_code(zcbor_state_t *state);
 
 /** Convenience function before encoding/decoding one element of a union.
  *  Consumes the backup without restoring it.
  */
-bool union_end_code(cbor_state_t *state);
+bool zcbor_union_end_code(zcbor_state_t *state);
 
 /** Initialize a state with backups.
- *  One of the states in the array is used as a cbor_state_backups_t object.
+ *  One of the states in the array is used as a zcbor_state_backups_t object.
  *  This means that you get a state with (n_states - 2) backups.
  *  It also means that (n_states = 2) is an invalid input, which is handled as
  *  if (n_states = 1).
  *  payload, payload_len, and elem_count are used to initialize the first state.
  *  in the array, which is the state that can be passed to cbor functions.
  */
-void new_state(cbor_state_t *state_array, uint32_t n_states,
+void zcbor_new_state(zcbor_state_t *state_array, uint32_t n_states,
 		const uint8_t *payload, uint32_t payload_len, uint32_t elem_count);
 
 #endif /* CBOR_COMMON_H__ */
