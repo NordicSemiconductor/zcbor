@@ -1,7 +1,52 @@
-Schema-based data manipulation and code generation
+zcbor
+=====
+
+zcbor is a low footprint [CBOR](https://en.wikipedia.org/wiki/CBOR) library in the C language that comes with a schema-driven script tool that can validate your data, or even generate code for you.
+Aside from the script, the CBOR library is a standalone library which is tailored for use in microcontrollers.
+
+The validation part of the script can also work with YAML and JSON data.
+It can for example validate a YAML file against a schema and convert it into CBOR.
+
+The schema language used by zcbor is CDDL (Consise Data Definition Language) which is a powerful human-readable data description language defined in [IETF RFC 8610](https://datatracker.ietf.org/doc/rfc8610/).
+
+zcbor was previously called "cddl-gen".
+
+CBOR decoding/encoding library
+==============================
+
+The CBOR library found at [headers](include) and [source](src) is used by the generated code, but can also be used directly.
+If so, you must instantiate a `zcbor_state_t` object, which is most easily done using the `zcbor_new_state` function.
+
+The `elem_count` member refers to the number of encoded objects in the current list or map.
+`elem_count` starts again when entering a nested list or map, and is restored when exiting.
+
+`elem_count` is one reason for needing "backup" states (the other is to allow rollback of the payload).
+You need a number of backups corresponding to the maximum number of nested levels in your data.
+
+Backups are needed for encoding if you are using canonical encoding (`ZCBOR_CANONICAL`), or using the `bstrx_cbor_*` functions.
+Backups are needed for decoding if there are any lists, maps, or CBOR-encoded strings in the data.
+
+Note that the benefits of using the library directly is greater for encoding than for decoding.
+For decoding, the code generation will provide a number of checks that are tedious to write manually, and easy to forget.
+
+```c
+/** The number of states must be at least equal to one more than the maximum
+ *  nested depth of the data.
+ */
+cbor_state_t states[n];
+
+/** Initialize the states. After calling this, states[0] is ready to be used
+ *  with the encoding/decoding APIs.
+ *  elem_count must be the maximum expected number of top-level elements when
+ *  decoding (1 if the data is wrapped in a list).
+ *  When encoding, elem_count must be 0.
+ */
+new_state(states, n, payload, payload_len, elem_count);
+```
+
+Schema-driven data manipulation and code generation
 ===================================================
 
-CDDL is a human-readable data description language defined in [IETF RFC 8610](https://datatracker.ietf.org/doc/rfc8610/).
 By invoking `zcbor` (when installed via Pip or setup.py), or the Python script [zcbor.py](zcbor/zcbor.py) directly, you can generate C code that validates/encodes/decodes CBOR data conforming to a CDDL schema.
 zcbor can also validate and convert CBOR data to and from JSON/YAML, either from the command line, or imported as a module.
 Finally, the package contains a light-weight CBOR encoding/decoding library in C.
@@ -93,38 +138,6 @@ This cmake file can then be included in your project's `CMakeLists.txt` file, an
 This is demonstrated in the tests, e.g. at tests/decode/test3_simple/CMakeLists.txt.
 zcbor can be instructed to copy the non-generated sources to the same location as the generated sources with `--copy-sources`.
 
-CBOR decoding/encoding library
-==============================
-
-The CBOR library found at [headers](include) and [source](src) is used by the generated code, but can also be used directly.
-If so, you must instantiate a `zcbor_state_t` object as well as a `zcbor_state_backups_t` object (backups can be NULL in simple use cases).
-
-The elem_count member refers to the number of encoded objects in the current list or map.
-elem_count starts again when entering a nested list or map, and is restored when exiting.
-
-elem_count is one reason for needing "backup" states (the other is to allow rollback of the payload).
-You need a number of backups corresponding to the maximum number of nested levels in your data.
-
-Backups are needed for encoding if you are using canonical encoding (ZCBOR_CANONICAL), or using the bstrx_cbor_* functions.
-Backups are needed for decoding if there are any lists, maps, or CBOR-encoded strings in the data.
-
-Note that the benefits of using the library directly is greater for encoding than for decoding.
-For decoding, the code generation will provide a number of checks that are tedious to write manually, and easy to forget.
-
-```c
-/** The number of states must be at least equal to one more than the maximum
- *  nested depth of the data.
- */
-zcbor_state_t states[n];
-
-/** Initialize the states. After calling this, states[0] is ready to be used
- *  with the encoding/decoding APIs.
- *  elem_count must be the maximum expected number of top-level elements when
- *  decoding (1 if the data is wrapped in a list).
- *  When encoding, elem_count must be 0.
- */
-zcbor_new_state(states, n, payload, payload_len, elem_count);
-```
 
 Introduction to CDDL
 ====================
