@@ -9,7 +9,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
-#include "cbor_common.h"
+#include "zcbor_common.h"
 
 
 /** Encode a PINT/NINT into a int32_t.

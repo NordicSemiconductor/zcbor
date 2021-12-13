@@ -52,8 +52,8 @@ FILE(GLOB app_sources src/*.c)
 target_sources(app PRIVATE
   ${app_sources}
   ${PROJECT_BINARY_DIR}/src/strange.c
-  ${PROJECT_BINARY_DIR}/src/cbor_decode.c
-  ${PROJECT_BINARY_DIR}/src/cbor_common.c)
+  ${PROJECT_BINARY_DIR}/src/zcbor_decode.c
+  ${PROJECT_BINARY_DIR}/src/zcbor_common.c)
 
 if (TEST_INDETERMINATE_LENGTH_ARRAYS)
   target_compile_definitions(app PUBLIC TEST_INDETERMINATE_LENGTH_ARRAYS)

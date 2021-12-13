@@ -65,7 +65,7 @@ setuptools.setup(
     package_data={'': ['VERSION']},
     data_files=[
         ("lib/zcbor/include",
-            ("include/cbor_decode.h", "include/cbor_encode.h", "include/cbor_common.h",
-                "include/cbor_debug.h")),
-        ("lib/zcbor/src", ("src/cbor_decode.c", "src/cbor_encode.c", "src/cbor_common.c"))],
+            ("include/zcbor_decode.h", "include/zcbor_encode.h", "include/zcbor_common.h",
+                "include/zcbor_debug.h")),
+        ("lib/zcbor/src", ("src/zcbor_decode.c", "src/zcbor_encode.c", "src/zcbor_common.c"))],
 )

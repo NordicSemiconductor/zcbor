@@ -246,7 +246,7 @@ CBOR decoding/encoding library
 For encoding:
 
 ```c
-#include <cbor_encode.h>
+#include <zcbor_encode.h>
 
 uint8_t payload[100];
 cbor_state_t state;

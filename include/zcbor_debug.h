@@ -9,8 +9,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
-
-#define min(a,b) (((a) < (b)) ? (a) : (b))
+#include "zcbor_common.h"
 
 __attribute__((used))
 static void print_compare_lines(const uint8_t *str1, const uint8_t *str2, uint32_t size)

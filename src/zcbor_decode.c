@@ -8,8 +8,8 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <string.h>
-#include "cbor_decode.h"
-#include "cbor_common.h"
+#include "zcbor_decode.h"
+#include "zcbor_common.h"
 
 
 /** Return value length from additional value.
