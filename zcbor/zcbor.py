@@ -2401,7 +2401,7 @@ static bool {xcoder.func_name}(
 #include <stdbool.h>
 #include <stddef.h>
 #include <string.h>
-#include "cbor_{self.mode}.h"
+#include "zcbor_{self.mode}.h"
 #include "{header_file_name}"
 
 #if DEFAULT_MAX_QTY != {self.default_max_qty}
@@ -2430,7 +2430,7 @@ static bool {xcoder.func_name}(
 #include <stdbool.h>
 #include <stddef.h>
 #include <string.h>
-#include "cbor_{self.mode}.h"
+#include "zcbor_{self.mode}.h"
 #include "{type_def_file}"
 
 #if DEFAULT_MAX_QTY != {self.default_max_qty}
@@ -2459,7 +2459,7 @@ static bool {xcoder.func_name}(
 #include <stdbool.h>
 #include <stddef.h>
 #include <string.h>
-#include "cbor_{self.mode}.h"
+#include "zcbor_{self.mode}.h"
 
 #define DEFAULT_MAX_QTY {self.default_max_qty}
 
@@ -2481,9 +2481,9 @@ static bool {xcoder.func_name}(
 
 add_library({target_name})
 target_sources({target_name} PRIVATE
-    {Path(output_c_dir, "cbor_decode.c")}
-    {Path(output_c_dir, "cbor_encode.c")}
-    {Path(output_c_dir, "cbor_common.c")}
+    {Path(output_c_dir, "zcbor_decode.c")}
+    {Path(output_c_dir, "zcbor_encode.c")}
+    {Path(output_c_dir, "zcbor_common.c")}
     {c_file.name}
     )
 target_include_directories({target_name} PUBLIC
@@ -2706,13 +2706,13 @@ def process_code(args):
     if args.copy_sources:
         new_c_code_dir = out_c.parent
         new_h_code_dir = out_h.parent
-        copyfile(Path(c_code_dir, "cbor_decode.c"), Path(new_c_code_dir, "cbor_decode.c"))
-        copyfile(Path(c_code_dir, "cbor_encode.c"), Path(new_c_code_dir, "cbor_encode.c"))
-        copyfile(Path(c_code_dir, "cbor_common.c"), Path(new_c_code_dir, "cbor_common.c"))
-        copyfile(Path(h_code_dir, "cbor_decode.h"), Path(new_h_code_dir, "cbor_decode.h"))
-        copyfile(Path(h_code_dir, "cbor_encode.h"), Path(new_h_code_dir, "cbor_encode.h"))
-        copyfile(Path(h_code_dir, "cbor_common.h"), Path(new_h_code_dir, "cbor_common.h"))
-        copyfile(Path(h_code_dir, "cbor_debug.h"), Path(new_h_code_dir, "cbor_debug.h"))
+        copyfile(Path(c_code_dir, "zcbor_decode.c"), Path(new_c_code_dir, "zcbor_decode.c"))
+        copyfile(Path(c_code_dir, "zcbor_encode.c"), Path(new_c_code_dir, "zcbor_encode.c"))
+        copyfile(Path(c_code_dir, "zcbor_common.c"), Path(new_c_code_dir, "zcbor_common.c"))
+        copyfile(Path(h_code_dir, "zcbor_decode.h"), Path(new_h_code_dir, "zcbor_decode.h"))
+        copyfile(Path(h_code_dir, "zcbor_encode.h"), Path(new_h_code_dir, "zcbor_encode.h"))
+        copyfile(Path(h_code_dir, "zcbor_common.h"), Path(new_h_code_dir, "zcbor_common.h"))
+        copyfile(Path(h_code_dir, "zcbor_debug.h"), Path(new_h_code_dir, "zcbor_debug.h"))
         c_code_dir = new_c_code_dir
         h_code_dir = new_h_code_dir
 

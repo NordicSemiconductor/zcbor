@@ -6,7 +6,7 @@
 
 #include <ztest.h>
 #include "manifest14_decode.h"
-#include "cbor_debug.h" // Enables use of print functions when debugging tests.
+#include "zcbor_debug.h" // Enables use of print functions when debugging tests.
 
 
 /** Example 0 from draft-suit-manifest-14 */

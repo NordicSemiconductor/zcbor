@@ -6,7 +6,7 @@
 
 #include <ztest.h>
 #include "pet_encode.h"
-#include "cbor_debug.h" // Enables use of print functions when debugging tests.
+#include "zcbor_debug.h" // Enables use of print functions when debugging tests.
 // #include "serial_recovery.h"
 
 uint8_t serial_rec_input1[] = {
@@ -184,7 +184,7 @@ void test_pet(void)
  * It has no checking against a CDDL schema, but follows the "Pet" structure.
  * It sets up the cbor_state_t variable, and for canonical encoding it adds
  * backups (for entering containers).
- * It then makes a number of calls to functions in cbor_encode.h and checks the
+ * It then makes a number of calls to functions in zcbor_encode.h and checks the
  * resulting payload agains the expected output.
  */
 void test_pet_raw(void)

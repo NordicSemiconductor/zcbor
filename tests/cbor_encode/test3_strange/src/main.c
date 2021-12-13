@@ -6,7 +6,7 @@
 
 #include <ztest.h>
 #include "strange_encode.h"
-#include "cbor_debug.h" // Enables use of print functions when debugging tests.
+#include "zcbor_debug.h" // Enables use of print functions when debugging tests.
 
 #define CONCAT_BYTE(a,b) a ## b
 
