@@ -649,7 +649,8 @@ bool zcbor_any_decode(zcbor_state_t *state, void *result)
 	uint_fast32_t value;
 	uint_fast32_t num_decode;
 	uint_fast32_t temp_elem_count;
-	uint8_t const *payload_bak;
+	uint_fast32_t elem_count_bak = state->elem_count;
+	uint8_t const *payload_bak = state->payload;
 
 	if (!value_extract(state, &value, sizeof(value))) {
 		/* Can happen because of elem_count (or payload_end) */
@@ -671,12 +672,11 @@ bool zcbor_any_decode(zcbor_state_t *state, void *result)
 			/* Fallthrough */
 		case ZCBOR_MAJOR_TYPE_LIST:
 			temp_elem_count = state->elem_count;
-			payload_bak = state->payload;
 			state->elem_count = value;
 			if (!zcbor_multi_decode(value, value, &num_decode,
 					(void *)zcbor_any_decode, state,
 					NULL, 0)) {
-				state->elem_count = temp_elem_count;
+				state->elem_count = elem_count_bak;
 				state->payload = payload_bak;
 				ZCBOR_FAIL();
 			}
