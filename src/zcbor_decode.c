@@ -401,7 +401,9 @@ static bool list_map_start_decode(zcbor_state_t *state,
 	if (ADDITIONAL(*state->payload) == 0x1F) {
 		/* Indeterminate length array. */
 		new_elem_count = INDET_LEN_ELEM_COUNT;
+		FAIL_IF(state->elem_count == 0);
 		state->payload++;
+		state->elem_count--;
 	} else {
 		if (!value_extract(state, &new_elem_count, sizeof(new_elem_count))) {
 			ZCBOR_FAIL();
