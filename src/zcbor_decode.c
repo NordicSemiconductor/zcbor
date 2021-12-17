@@ -648,15 +648,37 @@ bool zcbor_any_decode(zcbor_state_t *state, void *result)
 
 	FAIL_IF(state->payload >= state->payload_end);
 	uint8_t major_type = MAJOR_TYPE(*state->payload);
+	uint8_t additional = ADDITIONAL(*state->payload);
 	uint_fast32_t value;
 	uint_fast32_t num_decode;
 	uint_fast32_t temp_elem_count;
 	uint_fast32_t elem_count_bak = state->elem_count;
 	uint8_t const *payload_bak = state->payload;
 
+	if ((major_type == ZCBOR_MAJOR_TYPE_MAP) || (major_type == ZCBOR_MAJOR_TYPE_LIST)) {
+		if (additional == ZCBOR_VALUE_IS_INDEFINITE_LENGTH) {
+			FAIL_IF(state->elem_count == 0);
+			state->payload++;
+			state->elem_count--;
+			temp_elem_count = state->elem_count;
+			payload_bak = state->payload;
+			state->elem_count = INDET_LEN_ELEM_COUNT;
+			if (!zcbor_multi_decode(0, INDET_LEN_ELEM_COUNT, &num_decode,
+					(zcbor_decoder_t *)zcbor_any_decode, state,
+					NULL, 0)
+					|| (state->payload >= state->payload_end)
+					|| !(*(state->payload++) == 0xFF)) {
+				state->elem_count = elem_count_bak;
+				state->payload = payload_bak;
+				ZCBOR_FAIL();
+			}
+			state->elem_count = temp_elem_count;
+			return true;
+		}
+	}
+
 	if (!value_extract(state, &value, sizeof(value))) {
 		/* Can happen because of elem_count (or payload_end) */
-		/* Note: Indeterminate length arrays are not supported in zcbor_any_decode */
 		ZCBOR_FAIL();
 	}
 

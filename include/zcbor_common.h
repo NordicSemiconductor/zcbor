@@ -118,6 +118,7 @@ do {\
 #define ZCBOR_VALUE_IS_2_BYTES 25 ///! The next 2 bytes contain the value.
 #define ZCBOR_VALUE_IS_4_BYTES 26 ///! The next 4 bytes contain the value.
 #define ZCBOR_VALUE_IS_8_BYTES 27 ///! The next 8 bytes contain the value.
+#define ZCBOR_VALUE_IS_INDEFINITE_LENGTH 31 ///! The list or map has indefinite length, and will instead be terminated by a 0xFF token.
 
 #define ZCBOR_BOOL_TO_PRIM 20 ///! In CBOR, false/true have the values 20/21
 

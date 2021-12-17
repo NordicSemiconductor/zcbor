@@ -348,7 +348,7 @@ static bool list_map_start_encode(zcbor_state_t *state, uint_fast32_t max_num,
 	}
 	state->elem_count--; /* Because of dummy header. */
 #else
-	if (!encode_header_byte(state, major_type, 31)) {
+	if (!encode_header_byte(state, major_type, ZCBOR_VALUE_IS_INDEFINITE_LENGTH)) {
 		ZCBOR_FAIL();
 	}
 #endif
@@ -416,7 +416,7 @@ static bool list_map_end_encode(zcbor_state_t *state, uint_fast32_t max_num,
 		state->payload = payload;
 	}
 #else
-	if (!encode_header_byte(state, ZCBOR_MAJOR_TYPE_PRIM, 31)) {
+	if (!encode_header_byte(state, ZCBOR_MAJOR_TYPE_PRIM, ZCBOR_VALUE_IS_INDEFINITE_LENGTH)) {
 		ZCBOR_FAIL();
 	}
 #endif
