@@ -276,6 +276,7 @@ bool zcbor_uint64_expect(zcbor_state_t *state, uint64_t result)
 	return true;
 }
 
+
 static bool strx_start_decode(zcbor_state_t *state,
 		zcbor_string_type_t *result, zcbor_major_type_t exp_major_type)
 {
@@ -301,6 +302,7 @@ static bool strx_start_decode(zcbor_state_t *state,
 	return true;
 }
 
+
 bool zcbor_bstr_start_decode(zcbor_state_t *state, zcbor_string_type_t *result)
 {
 	if(!strx_start_decode(state, result, ZCBOR_MAJOR_TYPE_BSTR)) {
@@ -315,6 +317,7 @@ bool zcbor_bstr_start_decode(zcbor_state_t *state, zcbor_string_type_t *result)
 	state->payload_end = result->value + result->len;
 	return true;
 }
+
 
 bool zcbor_bstr_end_decode(zcbor_state_t *state)
 {
@@ -684,10 +687,16 @@ bool zcbor_present_decode(uint_fast32_t *present,
 {
 	uint_fast32_t num_decode;
 	bool retval = zcbor_multi_decode(0, 1, &num_decode, decoder, state, result, 0);
+
 	zcbor_assert(retval, "zcbor_multi_decode should not fail with these parameters.\r\n");
 
-	if (retval) {
-		*present = num_decode;
-	}
+	*present = num_decode;
 	return retval;
+}
+
+
+void zcbor_new_decode_state(zcbor_state_t *state_array, uint32_t n_states,
+		const uint8_t *payload, uint32_t payload_len, uint32_t elem_count)
+{
+	zcbor_new_state(state_array, n_states, payload, payload_len, elem_count);
 }

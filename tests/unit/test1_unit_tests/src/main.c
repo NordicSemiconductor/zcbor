@@ -143,12 +143,49 @@ void test_size64(void)
 #endif
 
 
+void test_string_macros(void)
+{
+	uint8_t payload[100];
+	ZCBOR_STATE_E(state_e, 0, payload, sizeof(payload), 0);
+	char world[] = {'w', 'o', 'r', 'l', 'd'};
+
+	zassert_true(zcbor_bstr_put_lit(state_e, "Hello"), NULL);
+	zassert_true(zcbor_bstr_put_term(state_e, "Hello"), NULL);
+	zassert_true(zcbor_bstr_put_arr(state_e, world), NULL);
+	zassert_true(zcbor_tstr_put_lit(state_e, "Hello"), NULL);
+	zassert_true(zcbor_tstr_put_term(state_e, "Hello"), NULL);
+	zassert_true(zcbor_tstr_put_arr(state_e, world), NULL);
+
+	ZCBOR_STATE_D(state_d, 0, payload, sizeof(payload), 6);
+
+	zassert_false(zcbor_bstr_expect_lit(state_d, "Yello"), NULL);
+	zassert_false(zcbor_tstr_expect_lit(state_d, "Hello"), NULL);
+	zassert_true(zcbor_bstr_expect_lit(state_d, "Hello"), NULL);
+	zassert_false(zcbor_bstr_expect_term(state_d, "Hello!"), NULL);
+	zassert_true(zcbor_bstr_expect_term(state_d, "Hello"), NULL);
+	world[3]++;
+	zassert_false(zcbor_bstr_expect_arr(state_d, world), NULL);
+	world[3]--;
+	zassert_true(zcbor_bstr_expect_arr(state_d, world), NULL);
+	zassert_false(zcbor_tstr_expect_lit(state_d, "hello"), NULL);
+	zassert_true(zcbor_tstr_expect_lit(state_d, "Hello"), NULL);
+	zassert_false(zcbor_tstr_expect_term(state_d, "Helo"), NULL);
+	zassert_true(zcbor_tstr_expect_term(state_d, "Hello"), NULL);
+	world[2]++;
+	zassert_false(zcbor_tstr_expect_arr(state_d, world), NULL);
+	world[2]--;
+	zassert_false(zcbor_bstr_expect_arr(state_d, world), NULL);
+	zassert_true(zcbor_tstr_expect_arr(state_d, world), NULL);
+}
+
+
 void test_main(void)
 {
 	ztest_test_suite(zcbor_unit_tests,
 			 ztest_unit_test(test_int64),
 			 ztest_unit_test(test_uint64),
-			 ztest_unit_test(test_size64)
+			 ztest_unit_test(test_size64),
+			 ztest_unit_test(test_string_macros)
 	);
 	ztest_run_test_suite(zcbor_unit_tests);
 }

@@ -46,12 +46,15 @@ do { \
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #endif
 
+#ifndef ARRAY_SIZE
+#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
+#endif
 
 struct zcbor_state_backups_s;
 
 typedef struct zcbor_state_backups_s zcbor_state_backups_t;
 
-typedef struct{
+typedef struct {
 union {
 	uint8_t *payload_mut;
 	uint8_t const *payload; /**< The current place in the payload. Will be
@@ -70,7 +73,7 @@ union {
 	zcbor_state_backups_t *backups;
 } zcbor_state_t;
 
-struct zcbor_state_backups_s{
+struct zcbor_state_backups_s {
 	zcbor_state_t *backup_list;
 	uint_fast32_t current_backup;
 	uint_fast32_t num_backups;
@@ -101,6 +104,8 @@ typedef enum
 } zcbor_major_type_t;
 
 
+/** Convenience macro for failing out of a decoding/encoding function.
+*/
 #define ZCBOR_FAIL() \
 do {\
 	zcbor_trace(); \
@@ -109,33 +114,37 @@ do {\
 
 
 #define ZCBOR_VALUE_IN_HEADER 23 ///! Values below this are encoded directly in the header.
-
 #define ZCBOR_BOOL_TO_PRIM 20 ///! In CBOR, false/true have the values 20/21
 
-#define ZCBOR_FLAG_RESTORE 1UL ///! Restore from the backup.
-#define ZCBOR_FLAG_CONSUME 2UL ///! Consume the backup.
+#define ZCBOR_FLAG_RESTORE 1UL ///! Restore from the backup. Overwrite the current state with the state from the backup.
+#define ZCBOR_FLAG_CONSUME 2UL ///! Consume the backup. Remove the backup from the stack of backups.
 #define ZCBOR_FLAG_TRANSFER_PAYLOAD 4UL ///! Keep the pre-restore payload after restoring.
 
 /** Take a backup of the current state. Overwrite the current elem_count. */
 bool zcbor_new_backup(zcbor_state_t *state, uint_fast32_t new_elem_count);
 
 /** Consult the most recent backup. In doing so, check whether elem_count is
- *  within max_elem_count, and return the result.
+ *  less than or equal to max_elem_count.
  *  Also, take action based on the flags (See ZCBOR_FLAG_*).
  */
 bool zcbor_process_backup(zcbor_state_t *state, uint32_t flags, uint_fast32_t max_elem_count);
 
 /** Convenience function for starting encoding/decoding of a union.
- *  Takes a new backup.
+ *
+ *  That is, for attempting to encode, or especially decode, multiple options.
+ *  Makes a new backup.
  */
 bool zcbor_union_start_code(zcbor_state_t *state);
 
 /** Convenience function before encoding/decoding one element of a union.
+ *
+ *  Call this before attempting each option.
  *  Restores the backup, without consuming it.
  */
 bool zcbor_union_elem_code(zcbor_state_t *state);
 
 /** Convenience function before encoding/decoding one element of a union.
+ *
  *  Consumes the backup without restoring it.
  */
 bool zcbor_union_end_code(zcbor_state_t *state);

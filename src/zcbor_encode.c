@@ -249,7 +249,7 @@ static bool strx_start_encode(zcbor_state_t *state,
 }
 
 
-static bool primx_encode(zcbor_state_t *state, uint32_t input)
+static bool primitive_put(zcbor_state_t *state, uint32_t input)
 {
 	if (!uint32_encode(state, &input, ZCBOR_MAJOR_TYPE_PRIM)) {
 		ZCBOR_FAIL();
@@ -266,7 +266,7 @@ static size_t remaining_str_len(zcbor_state_t *state)
 }
 
 
-bool zcbor_bstr_start_encode(zcbor_state_t *state, const zcbor_string_type_t *result)
+bool zcbor_bstr_start_encode(zcbor_state_t *state)
 {
 	if (!zcbor_new_backup(state, 0)) {
 		ZCBOR_FAIL();
@@ -313,6 +313,8 @@ static bool strx_encode(zcbor_state_t *state,
 		ZCBOR_FAIL();
 	}
 	if (state->payload_mut != input->value) {
+		/* Use memmove since string might be encoded into the same space
+		 * because of bstrx_cbor_start_encode/bstrx_cbor_end_encode. */
 		memmove(state->payload_mut, input->value, input->len);
 	}
 	state->payload += input->len;
@@ -434,16 +436,16 @@ bool zcbor_map_end_encode(zcbor_state_t *state, uint_fast32_t max_num)
 }
 
 
-bool zcbor_nil_put(zcbor_state_t *state, const void *input)
+bool zcbor_nil_put(zcbor_state_t *state, const void *unused)
 {
-	(void)input;
-	return primx_encode(state, 22);
+	(void)unused;
+	return primitive_put(state, 22);
 }
 
 
 bool zcbor_bool_encode(zcbor_state_t *state, const bool *input)
 {
-	if (!primx_encode(state, *input + ZCBOR_BOOL_TO_PRIM)) {
+	if (!primitive_put(state, *input + ZCBOR_BOOL_TO_PRIM)) {
 		ZCBOR_FAIL();
 	}
 	return true;
@@ -452,7 +454,7 @@ bool zcbor_bool_encode(zcbor_state_t *state, const bool *input)
 
 bool zcbor_bool_put(zcbor_state_t *state, bool input)
 {
-	if (!primx_encode(state, input + ZCBOR_BOOL_TO_PRIM)) {
+	if (!primitive_put(state, input + ZCBOR_BOOL_TO_PRIM)) {
 		ZCBOR_FAIL();
 	}
 	return true;
@@ -476,12 +478,6 @@ bool double_put(zcbor_state_t *state, double input)
 }
 
 
-bool zcbor_any_encode(zcbor_state_t *state, void *input)
-{
-	return zcbor_nil_put(state, input);
-}
-
-
 bool zcbor_tag_encode(zcbor_state_t *state, uint32_t tag)
 {
 	if (!value_encode(state, ZCBOR_MAJOR_TYPE_TAG, &tag, sizeof(tag))) {
@@ -493,7 +489,7 @@ bool zcbor_tag_encode(zcbor_state_t *state, uint32_t tag)
 }
 
 
-bool zcbor_multi_encode(uint_fast32_t min_encode,
+bool zcbor_multi_encode_minmax(uint_fast32_t min_encode,
 		uint_fast32_t max_encode,
 		const uint_fast32_t *num_encode,
 		zcbor_encoder_t encoder,
@@ -501,15 +497,26 @@ bool zcbor_multi_encode(uint_fast32_t min_encode,
 		const void *input,
 		uint_fast32_t result_len)
 {
-	if ((*num_encode < min_encode) || (*num_encode > max_encode)) {
+
+	if ((*num_encode >= min_encode) && (*num_encode <= max_encode)) {
+		return zcbor_multi_encode(*num_encode, encoder, state, input, result_len);
+	} else {
 		ZCBOR_FAIL();
 	}
-	for (uint_fast32_t i = 0; i < *num_encode; i++) {
+}
+
+bool zcbor_multi_encode(uint_fast32_t num_encode,
+		zcbor_encoder_t encoder,
+		zcbor_state_t *state,
+		const void *input,
+		uint_fast32_t result_len)
+{
+	for (uint_fast32_t i = 0; i < num_encode; i++) {
 		if (!encoder(state, (const uint8_t *)input + i*result_len)) {
 			ZCBOR_FAIL();
 		}
 	}
-	zcbor_print("Found %" PRIuFAST32 " elements.\n", *num_encode);
+	zcbor_print("Encoded %" PRIuFAST32 " elements.\n", num_encode);
 	return true;
 }
 
@@ -519,7 +526,12 @@ bool zcbor_present_encode(const uint_fast32_t *present,
 		zcbor_state_t *state,
 		const void *input)
 {
-	uint_fast32_t num_encode = *present;
-	bool retval = zcbor_multi_encode(0, 1, &num_encode, encoder, state, input, 0);
-	return retval;
+	return zcbor_multi_encode(!!*present, encoder, state, input, 0);
+}
+
+
+void zcbor_new_encode_state(zcbor_state_t *state_array, uint32_t n_states,
+		uint8_t *payload, uint32_t payload_len, uint32_t elem_count)
+{
+	zcbor_new_state(state_array, n_states, payload, payload_len, elem_count);
 }
