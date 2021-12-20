@@ -1715,8 +1715,8 @@ class CodeGenerator(CddlXcoder):
             "UINT": lambda: f"uint{self.bit_size()}_t",
             "NINT": lambda: f"int{self.bit_size()}_t",
             "FLOAT": lambda: "float_t",
-            "BSTR": lambda: "zcbor_string_type_t",
-            "TSTR": lambda: "zcbor_string_type_t",
+            "BSTR": lambda: "struct zcbor_string",
+            "TSTR": lambda: "struct zcbor_string",
             "BOOL": lambda: "bool",
             "NIL": lambda: None,
             "ANY": lambda: None,
@@ -2382,7 +2382,7 @@ static bool {xcoder.func_name}(
             if struct_ptr_name(self.mode) in body else "void"} *{struct_ptr_name(self.mode)})
 {{
 	zcbor_print("%s\\r\\n", __func__);
-	{"zcbor_string_type_t tmp_str;" if "tmp_str" in body else ""}
+	{"struct zcbor_string tmp_str;" if "tmp_str" in body else ""}
 	{"bool int_res;" if "int_res" in body else ""}
 
 	bool tmp_result = ({ body });

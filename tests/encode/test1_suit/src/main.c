@@ -228,15 +228,15 @@ uint32_t num_test_vectors = sizeof(test_vector)/sizeof(uint8_t*);
 
 static uint8_t output[2000];
 
-void test_command_sequence(zcbor_string_type_t *sequence_str,
+void test_command_sequence(struct zcbor_string *sequence_str,
 			bool present, char *name)
 {
 	struct SUIT_Command_Sequence sequence1;
-	zcbor_string_type_t *run_seq;
+	struct zcbor_string *run_seq;
 	bool run_seq_present;
-	zcbor_string_type_t *try_each1;
+	struct zcbor_string *try_each1;
 	bool try_each1_present;
-	zcbor_string_type_t *try_each2;
+	struct zcbor_string *try_each2;
 	bool try_each2_present;
 	size_t out_len;
 
@@ -315,25 +315,25 @@ void test_manifest(const uint8_t *input, uint32_t len)
 	struct SUIT_Outer_Wrapper outerwrapper1 = {0};
 	struct SUIT_Manifest *manifest;
 	// struct SUIT_Component_Identifier *component;
-	zcbor_string_type_t *dependency1;
+	struct zcbor_string *dependency1;
 	bool dependency1_present;
-	zcbor_string_type_t *fetch1;
+	struct zcbor_string *fetch1;
 	bool fetch1_present;
-	zcbor_string_type_t *install1;
+	struct zcbor_string *install1;
 	bool install1_present;
-	zcbor_string_type_t *common_seq;
+	struct zcbor_string *common_seq;
 	bool common_seq_present;
-	zcbor_string_type_t *dependency2;
+	struct zcbor_string *dependency2;
 	bool dependency2_present;
-	zcbor_string_type_t *fetch2;
+	struct zcbor_string *fetch2;
 	bool fetch2_present;
-	zcbor_string_type_t *install2;
+	struct zcbor_string *install2;
 	bool install2_present;
-	zcbor_string_type_t *validate;
+	struct zcbor_string *validate;
 	bool validate_present;
-	zcbor_string_type_t *load;
+	struct zcbor_string *load;
 	bool load_present;
-	zcbor_string_type_t *run;
+	struct zcbor_string *run;
 	bool run_present;
 	bool res;
 	size_t out_len;

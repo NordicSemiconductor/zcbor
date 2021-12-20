@@ -278,7 +278,7 @@ bool zcbor_uint64_expect(zcbor_state_t *state, uint64_t result)
 
 
 static bool strx_start_decode(zcbor_state_t *state,
-		zcbor_string_type_t *result, zcbor_major_type_t exp_major_type)
+		struct zcbor_string *result, zcbor_major_type_t exp_major_type)
 {
 	FAIL_IF(state->payload >= state->payload_end);
 	uint8_t major_type = MAJOR_TYPE(*state->payload);
@@ -303,7 +303,7 @@ static bool strx_start_decode(zcbor_state_t *state,
 }
 
 
-bool zcbor_bstr_start_decode(zcbor_state_t *state, zcbor_string_type_t *result)
+bool zcbor_bstr_start_decode(zcbor_state_t *state, struct zcbor_string *result)
 {
 	if(!strx_start_decode(state, result, ZCBOR_MAJOR_TYPE_BSTR)) {
 		ZCBOR_FAIL();
@@ -334,7 +334,7 @@ bool zcbor_bstr_end_decode(zcbor_state_t *state)
 }
 
 
-bool strx_decode(zcbor_state_t *state, zcbor_string_type_t *result,
+bool strx_decode(zcbor_state_t *state, struct zcbor_string *result,
 		zcbor_major_type_t exp_major_type)
 {
 	if (!strx_start_decode(state, result, exp_major_type)) {
@@ -347,10 +347,10 @@ bool strx_decode(zcbor_state_t *state, zcbor_string_type_t *result,
 }
 
 
-bool strx_expect(zcbor_state_t *state, zcbor_string_type_t *result,
+bool strx_expect(zcbor_state_t *state, struct zcbor_string *result,
 		zcbor_major_type_t exp_major_type)
 {
-	zcbor_string_type_t tmp_result;
+	struct zcbor_string tmp_result;
 
 	if (!strx_decode(state, &tmp_result, exp_major_type)) {
 		ZCBOR_FAIL();
@@ -363,25 +363,25 @@ bool strx_expect(zcbor_state_t *state, zcbor_string_type_t *result,
 }
 
 
-bool zcbor_bstr_decode(zcbor_state_t *state, zcbor_string_type_t *result)
+bool zcbor_bstr_decode(zcbor_state_t *state, struct zcbor_string *result)
 {
 	return strx_decode(state, result, ZCBOR_MAJOR_TYPE_BSTR);
 }
 
 
-bool zcbor_bstr_expect(zcbor_state_t *state, zcbor_string_type_t *result)
+bool zcbor_bstr_expect(zcbor_state_t *state, struct zcbor_string *result)
 {
 	return strx_expect(state, result, ZCBOR_MAJOR_TYPE_BSTR);
 }
 
 
-bool zcbor_tstr_decode(zcbor_state_t *state, zcbor_string_type_t *result)
+bool zcbor_tstr_decode(zcbor_state_t *state, struct zcbor_string *result)
 {
 	return strx_decode(state, result, ZCBOR_MAJOR_TYPE_TSTR);
 }
 
 
-bool zcbor_tstr_expect(zcbor_state_t *state, zcbor_string_type_t *result)
+bool zcbor_tstr_expect(zcbor_state_t *state, struct zcbor_string *result)
 {
 	return strx_expect(state, result, ZCBOR_MAJOR_TYPE_TSTR);
 }

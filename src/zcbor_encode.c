@@ -234,7 +234,7 @@ bool zcbor_uint64_put(zcbor_state_t *state, uint64_t input)
 
 
 static bool strx_start_encode(zcbor_state_t *state,
-		const zcbor_string_type_t *input, zcbor_major_type_t major_type)
+		const struct zcbor_string *input, zcbor_major_type_t major_type)
 {
 	if (input->value && ((get_result_len(&input->len, sizeof(input->len))
 			+ 1 + input->len + (size_t)state->payload)
@@ -290,7 +290,7 @@ bool zcbor_bstr_end_encode(zcbor_state_t *state)
 	if (!zcbor_process_backup(state, ZCBOR_FLAG_RESTORE | ZCBOR_FLAG_CONSUME, 0xFFFFFFFF)) {
 		ZCBOR_FAIL();
 	}
-	zcbor_string_type_t value;
+	struct zcbor_string value;
 
 	value.value = state->payload_end - remaining_str_len(state);
 	value.len = (size_t)payload - (size_t)value.value;
@@ -304,7 +304,7 @@ bool zcbor_bstr_end_encode(zcbor_state_t *state)
 
 
 static bool strx_encode(zcbor_state_t *state,
-		const zcbor_string_type_t *input, zcbor_major_type_t major_type)
+		const struct zcbor_string *input, zcbor_major_type_t major_type)
 {
 	if (!strx_start_encode(state, input, major_type)) {
 		ZCBOR_FAIL();
@@ -322,13 +322,13 @@ static bool strx_encode(zcbor_state_t *state,
 }
 
 
-bool zcbor_bstr_encode(zcbor_state_t *state, const zcbor_string_type_t *input)
+bool zcbor_bstr_encode(zcbor_state_t *state, const struct zcbor_string *input)
 {
 	return strx_encode(state, input, ZCBOR_MAJOR_TYPE_BSTR);
 }
 
 
-bool zcbor_tstr_encode(zcbor_state_t *state, const zcbor_string_type_t *input)
+bool zcbor_tstr_encode(zcbor_state_t *state, const struct zcbor_string *input)
 {
 	return strx_encode(state, input, ZCBOR_MAJOR_TYPE_TSTR);
 }

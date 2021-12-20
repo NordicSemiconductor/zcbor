@@ -153,7 +153,7 @@ For example:
 A CodeGenerator object operates in one of two modes: `"encode"` or `"decode"`.
 The generated code for the two is not very different, but they call into different libraries.
 
-Base types, like `"UINT"`, `"BOOL"`, `"FLOAT"` are represented by native C types. `"BSTR"`s and `"TSTR"`s are represented by a proprietary `zcbor_string_type_t` which is just a `uint8_t` pointer and length.
+Base types, like `"UINT"`, `"BOOL"`, `"FLOAT"` are represented by native C types. `"BSTR"`s and `"TSTR"`s are represented by a proprietary `struct zcbor_string` which is just a `uint8_t` pointer and length.
 These types are decoded/encoded with C code that is not generated.
 More on this in the Architecture of the generated C code below.
 
@@ -166,7 +166,7 @@ These types are called "entry types" and they are typically the "outermost" type
 The user can also use entry types when there are `"BSTR"`s that are CBOR encoded, specified as `Foo = bstr .cbor Bar`.
 Usually such strings are automatically decoded/encoded by the generated code, and the objects part of the encompassing struct.
 However, if the user instead wants to manually decode/encode such strings, they can add them to `self.entry_types`.
-In this case, the strings will be stored as a regular `zcbor_string_type_t` instead of being decoded/encoded.
+In this case, the strings will be stored as a regular `struct zcbor_string` instead of being decoded/encoded.
 
 CodeRenderer
 ------------

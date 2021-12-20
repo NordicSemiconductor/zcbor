@@ -14,11 +14,11 @@
 /** Convenience type that allows pointing to strings directly inside the payload
  *  without the need to copy out.
  */
-typedef struct
+struct zcbor_string
 {
 	const uint8_t *value;
 	size_t len;
-} zcbor_string_type_t;
+};
 
 #ifdef ZCBOR_VERBOSE
 #include <sys/printk.h>
@@ -50,9 +50,8 @@ do { \
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 #endif
 
-struct zcbor_state_backups_s;
 
-typedef struct zcbor_state_backups_s zcbor_state_backups_t;
+struct zcbor_state_constant;
 
 typedef struct {
 union {
@@ -70,10 +69,11 @@ union {
 	uint8_t const *payload_end; /**< The end of the payload. This will be
 	                                 checked against payload before
 	                                 processing each element. */
-	zcbor_state_backups_t *backups;
+	struct zcbor_state_constant *constant_state; /**< The part of the state that is
+	                                                  not backed up and duplicated. */
 } zcbor_state_t;
 
-struct zcbor_state_backups_s {
+struct zcbor_state_constant {
 	zcbor_state_t *backup_list;
 	uint_fast32_t current_backup;
 	uint_fast32_t num_backups;
@@ -150,7 +150,7 @@ bool zcbor_union_elem_code(zcbor_state_t *state);
 bool zcbor_union_end_code(zcbor_state_t *state);
 
 /** Initialize a state with backups.
- *  One of the states in the array is used as a zcbor_state_backups_t object.
+ *  One of the states in the array is used as a struct zcbor_state_constant object.
  *  This means that you get a state with (n_states - 2) backups.
  *  It also means that (n_states = 2) is an invalid input, which is handled as
  *  if (n_states = 1).

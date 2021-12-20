@@ -43,9 +43,9 @@ bool zcbor_uint32_encode(zcbor_state_t *state, const uint32_t *result);
 bool zcbor_uint64_encode(zcbor_state_t *state, const uint64_t *input);
 
 /** Encode a BSTR. */
-bool zcbor_bstr_encode(zcbor_state_t *state, const zcbor_string_type_t *input);
+bool zcbor_bstr_encode(zcbor_state_t *state, const struct zcbor_string *input);
 /** Encode a TSTR. */
-bool zcbor_tstr_encode(zcbor_state_t *state, const zcbor_string_type_t *input);
+bool zcbor_tstr_encode(zcbor_state_t *state, const struct zcbor_string *input);
 
 /** Encode a string literal as a BSTR/TSTR.
  *
@@ -55,10 +55,10 @@ bool zcbor_tstr_encode(zcbor_state_t *state, const zcbor_string_type_t *input);
  */
 #define zcbor_bstr_put_lit(state, string) \
 	zcbor_bstr_encode(state, \
-		&(zcbor_string_type_t){.value = string, .len = (sizeof(string) - 1)})
+		&(struct zcbor_string){.value = string, .len = (sizeof(string) - 1)})
 #define zcbor_tstr_put_lit(state, string) \
 	zcbor_tstr_encode(state, \
-		&(zcbor_string_type_t){.value = string, .len = (sizeof(string) - 1)})
+		&(struct zcbor_string){.value = string, .len = (sizeof(string) - 1)})
 
 /** Encode null-terminated string as a BSTR/TSTR.
  *
@@ -67,9 +67,9 @@ bool zcbor_tstr_encode(zcbor_state_t *state, const zcbor_string_type_t *input);
  *                       so that strlen can be used.
  */
 #define zcbor_bstr_put_term(state, string) \
-	zcbor_bstr_encode(state, &(zcbor_string_type_t){.value = string, .len = strlen(string)})
+	zcbor_bstr_encode(state, &(struct zcbor_string){.value = string, .len = strlen(string)})
 #define zcbor_tstr_put_term(state, string) \
-	zcbor_tstr_encode(state, &(zcbor_string_type_t){.value = string, .len = strlen(string)})
+	zcbor_tstr_encode(state, &(struct zcbor_string){.value = string, .len = strlen(string)})
 
 /** Encode a char array literal as a BSTR/TSTR.
  *
@@ -78,9 +78,9 @@ bool zcbor_tstr_encode(zcbor_state_t *state, const zcbor_string_type_t *input);
  *                       so that sizeof(string) is the length of the string.
  */
 #define zcbor_bstr_put_arr(state, string) \
-	zcbor_bstr_encode(state, &(zcbor_string_type_t){.value = string, .len = sizeof(string)})
+	zcbor_bstr_encode(state, &(struct zcbor_string){.value = string, .len = sizeof(string)})
 #define zcbor_tstr_put_arr(state, string) \
-	zcbor_tstr_encode(state, &(zcbor_string_type_t){.value = string, .len = sizeof(string)})
+	zcbor_tstr_encode(state, &(struct zcbor_string){.value = string, .len = sizeof(string)})
 
 /** Encode a tag. Must be called before encoding the value being tagged. */
 bool zcbor_tag_encode(zcbor_state_t *state, uint32_t input);
@@ -165,14 +165,14 @@ bool zcbor_map_end_encode(zcbor_state_t *state, uint_fast32_t max_num);
  *
  * @code{c}
  *     uint32_t ints[3] = <initialize>;
- *     zcbor_string_type_t bstrs[2] = <initialize>;
+ *     struct zcbor_string bstrs[2] = <initialize>;
  *     bool res;
  *
  *     res = zcbor_list_start_encode(state, 5);
  *     res = res && zcbor_multi_encode(3, zcbor_uint32_encode, state,
  *                  ints, sizeof(uint32_t));
  *     res = res && zcbor_multi_encode(2, zcbor_bstr_encode, state,
- *                  bstrs, sizeof(zcbor_string_type_t));
+ *                  bstrs, sizeof(struct zcbor_string));
  *     res = res && zcbor_list_end_encode(state, 5);
  *     // check res
  * @endcode
