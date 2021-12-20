@@ -194,6 +194,48 @@ E.g. `Foo = [name: tstr, age: uint]` is equivalent to `Foo = [tstr, uint]`.
 
 See [test3_simple](tests/decode/test3_simple/) for CDDL example code.
 
+Introduction to CBOR
+====================
+
+CBOR's format is described well on [Wikipedia](https://en.wikipedia.org/wiki/CBOR), but here's a synopsis:
+
+Encoded CBOR data elements look like this.
+
+```
+| Header                       | Value                  | Payload                   |
+| 1 byte                       | 0, 1, 2, 4, or 8 bytes | 0 - 2^64-1 bytes/elements |
+| 3 bits     | 5 bits          |
+| Major Type | Additional Info |
+```
+
+The available major types can be seen in `zcbor_major_type_t`.
+
+For all major types, Values 0-23 are encoded directly in the _Additional info_, meaning that the _Value_ field is 0 bytes long.
+If _Additional info_ is 24, 25, 26, or 27, the _Value_ field is 1, 2, 4, or 8 bytes long, respectively.
+
+Major types `pint`, `nint`, `tag`, and `prim` elements have no payload, only _Value_.
+
+ * `pint`: Interpret the _Value_ as a positive integer.
+ * `nint`: Interpret the _Value_ as a positive integer, then multiply by -1 and subtract 1.
+ * `tag`: The _Value_ says something about the next non-tag element.
+   See the [CBOR tag documentation](See https://www.iana.org/assignments/cbor-tags/cbor-tags.xhtml) for details.
+ * `prim`: Different _Additional info_ mean different things:
+    * 20: `false`
+    * 21: `true`
+    * 22: `null`
+    * 23: `undefined`
+    * 25: Interpret the _Value_ as an IEEE 754 float16.
+    * 26: Interpret the _Value_ as an IEEE 754 float32.
+    * 27: Interpret the _Value_ as an IEEE 754 float64.
+    * 31: End of an indeterminate-length `list` or `map`.
+
+For `bstr`, `tstr`, `list`, and `map`, the _Value_ describes the length of the _Payload_.
+For `bstr` and `tstr`, the length is in bytes, for `list`, the length is in number of elements, and for `map`, the length is in number of key/value element pairs.
+
+For `list` and `map`, sub elements are regular CBOR elements with their own _Header_, _Value_ and _Payload_. `list`s and `map`s can be recursively encoded.
+If a `list` or `map` has _Additional info_ 31, it is "indeterminate-length", which means it has an "unknown" number of elements.
+Instead, its end is marked by a `prim` with _Additional info_ 31 (byte value 0xFF).
+
 Usage Example
 =============
 
