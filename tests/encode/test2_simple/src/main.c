@@ -182,31 +182,14 @@ void test_pet(void)
 
 /* This test uses the CBOR encoding library directly, i.e. no generated code.
  * It has no checking against a CDDL schema, but follows the "Pet" structure.
- * It sets up the zcbor_state_t variable, and for canonical encoding it adds
- * backups (for entering containers).
+ * It sets up the zcbor_state_t variable.
  * It then makes a number of calls to functions in zcbor_encode.h and checks the
  * resulting payload agains the expected output.
  */
 void test_pet_raw(void)
 {
-	uint8_t payload[100];
-	zcbor_state_t state = {
-		.payload_mut = payload,
-		.payload_end = payload + sizeof(payload),
-		.elem_count = 0,
-	};
-
-#ifdef ZCBOR_CANONICAL
-	zcbor_state_t state_backups[2];
-
-	zcbor_state_backups_t backups = {
-	.backup_list = state_backups,
-	.current_backup = 0,
-	.num_backups = 2,
-	};
-
-	state.backups = &backups;
-#endif
+	uint8_t payload[100] = {0};
+	ZCBOR_STATE_E(state, 4, payload, sizeof(payload), 1);
 
 	uint8_t exp_output[] = {
 		LIST(3),
@@ -219,32 +202,32 @@ void test_pet_raw(void)
 		END
 	};
 
-	bool res = zcbor_list_start_encode(&state, 0);
+	bool res = zcbor_list_start_encode(state, 0);
 	zassert_true(res, NULL);
 
-	res = res && zcbor_list_start_encode(&state, 0);
+	res = res && zcbor_list_start_encode(state, 0);
 	zassert_true(res, NULL);
-	res = res && zcbor_tstr_put(&state, "first");
+	res = res && zcbor_tstr_put_lit(state, "first");
 	zassert_true(res, NULL);
-	res = res && zcbor_tstr_put(&state, "second");
+	res = res && zcbor_tstr_put_lit(state, "second");
 	zassert_true(res, NULL);
-	res = res && zcbor_list_end_encode(&state, 0);
+	res = res && zcbor_list_end_encode(state, 0);
 	zassert_true(res, NULL);
 	uint8_t timestamp[8] = {1, 2, 3, 4, 5, 6, 7, 8};
 	zcbor_string_type_t timestamp_str = {
 		.value = timestamp,
 		.len = sizeof(timestamp),
 	};
-	res = res && zcbor_bstr_encode(&state, &timestamp_str);
+	res = res && zcbor_bstr_encode(state, &timestamp_str);
 	zassert_true(res, NULL);
-	res = res && zcbor_uint32_put(&state, 2 /* dog */);
+	res = res && zcbor_uint32_put(state, 2 /* dog */);
 	zassert_true(res, NULL);
-	res = res && zcbor_list_end_encode(&state, 0);
+	res = res && zcbor_list_end_encode(state, 0);
 
 	/* Check that encoding succeeded. */
 	zassert_true(res, NULL);
 	/* Check that the resulting length is correct. */
-	zassert_equal(sizeof(exp_output), state.payload - payload, NULL);
+	zassert_equal(sizeof(exp_output), state->payload - payload, NULL);
 	/* Check the payload contents. */
 	zassert_mem_equal(exp_output, payload, sizeof(exp_output), NULL);
 }

@@ -495,7 +495,8 @@ void test_serial1(void)
 	zassert_equal(_Member_image, upload._Upload_members[1]._Upload_members
 		._Member_choice, "expect image 2nd");
 	zassert_equal(_Member_len, upload._Upload_members[2]._Upload_members
-		._Member_choice, "expect len 3rd");
+		._Member_choice, "was %d\r\n", upload._Upload_members[2]._Upload_members
+		._Member_choice);
 	zassert_equal(_Member_off, upload._Upload_members[3]._Upload_members
 		._Member_choice, "expect off 4th");
 	zassert_equal(_Member_sha, upload._Upload_members[4]._Upload_members

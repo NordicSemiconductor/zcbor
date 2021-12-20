@@ -1928,7 +1928,9 @@ class CodeGenerator(CddlXcoder):
             elif union_uint == "DROP":
                 return None
         else:
-            if (not self.is_unambiguous_value()) or self.type in ["TSTR", "BSTR"]:
+            if self.type == "ANY":
+                func = "zcbor_nil_put"
+            elif (not self.is_unambiguous_value()) or self.type in ["TSTR", "BSTR"]:
                 func = f"{func_prefix}_encode"
             else:
                 func = f"{func_prefix}_put"
@@ -2126,8 +2128,9 @@ class CodeGenerator(CddlXcoder):
 
     def xcode_bstr(self):
         if self.cbor_var_condition():
+            access_arg = f', &{self.val_access()}' if self.mode == 'decode' else ''
             xcode_cbor = "(%s)" % ((newl_ind + "&& ").join(
-                [f"(int_res = (zcbor_bstr_start_{self.mode}(state, &{self.val_access()})",
+                [f"(int_res = (zcbor_bstr_start_{self.mode}(state{access_arg})",
                  f"{self.cbor.full_xcode()})), zcbor_bstr_end_{self.mode}(state), int_res"]))
             if self.mode == "decode":
                 return xcode_cbor
@@ -2220,8 +2223,9 @@ class CodeGenerator(CddlXcoder):
                  xcode_args(*arguments),))
         elif self.count_var_condition():
             func, *arguments = self.repeated_single_func(ptr_result=True)
+            minmax_str = "_minmax" if self.mode == "encode" else ""
             return (
-                f"zcbor_multi_{self.mode}(%s, %s, &%s, (void *)%s, %s, %s)" %
+                f"zcbor_multi_{self.mode}{minmax_str}(%s, %s, &%s, (void *)%s, %s, %s)" %
                 (self.min_qty,
                  self.max_qty,
                  self.count_var_access(),

@@ -15,7 +15,7 @@ CBOR decoding/encoding library
 ==============================
 
 The CBOR library found at [headers](include) and [source](src) is used by the generated code, but can also be used directly.
-If so, you must instantiate a `zcbor_state_t` object, which is most easily done using the `zcbor_new_state` function.
+If so, you must instantiate a `zcbor_state_t` object, which is most easily done using the `zcbor_new_*_state()` functions or the `ZCBOR_STATE_*()` macros.
 
 The `elem_count` member refers to the number of encoded objects in the current list or map.
 `elem_count` starts again when entering a nested list or map, and is restored when exiting.
@@ -41,7 +41,11 @@ cbor_state_t states[n];
  *  decoding (1 if the data is wrapped in a list).
  *  When encoding, elem_count must be 0.
  */
-new_state(states, n, payload, payload_len, elem_count);
+zcbor_new_state(states, n, payload, payload_len, elem_count);
+
+/** Alternatively, use one of the following convenience macros. */
+ZCBOR_STATE_D(decode_state, n, payload, payload_len, elem_count);
+ZCBOR_STATE_E(encode_state, n, payload, payload_len, 0);
 ```
 
 Schema-driven data manipulation and code generation
