@@ -303,7 +303,7 @@ bool zcbor_bstr_end_encode(zcbor_state_t *state)
 }
 
 
-static bool strx_encode(zcbor_state_t *state,
+static bool str_encode(zcbor_state_t *state,
 		const struct zcbor_string *input, zcbor_major_type_t major_type)
 {
 	if (!strx_start_encode(state, input, major_type)) {
@@ -324,17 +324,17 @@ static bool strx_encode(zcbor_state_t *state,
 
 bool zcbor_bstr_encode(zcbor_state_t *state, const struct zcbor_string *input)
 {
-	return strx_encode(state, input, ZCBOR_MAJOR_TYPE_BSTR);
+	return str_encode(state, input, ZCBOR_MAJOR_TYPE_BSTR);
 }
 
 
 bool zcbor_tstr_encode(zcbor_state_t *state, const struct zcbor_string *input)
 {
-	return strx_encode(state, input, ZCBOR_MAJOR_TYPE_TSTR);
+	return str_encode(state, input, ZCBOR_MAJOR_TYPE_TSTR);
 }
 
 
-static bool list_zcbor_map_start_encode(zcbor_state_t *state, uint_fast32_t max_num,
+static bool list_map_start_encode(zcbor_state_t *state, uint_fast32_t max_num,
 		zcbor_major_type_t major_type)
 {
 #ifdef ZCBOR_CANONICAL
@@ -358,13 +358,13 @@ static bool list_zcbor_map_start_encode(zcbor_state_t *state, uint_fast32_t max_
 
 bool zcbor_list_start_encode(zcbor_state_t *state, uint_fast32_t max_num)
 {
-	return list_zcbor_map_start_encode(state, max_num, ZCBOR_MAJOR_TYPE_LIST);
+	return list_map_start_encode(state, max_num, ZCBOR_MAJOR_TYPE_LIST);
 }
 
 
 bool zcbor_map_start_encode(zcbor_state_t *state, uint_fast32_t max_num)
 {
-	return list_zcbor_map_start_encode(state, max_num, ZCBOR_MAJOR_TYPE_MAP);
+	return list_map_start_encode(state, max_num, ZCBOR_MAJOR_TYPE_MAP);
 }
 
 
@@ -379,7 +379,7 @@ static uint_fast32_t get_encoded_len2(const void *const input, uint_fast32_t max
 #endif
 
 
-bool list_zcbor_map_end_encode(zcbor_state_t *state, uint_fast32_t max_num,
+static bool list_map_end_encode(zcbor_state_t *state, uint_fast32_t max_num,
 			zcbor_major_type_t major_type)
 {
 #ifdef ZCBOR_CANONICAL
@@ -426,13 +426,13 @@ bool list_zcbor_map_end_encode(zcbor_state_t *state, uint_fast32_t max_num,
 
 bool zcbor_list_end_encode(zcbor_state_t *state, uint_fast32_t max_num)
 {
-	return list_zcbor_map_end_encode(state, max_num, ZCBOR_MAJOR_TYPE_LIST);
+	return list_map_end_encode(state, max_num, ZCBOR_MAJOR_TYPE_LIST);
 }
 
 
 bool zcbor_map_end_encode(zcbor_state_t *state, uint_fast32_t max_num)
 {
-	return list_zcbor_map_end_encode(state, max_num, ZCBOR_MAJOR_TYPE_MAP);
+	return list_map_end_encode(state, max_num, ZCBOR_MAJOR_TYPE_MAP);
 }
 
 

@@ -277,7 +277,7 @@ bool zcbor_uint64_expect(zcbor_state_t *state, uint64_t result)
 }
 
 
-static bool strx_start_decode(zcbor_state_t *state,
+static bool str_start_decode(zcbor_state_t *state,
 		struct zcbor_string *result, zcbor_major_type_t exp_major_type)
 {
 	FAIL_IF(state->payload >= state->payload_end);
@@ -305,7 +305,7 @@ static bool strx_start_decode(zcbor_state_t *state,
 
 bool zcbor_bstr_start_decode(zcbor_state_t *state, struct zcbor_string *result)
 {
-	if(!strx_start_decode(state, result, ZCBOR_MAJOR_TYPE_BSTR)) {
+	if(!str_start_decode(state, result, ZCBOR_MAJOR_TYPE_BSTR)) {
 		ZCBOR_FAIL();
 	}
 
@@ -313,7 +313,7 @@ bool zcbor_bstr_start_decode(zcbor_state_t *state, struct zcbor_string *result)
 		FAIL_RESTORE();
 	}
 
-	/* Overflow is checked in strx_start_decode() */
+	/* Overflow is checked in str_start_decode() */
 	state->payload_end = result->value + result->len;
 	return true;
 }
@@ -334,25 +334,25 @@ bool zcbor_bstr_end_decode(zcbor_state_t *state)
 }
 
 
-bool strx_decode(zcbor_state_t *state, struct zcbor_string *result,
+static bool str_decode(zcbor_state_t *state, struct zcbor_string *result,
 		zcbor_major_type_t exp_major_type)
 {
-	if (!strx_start_decode(state, result, exp_major_type)) {
+	if (!str_start_decode(state, result, exp_major_type)) {
 		ZCBOR_FAIL();
 	}
 
-	/* Overflow is checked in strx_start_decode() */
+	/* Overflow is checked in str_start_decode() */
 	(state->payload) += result->len;
 	return true;
 }
 
 
-bool strx_expect(zcbor_state_t *state, struct zcbor_string *result,
+static bool str_expect(zcbor_state_t *state, struct zcbor_string *result,
 		zcbor_major_type_t exp_major_type)
 {
 	struct zcbor_string tmp_result;
 
-	if (!strx_decode(state, &tmp_result, exp_major_type)) {
+	if (!str_decode(state, &tmp_result, exp_major_type)) {
 		ZCBOR_FAIL();
 	}
 	if ((tmp_result.len != result->len)
@@ -365,29 +365,29 @@ bool strx_expect(zcbor_state_t *state, struct zcbor_string *result,
 
 bool zcbor_bstr_decode(zcbor_state_t *state, struct zcbor_string *result)
 {
-	return strx_decode(state, result, ZCBOR_MAJOR_TYPE_BSTR);
+	return str_decode(state, result, ZCBOR_MAJOR_TYPE_BSTR);
 }
 
 
 bool zcbor_bstr_expect(zcbor_state_t *state, struct zcbor_string *result)
 {
-	return strx_expect(state, result, ZCBOR_MAJOR_TYPE_BSTR);
+	return str_expect(state, result, ZCBOR_MAJOR_TYPE_BSTR);
 }
 
 
 bool zcbor_tstr_decode(zcbor_state_t *state, struct zcbor_string *result)
 {
-	return strx_decode(state, result, ZCBOR_MAJOR_TYPE_TSTR);
+	return str_decode(state, result, ZCBOR_MAJOR_TYPE_TSTR);
 }
 
 
 bool zcbor_tstr_expect(zcbor_state_t *state, struct zcbor_string *result)
 {
-	return strx_expect(state, result, ZCBOR_MAJOR_TYPE_TSTR);
+	return str_expect(state, result, ZCBOR_MAJOR_TYPE_TSTR);
 }
 
 
-static bool list_zcbor_map_start_decode(zcbor_state_t *state,
+static bool list_map_start_decode(zcbor_state_t *state,
 		zcbor_major_type_t exp_major_type)
 {
 	FAIL_IF(state->payload >= state->payload_end);
@@ -421,13 +421,13 @@ static bool list_zcbor_map_start_decode(zcbor_state_t *state,
 
 bool zcbor_list_start_decode(zcbor_state_t *state)
 {
-	return list_zcbor_map_start_decode(state, ZCBOR_MAJOR_TYPE_LIST);
+	return list_map_start_decode(state, ZCBOR_MAJOR_TYPE_LIST);
 }
 
 
 bool zcbor_map_start_decode(zcbor_state_t *state)
 {
-	bool ret = list_zcbor_map_start_decode(state, ZCBOR_MAJOR_TYPE_MAP);
+	bool ret = list_map_start_decode(state, ZCBOR_MAJOR_TYPE_MAP);
 
 	if (ret && !INDET_LEN(state->elem_count)) {
 		if (INDET_LEN(state->elem_count * 2)) {
@@ -450,7 +450,7 @@ static bool array_end_expect(zcbor_state_t *state)
 }
 
 
-bool list_zcbor_map_end_decode(zcbor_state_t *state)
+bool list_map_end_decode(zcbor_state_t *state)
 {
 	uint_fast32_t max_elem_count = 0;
 	if (INDET_LEN(state->elem_count)) {
@@ -471,13 +471,13 @@ bool list_zcbor_map_end_decode(zcbor_state_t *state)
 
 bool zcbor_list_end_decode(zcbor_state_t *state)
 {
-	return list_zcbor_map_end_decode(state);
+	return list_map_end_decode(state);
 }
 
 
 bool zcbor_map_end_decode(zcbor_state_t *state)
 {
-	return list_zcbor_map_end_decode(state);
+	return list_map_end_decode(state);
 }
 
 
