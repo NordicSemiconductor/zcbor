@@ -13,8 +13,8 @@
 
 /** The zcbor_encode library provides functions for encoding CBOR data elements.
  *
- * See The README for an introduction to CBOR, including the meaning of PINT,
- * NINT, BSTR etc.
+ * See The README for an introduction to CBOR, including the meaning of pint,
+ * nint, bstr etc.
  */
 
 
@@ -27,13 +27,13 @@
  * @retval false  If the payload is exhausted. Or an unexpected error happened.
  */
 
-/** Encode a PINT/NINT. */
+/** Encode a pint/nint. */
 bool zcbor_int32_put(zcbor_state_t *state, int32_t input);
 bool zcbor_int64_put(zcbor_state_t *state, int64_t input);
 bool zcbor_uint32_put(zcbor_state_t *state, uint32_t result);
 bool zcbor_uint64_put(zcbor_state_t *state, uint64_t input);
 
-/** Encode a PINT/NINT from a pointer.
+/** Encode a pint/nint from a pointer.
  *
  *  Can be used for bulk encoding with @ref zcbor_multi_encode.
  */
@@ -42,12 +42,12 @@ bool zcbor_int64_encode(zcbor_state_t *state, const int64_t *input);
 bool zcbor_uint32_encode(zcbor_state_t *state, const uint32_t *result);
 bool zcbor_uint64_encode(zcbor_state_t *state, const uint64_t *input);
 
-/** Encode a BSTR. */
+/** Encode a bstr. */
 bool zcbor_bstr_encode(zcbor_state_t *state, const struct zcbor_string *input);
-/** Encode a TSTR. */
+/** Encode a tstr. */
 bool zcbor_tstr_encode(zcbor_state_t *state, const struct zcbor_string *input);
 
-/** Encode a string literal as a BSTR/TSTR.
+/** Encode a string literal as a bstr/tstr.
  *
  * @param[inout] state   The current state of the encoding.
  * @param[in]    string  The value to encode. A string literal, e.g. "Foo", so
@@ -60,7 +60,7 @@ bool zcbor_tstr_encode(zcbor_state_t *state, const struct zcbor_string *input);
 	zcbor_tstr_encode(state, \
 		&(struct zcbor_string){.value = string, .len = (sizeof(string) - 1)})
 
-/** Encode null-terminated string as a BSTR/TSTR.
+/** Encode null-terminated string as a bstr/tstr.
  *
  * @param[inout] state   The current state of the encoding.
  * @param[in]    string  The value to encode. Must be a null-terminated string,
@@ -71,7 +71,7 @@ bool zcbor_tstr_encode(zcbor_state_t *state, const struct zcbor_string *input);
 #define zcbor_tstr_put_term(state, string) \
 	zcbor_tstr_encode(state, &(struct zcbor_string){.value = string, .len = strlen(string)})
 
-/** Encode a char array literal as a BSTR/TSTR.
+/** Encode a char array literal as a bstr/tstr.
  *
  * @param[inout] state   The current state of the encoding.
  * @param[in]    string  The value to encode. An array literal, e.g. {'F', 'o', 'o'},
@@ -104,7 +104,7 @@ bool zcbor_float64_encode(zcbor_state_t *state, const double *input);
 bool zcbor_nil_put(zcbor_state_t *state, const void *unused);
 bool zcbor_undefined_put(zcbor_state_t *state, const void *unused);
 
-/** Encode a BSTR header.
+/** Encode a bstr header.
  *
  * The rest of the string can be encoded as CBOR.
  * A state backup is created to keep track of the element count.
@@ -117,13 +117,13 @@ bool zcbor_undefined_put(zcbor_state_t *state, const void *unused);
  */
 bool zcbor_bstr_start_encode(zcbor_state_t *state);
 
-/** Finalize encoding a CBOR-encoded BSTR.
+/** Finalize encoding a CBOR-encoded bstr.
  *
  * Restore element count from backup.
  */
 bool zcbor_bstr_end_encode(zcbor_state_t *state);
 
-/** Encode a LIST/MAP header.
+/** Encode a list/map header.
  *
  * The contents of the list/map can be encoded via subsequent function calls.
  * If ZCBOR_CANONICAL is defined, a state backup is created to keep track of the
@@ -142,7 +142,7 @@ bool zcbor_bstr_end_encode(zcbor_state_t *state);
 bool zcbor_list_start_encode(zcbor_state_t *state, uint_fast32_t max_num);
 bool zcbor_map_start_encode(zcbor_state_t *state, uint_fast32_t max_num);
 
-/** Encode the end of a LIST/MAP. Do some checks and deallocate backup.
+/** Encode the end of a list/map. Do some checks and deallocate backup.
  *
  *  - Default: Adds a list terminator (0xFF) to mark the
  *    end of the list/map.
@@ -164,7 +164,7 @@ bool zcbor_map_end_encode(zcbor_state_t *state, uint_fast32_t max_num);
  * The encoded values are taken from the @p input array.
  *
  * The following is an example of encoding a list containing 3 INTS followed by
- * 0 to 2 BSTRs:
+ * 0 to 2 bstrs:
  *
  * @code{c}
  *     uint32_t ints[3] = <initialize>;
