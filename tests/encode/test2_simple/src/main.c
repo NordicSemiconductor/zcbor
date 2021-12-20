@@ -214,7 +214,7 @@ void test_pet_raw(void)
 	res = res && zcbor_list_end_encode(state, 0);
 	zassert_true(res, NULL);
 	uint8_t timestamp[8] = {1, 2, 3, 4, 5, 6, 7, 8};
-	zcbor_string_type_t timestamp_str = {
+	struct zcbor_string timestamp_str = {
 		.value = timestamp,
 		.len = sizeof(timestamp),
 	};

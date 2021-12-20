@@ -904,7 +904,7 @@ void test_single(void)
 	uint8_t exp_payload_single2[] = {9};
 	uint8_t output[10];
 	size_t out_len;
-	zcbor_string_type_t input_single0 = {
+	struct zcbor_string input_single0 = {
 		.value = "hello",
 		.len = 5
 	};
@@ -960,7 +960,7 @@ void test_unabstracted(void)
 
 void test_string_overflow(void)
 {
-	zcbor_string_type_t input_overflow0 = {
+	struct zcbor_string input_overflow0 = {
 		.value = "",
 		.len = 0xFFFFFF00, /* overflows to before this object. */
 	};

@@ -109,8 +109,8 @@ void test_size64(void)
 {
 	uint8_t *large_payload = malloc(PAYL_SIZE);
 	uint8_t *large_string = malloc(STR_SIZE);
-	zcbor_string_type_t tstr = {.value = large_string, .len = STR_SIZE};
-	zcbor_string_type_t tstr_res;
+	struct zcbor_string tstr = {.value = large_string, .len = STR_SIZE};
+	struct zcbor_string tstr_res;
 	zcbor_state_t state_d;
 	zcbor_state_t state_e;
 

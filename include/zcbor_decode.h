@@ -116,10 +116,10 @@ bool zcbor_uint32_expect_union(zcbor_state_t *state, uint32_t result);
 bool zcbor_uint64_expect_union(zcbor_state_t *state, uint64_t result);
 
 /** Decode and consume a BSTR/TSTR */
-bool zcbor_bstr_decode(zcbor_state_t *state, zcbor_string_type_t *result);
-bool zcbor_bstr_expect(zcbor_state_t *state, zcbor_string_type_t *result);
-bool zcbor_tstr_decode(zcbor_state_t *state, zcbor_string_type_t *result);
-bool zcbor_tstr_expect(zcbor_state_t *state, zcbor_string_type_t *result);
+bool zcbor_bstr_decode(zcbor_state_t *state, struct zcbor_string *result);
+bool zcbor_bstr_expect(zcbor_state_t *state, struct zcbor_string *result);
+bool zcbor_tstr_decode(zcbor_state_t *state, struct zcbor_string *result);
+bool zcbor_tstr_expect(zcbor_state_t *state, struct zcbor_string *result);
 
 /** Consume and expect a BSTR/TSTR with the value of the provided string literal.
  *
@@ -128,9 +128,9 @@ bool zcbor_tstr_expect(zcbor_state_t *state, zcbor_string_type_t *result);
  *                       that sizeof(string) - 1 is the length of the string.
  */
 #define zcbor_bstr_expect_lit(state, string) zcbor_bstr_expect(state, \
-		&(zcbor_string_type_t){.value = string, .len = (sizeof(string) - 1)})
+		&(struct zcbor_string){.value = string, .len = (sizeof(string) - 1)})
 #define zcbor_tstr_expect_lit(state, string) zcbor_tstr_expect(state, \
-		&(zcbor_string_type_t){.value = string, .len = (sizeof(string) - 1)})
+		&(struct zcbor_string){.value = string, .len = (sizeof(string) - 1)})
 
 /** Consume and expect a BSTR/TSTR with the value of the provided null-terminated string.
  *
@@ -139,9 +139,9 @@ bool zcbor_tstr_expect(zcbor_state_t *state, zcbor_string_type_t *result);
  *                       so that strlen can be used.
  */
 #define zcbor_bstr_expect_term(state, string) zcbor_bstr_expect(state, \
-		&(zcbor_string_type_t){.value = string, .len = strlen(string)})
+		&(struct zcbor_string){.value = string, .len = strlen(string)})
 #define zcbor_tstr_expect_term(state, string) zcbor_tstr_expect(state, \
-		&(zcbor_string_type_t){.value = string, .len = strlen(string)})
+		&(struct zcbor_string){.value = string, .len = strlen(string)})
 
 /** Consume and expect a BSTR/TSTR with the value of the provided char array literal.
  *
@@ -150,9 +150,9 @@ bool zcbor_tstr_expect(zcbor_state_t *state, zcbor_string_type_t *result);
  *                       so that sizeof(string) is the length of the string.
  */
 #define zcbor_bstr_expect_arr(state, string) zcbor_bstr_expect(state, \
-		&(zcbor_string_type_t){.value = string, .len = (sizeof(string))})
+		&(struct zcbor_string){.value = string, .len = (sizeof(string))})
 #define zcbor_tstr_expect_arr(state, string) zcbor_tstr_expect(state, \
-		&(zcbor_string_type_t){.value = string, .len = (sizeof(string))})
+		&(struct zcbor_string){.value = string, .len = (sizeof(string))})
 
 /** Decode and consume a tag. */
 bool zcbor_tag_decode(zcbor_state_t *state, uint32_t *result);
@@ -191,7 +191,7 @@ bool zcbor_any_decode(zcbor_state_t *state, void *unused);
  * @retval true   Header decoded correctly
  * @retval false  Header decoded incorrectly, or backup failed.
  */
-bool zcbor_bstr_start_decode(zcbor_state_t *state, zcbor_string_type_t *result);
+bool zcbor_bstr_start_decode(zcbor_state_t *state, struct zcbor_string *result);
 
 /** Finalize decoding a CBOR-encoded bstr.
  *
@@ -232,7 +232,7 @@ bool zcbor_map_end_decode(zcbor_state_t *state);
  *
  * @code{c}
  *     uint32_t ints[3];
- *     zcbor_string_type_t bstrs[2];
+ *     struct zcbor_string bstrs[2];
  *     uint32_t num_decode;
  *     bool res;
  *
