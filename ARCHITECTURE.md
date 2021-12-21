@@ -220,4 +220,4 @@ The non-generated files provide decoding/encoding functions for all the basic ty
 There are also housekeeping functions for managing state and logging.
 This code is documented in the header files in the [include](include) folder.
 
-The C tests for the code generation can be found in the [tests/cbor_decode](tests/cbor_decode) and [tests/cbor_encode](tests/cbor_encode) folders.
+The C tests for the code generation can be found in the [tests/decode](tests/decode) and [tests/encode](tests/encode) folders.

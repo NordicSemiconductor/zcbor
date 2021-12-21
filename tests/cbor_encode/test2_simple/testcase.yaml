@@ -1,8 +1,0 @@
-tests:
-  zcbor.cbor_encode.test2_simple:
-    platform_allow: native_posix native_posix_64
-    tags: zcbor cbor_encode
-  zcbor.cbor_encode.test2_simple.canonical:
-    platform_allow: native_posix native_posix_64
-    tags: zcbor cbor_encode canonical
-    extra_args: CANONICAL=CANONICAL

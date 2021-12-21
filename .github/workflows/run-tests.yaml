@@ -62,19 +62,19 @@ jobs:
         sudo apt update
         sudo apt install -y gcc-multilib
 
-    - name: Run cbor_decode tests
+    - name: Run decode tests
       working-directory: tests
       run: |
         export ZEPHYR_BASE=$(pwd)/zephyr
         export ZEPHYR_TOOLCHAIN_VARIANT=host
-        $ZEPHYR_BASE/scripts/twister -i -T . -W --platform native_posix --platform native_posix_64 -t cbor_decode
+        $ZEPHYR_BASE/scripts/twister -i -T . -W --platform native_posix --platform native_posix_64 -t decode
 
-    - name: Run cbor_encode tests
+    - name: Run encode tests
       working-directory: tests
       run: |
         export ZEPHYR_BASE=$(pwd)/zephyr
         export ZEPHYR_TOOLCHAIN_VARIANT=host
-        $ZEPHYR_BASE/scripts/twister -i -T . -W --platform native_posix --platform native_posix_64 -t cbor_encode
+        $ZEPHYR_BASE/scripts/twister -i -T . -W --platform native_posix --platform native_posix_64 -t encode
 
   release-test:
     runs-on: ubuntu-latest
