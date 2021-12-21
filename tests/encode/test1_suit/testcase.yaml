@@ -1,5 +1,5 @@
 tests:
-  zcbor.cbor_encode.test1_suit.canonical:
+  zcbor.encode.test1_suit.canonical:
     platform_allow: native_posix native_posix_64
-    tags: zcbor cbor_encode canonical
+    tags: zcbor encode canonical
     extra_args: CANONICAL=CANONICAL

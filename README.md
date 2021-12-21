@@ -90,7 +90,7 @@ Build system
 When calling zcbor with the argument `--output-cmake <file path>`, a cmake file will be created at that location.
 The cmake file creates a cmake target and adds the generated and non-generated source files, and the include directories to the header files.
 This cmake file can then be included in your project's `CMakeLists.txt` file, and the target can be linked into your project.
-This is demonstrated in the tests, e.g. at tests/cbor_decode/test3_simple/CMakeLists.txt.
+This is demonstrated in the tests, e.g. at tests/decode/test3_simple/CMakeLists.txt.
 zcbor can be instructed to copy the non-generated sources to the same location as the generated sources with `--copy-sources`.
 
 CBOR decoding/encoding library
@@ -175,7 +175,7 @@ Any element can be labeled with `:`.
 The label is only for readability and does not impact the data structure in any way.
 E.g. `Foo = [name: tstr, age: uint]` is equivalent to `Foo = [tstr, uint]`.
 
-See [test3_simple](tests/cbor_decode/test3_simple/) for CDDL example code.
+See [test3_simple](tests/decode/test3_simple/) for CDDL example code.
 
 Usage Example
 =============
@@ -183,7 +183,7 @@ Usage Example
 Code generation
 ---------------
 
-This example is is taken from [test3_simple](tests/cbor_decode/test3_simple/).
+This example is is taken from [test3_simple](tests/decode/test3_simple/).
 
 If your CDDL file contains the following code:
 
@@ -290,8 +290,8 @@ Tests for the conversion functions in the script are implemented with the unitte
 
 There are also test.sh scripts to quickly run all tests.
 [`tests/test.sh`](tests/test.sh) runs all tests, including python tests in [`tests/scripts`](tests/scripts).
-[`tests/cbor_decode/test.sh`](tests/cbor_decode/test.sh) runs all decoding tests.
-[`tests/cbor_encode/test.sh`](tests/cbor_encode/test.sh) runs all encoding tests.
+[`tests/decode/test.sh`](tests/decode/test.sh) runs all decoding tests.
+[`tests/encode/test.sh`](tests/encode/test.sh) runs all encoding tests.
 
 These tests are dependent upon the `pycodestyle` package from `pip`.
 Run these scripts with no arguments.

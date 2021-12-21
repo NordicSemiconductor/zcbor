@@ -1,4 +1,0 @@
-tests:
-  zcbor.cbor_decode.test2_suit:
-    platform_allow: native_posix native_posix_64
-    tags: zcbor cbor_decode
