@@ -2396,7 +2396,7 @@ static bool {xcoder.func_name}(
  * Generated using zcbor version {self.version}
  * https://github.com/NordicSemiconductor/zcbor{'''
  * at: ''' + datetime.now().strftime('%Y-%m-%d %H:%M:%S') if self.print_time else ''}
- * Generated with a default_max_qty of {self.default_max_qty}
+ * Generated with a --default-max-qty of {self.default_max_qty}
  */
 
 #include <stdint.h>
@@ -2422,7 +2422,7 @@ static bool {xcoder.func_name}(
  * Generated using zcbor version {self.version}
  * https://github.com/NordicSemiconductor/zcbor{'''
  * at: ''' + datetime.now().strftime('%Y-%m-%d %H:%M:%S') if self.print_time else ''}
- * Generated with a default_max_qty of {self.default_max_qty}
+ * Generated with a --default-max-qty of {self.default_max_qty}
  */
 
 #ifndef {header_guard}
@@ -2451,7 +2451,7 @@ static bool {xcoder.func_name}(
  * Generated using zcbor version {self.version}
  * https://github.com/NordicSemiconductor/zcbor{'''
  * at: ''' + datetime.now().strftime('%Y-%m-%d %H:%M:%S') if self.print_time else ''}
- * Generated with a default_max_qty of {self.default_max_qty}
+ * Generated with a --default-max-qty of {self.default_max_qty}
  */
 
 #ifndef {header_guard}
@@ -2463,6 +2463,13 @@ static bool {xcoder.func_name}(
 #include <string.h>
 #include "zcbor_{self.mode}.h"
 
+/** Which value for --default-max-qty this file was created with.
+ *
+ *  The define is used in the other generated file to do a build-time
+ *  compatibility check.
+ *
+ *  See `zcbor --help` for more information about --default-max-qty
+ */
 #define DEFAULT_MAX_QTY {self.default_max_qty}
 
 {(linesep+linesep).join(
