@@ -338,9 +338,9 @@ void test_manifest(const uint8_t *input, uint32_t len)
 	bool res;
 	uint32_t out_len;
 
-	zcbor_print("test_vector at: 0x%x\r\n", (uint32_t)input);
-	zcbor_print("test_vector end at: 0x%x\r\n",
-				((uint32_t)input) + len);
+	zcbor_print("test_vector at: 0x%zx\r\n", (size_t)input);
+	zcbor_print("test_vector end at: 0x%zx\r\n",
+				((size_t)input) + len);
 	res = cbor_decode_SUIT_Outer_Wrapper(input, len, &outerwrapper1, NULL);
 	zassert_true(res, "top-level decoding failed.");
 

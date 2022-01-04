@@ -509,7 +509,7 @@ bool zcbor_multi_encode(uint32_t min_encode,
 			ZCBOR_FAIL();
 		}
 	}
-	zcbor_print("Found %zu elements.\n", *num_encode);
+	zcbor_print("Found %u elements.\n", *num_encode);
 	return true;
 }
 
