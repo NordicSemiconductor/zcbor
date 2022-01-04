@@ -45,9 +45,9 @@ void test_5(void)
 	uint8_t expected_component1[] = {0x00, 0x34, 0x01};
 	bool res;
 
-	zcbor_print("test_vector at: 0x%x\r\n", (uint32_t)test_vector1);
-	zcbor_print("test_vector end at: 0x%x\r\n",
-				((uint32_t)test_vector1) + sizeof(test_vector1));
+	zcbor_print("test_vector at: 0x%zu\r\n", (size_t)test_vector1);
+	zcbor_print("test_vector end at: 0x%zu\r\n",
+				((size_t)test_vector1) + sizeof(test_vector1));
 	memset(&outerwrapper1, 0, sizeof(outerwrapper1));
 	res = cbor_decode_SUIT_Outer_Wrapper(test_vector1, sizeof(test_vector1),
 						&outerwrapper1, &decode_len);

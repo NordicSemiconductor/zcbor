@@ -9,6 +9,10 @@ target_sources(app PRIVATE
   ${app_sources}
   )
 
+if (VERBOSE)
+  zephyr_compile_definitions(ZCBOR_VERBOSE)
+endif()
+
 if (CANONICAL)
   zephyr_compile_definitions(ZCBOR_CANONICAL)
 endif()

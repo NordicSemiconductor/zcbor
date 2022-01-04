@@ -96,9 +96,9 @@ void test_suit9_simple2(void)
 {
 	bool res;
 
-	zcbor_print("test_vector at: 0x%x\r\n", (uint32_t)test_vector2);
-	zcbor_print("test_vector end at: 0x%x\r\n",
-				((uint32_t)test_vector2) + sizeof(test_vector2));
+	zcbor_print("test_vector at: 0x%zx\r\n", (size_t)test_vector2);
+	zcbor_print("test_vector end at: 0x%zx\r\n",
+				((size_t)test_vector2) + sizeof(test_vector2));
 	memset(&envelope1, 0, sizeof(envelope1));
 	res = cbor_decode_SUIT_Envelope(test_vector2,
 					sizeof(test_vector2), &envelope1, NULL);
@@ -116,9 +116,9 @@ void test_suit9_simple5(void)
 {
 	bool res;
 
-	zcbor_print("test_vector at: 0x%x\r\n", (uint32_t)test_vector5);
-	zcbor_print("test_vector end at: 0x%x\r\n",
-				((uint32_t)test_vector5) + sizeof(test_vector5));
+	zcbor_print("test_vector at: 0x%zx\r\n", (size_t)test_vector5);
+	zcbor_print("test_vector end at: 0x%zx\r\n",
+				((size_t)test_vector5) + sizeof(test_vector5));
 	memset(&envelope1, 0, sizeof(envelope1));
 	res = cbor_decode_SUIT_Envelope(test_vector5,
 					sizeof(test_vector5), &envelope1, NULL);
