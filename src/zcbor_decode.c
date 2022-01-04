@@ -677,6 +677,8 @@ bool zcbor_present_decode(uint32_t *present,
 {
 	uint32_t num_decode;
 	bool retval = zcbor_multi_decode(0, 1, &num_decode, decoder, state, result, 0);
+	zcbor_assert(retval, "zcbor_multi_decode should not fail with these parameters.\n");
+
 	if (retval) {
 		*present = num_decode;
 	}
