@@ -33,7 +33,7 @@ static uint8_t log2ceil(uint_fast32_t val)
 
 static uint8_t get_additional(uint_fast32_t len, uint8_t value0)
 {
-	return len == 0 ? value0 : (24 + log2ceil(len));
+	return len == 0 ? value0 : (uint8_t)(24 + log2ceil(len));
 }
 
 static bool encode_header_byte(zcbor_state_t *state,
@@ -45,7 +45,7 @@ static bool encode_header_byte(zcbor_state_t *state,
 
 	zcbor_assert(additional < 32, NULL);
 
-	*(state->payload_mut++) = (major_type << 5) | (additional & 0x1F);
+	*(state->payload_mut++) = (uint8_t)((major_type << 5) | (additional & 0x1F));
 	return true;
 }
 
@@ -103,7 +103,7 @@ static uint_fast32_t get_result_len(const void *const input, uint_fast32_t max_r
 	}
 
 	/* Round up to nearest power of 2. */
-	return len <= 2 ? len : (1 << log2ceil(len));
+	return len <= 2 ? len : (uint8_t)(1 << log2ceil(len));
 }
 
 
@@ -261,7 +261,8 @@ static bool primitive_put(zcbor_state_t *state, uint32_t input)
 static size_t remaining_str_len(zcbor_state_t *state)
 {
 	size_t max_len = (size_t)state->payload_end - (size_t)state->payload;
-	size_t result_len = get_result_len(&max_len, sizeof(size_t));
+	size_t result_len = get_result_len(&max_len, sizeof(max_len));
+
 	return max_len - result_len - 1;
 }
 
@@ -286,11 +287,11 @@ bool zcbor_bstr_start_encode(zcbor_state_t *state)
 bool zcbor_bstr_end_encode(zcbor_state_t *state)
 {
 	const uint8_t *payload = state->payload;
+	struct zcbor_string value;
 
 	if (!zcbor_process_backup(state, ZCBOR_FLAG_RESTORE | ZCBOR_FLAG_CONSUME, 0xFFFFFFFF)) {
 		ZCBOR_FAIL();
 	}
-	struct zcbor_string value;
 
 	value.value = state->payload_end - remaining_str_len(state);
 	value.len = (size_t)payload - (size_t)value.value;
@@ -405,7 +406,7 @@ static bool list_map_end_encode(zcbor_state_t *state, uint_fast32_t max_num,
 
 	if (max_header_len != header_len) {
 		const uint8_t *start = state->payload + max_header_len - header_len;
-		size_t body_size = payload - start;
+		size_t body_size = (size_t)payload - (size_t)start;
 		memmove(state->payload_mut,
 			state->payload + max_header_len - header_len,
 			body_size);
@@ -452,7 +453,7 @@ bool zcbor_undefined_put(zcbor_state_t *state, const void *unused)
 
 bool zcbor_bool_encode(zcbor_state_t *state, const bool *input)
 {
-	if (!primitive_put(state, *input + ZCBOR_BOOL_TO_PRIM)) {
+	if (!primitive_put(state, (uint32_t)(*input + ZCBOR_BOOL_TO_PRIM))) {
 		ZCBOR_FAIL();
 	}
 	return true;
@@ -461,7 +462,7 @@ bool zcbor_bool_encode(zcbor_state_t *state, const bool *input)
 
 bool zcbor_bool_put(zcbor_state_t *state, bool input)
 {
-	if (!primitive_put(state, input + ZCBOR_BOOL_TO_PRIM)) {
+	if (!primitive_put(state, (uint32_t)(input + ZCBOR_BOOL_TO_PRIM))) {
 		ZCBOR_FAIL();
 	}
 	return true;

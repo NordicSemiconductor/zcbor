@@ -48,3 +48,7 @@ include(${PROJECT_BINARY_DIR}/strange.cmake)
 target_link_libraries(strange PRIVATE zephyr_interface)
 target_link_libraries(app PRIVATE strange)
 
+if (NOT VERBOSE)
+  # VERBOSE means including printk which doesn't build with these options.
+  target_compile_options(strange PRIVATE -Wpedantic -Wconversion)
+endif()

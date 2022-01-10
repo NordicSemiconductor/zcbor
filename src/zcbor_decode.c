@@ -22,7 +22,7 @@ static uint_fast32_t additional_len(uint8_t additional)
 		 * 26 => 4
 		 * 27 => 8
 		 */
-		return 1 << (additional - ZCBOR_VALUE_IS_1_BYTE);
+		return 1U << (additional - ZCBOR_VALUE_IS_1_BYTE);
 	}
 	return 0;
 }
@@ -142,7 +142,7 @@ bool zcbor_int32_decode(zcbor_state_t *state, int32_t *result)
 		if (result64 > INT32_MAX) {
 			FAIL_RESTORE();
 		}
-		*result = result64;
+		*result = (int32_t)result64;
 		return true;
 	} else {
 		ZCBOR_FAIL();
@@ -714,7 +714,7 @@ bool zcbor_any_skip(zcbor_state_t *state, void *result)
 			temp_elem_count = state->elem_count;
 			state->elem_count = value;
 			if (!zcbor_multi_decode(value, value, &num_decode,
-					(void *)zcbor_any_skip, state,
+					(zcbor_decoder_t *)zcbor_any_skip, state,
 					NULL, 0)) {
 				state->elem_count = elem_count_bak;
 				state->payload = payload_bak;
