@@ -17,7 +17,7 @@
 typedef struct
 {
 	const uint8_t *value;
-	uint32_t len;
+	size_t len;
 } zcbor_string_type_t;
 
 #ifdef ZCBOR_VERBOSE
@@ -149,6 +149,6 @@ bool zcbor_union_end_code(zcbor_state_t *state);
  *  in the array, which is the state that can be passed to cbor functions.
  */
 void zcbor_new_state(zcbor_state_t *state_array, uint32_t n_states,
-		const uint8_t *payload, uint32_t payload_len, uint32_t elem_count);
+		const uint8_t *payload, size_t payload_len, uint32_t elem_count);
 
 #endif /* CBOR_COMMON_H__ */

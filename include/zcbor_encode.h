@@ -12,7 +12,7 @@
 #include "zcbor_common.h"
 
 
-/** Encode a PINT/NINT into a int32_t.
+/** Encode a PINT/NINT.
  *
  * @param[inout] state        The current state of the decoding.
  * @param[out]   result       Where to place the encoded value.
@@ -21,11 +21,15 @@
  * @retval false  If the payload is exhausted.
  */
 bool zcbor_int32_encode(zcbor_state_t *state, const int32_t *input);
+bool zcbor_int64_encode(zcbor_state_t *state, const int64_t *input);
 bool zcbor_int32_put(zcbor_state_t *state, int32_t result);
+bool zcbor_int64_put(zcbor_state_t *state, int64_t input);
 
-/** Encode a PINT into a uint32_t. */
+/** Encode a PINT. */
 bool zcbor_uint32_encode(zcbor_state_t *state, const uint32_t *result);
+bool zcbor_uint64_encode(zcbor_state_t *state, const uint64_t *input);
 bool zcbor_uint32_put(zcbor_state_t *state, uint32_t result);
+bool zcbor_uint64_put(zcbor_state_t *state, uint64_t input);
 
 /** Encode a BSTR header.
  *

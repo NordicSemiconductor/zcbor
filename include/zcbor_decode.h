@@ -86,6 +86,7 @@
  *                fit in the result variable.
  */
 bool zcbor_int32_decode(zcbor_state_t *state, int32_t *result);
+bool zcbor_int64_decode(zcbor_state_t *state, int64_t *result);
 
 /** Expect a PINT/NINT with a certain value. Uses zcbor_int32_decode internally.
  *
@@ -97,10 +98,15 @@ bool zcbor_int32_decode(zcbor_state_t *state, int32_t *result);
  *                expected value.
  */
 bool zcbor_int32_expect(zcbor_state_t *state, int32_t result);
+bool zcbor_int64_expect(zcbor_state_t *state, int64_t result);
 
 /** Decode a PINT. */
 bool zcbor_uint32_decode(zcbor_state_t *state, uint32_t *result);
+bool zcbor_uint64_decode(zcbor_state_t *state, uint64_t *result);
+
 bool zcbor_uint32_expect(zcbor_state_t *state, uint32_t result);
+bool zcbor_uint64_expect(zcbor_state_t *state, uint64_t result);
+
 bool zcbor_uint32_expect_union(zcbor_state_t *state, uint32_t result);
 
 /** Decode and consume a BSTR header.
