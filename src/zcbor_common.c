@@ -101,7 +101,7 @@ bool zcbor_union_end_code(zcbor_state_t *state)
 }
 
 void zcbor_new_state(zcbor_state_t *state_array, uint32_t n_states,
-		const uint8_t *payload, uint32_t payload_len, uint32_t elem_count)
+		const uint8_t *payload, size_t payload_len, uint32_t elem_count)
 {
 	state_array[0].payload = payload;
 	state_array[0].payload_end = payload + payload_len;
