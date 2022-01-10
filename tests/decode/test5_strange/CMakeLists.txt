@@ -47,14 +47,20 @@ execute_process(
   COMMAND_ERROR_IS_FATAL ANY
 )
 
-target_sources(app PRIVATE
+add_library(strange
   ${PROJECT_BINARY_DIR}/src/strange.c
   ${PROJECT_BINARY_DIR}/src/zcbor_decode.c
   ${PROJECT_BINARY_DIR}/src/zcbor_common.c)
+
+target_include_directories(strange PUBLIC ${PROJECT_BINARY_DIR}/include)
+target_link_libraries(strange PRIVATE zephyr_interface)
+target_link_libraries(app PRIVATE strange)
 
 if (TEST_INDETERMINATE_LENGTH_ARRAYS)
   target_compile_definitions(app PUBLIC TEST_INDETERMINATE_LENGTH_ARRAYS)
 endif()
 
-target_include_directories(app PRIVATE
-  ${PROJECT_BINARY_DIR}/include)
+if (NOT VERBOSE)
+  # VERBOSE means including printk which doesn't build with these options.
+  target_compile_options(strange PRIVATE -Wpedantic -Wconversion)
+endif()

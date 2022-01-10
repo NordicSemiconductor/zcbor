@@ -31,3 +31,8 @@ include(${PROJECT_BINARY_DIR}/manifest2.cmake)
 
 target_link_libraries(manifest2 PRIVATE zephyr_interface)
 target_link_libraries(app PRIVATE manifest2)
+
+if (NOT VERBOSE)
+  # VERBOSE means including printk which doesn't build with these options.
+  target_compile_options(manifest2 PRIVATE -Wpedantic -Wconversion)
+endif()

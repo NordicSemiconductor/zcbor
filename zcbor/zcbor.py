@@ -126,7 +126,7 @@ def val_or_null(value, var_name):
 def tmp_str_or_null(value):
     value_str = f'"{value}"' if value is not None else 'NULL'
     len_str = f"""sizeof({f'"{value}"'}) - 1, &tmp_str)"""
-    return f"(tmp_str.value = {value_str}, tmp_str.len = {len_str}"
+    return f"(tmp_str.value = (uint8_t *){value_str}, tmp_str.len = {len_str}"
 
 
 # Assign the max_value variable.
@@ -2270,15 +2270,16 @@ class CodeGenerator(CddlXcoder):
         if self.present_var_condition():
             func, *arguments = self.repeated_single_func(ptr_result=True)
             return (
-                f"zcbor_present_{self.mode}(&(%s), (void *)%s, %s)" %
+                f"zcbor_present_{self.mode}(&(%s), (zcbor_{self.mode}r_t *)%s, %s)" %
                 (self.present_var_access(),
                  func,
                  xcode_args(*arguments),))
         elif self.count_var_condition():
             func, *arguments = self.repeated_single_func(ptr_result=True)
-            minmax_str = "_minmax" if self.mode == "encode" else ""
+            minmax = "_minmax" if self.mode == "encode" else ""
+            mode = self.mode
             return (
-                f"zcbor_multi_{self.mode}{minmax_str}(%s, %s, &%s, (void *)%s, %s, %s)" %
+                f"zcbor_multi_{mode}{minmax}(%s, %s, &%s, (zcbor_{mode}r_t *)%s, %s, %s)" %
                 (self.min_qty,
                  self.max_qty,
                  self.count_var_access(),
