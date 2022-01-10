@@ -153,7 +153,6 @@ void test_pet(void)
 		._Pet_name_tstr = {{.value = "foo", .len = 3}, {.value = "bar", .len = 3}},
 		._Pet_name_tstr_count = 2,
 		._Pet_birthday = {.value = (uint8_t[]){1,2,3,4,5,6,7,8}, .len = 8},
-		._Pet_species_dog = 2,
 		._Pet_species_choice = _Pet_species_dog
 	};
 	uint8_t exp_output[] = {
@@ -227,7 +226,8 @@ void test_pet_raw(void)
 	/* Check that encoding succeeded. */
 	zassert_true(res, NULL);
 	/* Check that the resulting length is correct. */
-	zassert_equal(sizeof(exp_output), state->payload - payload, NULL);
+	zassert_equal(sizeof(exp_output), state->payload - payload, "%d != %d\r\n",
+		sizeof(exp_output), state->payload - payload);
 	/* Check the payload contents. */
 	zassert_mem_equal(exp_output, payload, sizeof(exp_output), NULL);
 }

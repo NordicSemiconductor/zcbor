@@ -305,6 +305,11 @@ static bool str_start_decode(zcbor_state_t *state,
 
 bool zcbor_bstr_start_decode(zcbor_state_t *state, struct zcbor_string *result)
 {
+	if (result == NULL) {
+		struct zcbor_string dummy;
+		result = &dummy;
+	}
+
 	if(!str_start_decode(state, result, ZCBOR_MAJOR_TYPE_BSTR)) {
 		ZCBOR_FAIL();
 	}

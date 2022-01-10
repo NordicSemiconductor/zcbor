@@ -947,9 +947,11 @@ class CddlXcoder(CddlParser):
                 or (self.type == "OTHER" and self.my_types[self.value].is_unambiguous()))
 
     def is_unambiguous_repeated(self):
-        return self.is_unambiguous_value() \
-            and (self.key is None or self.key.is_unambiguous_repeated()) \
-            or (self.type in ["LIST", "GROUP", "MAP"] and len(self.value) == 0)
+        return (self.is_unambiguous_value()
+                and (self.key is None or self.key.is_unambiguous_repeated())
+                or (self.type in ["LIST", "GROUP", "MAP"] and len(self.value) == 0)
+                or (self.type in ["LIST", "GROUP", "MAP"]
+                    and all((child.is_unambiguous() for child in self.value))))
 
     def is_unambiguous(self):
         return (self.is_unambiguous_repeated() and (self.min_qty == self.max_qty))
@@ -1087,12 +1089,12 @@ class CddlXcoder(CddlParser):
             or self.cbor_var_condition()
             or self.tags
             or self.type_def_condition()
-            or (self.type in ["LIST", "MAP"] and len(self.value) != 0))
+            or (self.type in ["LIST", "MAP", "GROUP"] and len(self.value) != 0))
 
     # Whether this element needs its own encoder/decoder function.
     def repeated_single_func_impl_condition(self):
         return self.repeated_type_def_condition() \
-            or (self.type in ["LIST", "MAP"] and self.multi_member()) \
+            or (self.type in ["LIST", "MAP", "GROUP"] and self.multi_member()) \
             or (
                 self.multi_var_condition()
                 and (self.self_repeated_multi_var_condition() or self.range_check_condition()))
@@ -1671,9 +1673,11 @@ class CodeGenerator(CddlXcoder):
 
     # Declaration of the variables of all children.
     def child_single_declarations(self):
-        decl = [
-            line for child in self.value for line in child.add_var_name(
-                child.single_var_type(), anonymous=True)]
+        decl = list()
+        for child in self.value:
+            if not child.is_unambiguous_repeated():
+                decl.extend(child.add_var_name(
+                    child.single_var_type(), anonymous=True))
         return decl
 
     def simple_func_condition(self):
@@ -1793,7 +1797,10 @@ class CodeGenerator(CddlXcoder):
 
     # Enclose a list of declarations in a block (struct, union or enum).
     def enclose(self, ingress, declaration):
-        return [f"{ingress} {{"] + [indentation + line for line in declaration] + ["}"]
+        if declaration:
+            return [f"{ingress} {{"] + [indentation + line for line in declaration] + ["}"]
+        else:
+            return []
 
     # Type declaration for unions.
     def union_type(self):
@@ -1903,9 +1910,13 @@ class CodeGenerator(CddlXcoder):
         if self.type == "OTHER":
             ret_val.extend(self.my_types[self.value].type_def())
         if self.repeated_type_def_condition():
-            ret_val.extend([(self.single_var_type(full=False), self.repeated_type_name())])
+            type_def_list = self.single_var_type(full=False)
+            if type_def_list:
+                ret_val.extend([(self.single_var_type(full=False), self.repeated_type_name())])
         if self.type_def_condition():
-            ret_val.extend([(self.single_var_type(), self.type_name())])
+            type_def_list = self.single_var_type()
+            if type_def_list:
+                ret_val.extend([(self.single_var_type(), self.type_name())])
         return ret_val
 
     def type_def_bits(self):
@@ -2168,7 +2179,8 @@ class CodeGenerator(CddlXcoder):
 
     def xcode_bstr(self):
         if self.cbor_var_condition():
-            access_arg = f', &{self.val_access()}' if self.mode == 'decode' else ''
+            access_arg = f', {deref_if_not_null(self.val_access())}' if self.mode == 'decode' \
+                else ''
             xcode_cbor = "(%s)" % ((newl_ind + "&& ").join(
                 [f"(int_res = (zcbor_bstr_start_{self.mode}(state{access_arg})",
                  f"{self.cbor.full_xcode()})), zcbor_bstr_end_{self.mode}(state), int_res"]))
