@@ -2517,7 +2517,7 @@ target_include_directories({target_name} PUBLIC
 
         print("Writing to " + h_file.name)
         h_file.write(self.render_h_file(
-            type_def_file=type_file.name, header_guard=self.header_guard(h_file.name)))
+            type_def_file=Path(type_file.name).name, header_guard=self.header_guard(h_file.name)))
 
         print("Writing to " + type_file.name)
         type_file.write(self.render_type_file(header_guard=self.header_guard(type_file.name)))
