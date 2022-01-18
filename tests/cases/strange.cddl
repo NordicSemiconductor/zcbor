@@ -55,6 +55,8 @@ Map = {
 	twotothree: 2*3 nil => bstr,
 }
 
+EmptyMap = {}
+
 NestedListMap = [*{?1 => 4}]
 NestedMapListMap = {+[] => [*{}]}
 
