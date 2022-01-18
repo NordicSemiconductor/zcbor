@@ -29,6 +29,7 @@ set(py_command
     Optional
     Union
     Map
+    EmptyMap
     Level1
     Range
     ValueRange

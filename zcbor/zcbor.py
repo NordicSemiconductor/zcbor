@@ -2235,16 +2235,19 @@ class CodeGenerator(CddlXcoder):
             yield XcoderTuple(xcode_body, self.xcode_func_name(), self.type_name())
 
     def public_xcode_func_sig(self):
+        type_name = self.type_name()
         return f"""
 bool cbor_{self.xcode_func_name()}(
 		{"const " if self.mode == "decode" else ""}uint8_t *payload, uint32_t payload_len,
-		{"" if self.mode == "decode" else "const "}{self.type_name()} *{struct_ptr_name(self.mode)},
+		{"" if self.mode == "decode" else "const "}{type_name if type_name else "void"} *{
+            struct_ptr_name(self.mode)},
 		{"uint32_t *payload_len_out"})"""
 
     def type_test_xcode_func_sig(self):
+        type_name = self.type_name()
         return f"""
 __attribute__((unused)) static bool type_test_{self.xcode_func_name()}(
-		{"" if self.mode == "decode" else "const "}{self.type_name()} *{
+		{"" if self.mode == "decode" else "const "}{type_name if type_name else "void"} *{
             struct_ptr_name(self.mode)})"""
 
 

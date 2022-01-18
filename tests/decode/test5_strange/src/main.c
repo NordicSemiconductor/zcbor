@@ -506,6 +506,43 @@ void test_map(void)
 	zassert_equal(2, map._Map_twotothree_count, NULL);
 }
 
+
+static bool my_decode_EmptyMap(zcbor_state_t *state, void *unused)
+{
+	uint32_t payload_len_out;
+	bool res = cbor_decode_EmptyMap(state->payload,
+		state->payload_end - state->payload, NULL, &payload_len_out);
+
+	if (res) {
+		state->payload += payload_len_out;
+	}
+	return res;
+}
+
+
+void test_empty_map(void)
+{
+	const uint8_t payload1[] = {MAP(0), END};
+	const uint8_t payload2_inv[] = {MAP(1), END};
+	const uint8_t payload3_inv[] = {MAP(1), 0, END};
+	const uint8_t payload4[] = {MAP(0), END MAP(0), END MAP(0), END};
+	uint32_t num_decode;
+	zcbor_state_t state;
+
+	zcbor_new_state(&state, 1, payload4, sizeof(payload4), 3);
+
+	zassert_true(cbor_decode_EmptyMap(payload1, sizeof(payload1), NULL, NULL), NULL);
+#ifdef TEST_INDETERMINATE_LENGTH_ARRAYS
+	zassert_true(cbor_decode_EmptyMap(payload2_inv, sizeof(payload2_inv), NULL, NULL), NULL);
+#else
+	zassert_false(cbor_decode_EmptyMap(payload2_inv, sizeof(payload2_inv), NULL, NULL), NULL);
+#endif
+	zassert_false(cbor_decode_EmptyMap(payload3_inv, sizeof(payload3_inv), NULL, NULL), NULL);
+	zassert_true(zcbor_multi_decode(3, 3, &num_decode, my_decode_EmptyMap, &state, NULL, 0), NULL);
+	zassert_equal(3, num_decode, NULL);
+}
+
+
 void test_nested_list_map(void)
 {
 	const uint8_t payload_nested_lm1[] = {LIST(0), END};
@@ -1033,6 +1070,7 @@ void test_main(void)
 			 ztest_unit_test(test_union),
 			 ztest_unit_test(test_levels),
 			 ztest_unit_test(test_map),
+			 ztest_unit_test(test_empty_map),
 			 ztest_unit_test(test_nested_list_map),
 			 ztest_unit_test(test_nested_map_list_map),
 			 ztest_unit_test(test_range),
