@@ -217,7 +217,7 @@ And use the generated code with
 /* The following type and function refer to the Pet type in the CDDL, which
  * has been specified as an --entry-types (-t) when invoking zcbor. */
 Pet_t pet;
-uint32_t decode_len;
+size_t decode_len;
 bool success = cbor_decode_Pet(input, sizeof(input), &pet, &decode_len);
 ```
 
@@ -236,7 +236,7 @@ The process is the same for encoding, except:
  * has been specified as an --entry-types (-t) when invoking zcbor. */
 Pet_t pet = { /* Initialize with desired data. */ };
 uint8_t output[100]; /* 100 is an example. Must be large enough for data to fit. */
-uint32_t out_len;
+size_t out_len;
 bool success = cbor_encode_Pet(output, sizeof(output), &pet, &out_len);
 ```
 

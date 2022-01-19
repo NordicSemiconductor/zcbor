@@ -122,12 +122,6 @@ def val_or_null(value, var_name):
     return "(%s = %d, &%s)" % (var_name, value, var_name) if value is not None else "NULL"
 
 
-# Assign the tmp_value variable.
-def tmp_val_or_null(value):
-    return val_or_null(value, "tmp_value")
-    # return f"""{f'&(uint32_t){{{value}}}' if value is not None else 'NULL'}"""
-
-
 # Assign the min_value variable.
 def tmp_str_or_null(value):
     value_str = f'"{value}"' if value is not None else 'NULL'
@@ -540,7 +534,13 @@ class CddlParser:
         if self.type is None:
             raise TypeError("Cannot have size before value: " + str(size))
         elif self.type in ["INT", "UINT", "NINT"]:
-            self.set_size_range(None, size)
+            value = 256**size
+            if self.type == "INT":
+                self.max_value = int((value >> 1) - 1)
+            if self.type == "UINT":
+                self.max_value = int(value - 1)
+            if self.type in ["INT", "NINT"]:
+                self.min_value = int(-1 * (value >> 1) + 1)
         elif self.type in ["BSTR", "TSTR"]:
             self.set_size_range(size, size)
         else:
@@ -1111,7 +1111,9 @@ class CddlXcoder(CddlParser):
 
     def all_children_uint_disambiguated(self):
         values = set(child.uint_val() for child in self.value)
-        return (len(values) == len(self.value)) and None not in values
+        bit_sizes = set(child.bit_size() for child in self.value)
+        return (len(values) == len(self.value)) and None not in values \
+            and (len(bit_sizes) == 1) and None not in bit_sizes
 
     # Name of the "present" variable for this element.
     def present_var_name(self):
@@ -1610,10 +1612,11 @@ class CddlTypes(NamedTuple):
 # Class for generating C code that encode/decodes CBOR and validates it according
 # to the CDDL.
 class CodeGenerator(CddlXcoder):
-    def __init__(self, mode, entry_type_names, *args, **kwargs):
+    def __init__(self, mode, entry_type_names, default_bit_size, *args, **kwargs):
         super(CodeGenerator, self).__init__(*args, **kwargs)
         self.mode = mode
         self.entry_type_names = entry_type_names
+        self.default_bit_size = default_bit_size
 
     @classmethod
     def from_cddl(cddl_class, mode, *args, **kwargs):
@@ -1632,15 +1635,15 @@ class CodeGenerator(CddlXcoder):
             or ((self.value not in self.entry_type_names) and self.my_types[self.value].is_cbor()))
 
     def init_args(self):
-        return (self.mode, self.entry_type_names, self.default_max_qty)
+        return (self.mode, self.entry_type_names, self.default_bit_size, self.default_max_qty)
 
     # Declaration of the "present" variable for this element.
     def present_var(self):
-        return ["uint32_t %s;" % self.present_var_name()]
+        return ["uint_fast32_t %s;" % self.present_var_name()]
 
     # Declaration of the "count" variable for this element.
     def count_var(self):
-        return ["uint32_t %s;" % self.count_var_name()]
+        return ["uint_fast32_t %s;" % self.count_var_name()]
 
     # Declaration of the "choice" variable for this element.
     def anonymous_choice_var(self):
@@ -1681,6 +1684,25 @@ class CodeGenerator(CddlXcoder):
     def enum_type_name(self):
         return "enum %s" % self.id()
 
+    # The bit width of the integers as represented in code.
+    def bit_size(self):
+        bit_size = None
+        if self.type in ["UINT", "INT", "NINT"]:
+            assert self.default_bit_size in [32, 64], "The default_bit_size must be 32 or 64."
+            if self.default_bit_size == 64:
+                bit_size = 64
+            else:
+                bit_size = 32
+
+                for v in [self.value or 0, self.max_value or 0, self.min_value or 0]:
+                    if self.type == "UINT":
+                        if (v > 0xFFFFFFFF):
+                            bit_size = 64
+                    else:
+                        if (v > 0x7FFFFFFF) or (v < -0x80000000):
+                            bit_size = 64
+        return bit_size
+
     # Name of the type of this element's actual value variable.
     def val_type_name(self):
         if self.multi_val_condition():
@@ -1689,9 +1711,9 @@ class CodeGenerator(CddlXcoder):
         # Will fail runtime if we don't use lambda for type_name()
         # pylint: disable=unnecessary-lambda
         name = {
-            "INT": lambda: "int32_t",
-            "UINT": lambda: "uint32_t",
-            "NINT": lambda: "int32_t",
+            "INT": lambda: f"int{self.bit_size()}_t",
+            "UINT": lambda: f"uint{self.bit_size()}_t",
+            "NINT": lambda: f"int{self.bit_size()}_t",
             "FLOAT": lambda: "float_t",
             "BSTR": lambda: "zcbor_string_type_t",
             "TSTR": lambda: "zcbor_string_type_t",
@@ -1874,9 +1896,9 @@ class CodeGenerator(CddlXcoder):
         if self.type == "OTHER":
             return self.my_types[self.value].single_func_prim_prefix()
         return ({
-            "INT": f"zcbor_int32",
-            "UINT": f"zcbor_uint32",
-            "NINT": f"zcbor_int32",
+            "INT": f"zcbor_int{self.bit_size()}",
+            "UINT": f"zcbor_uint{self.bit_size()}",
+            "NINT": f"zcbor_int{self.bit_size()}",
             "FLOAT": f"zcbor_float",
             "BSTR": f"zcbor_bstr",
             "TSTR": f"zcbor_tstr",
@@ -1937,7 +1959,7 @@ class CodeGenerator(CddlXcoder):
             # Make False and True lower case
             arg = ("(void *) " if ptr_result else "") + str(self.value).lower()
         else:
-            arg = tmp_val_or_null(self.value)
+            assert False, "Should not come here."
 
         min_val = None
         max_val = None
@@ -2074,8 +2096,10 @@ class CodeGenerator(CddlXcoder):
                         (self.choice_var_access(), child.var_name(),
                             child.full_xcode(union_uint="DROP"))
                         for child in self.value])
+                bit_size = self.value[0].bit_size()
+                func = f"zcbor_uint{bit_size}_{self.mode}"
                 return "((%s) && (%s))" % (
-                    f"(zcbor_uint32_{self.mode}(state, (uint32_t *)&{self.choice_var_access()}))",
+                    f"({func}(state, (uint{bit_size}_t *)&{self.choice_var_access()}))",
                     f"{newl_ind}|| ".join(lines), )
             child_values = ["(%s && ((%s = %s) || 1))" %
                             (child.full_xcode(
@@ -2238,10 +2262,10 @@ class CodeGenerator(CddlXcoder):
         type_name = self.type_name()
         return f"""
 bool cbor_{self.xcode_func_name()}(
-		{"const " if self.mode == "decode" else ""}uint8_t *payload, uint32_t payload_len,
+		{"const " if self.mode == "decode" else ""}uint8_t *payload, size_t payload_len,
 		{"" if self.mode == "decode" else "const "}{type_name if type_name else "void"} *{
             struct_ptr_name(self.mode)},
-		{"uint32_t *payload_len_out"})"""
+		{"size_t *payload_len_out"})"""
 
     def type_test_xcode_func_sig(self):
         type_name = self.type_name()
@@ -2354,12 +2378,6 @@ static bool {xcoder.func_name}(
             if struct_ptr_name(self.mode) in body else "void"} *{struct_ptr_name(self.mode)})
 {{
 	zcbor_print("%s\\r\\n", __func__);
-	{f"uint32_t temp_elem_counts[{temp_count}];" if "temp_elem_count" in body else ""}
-	{"uint32_t *temp_elem_count = temp_elem_counts;" if "temp_elem_count" in body else ""}
-	{"uint32_t current_list_num;" if "current_list_num" in body else ""}
-	{"uint8_t const *payload_bak;" if "payload_bak" in body else ""}
-	{"uint32_t elem_count_bak;" if "elem_count_bak" in body else ""}
-	{"uint32_t tmp_value;" if "tmp_value" in body else ""}
 	{"zcbor_string_type_t tmp_str;" if "tmp_str" in body else ""}
 	{"bool int_res;" if "int_res" in body else ""}
 
@@ -2368,7 +2386,6 @@ static bool {xcoder.func_name}(
 	if (!tmp_result)
 		zcbor_trace();
 
-	{"state->elem_count = temp_elem_counts[0];" if "temp_elem_count" in body else ""}
 	return tmp_result;
 }}""".replace("	\n", "")  # call replace() to remove empty lines.
 
@@ -2598,6 +2615,12 @@ as the name of the Cmake target in the file.""")
     code_parser.add_argument(
         "--git-sha-header", required=False, action="store_true", default=False,
         help="Put the current git sha of zcbor in a comment in the generated files.")
+    code_parser.add_argument(
+        "-b", "--default-bit-size", required=False, type=int, default=32, choices=[32, 64],
+        help="""Default bit size of integers in code. When integers have no explicit bounds,
+assume they have this bit width. Should follow the bit width of the architecture
+the code will be running on."""
+    )
     code_parser.set_defaults(process=process_code)
 
     convert_parser = subparsers.add_parser(
@@ -2669,7 +2692,7 @@ def process_code(args):
     cddl_contents = linesep.join((c.read() for c in args.cddl))
 
     cddl_res = CodeGenerator.from_cddl(
-        mode, cddl_contents, args.default_max_qty, mode, args.entry_types)
+        mode, cddl_contents, args.default_max_qty, mode, args.entry_types, args.default_bit_size)
 
     # Parsing is done, pretty print the result.
     verbose_print(args.verbose, "Parsed CDDL types:")

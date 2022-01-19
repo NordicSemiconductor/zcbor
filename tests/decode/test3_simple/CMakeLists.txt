@@ -18,6 +18,7 @@ set(py_command_pet
   --output-cmake ${PROJECT_BINARY_DIR}/pet.cmake
   -t Pet
   -d
+  ${bit_arg}
   )
 set(py_command_serial_recovery
   zcbor
@@ -26,6 +27,7 @@ set(py_command_serial_recovery
   --output-cmake ${PROJECT_BINARY_DIR}/serial_recovery.cmake
   -t Upload
   -d
+  ${bit_arg}
   )
 execute_process(
   COMMAND ${py_command_pet}

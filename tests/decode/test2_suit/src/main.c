@@ -39,7 +39,7 @@ static struct SUIT_Command_Sequence sequence;
 void test_5(void)
 {
 	struct SUIT_Manifest *manifest;
-	uint32_t decode_len;
+	size_t decode_len;
 	struct SUIT_Component_Identifier *component;
 	uint8_t expected_component0[] = {0x46, 0x6c, 0x61, 0x73, 0x68};
 	uint8_t expected_component1[] = {0x00, 0x34, 0x01};

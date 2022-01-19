@@ -64,16 +64,16 @@ bool zcbor_tstr_encode(zcbor_state_t *state, const zcbor_string_type_t *result);
  * The contents of the list can be decoded via subsequent function calls.
  * A state backup is created to keep track of the element count.
  */
-bool zcbor_list_start_encode(zcbor_state_t *state, uint32_t max_num);
+bool zcbor_list_start_encode(zcbor_state_t *state, uint_fast32_t max_num);
 
 /** Encode a MAP header. */
-bool zcbor_map_start_encode(zcbor_state_t *state, uint32_t max_num);
+bool zcbor_map_start_encode(zcbor_state_t *state, uint_fast32_t max_num);
 
 /** Encode end of a LIST. Do some checks and deallocate backup. */
-bool zcbor_list_end_encode(zcbor_state_t *state, uint32_t max_num);
+bool zcbor_list_end_encode(zcbor_state_t *state, uint_fast32_t max_num);
 
 /** Encode end of a MAP. Do some checks and deallocate backup. */
-bool zcbor_map_end_encode(zcbor_state_t *state, uint32_t max_num);
+bool zcbor_map_end_encode(zcbor_state_t *state, uint_fast32_t max_num);
 
 /** Encode a "nil" primitive value. result should be NULL. */
 bool zcbor_nil_put(zcbor_state_t *state, const void *result);
@@ -137,11 +137,11 @@ bool zcbor_tag_encode(zcbor_state_t *state, uint32_t tag);
  * @retval false  If @p encoder failed before having encoded @p min_encode
  *                values.
  */
-bool zcbor_multi_encode(uint32_t min_encode, uint32_t max_encode, const uint32_t *num_encode,
+bool zcbor_multi_encode(uint_fast32_t min_encode, uint_fast32_t max_encode, const uint_fast32_t *num_encode,
 		zcbor_encoder_t encoder, zcbor_state_t *state, const void *input,
-		uint32_t result_len);
+		uint_fast32_t result_len);
 
-bool zcbor_present_encode(const uint32_t *present,
+bool zcbor_present_encode(const uint_fast32_t *present,
 		zcbor_encoder_t encoder,
 		zcbor_state_t *state,
 		const void *input);

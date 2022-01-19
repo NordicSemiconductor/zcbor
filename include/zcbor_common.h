@@ -22,9 +22,9 @@ typedef struct
 
 #ifdef ZCBOR_VERBOSE
 #include <sys/printk.h>
-#define zcbor_trace() (printk("bytes left: %zu, byte: 0x%x, elem_count: 0x%x, %s:%d\n",\
-	(size_t)state->payload_end - (size_t)state->payload, *state->payload, state->elem_count,\
-	__FILE__, __LINE__))
+#define zcbor_trace() (printk("bytes left: %zu, byte: 0x%x, elem_count: 0x%" PRIxFAST32 ", %s:%d\n",\
+	(size_t)state->payload_end - (size_t)state->payload, *state->payload, \
+	state->elem_count, __FILE__, __LINE__))
 #define zcbor_assert(expr, ...) \
 do { \
 	if (!(expr)) { \
@@ -59,11 +59,11 @@ union {
 	                             processed. */
 };
 	uint8_t const *payload_bak; /**< Temporary backup of payload. */
-	uint32_t elem_count; /**< The current element is part of a LIST or a MAP,
-	                          and this keeps count of how many elements are
-	                          expected. This will be checked before processing
-	                          and decremented if the element is correctly
-	                          processed. */
+	uint_fast32_t elem_count; /**< The current element is part of a LIST or a MAP,
+	                               and this keeps count of how many elements are
+	                               expected. This will be checked before processing
+	                               and decremented if the element is correctly
+	                               processed. */
 	uint8_t const *payload_end; /**< The end of the payload. This will be
 	                                 checked against payload before
 	                                 processing each element. */
@@ -72,8 +72,8 @@ union {
 
 struct zcbor_state_backups_s{
 	zcbor_state_t *backup_list;
-	uint32_t current_backup;
-	uint32_t num_backups;
+	uint_fast32_t current_backup;
+	uint_fast32_t num_backups;
 };
 
 /** Function pointer type used with zcbor_multi_decode.
@@ -117,13 +117,13 @@ do {\
 #define ZCBOR_FLAG_TRANSFER_PAYLOAD 4UL ///! Keep the pre-restore payload after restoring.
 
 /** Take a backup of the current state. Overwrite the current elem_count. */
-bool zcbor_new_backup(zcbor_state_t *state, uint32_t new_elem_count);
+bool zcbor_new_backup(zcbor_state_t *state, uint_fast32_t new_elem_count);
 
 /** Consult the most recent backup. In doing so, check whether elem_count is
  *  within max_elem_count, and return the result.
  *  Also, take action based on the flags (See ZCBOR_FLAG_*).
  */
-bool zcbor_process_backup(zcbor_state_t *state, uint32_t flags, uint32_t max_elem_count);
+bool zcbor_process_backup(zcbor_state_t *state, uint32_t flags, uint_fast32_t max_elem_count);
 
 /** Convenience function for starting encoding/decoding of a union.
  *  Takes a new backup.
@@ -148,7 +148,7 @@ bool zcbor_union_end_code(zcbor_state_t *state);
  *  payload, payload_len, and elem_count are used to initialize the first state.
  *  in the array, which is the state that can be passed to cbor functions.
  */
-void zcbor_new_state(zcbor_state_t *state_array, uint32_t n_states,
-		const uint8_t *payload, size_t payload_len, uint32_t elem_count);
+void zcbor_new_state(zcbor_state_t *state_array, uint_fast32_t n_states,
+		const uint8_t *payload, size_t payload_len, uint_fast32_t elem_count);
 
 #endif /* CBOR_COMMON_H__ */

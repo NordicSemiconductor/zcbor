@@ -168,7 +168,7 @@ void test_pet(void)
 	};
 
 	uint8_t output[25];
-	uint32_t out_len;
+	size_t out_len;
 
 	/* Check that encoding succeeded. */
 	zassert_true(cbor_encode_Pet(output, sizeof(output), &pet, &out_len), NULL);

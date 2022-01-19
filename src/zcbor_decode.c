@@ -14,7 +14,7 @@
 
 /** Return value length from additional value.
  */
-static uint32_t additional_len(uint8_t additional)
+static uint_fast32_t additional_len(uint8_t additional)
 {
 	if (24 <= additional && additional <= 27) {
 		/* 24 => 1
@@ -88,7 +88,7 @@ do {\
  *          big to little-endian if necessary (@ref CONFIG_BIG_ENDIAN).
  */
 static bool value_extract(zcbor_state_t *state,
-		void *const result, uint32_t result_len)
+		void *const result, uint_fast32_t result_len)
 {
 	zcbor_trace();
 	zcbor_assert(result_len != 0, "0-length result not supported.\r\n");
@@ -112,7 +112,7 @@ static bool value_extract(zcbor_state_t *state,
 		u8_result[0] = additional;
 #endif /* CONFIG_BIG_ENDIAN */
 	} else {
-		uint32_t len = additional_len(additional);
+		uint_fast32_t len = additional_len(additional);
 
 		FAIL_AND_DECR_IF(len > result_len);
 		FAIL_AND_DECR_IF((state->payload + len)
@@ -121,7 +121,7 @@ static bool value_extract(zcbor_state_t *state,
 #ifdef CONFIG_BIG_ENDIAN
 		memcpy(&u8_result[result_len - len], state->payload, len);
 #else
-		for (uint32_t i = 0; i < len; i++) {
+		for (uint_fast32_t i = 0; i < len; i++) {
 			u8_result[i] = (state->payload)[len - i - 1];
 		}
 #endif /* CONFIG_BIG_ENDIAN */
@@ -208,6 +208,13 @@ bool zcbor_uint32_expect_union(zcbor_state_t *state, uint32_t result)
 {
 	zcbor_union_elem_code(state);
 	return zcbor_uint32_expect(state, result);
+}
+
+
+bool zcbor_uint64_expect_union(zcbor_state_t *state, uint64_t result)
+{
+	zcbor_union_elem_code(state);
+	return zcbor_uint64_expect(state, result);
 }
 
 
@@ -382,7 +389,7 @@ static bool list_zcbor_map_start_decode(zcbor_state_t *state,
 {
 	FAIL_IF(state->payload >= state->payload_end);
 	uint8_t major_type = MAJOR_TYPE(*state->payload);
-	uint32_t new_elem_count;
+	uint_fast32_t new_elem_count;
 
 	if (major_type != exp_major_type) {
 		ZCBOR_FAIL();
@@ -442,7 +449,7 @@ static bool array_end_expect(zcbor_state_t *state)
 
 bool list_zcbor_map_end_decode(zcbor_state_t *state)
 {
-	uint32_t max_elem_count = 0;
+	uint_fast32_t max_elem_count = 0;
 	if (INDET_LEN(state->elem_count)) {
 		if (!array_end_expect(state)) {
 			ZCBOR_FAIL();
@@ -563,9 +570,9 @@ bool zcbor_any_decode(zcbor_state_t *state, void *result)
 
 	FAIL_IF(state->payload >= state->payload_end);
 	uint8_t major_type = MAJOR_TYPE(*state->payload);
-	uint32_t value;
-	uint32_t num_decode;
-	uint32_t temp_elem_count;
+	uint_fast32_t value;
+	uint_fast32_t num_decode;
+	uint_fast32_t temp_elem_count;
 	uint8_t const *payload_bak;
 
 	if (!value_extract(state, &value, sizeof(value))) {
@@ -639,17 +646,17 @@ bool zcbor_tag_expect(zcbor_state_t *state, uint32_t result)
 }
 
 
-bool zcbor_multi_decode(uint32_t min_decode,
-		uint32_t max_decode,
-		uint32_t *num_decode,
+bool zcbor_multi_decode(uint_fast32_t min_decode,
+		uint_fast32_t max_decode,
+		uint_fast32_t *num_decode,
 		zcbor_decoder_t decoder,
 		zcbor_state_t *state,
 		void *result,
-		uint32_t result_len)
+		uint_fast32_t result_len)
 {
-	for (uint32_t i = 0; i < max_decode; i++) {
+	for (uint_fast32_t i = 0; i < max_decode; i++) {
 		uint8_t const *payload_bak = state->payload;
-		uint32_t elem_count_bak = state->elem_count;
+		uint_fast32_t elem_count_bak = state->elem_count;
 
 		if (!decoder(state,
 				(uint8_t *)result + i*result_len)) {
@@ -659,23 +666,23 @@ bool zcbor_multi_decode(uint32_t min_decode,
 			if (i < min_decode) {
 				ZCBOR_FAIL();
 			} else {
-				zcbor_print("Found %d elements.\r\n", i);
+				zcbor_print("Found %" PRIuFAST32 " elements.\r\n", i);
 			}
 			return true;
 		}
 	}
-	zcbor_print("Found %d elements.\r\n", max_decode);
+	zcbor_print("Found %" PRIuFAST32 " elements.\r\n", max_decode);
 	*num_decode = max_decode;
 	return true;
 }
 
 
-bool zcbor_present_decode(uint32_t *present,
+bool zcbor_present_decode(uint_fast32_t *present,
 		zcbor_decoder_t decoder,
 		zcbor_state_t *state,
 		void *result)
 {
-	uint32_t num_decode;
+	uint_fast32_t num_decode;
 	bool retval = zcbor_multi_decode(0, 1, &num_decode, decoder, state, result, 0);
 	zcbor_assert(retval, "zcbor_multi_decode should not fail with these parameters.\r\n");
 

@@ -21,7 +21,7 @@ set(py_command_e
   --oc ${PROJECT_BINARY_DIR}/src/manifest3_encode.c
   --oh ${PROJECT_BINARY_DIR}/include/manifest3_encode.h
   --output-h-types ${PROJECT_BINARY_DIR}/include/manifest3_types.h
-
+  ${bit_arg}
   )
 
 set(py_command_d
@@ -37,6 +37,7 @@ set(py_command_d
   --oc ${PROJECT_BINARY_DIR}/src/manifest3_decode.c
   --oh ${PROJECT_BINARY_DIR}/include/manifest3_decode.h
   --output-h-types ${PROJECT_BINARY_DIR}/include/manifest3_types.h
+  ${bit_arg}
   )
 
 execute_process(

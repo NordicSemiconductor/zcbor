@@ -15,6 +15,7 @@ set(py_command
   --output-cmake ${PROJECT_BINARY_DIR}/pet.cmake
   -t Pet
   -e
+  ${bit_arg}
   )
 
 execute_process(

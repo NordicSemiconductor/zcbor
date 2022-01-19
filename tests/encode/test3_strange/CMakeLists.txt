@@ -33,6 +33,7 @@ set(py_command
   QuantityRange
   DoubleMap
   -e
+  ${bit_arg}
   )
 
 execute_process(
