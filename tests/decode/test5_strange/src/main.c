@@ -25,7 +25,7 @@
 
 void test_numbers(void)
 {
-	uint32_t decode_len = 0xFFFFFFFF;
+	size_t decode_len = 0xFFFFFFFF;
 	const uint8_t payload_numbers1[] = {
 		LIST(A),
 			0x01, // 1
@@ -61,18 +61,88 @@ void test_numbers(void)
 
 void test_numbers2(void)
 {
-	uint32_t decode_len = 0xFFFFFFFF;
+	size_t decode_len = 0xFFFFFFFF;
 	const uint8_t payload_numbers2[] = {
-		LIST(1),
+		LIST(5),
 			0x1A, 0x00, 0x12, 0x34, 0x56, // 0x123456
+			0x1B, 0x01, 2, 3, 4, 5, 6, 7, 8, // 0x0102030405060708
+			0x1B, 0x11, 2, 3, 4, 5, 6, 7, 9, // 0x1102030405060709
+			0x3A, 0x80, 0x00, 0x00, 0x00, // -0x8000_0001
+			0x3A, 0x7F, 0xFF, 0xFF, 0xFF, // -0x8000_0000
 		END
 	};
-	uint32_t numbers2;
+	const uint8_t payload_numbers2_1[] = {
+		LIST(5),
+			0x1A, 0x00, 0x12, 0x34, 0x56, // 0x123456
+			0x3B, 0x01, 2, 3, 4, 5, 6, 7, 8, // -0x0102030405060709
+			0x1B, 0x11, 2, 3, 4, 5, 6, 7, 9, // 0x1102030405060709
+			0x3A, 0x80, 0x00, 0x00, 0x00, // -0x8000_0001
+			0x3A, 0x7F, 0xFF, 0xFF, 0xFF, // -0x8000_0000
+		END
+	};
+	const uint8_t payload_numbers2_inv2[] = {
+		LIST(5),
+			0x1A, 0x00, 0x12, 0x34, 0x56, // 0x123456
+			0x1B, 0x01, 2, 3, 4, 5, 6, 7, 8, // 0x0102030405060708
+			0x1B, 0x11, 2, 3, 4, 5, 6, 7, 9, // 0x1102030405060709
+			0x3A, 0x80, 0x00, 0x00, 0x01, // -0x8000_0002 INV
+			0x3A, 0x7F, 0xFF, 0xFF, 0xFF, // -0x8000_0000
+		END
+	};
+	const uint8_t payload_numbers2_inv3[] = {
+		LIST(5),
+			0x1A, 0x00, 0x12, 0x34, 0x56, // 0x123456
+			0x1B, 0x01, 2, 3, 4, 5, 6, 7, 8, // 0x0102030405060708
+			0x1B, 0x11, 2, 3, 4, 5, 6, 7, 9, // 0x1102030405060709
+			0x3A, 0x7F, 0xFF, 0xFF, 0xFF, // -0x8000_0000 INV
+			0x3A, 0x7F, 0xFF, 0xFF, 0xFF, // -0x8000_0000
+		END
+	};
+	const uint8_t payload_numbers2_inv4[] = {
+		LIST(5),
+			0x1A, 0x00, 0x12, 0x34, 0x56, // 0x123456
+			0x1B, 0x01, 2, 3, 4, 5, 6, 7, 8, // 0x0102030405060708
+			0x1A, 0x00, 0x12, 0x34, 0x56, // 0x123456 INV
+			0x3A, 0x80, 0x00, 0x00, 0x00, // -0x8000_0001
+			0x3A, 0x7F, 0xFF, 0xFF, 0xFF, // -0x8000_0000
+		END
+	};
+	const uint8_t payload_numbers2_inv5[] = {
+		LIST(5),
+			0x1A, 0x00, 0x12, 0x34, 0x56, // 0x123456
+			0x1B, 0x01, 2, 3, 4, 5, 6, 7, 8, // 0x0102030405060708
+			0x1B, 0x11, 2, 3, 4, 5, 6, 7, 9, // 0x1102030405060709
+			0x3A, 0x80, 0x00, 0x00, 0x00, // -0x8000_0001
+			0x3A, 0x80, 0x00, 0x00, 0x00, // -0x8000_0001 INV
+		END
+	};
+	struct Numbers2 numbers2;
 
 	zassert_true(cbor_decode_Numbers2(payload_numbers2,
 		sizeof(payload_numbers2), &numbers2, &decode_len), NULL);
 
-	zassert_equal(0x123456, numbers2, NULL);
+	zassert_equal(0x123456, numbers2._Numbers2_threebytes, NULL);
+	zassert_equal(0x0102030405060708, numbers2._Numbers2_bigint, NULL);
+	zassert_equal(0x1102030405060709, numbers2._Numbers2_biguint, NULL);
+
+	zassert_true(cbor_decode_Numbers2(payload_numbers2_1,
+		sizeof(payload_numbers2_1), &numbers2, &decode_len), NULL);
+
+	zassert_equal(0x123456, numbers2._Numbers2_threebytes, NULL);
+	zassert_equal(-0x0102030405060709, numbers2._Numbers2_bigint, NULL);
+	zassert_equal(0x1102030405060709, numbers2._Numbers2_biguint, NULL);
+
+	zassert_false(cbor_decode_Numbers2(payload_numbers2_inv2,
+		sizeof(payload_numbers2_inv2), &numbers2, &decode_len), NULL);
+
+	zassert_false(cbor_decode_Numbers2(payload_numbers2_inv3,
+		sizeof(payload_numbers2_inv3), &numbers2, &decode_len), NULL);
+
+	zassert_false(cbor_decode_Numbers2(payload_numbers2_inv4,
+		sizeof(payload_numbers2_inv4), &numbers2, &decode_len), NULL);
+
+	zassert_false(cbor_decode_Numbers2(payload_numbers2_inv5,
+		sizeof(payload_numbers2_inv5), &numbers2, &decode_len), NULL);
 }
 
 void test_strings(void)
@@ -209,7 +279,7 @@ void test_string_overflow(void)
 	};
 
 	zcbor_string_type_t result_overflow;
-	uint32_t out_len;
+	size_t out_len;
 
 	zassert_false(cbor_decode_SingleBstr(payload_overflow, sizeof(payload_overflow), &result_overflow, &out_len), NULL);
 }
@@ -350,7 +420,7 @@ void test_union(void)
 	const uint8_t payload_union10_inv[] = {
 		0x03, 0x23, 0x03, 0x23, 0x03, 0x23, 0x03, 0x23,
 		0x03, 0x23, 0x03, 0x23, 0x03, 0x23}; /* Too many */
-	uint32_t decode_len;
+	size_t decode_len;
 
 	struct Union_ _union;
 	zassert_true(cbor_decode_Union(payload_union1, sizeof(payload_union1),
@@ -509,7 +579,7 @@ void test_map(void)
 
 static bool my_decode_EmptyMap(zcbor_state_t *state, void *unused)
 {
-	uint32_t payload_len_out;
+	size_t payload_len_out;
 	bool res = cbor_decode_EmptyMap(state->payload,
 		state->payload_end - state->payload, NULL, &payload_len_out);
 
@@ -526,7 +596,7 @@ void test_empty_map(void)
 	const uint8_t payload2_inv[] = {MAP(1), END};
 	const uint8_t payload3_inv[] = {MAP(1), 0, END};
 	const uint8_t payload4[] = {MAP(0), END MAP(0), END MAP(0), END};
-	uint32_t num_decode;
+	uint_fast32_t num_decode;
 	zcbor_state_t state;
 
 	zcbor_new_state(&state, 1, payload4, sizeof(payload4), 3);
@@ -893,7 +963,7 @@ void test_value_range(void)
 	};
 
 	struct ValueRange output;
-	uint32_t out_len;
+	size_t out_len;
 
 	zassert_true(cbor_decode_ValueRange(payload_value_range1, sizeof(payload_value_range1),
 					&output, &out_len), NULL);
@@ -947,8 +1017,8 @@ void test_single(void)
 	uint8_t payload_single3[] = {9};
 	uint8_t payload_single4_inv[] = {10};
 	zcbor_string_type_t result_bstr;
-	uint32_t result_int;
-	uint32_t out_len;
+	uint_fast32_t result_int;
+	size_t out_len;
 
 	zassert_true(cbor_decode_SingleBstr(payload_single0, sizeof(payload_single0), &result_bstr, &out_len), NULL);
 	zassert_equal(sizeof(payload_single0), out_len, NULL);
@@ -974,7 +1044,7 @@ void test_unabstracted(void)
 	uint8_t payload_unabstracted2_inv[] = {LIST(2), 0x03, 0x03, END};
 	uint8_t payload_unabstracted3_inv[] = {LIST(2), 0x01, 0x01, END};
 	struct Unabstracted result_unabstracted;
-	uint32_t out_len;
+	size_t out_len;
 
 	zassert_true(cbor_decode_Unabstracted(payload_unabstracted0,
 					sizeof(payload_unabstracted0),
@@ -1009,7 +1079,7 @@ void test_quantity_range(void)
 	uint8_t payload_qty_range3[] = {0xF6, 0xF6, 0xF6, 0xF6, 0xF5, 0xF5, 0xF5, 0xF5, 0xF5, 0xF5};
 	uint8_t payload_qty_range4_inv[] = {0xF6, 0xF6, 0xF6, 0xF6, 0xF6, 0xF5, 0xF5, 0xF5};
 	struct QuantityRange result_qty_range;
-	uint32_t out_len;
+	size_t out_len;
 
 	zassert_true(cbor_decode_QuantityRange(payload_qty_range1,
 					sizeof(payload_qty_range1),
@@ -1039,7 +1109,7 @@ void test_doublemap(void)
 	uint8_t payload_doublemap0[] = {0xA2, 0x01, 0xA1, 0x01, 0x01, 0x02, 0xA1, 0x02, 0x02};
 	uint8_t payload_doublemap1_inv[] = {0xA2, 0x01, 0xA1, 0x01, 0x01, 0x02, 0xA1, 0x03, 0x02};
 	struct DoubleMap result_doublemap;
-	uint32_t out_len;
+	size_t out_len;
 
 	zassert_true(cbor_decode_DoubleMap(payload_doublemap0,
 					sizeof(payload_doublemap0),

@@ -23,6 +23,7 @@ set(py_command
   SUIT_Command_Sequence
   SUIT_Common_Sequence
   -d
+  ${bit_arg}
   )
 
 execute_process(

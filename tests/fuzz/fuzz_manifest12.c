@@ -3,7 +3,7 @@
 
 bool fuzz_one_input(const uint8_t *data, size_t size)
 {
-    uint32_t payload_len_out = 0;
+    size_t payload_len_out = 0;
     struct SUIT_Envelope result;
     struct SUIT_Envelope result2;
     struct SUIT_Command_Sequence command_seq;

@@ -18,6 +18,7 @@ set(py_command
   SUIT_Envelope
   SUIT_Manifest
   -d
+  ${bit_arg}
   )
 
 execute_process(

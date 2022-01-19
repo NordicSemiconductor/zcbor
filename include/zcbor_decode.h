@@ -108,6 +108,7 @@ bool zcbor_uint32_expect(zcbor_state_t *state, uint32_t result);
 bool zcbor_uint64_expect(zcbor_state_t *state, uint64_t result);
 
 bool zcbor_uint32_expect_union(zcbor_state_t *state, uint32_t result);
+bool zcbor_uint64_expect_union(zcbor_state_t *state, uint64_t result);
 
 /** Decode and consume a BSTR header.
  *
@@ -223,11 +224,11 @@ bool zcbor_tag_expect(zcbor_state_t *state, uint32_t result);
  * @retval false  If @p decoder failed before having decoded @p min_decode
  *                values.
  */
-bool zcbor_multi_decode(uint32_t min_decode, uint32_t max_decode, uint32_t *num_decode,
+bool zcbor_multi_decode(uint_fast32_t min_decode, uint_fast32_t max_decode, uint_fast32_t *num_decode,
 		zcbor_decoder_t decoder, zcbor_state_t *state, void *result,
-		uint32_t result_len);
+		uint_fast32_t result_len);
 
-bool zcbor_present_decode(uint32_t *present,
+bool zcbor_present_decode(uint_fast32_t *present,
 		zcbor_decoder_t decoder,
 		zcbor_state_t *state,
 		void *result);

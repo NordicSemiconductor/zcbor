@@ -36,6 +36,7 @@ set(py_command
     DoubleMap
   --decode
   --git-sha-header
+  ${bit_arg}
   )
 
 execute_process(

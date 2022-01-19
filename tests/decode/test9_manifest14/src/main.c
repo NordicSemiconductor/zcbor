@@ -39,7 +39,7 @@ void test_suit14_ex0_auth(void)
 	struct SUIT_Envelope envelope;
 	struct SUIT_Digest *digest;
 	struct COSE_Sign1 *cose_sign1;
-	uint32_t out_len;
+	size_t out_len;
 	uint8_t exp_digest[] = {
 		0xa6, 0xc4, 0x59, 0x0a, 0xc5, 0x30, 0x43, 0xa9,
 		0x8e, 0x8c, 0x41, 0x06, 0xe1, 0xe3, 0x1b, 0x30,
@@ -101,7 +101,7 @@ void test_suit14_ex0_common_sequence(void)
 	struct SUIT_Command_Sequence command_sequence;
 	struct SUIT_Parameters_ *parameter;
 	struct SUIT_Condition_ *condition;
-	uint32_t out_len;
+	size_t out_len;
 	uint8_t exp_vendor_id[] = {
 		0xfa, 0x6b, 0x4a, 0x53, 0xd5, 0xad, 0x5f, 0xdf,
 		0xbe, 0x9d, 0xe6, 0x63, 0xe4, 0xd4, 0x1f, 0xfe,
@@ -218,7 +218,7 @@ void test_suit14_ex0_common_sequence_as_command_sequence(void)
 	struct SUIT_Command_Sequence command_sequence;
 	struct SUIT_Parameters_ *parameter;
 	struct SUIT_Condition_ *condition;
-	uint32_t out_len;
+	size_t out_len;
 	uint8_t exp_vendor_id[] = {
 		0xfa, 0x6b, 0x4a, 0x53, 0xd5, 0xad, 0x5f, 0xdf,
 		0xbe, 0x9d, 0xe6, 0x63, 0xe4, 0xd4, 0x1f, 0xfe,
@@ -334,7 +334,7 @@ void test_suit14_ex0_validate_run(void)
 	struct SUIT_Command_Sequence command_sequence;
 	struct SUIT_Condition_ *condition;
 	struct SUIT_Directive_ *directive;
-	uint32_t out_len;
+	size_t out_len;
 	uint32_t exp_rep_policy1 = (
 		(1 << _suit_reporting_bits_suit_send_record_success)
 		| (1 << _suit_reporting_bits_suit_send_record_failure)

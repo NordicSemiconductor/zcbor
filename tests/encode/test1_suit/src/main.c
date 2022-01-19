@@ -238,7 +238,7 @@ void test_command_sequence(zcbor_string_type_t *sequence_str,
 	bool try_each1_present;
 	zcbor_string_type_t *try_each2;
 	bool try_each2_present;
-	uint32_t out_len;
+	size_t out_len;
 
 	if (!present) {
 		return;
@@ -336,7 +336,7 @@ void test_manifest(const uint8_t *input, uint32_t len)
 	zcbor_string_type_t *run;
 	bool run_present;
 	bool res;
-	uint32_t out_len;
+	size_t out_len;
 
 	zcbor_print("test_vector at: 0x%zx\r\n", (size_t)input);
 	zcbor_print("test_vector end at: 0x%zx\r\n",

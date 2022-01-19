@@ -16,6 +16,7 @@ set(py_command3
   --output-cmake ${PROJECT_BINARY_DIR}/manifest-moran3.cmake
   -t OuterWrapper
   --decode
+  ${bit_arg}
   )
 
 set(py_command4
@@ -26,6 +27,7 @@ set(py_command4
   --output-cmake ${PROJECT_BINARY_DIR}/manifest-moran4.cmake
   -t SUIT_Outer_Wrapper
   --decode
+  ${bit_arg}
   )
 
 execute_process(

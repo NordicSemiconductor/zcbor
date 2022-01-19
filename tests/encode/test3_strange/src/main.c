@@ -40,7 +40,7 @@ void test_numbers(void)
 
 	struct Numbers numbers = {0};
 	uint8_t output[100];
-	uint32_t out_len;
+	size_t out_len;
 
 	numbers._Numbers_fourtoten = 3; // Invalid
 	numbers._Numbers_twobytes = 256;
@@ -87,17 +87,26 @@ void test_numbers(void)
 void test_numbers2(void)
 {
 	const uint8_t exp_payload_numbers2[] = {
-		LIST(1), // List start
+		LIST(5),
 			0x1A, 0x00, 0x12, 0x34, 0x56, // 0x123456
+			0x1B, 0x01, 2, 3, 4, 5, 6, 7, 8, // 0x0102030405060708
+			0x1B, 0x11, 2, 3, 4, 5, 6, 7, 9, // 0x1102030405060709
+			0x3A, 0x80, 0x00, 0x00, 0x00, // -0x8000_0001
+			0x3A, 0x7F, 0xFF, 0xFF, 0xFF, // -0x8000_0000
 		END
 	};
-	uint32_t numbers = 0x123456;
+	struct Numbers2 numbers2 = {
+		._Numbers2_threebytes = 0x123456,
+		._Numbers2_bigint = 0x0102030405060708,
+		._Numbers2_biguint = 0x1102030405060709,
+	};
 	uint8_t output[100];
-	uint32_t out_len;
+	size_t out_len;
 
 	zassert_true(cbor_encode_Numbers2(output,
-		sizeof(output), &numbers, &out_len), NULL);
-	zassert_equal(sizeof(exp_payload_numbers2), out_len, "%d != %d\r\n", sizeof(exp_payload_numbers2), out_len);
+		sizeof(output), &numbers2, &out_len), NULL);
+	zassert_equal(sizeof(exp_payload_numbers2), out_len, "%d != %d\r\n",
+		sizeof(exp_payload_numbers2), out_len);
 	zassert_mem_equal(exp_payload_numbers2, output, sizeof(exp_payload_numbers2), NULL);
 }
 
@@ -232,7 +241,7 @@ void test_strings(void)
 	uint8_t output2[100];
 	uint8_t output3[400];
 	uint8_t output4[800];
-	uint32_t out_len;
+	size_t out_len;
 
 	numbers1._Numbers_fourtoten = 5;
 	numbers1._Numbers_twobytes = 0xFFFF;
@@ -317,7 +326,7 @@ void test_optional(void)
 				._Optional_opttwo_present = true, ._Optional_manduint = 2,
 				._Optional_multi8_count = 3};
 	uint8_t output[10];
-	uint32_t out_len;
+	size_t out_len;
 
 	zassert_true(cbor_encode_Optional(output,
 			sizeof(output), &optional1, &out_len), NULL);
@@ -376,7 +385,7 @@ void test_union(void)
 	struct Union_ _union6_inv = {._Union_choice = _Union__MultiGroup, ._Union__MultiGroup._MultiGroup_count = 7};
 
 	uint8_t output[15];
-	uint32_t out_len;
+	size_t out_len;
 
 	zassert_true(cbor_encode_Union(output, sizeof(output),
 				&_union1, &out_len), NULL);
@@ -426,7 +435,7 @@ void test_levels(void)
 		END END END
 	};
 	uint8_t output[32];
-	uint32_t out_len;
+	size_t out_len;
 
 	struct Level2 level1 = {._Level2__Level3_count = 2, ._Level2__Level3 = {
 		{._Level3__Level4_count = 4}, {._Level3__Level4_count = 4}
@@ -499,7 +508,7 @@ void test_map(void)
 	};
 
 	uint8_t output[25];
-	uint32_t out_len;
+	size_t out_len;
 
 	zassert_true(cbor_encode_Map(output, sizeof(output),
 			&map1, &out_len), NULL);
@@ -555,7 +564,7 @@ void test_nested_list_map(void)
 		}
 	};
 	uint8_t output[40];
-	uint32_t out_len;
+	size_t out_len;
 
 	zassert_true(cbor_encode_NestedListMap(output,
 			sizeof(output), &listmap1, &out_len), NULL);
@@ -627,7 +636,7 @@ void test_nested_map_list_map(void)
 		}
 	};
 	uint8_t output[30];
-	uint32_t out_len;
+	size_t out_len;
 
 	zassert_true(cbor_encode_NestedMapListMap(output,
 			sizeof(output), &maplistmap1, &out_len), NULL);
@@ -748,7 +757,7 @@ void test_range(void)
 	};
 
 	uint8_t output[25];
-	uint32_t out_len;
+	size_t out_len;
 
 	zassert_true(cbor_encode_Range(output, sizeof(output), &input1,
 				&out_len), NULL);
@@ -858,7 +867,7 @@ void test_value_range(void)
 	};
 
 	uint8_t output[25];
-	uint32_t out_len;
+	size_t out_len;
 
 	zassert_true(cbor_encode_ValueRange(output, sizeof(output), &input1,
 				&out_len), NULL);
@@ -894,15 +903,15 @@ void test_single(void)
 	uint8_t exp_payload_single1[] = {0x18, 52,};
 	uint8_t exp_payload_single2[] = {9};
 	uint8_t output[10];
-	uint32_t out_len;
+	size_t out_len;
 	zcbor_string_type_t input_single0 = {
 		.value = "hello",
 		.len = 5
 	};
-	uint32_t input_single1 = 52;
-	uint32_t input_single2_ign = 53;
-	uint32_t input_single3 = 9;
-	uint32_t input_single4_inv = 10;
+	uint_fast32_t input_single1 = 52;
+	uint_fast32_t input_single2_ign = 53;
+	uint_fast32_t input_single3 = 9;
+	uint_fast32_t input_single4_inv = 10;
 
 	zassert_true(cbor_encode_SingleBstr(output, sizeof(output), &input_single0, &out_len), NULL);
 	zassert_equal(sizeof(exp_payload_single0), out_len, NULL);
@@ -936,7 +945,7 @@ void test_unabstracted(void)
 		._Unabstracted_unabstractedunion2_choice = _Unabstracted_unabstractedunion2_choice4,
 	};
 	uint8_t output[4];
-	uint32_t out_len;
+	size_t out_len;
 
 	zassert_true(cbor_encode_Unabstracted(output, sizeof(output),
 					&result_unabstracted0, &out_len), NULL);
@@ -956,7 +965,7 @@ void test_string_overflow(void)
 		.len = 0xFFFFFF00, /* overflows to before this object. */
 	};
 	uint8_t output[10];
-	uint32_t out_len;
+	size_t out_len;
 
 	zassert_false(cbor_encode_SingleBstr(output, sizeof(output), &input_overflow0, &out_len), NULL);
 }
@@ -982,7 +991,7 @@ void test_quantity_range(void)
 		._QuantityRange_from3true_count = 2
 	};
 	uint8_t output[12];
-	uint32_t out_len;
+	size_t out_len;
 
 	zassert_true(cbor_encode_QuantityRange(output, sizeof(output),
 			&result_qty_range1, &out_len), NULL);
@@ -1024,7 +1033,7 @@ void test_doublemap(void)
 		}
 	};
 	uint8_t output[20];
-	uint32_t out_len;
+	size_t out_len;
 
 	zassert_true(cbor_encode_DoubleMap(output,
 					sizeof(output),

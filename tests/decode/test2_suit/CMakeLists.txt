@@ -18,6 +18,7 @@ set(py_command
   SUIT_Command_Sequence
   SUIT_Authentication_Wrapper
   -d
+  ${bit_arg}
   )
 
 execute_process(

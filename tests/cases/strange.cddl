@@ -19,6 +19,10 @@ Numbers = [
 
 Numbers2 = [
 	threebytes: uint .size 4,
+	bigint: int .size 8,
+	biguint: uint .gt 0x100000000,
+	bignint: -0x80000001,
+	bignint2: -0x80000000,
 ]
 
 Strings = [
