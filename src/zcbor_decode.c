@@ -91,7 +91,7 @@ static bool value_extract(zcbor_state_t *state,
 		void *const result, uint32_t result_len)
 {
 	zcbor_trace();
-	zcbor_assert(result_len != 0, "0-length result not supported.\n");
+	zcbor_assert(result_len != 0, "0-length result not supported.\r\n");
 	zcbor_assert(result != NULL, NULL);
 
 	FAIL_IF((state->elem_count == 0) \
@@ -559,7 +559,7 @@ bool double_expect(zcbor_state_t *state, double *result)
 bool zcbor_any_decode(zcbor_state_t *state, void *result)
 {
 	zcbor_assert(result == NULL,
-			"'any' type cannot be returned, only skipped.\n");
+			"'any' type cannot be returned, only skipped.\r\n");
 
 	FAIL_IF(state->payload >= state->payload_end);
 	uint8_t major_type = MAJOR_TYPE(*state->payload);
@@ -659,12 +659,12 @@ bool zcbor_multi_decode(uint32_t min_decode,
 			if (i < min_decode) {
 				ZCBOR_FAIL();
 			} else {
-				zcbor_print("Found %d elements.\n", i);
+				zcbor_print("Found %d elements.\r\n", i);
 			}
 			return true;
 		}
 	}
-	zcbor_print("Found %d elements.\n", max_decode);
+	zcbor_print("Found %d elements.\r\n", max_decode);
 	*num_decode = max_decode;
 	return true;
 }
@@ -677,7 +677,7 @@ bool zcbor_present_decode(uint32_t *present,
 {
 	uint32_t num_decode;
 	bool retval = zcbor_multi_decode(0, 1, &num_decode, decoder, state, result, 0);
-	zcbor_assert(retval, "zcbor_multi_decode should not fail with these parameters.\n");
+	zcbor_assert(retval, "zcbor_multi_decode should not fail with these parameters.\r\n");
 
 	if (retval) {
 		*present = num_decode;
