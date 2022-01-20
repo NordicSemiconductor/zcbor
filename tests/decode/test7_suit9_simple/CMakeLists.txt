@@ -6,8 +6,7 @@
 
 cmake_minimum_required(VERSION 3.13.1)
 
-find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
-project(NONE)
+include(../../cmake/test_template.cmake)
 
 set(py_command
   ${PYTHON_EXECUTABLE}
@@ -26,14 +25,7 @@ execute_process(
   COMMAND_ERROR_IS_FATAL ANY
 )
 
-FILE(GLOB app_sources src/*.c)
-target_sources(app PRIVATE
-  ${app_sources}
-  )
-
 include(${PROJECT_BINARY_DIR}/manifest9_simple.cmake)
 
 target_link_libraries(manifest9_simple PRIVATE zephyr_interface)
 target_link_libraries(app PRIVATE manifest9_simple)
-
-zephyr_compile_options(-Werror)

@@ -6,12 +6,7 @@
 
 cmake_minimum_required(VERSION 3.13.1)
 
-find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
-project(NONE)
-
-FILE(GLOB app_sources src/*.c)
-target_sources(app PRIVATE
-  ${app_sources})
+include(../../cmake/test_template.cmake)
 
 set(py_command
   ${PYTHON_EXECUTABLE}
@@ -49,9 +44,7 @@ execute_process(
   COMMAND_ERROR_IS_FATAL ANY
 )
 
-FILE(GLOB app_sources src/*.c)
 target_sources(app PRIVATE
-  ${app_sources}
   ${PROJECT_BINARY_DIR}/src/strange.c
   ${PROJECT_BINARY_DIR}/src/zcbor_decode.c
   ${PROJECT_BINARY_DIR}/src/zcbor_common.c)
@@ -62,5 +55,3 @@ endif()
 
 target_include_directories(app PRIVATE
   ${PROJECT_BINARY_DIR}/include)
-
-zephyr_compile_options(-Werror)
