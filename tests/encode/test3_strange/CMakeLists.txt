@@ -6,12 +6,7 @@
 
 cmake_minimum_required(VERSION 3.13.1)
 
-find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
-project(NONE)
-
-FILE(GLOB app_sources src/*.c)
-target_sources(app PRIVATE
-  ${app_sources})
+include(../../cmake/test_template.cmake)
 
 set(py_command
   zcbor
@@ -50,8 +45,3 @@ include(${PROJECT_BINARY_DIR}/strange.cmake)
 target_link_libraries(strange PRIVATE zephyr_interface)
 target_link_libraries(app PRIVATE strange)
 
-if (CANONICAL)
-  target_compile_definitions(strange PUBLIC ZCBOR_CANONICAL)
-endif()
-
-zephyr_compile_options(-Werror)

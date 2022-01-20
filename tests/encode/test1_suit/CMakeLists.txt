@@ -6,8 +6,7 @@
 
 cmake_minimum_required(VERSION 3.13.1)
 
-find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
-project(NONE)
+include(../../cmake/test_template.cmake)
 
 set(py_command_e
   zcbor
@@ -50,20 +49,9 @@ execute_process(
   COMMAND_ERROR_IS_FATAL ANY
 )
 
-FILE(GLOB app_sources src/*.c)
-target_sources(app PRIVATE
-  ${app_sources}
-  )
-
 include(${PROJECT_BINARY_DIR}/manifest3_encode.cmake)
 include(${PROJECT_BINARY_DIR}/manifest3_decode.cmake)
 
 target_link_libraries(manifest3_encode PRIVATE zephyr_interface)
 target_link_libraries(manifest3_decode PRIVATE zephyr_interface)
 target_link_libraries(app PRIVATE manifest3_encode manifest3_decode)
-
-if (CANONICAL)
-  target_compile_definitions(manifest3_encode PUBLIC ZCBOR_CANONICAL)
-endif()
-
-zephyr_compile_options(-Werror)
