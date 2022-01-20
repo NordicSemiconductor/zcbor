@@ -132,7 +132,7 @@ static uint32_t get_encoded_len(const void *const result, uint32_t result_len)
 static bool value_encode(zcbor_state_t *state, zcbor_major_type_t major_type,
 		const void *const input, uint32_t max_result_len)
 {
-	zcbor_assert(max_result_len != 0, "0-length result not supported.\n");
+	zcbor_assert(max_result_len != 0, "0-length result not supported.\r\n");
 
 	uint32_t result_len = get_result_len(input, max_result_len);
 	const void *const result = get_result(input, max_result_len, result_len);

@@ -2353,7 +2353,7 @@ static bool {xcoder.func_name}(
             xcoder.type_name
             if struct_ptr_name(self.mode) in body else "void"} *{struct_ptr_name(self.mode)})
 {{
-	zcbor_print("%s\\n", __func__);
+	zcbor_print("%s\\r\\n", __func__);
 	{f"uint32_t temp_elem_counts[{temp_count}];" if "temp_elem_count" in body else ""}
 	{"uint32_t *temp_elem_count = temp_elem_counts;" if "temp_elem_count" in body else ""}
 	{"uint32_t current_list_num;" if "current_list_num" in body else ""}
