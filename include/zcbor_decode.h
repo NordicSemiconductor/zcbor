@@ -146,6 +146,48 @@ bool zcbor_bstr_start_decode(zcbor_state_t *state, struct zcbor_string *result);
  */
 bool zcbor_bstr_end_decode(zcbor_state_t *state);
 
+/** Start decoding a bstr/tstr, even if the payload contains only part of it.
+ *
+ * This must be followed by a call to @ref zcbor_update_state, which can be
+ * followed by a call to @ref zcbor_next_fragment. Do not call this function
+ * again on subsequent fragments of the same string.
+ *
+ * This consumes the remaining payload as long as it belongs to the string.
+ */
+bool zcbor_bstr_decode_fragment(zcbor_state_t *state, struct zcbor_string_fragment *result);
+bool zcbor_tstr_decode_fragment(zcbor_state_t *state, struct zcbor_string_fragment *result);
+
+/** Extract the next fragment of a string.
+ *
+ * Use this function to extract all but the first fragment.
+ */
+void zcbor_next_fragment(zcbor_state_t *state,
+	struct zcbor_string_fragment *prev_fragment,
+	struct zcbor_string_fragment *result);
+
+/** Decode and consume a bstr header, assuming the payload does not contain the whole bstr.
+ *
+ * The rest of the string can be decoded as CBOR.
+ * A state backup is created to keep track of the element count.
+ * Call @ref zcbor_update_state followed by @ref zcbor_bstr_next_fragment when
+ * the current payload has been exhausted.
+ * Call @ref zcbor_bstr_end_decode when done decoding the contents of the bstr.
+ */
+bool zcbor_bstr_start_decode_fragment(zcbor_state_t *state,
+	struct zcbor_string_fragment *result);
+
+/** Start decoding the next fragment of a string.
+ *
+ * Use this function to extract all but the first fragment of a CBOR-encoded
+ * bstr.
+ */
+void zcbor_bstr_next_fragment(zcbor_state_t *state,
+	struct zcbor_string_fragment *prev_fragment,
+	struct zcbor_string_fragment *result);
+
+/** Can be used on any fragment to tell if it is the final fragment of the string. */
+bool zcbor_is_last_fragment(const struct zcbor_string_fragment *fragment);
+
 /** Decode and consume a list/map header.
  *
  * The contents of the list can be decoded via subsequent function calls.
