@@ -14,11 +14,25 @@
 /** Convenience type that allows pointing to strings directly inside the payload
  *  without the need to copy out.
  */
-struct zcbor_string
-{
+struct zcbor_string {
 	const uint8_t *value;
 	size_t len;
 };
+
+
+/** Type representing a string fragment.
+ *
+ * Don't modify any member variables, or subsequent calls may fail.
+**/
+struct zcbor_string_fragment {
+	struct zcbor_string fragment; ///! Location and length of the fragment.
+	size_t offset;                ///! The offset in the full string at which this fragment belongs.
+	size_t total_len;             ///! The total length of the string this fragment is a part of.
+};
+
+
+/** Size to use in struct zcbor_string_fragment when the real size is unknown. */
+#define ZCBOR_STRING_FRAGMENT_UNKNOWN_LENGTH SIZE_MAX
 
 #ifdef ZCBOR_VERBOSE
 #include <sys/printk.h>
@@ -82,6 +96,9 @@ union {
 	bool indefinite_length_array; /**< Is set to true if the decoder is currently
 	                                   decoding the contents of an indefinite-
 	                                   length array. */
+	bool payload_moved; /**< Is set to true while the state is stored as a backup
+	                         if @ref zcbor_update_state is called, since that function
+	                         updates the payload_end of all backed-up states. */
 	struct zcbor_state_constant *constant_state; /**< The part of the state that is
 	                                                  not backed up and duplicated. */
 } zcbor_state_t;
@@ -261,7 +278,7 @@ bool zcbor_new_state(zcbor_state_t *state_array, uint_fast32_t n_states,
 
 #ifdef ZCBOR_STOP_ON_ERROR
 /** Check stored error and fail if present, but only if stop_on_error is true. */
-static inline bool zcbor_check_error(zcbor_state_t *state)
+static inline bool zcbor_check_error(const zcbor_state_t *state)
 {
 	return !(state->constant_state->stop_on_error && state->constant_state->error);
 }
@@ -286,5 +303,64 @@ static inline void zcbor_error(zcbor_state_t *state, uint_fast8_t err)
 		state->constant_state->error = err;
 	}
 }
+
+/** Whether the current payload is exhausted. */
+static inline bool zcbor_payload_at_end(const zcbor_state_t *state)
+{
+	return (state->payload == state->payload_end);
+}
+
+/** Update the current payload pointer (and payload_end).
+ *
+ *  For use when the payload is divided into multiple chunks.
+ *
+ *  This function also updates all backups to the new payload_end.
+ *  This sets a flag so that if a backup is processed with the flag
+ *  @ref ZCBOR_FLAG_RESTORE, but without the flag
+ *  @ref ZCBOR_FLAG_TRANSFER_PAYLOAD since this would cause an invalid state.
+ *
+ *  @param[inout]  state              The current state, will be updated with
+ *                                    the new payload pointer.
+ *  @param[in]     payload            The new payload chunk.
+ *  @param[in]     payload_len        The length of the new payload chunk.
+ */
+void zcbor_update_state(zcbor_state_t *state,
+		const uint8_t *payload, size_t payload_len);
+
+/** Check that the provided fragments are complete and in the right order.
+ *
+ *  If the total length is not known, the total_len can have the value
+ *  @ref ZCBOR_STRING_FRAGMENT_UNKNOWN_LENGTH. If so, all fragments will be
+ *  updated with the actual total length.
+ *
+ *  @param[in]  fragments      An array of string fragments. Cannot be NULL.
+ *  @param[in]  num_fragments  The number of fragments in @p fragments.
+ *
+ *  @retval  true   If the fragments are in the right order, and there are no
+ *                  fragments missing.
+ *  @retval  false  If not all fragments have the same total_len, or gaps are
+ *                  found, or if any fragment value is NULL.
+ */
+bool zcbor_validate_string_fragments(struct zcbor_string_fragment *fragments,
+		uint_fast32_t num_fragments);
+
+/** Assemble the fragments into a single string.
+ *
+ *  The fragments are copied in the order they appear, without regard for
+ *  offset or total_len. To ensure that the fragments are correct, first
+ *  validate with @ref zcbor_validate_string_fragments.
+ *
+ *  @param[in]     fragments      An array of string fragments. Cannot be NULL.
+ *  @param[in]     num_fragments  The number of fragments in @p fragments.
+ *  @param[out]    result         The buffer to place the assembled string into.
+ *  @param[inout]  result_len     In: The length of the @p result.
+ *                                Out: The length of the assembled string.
+ *
+ *  @retval  true   On success.
+ *  @retval  false  If the assembled string would be larger than the buffer.
+ *                  The buffer might still be written to.
+ */
+bool zcbor_splice_string_fragments(struct zcbor_string_fragment *fragments,
+		uint_fast32_t num_fragments, uint8_t *result, size_t *result_len);
 
 #endif /* ZCBOR_COMMON_H__ */

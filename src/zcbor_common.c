@@ -25,6 +25,8 @@ bool zcbor_new_backup(zcbor_state_t *state, uint_fast32_t new_elem_count)
 		ZCBOR_ERR(ZCBOR_ERR_NO_BACKUP_MEM);
 	}
 
+	state->payload_moved = false;
+
 	(state->constant_state->current_backup)++;
 
 	/* use the backup at current_backup - 1, since otherwise, the 0th
@@ -49,6 +51,7 @@ bool zcbor_process_backup(zcbor_state_t *state, uint32_t flags,
 	ZCBOR_CHECK_ERROR();
 
 	if (state->constant_state->current_backup == 0) {
+		zcbor_print("No backups available.\r\n");
 		ZCBOR_ERR(ZCBOR_ERR_NO_BACKUP_ACTIVE);
 	}
 
@@ -57,6 +60,12 @@ bool zcbor_process_backup(zcbor_state_t *state, uint32_t flags,
 		 * 0th backup would be unused. */
 		uint_fast32_t i = state->constant_state->current_backup - 1;
 
+		if (!(flags & ZCBOR_FLAG_TRANSFER_PAYLOAD)) {
+			if (state->constant_state->backup_list[i].payload_moved) {
+				zcbor_print("Payload pointer out of date.\r\n");
+				ZCBOR_FAIL();
+			}
+		}
 		memcpy(state, &state->constant_state->backup_list[i],
 			sizeof(zcbor_state_t));
 	}
@@ -76,6 +85,16 @@ bool zcbor_process_backup(zcbor_state_t *state, uint32_t flags,
 	}
 
 	return true;
+}
+
+static void update_backups(zcbor_state_t *state, uint8_t const *new_payload_end)
+{
+	if (state->constant_state) {
+		for (int i = 0; i < state->constant_state->current_backup; i++) {
+			state->constant_state->backup_list[i].payload_end = new_payload_end;
+			state->constant_state->backup_list[i].payload_moved = true;
+		}
+	}
 }
 
 
@@ -111,6 +130,8 @@ bool zcbor_new_state(zcbor_state_t *state_array, uint_fast32_t n_states,
 	state_array[0].payload_end = payload + payload_len;
 	state_array[0].elem_count = elem_count;
 	state_array[0].indefinite_length_array = false;
+	state_array[0].payload_moved = false;
+	state_array[0].constant_state = NULL;
 
 	if(n_states < 2) {
 		return false;
@@ -128,5 +149,76 @@ bool zcbor_new_state(zcbor_state_t *state_array, uint_fast32_t n_states,
 	if (n_states > 2) {
 		state_array[0].constant_state->backup_list = &state_array[1];
 	}
+	return true;
+}
+
+void zcbor_update_state(zcbor_state_t *state,
+		const uint8_t *payload, size_t payload_len)
+{
+	state->payload = payload;
+	state->payload_end = payload + payload_len;
+
+	update_backups(state, state->payload_end);
+}
+
+
+bool zcbor_validate_string_fragments(struct zcbor_string_fragment *fragments,
+		uint_fast32_t num_fragments)
+{
+	size_t total_len = 0;
+
+	if (fragments == NULL) {
+		return false;
+	}
+
+	for (uint_fast32_t i = 0; i < num_fragments; i++) {
+		if (fragments[i].offset != total_len) {
+			return false;
+		}
+		if (fragments[i].fragment.value == NULL) {
+			return false;
+		}
+		if (fragments[i].total_len != fragments[0].total_len) {
+			return false;
+		}
+		total_len += fragments[i].fragment.len;
+		if (total_len > fragments[0].total_len) {
+			return false;
+		}
+	}
+
+	if (num_fragments && total_len != fragments[0].total_len) {
+		return false;
+	}
+
+	if (num_fragments && (fragments[0].total_len == ZCBOR_STRING_FRAGMENT_UNKNOWN_LENGTH)) {
+		for (uint_fast32_t i = 0; i < num_fragments; i++) {
+			fragments[i].total_len = total_len;
+		}
+	}
+
+	return true;
+}
+
+bool zcbor_splice_string_fragments(struct zcbor_string_fragment *fragments,
+		uint_fast32_t num_fragments, uint8_t *result, size_t *result_len)
+{
+	size_t total_len = 0;
+
+	if (!fragments) {
+		return false;
+	}
+
+	for (uint_fast32_t i = 0; i < num_fragments; i++) {
+		if ((total_len > *result_len)
+			|| (fragments[i].fragment.len > (*result_len - total_len))) {
+			return false;
+		}
+		memcpy(&result[total_len],
+			fragments[i].fragment.value, fragments[i].fragment.len);
+		total_len += fragments[i].fragment.len;
+	}
+
+	*result_len = total_len;
 	return true;
 }
