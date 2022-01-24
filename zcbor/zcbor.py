@@ -2150,9 +2150,9 @@ class CodeGenerator(CddlXcoder):
                             child.full_xcode(union_uint="DROP"))
                         for child in self.value])
                 bit_size = self.value[0].bit_size()
-                func = f"zcbor_uint{bit_size}_{self.mode}"
+                func = f"zcbor_uint32_{self.mode}"
                 return "((%s) && (%s))" % (
-                    f"({func}(state, (uint{bit_size}_t *)&{self.choice_var_access()}))",
+                    f"({func}(state, (uint32_t *)&{self.choice_var_access()}))",
                     f"{newl_ind}|| ".join(lines), )
             child_values = ["(%s && ((%s = %s) || 1))" %
                             (child.full_xcode(

@@ -1295,7 +1295,6 @@ void test_main(void)
 			 ztest_unit_test(test_single),
 			 ztest_unit_test(test_unabstracted),
 			 ztest_unit_test(test_quantity_range),
-			 ztest_unit_test(test_unabstracted),
 			 ztest_unit_test(test_doublemap),
 			 ztest_unit_test(test_floats)
 	);
