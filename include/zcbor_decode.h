@@ -166,13 +166,14 @@ bool zcbor_bool_expect(zcbor_state_t *state, bool result);
 bool zcbor_float_decode(zcbor_state_t *state, double *result);
 bool zcbor_float_expect(zcbor_state_t *state, double result);
 
-/** Consume and expect a "nil" primitive value.
+/** Consume and expect a "nil"/"undefined" primitive value.
  *
  * @param[inout] state   The current state of the encoding.
  * @param[in]    unused  Unused parameter to maintain signature parity with
  *                       @ref zcbor_decoder_t.
  */
 bool zcbor_nil_expect(zcbor_state_t *state, void *unused);
+bool zcbor_undefined_expect(zcbor_state_t *state, void *unused);
 
 /** Skip a single element, regardless of type and value.
  *

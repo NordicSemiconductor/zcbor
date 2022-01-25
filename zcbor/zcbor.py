@@ -216,8 +216,8 @@ class CddlParser:
         self.bits = None
         # The "type" of the element. This follows the CBOR types loosely, but are more related to
         # CDDL concepts. The possible types are "INT", "UINT", "NINT", "FLOAT", "BSTR", "TSTR",
-        # "BOOL",  "NIL", "LIST", "MAP","GROUP", "UNION" and "OTHER". "OTHER" represents a CDDL type
-        # defined with '='.
+        # "BOOL", "NIL", "UNDEF", "LIST", "MAP","GROUP", "UNION" and "OTHER". "OTHER" represents a
+        # CDDL type defined with '='.
         self.type = None
         self.match_str = ""
         self.errors = list()
@@ -747,6 +747,8 @@ class CddlParser:
              lambda _: self.type_and_value("BOOL", lambda: False)),
             (r'nil(?!\w)',
              lambda _: self.type_and_value("NIL", lambda: None)),
+            (r'undefined(?!\w)',
+             lambda _: self.type_and_value("UNDEF", lambda: None)),
             (r'any(?!\w)',
              lambda _: self.type_and_value("ANY", lambda: None)),
             (r'#6\.(?P<item>\d+)',
@@ -938,7 +940,7 @@ class CddlXcoder(CddlParser):
         return self.multi_var_condition() or self.repeated_multi_var_condition()
 
     def is_unambiguous_value(self):
-        return (self.type == "NIL"
+        return (self.type in ["NIL", "UNDEF"]
                 or (self.type in ["INT", "NINT", "UINT", "FLOAT", "BSTR", "TSTR", "BOOL"]
                     and self.value is not None)
                 or (self.type == "BSTR" and self.cbor is not None and self.cbor.is_unambiguous())
@@ -994,7 +996,7 @@ class CddlXcoder(CddlParser):
 
     # Whether to include a "cbor" variable for this element.
     def is_cbor(self):
-        return (self.type not in ["NIL", "ANY"]) \
+        return (self.type not in ["NIL", "UNDEF", "ANY"]) \
             and ((self.type != "OTHER") or (self.my_types[self.value].is_cbor()))
 
     # Whether to include a "cbor" variable for this element.
@@ -1227,6 +1229,7 @@ class DataTranslator(CddlXcoder):
             "TSTR": lambda: str,
             "BSTR": lambda: bytes,
             "NIL": lambda: type(None),
+            "UNDEF": lambda: type(None),
             "ANY": lambda: (int, float, str, bytes, type(None), bool, list, dict),
             "BOOL": lambda: bool,
             "LIST": lambda: (tuple, list),
@@ -1357,7 +1360,8 @@ CBOR-formatted bstr, all elements must be bstrs. If not, it is a programmer erro
         obj = self._check_tag(obj)
         self._check_type(obj)
         self._check_value(obj)
-        if self.type in ["UINT", "INT", "NINT", "FLOAT", "TSTR", "BSTR", "BOOL", "NIL", "ANY"]:
+        if self.type in ["UINT", "INT", "NINT", "FLOAT", "TSTR",
+                         "BSTR", "BOOL", "NIL", "UNDEF", "ANY"]:
             return obj
         elif self.type == "OTHER":
             return self.my_types[self.value]._decode_single_obj(obj)
@@ -1721,6 +1725,7 @@ class CodeGenerator(CddlXcoder):
             "TSTR": lambda: "struct zcbor_string",
             "BOOL": lambda: "bool",
             "NIL": lambda: None,
+            "UNDEF": lambda: None,
             "ANY": lambda: None,
             "LIST": lambda: self.value[0].type_name() if len(self.value) >= 1 else None,
             "MAP": lambda: self.value[0].type_name() if len(self.value) >= 1 else None,
@@ -1812,7 +1817,7 @@ class CodeGenerator(CddlXcoder):
             multi_var = cbor_var != []
 
         # if self.type not in ["LIST", "MAP", "GROUP"] or len(self.value) <= 1:
-            # This assert isn't accurate for value lists with NIL or ANY
+            # This assert isn't accurate for value lists with NIL, "UNDEF", or ANY
             # members.
             # assert multi_var == self.repeated_multi_var_condition(
             # ), f"""assert {multi_var} == {self.repeated_multi_var_condition()}
@@ -1906,6 +1911,7 @@ class CodeGenerator(CddlXcoder):
             "TSTR": f"zcbor_tstr",
             "BOOL": f"zcbor_bool",
             "NIL": f"zcbor_nil",
+            "UNDEF": f"zcbor_undefined",
             "ANY": f"zcbor_any",
         }[self.type])
 
@@ -1953,7 +1959,7 @@ class CodeGenerator(CddlXcoder):
         if func_name is None:
             return (None, None)
 
-        if self.type in ["NIL", "ANY"]:
+        if self.type in ["NIL", "UNDEF", "ANY"]:
             arg = "NULL"
         elif not self.is_unambiguous_value():
             arg = deref_if_not_null(access)
@@ -2044,6 +2050,7 @@ class CodeGenerator(CddlXcoder):
             "TSTR": lambda: (self.min_qty, self.max_qty),
             "BOOL": lambda: (self.min_qty, self.max_qty),
             "NIL": lambda: (self.min_qty, self.max_qty),
+            "UNDEF": lambda: (self.min_qty, self.max_qty),
             "ANY": lambda: (self.min_qty, self.max_qty),
             # Lists are their own element
             "LIST": lambda: (self.min_qty, self.max_qty),
@@ -2185,6 +2192,7 @@ class CodeGenerator(CddlXcoder):
             "TSTR": self.xcode_single_func_prim,
             "BOOL": self.xcode_single_func_prim,
             "NIL": self.xcode_single_func_prim,
+            "UNDEF": self.xcode_single_func_prim,
             "ANY": self.xcode_single_func_prim,
             "LIST": self.xcode_list,
             "MAP": self.xcode_list,

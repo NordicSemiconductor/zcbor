@@ -39,7 +39,11 @@ Primitives = [
 	boolfalse: false,
 	boolval: bool,
 	nilval: nil,
+	undef: undefined,
 ]
+
+Prim = Primitives
+Prim2 = Prim
 
 Optional = [
 	#6.10(boolval: bool),
