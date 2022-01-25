@@ -907,7 +907,9 @@ class CddlXcoder(CddlParser):
         if self.type in ["LIST", "MAP", "GROUP"]:
             return not self.multi_val_condition()
         if self.type == "OTHER":
-            return (not self.repeated_multi_var_condition()) and self.single_func_impl_condition()
+            return ((not self.repeated_multi_var_condition())
+                    and (not self.multi_var_condition())
+                    and (self.single_func_impl_condition() or self in self.my_types.values()))
         return False
 
     def set_skipped(self, skipped):
