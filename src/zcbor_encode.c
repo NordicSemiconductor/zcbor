@@ -443,6 +443,13 @@ bool zcbor_nil_put(zcbor_state_t *state, const void *unused)
 }
 
 
+bool zcbor_undefined_put(zcbor_state_t *state, const void *unused)
+{
+	(void)unused;
+	return primitive_put(state, 23);
+}
+
+
 bool zcbor_bool_encode(zcbor_state_t *state, const bool *input)
 {
 	if (!primitive_put(state, *input + ZCBOR_BOOL_TO_PRIM)) {

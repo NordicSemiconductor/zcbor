@@ -20,6 +20,7 @@ set(py_command
   Numbers
   Numbers2
   Strings
+  Prim2
   Optional
   Union
   Map

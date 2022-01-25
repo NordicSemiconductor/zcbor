@@ -93,13 +93,14 @@ bool zcbor_bool_encode(zcbor_state_t *state, const bool *input);
 bool zcbor_float_put(zcbor_state_t *state, double input);
 bool zcbor_float_encode(zcbor_state_t *state, const double *input);
 
-/** Encode a "nil" primitive value. @p unused should be NULL.
+/** Encode a "nil"/"undefined" primitive value. @p unused should be NULL.
  *
  * @param[inout] state   The current state of the encoding.
  * @param[in]    unused  Unused parameter to maintain signature parity with
  *                       @ref zcbor_encoder_t.
  */
 bool zcbor_nil_put(zcbor_state_t *state, const void *unused);
+bool zcbor_undefined_put(zcbor_state_t *state, const void *unused);
 
 /** Encode a BSTR header.
  *

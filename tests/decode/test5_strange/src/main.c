@@ -176,26 +176,29 @@ void test_strings(void)
 				0x1A, 0xFF, 0xFF, 0xFF, 0xFF, // 0xFFFFFFFF
 				0xD9, 0xFF, 0xFF, 0x09, // 9, tagged (0xFFFF)
 			END
-		STR_LEN(0x4F, 3), // Primitives (len: 15)
-			LIST(4),
+		STR_LEN(0x52, 3), // Primitives (len: 18)
+			LIST(5),
 				0xF5, // True
 				0xF4, // False
 				0xF4, // False
 				0xF6, // Nil
+				0xF7, // Undefined
 			END
-			LIST(4),
+			LIST(5),
 				0xF5, // True
 				0xF4, // False
 				0xF5, // True
 				0xF6, // Nil
+				0xF7, // Undefined
 			END
-			LIST(4),
+			LIST(5),
 				0xF5, // True
 				0xF4, // False
 				0xF4, // False
 				0xF6, // Nil
+				0xF7, // Undefined
 			END
-		0x59, 0x01, STR_LEN(0x67, 3), // Strings (len: 359)
+		0x59, 0x01, STR_LEN(0x68, 3), // Strings (len: 360)
 			LIST(5),
 			0x65, 0x68, 0x65, 0x6c, 0x6c, 0x6f, // "hello"
 			0x59, 0x01, 0x2c, // 300 bytes
@@ -224,12 +227,13 @@ void test_strings(void)
 					0x1A, 0xFF, 0xFF, 0xFF, 0xFF, // 0xFFFFFFFF
 					0xD9, 0xFF, 0xFF, 0x29, // -10, tagged (0xFFFF)
 				END
-			STR_LEN(0x45, 1), // Primitives (len: 5)
-				LIST(4),
+			STR_LEN(0x46, 1), // Primitives (len: 6)
+				LIST(5),
 					0xF5, // True
 					0xF4, // False
 					0xF4, // False
 					0xF6, // Nil
+					0xF7, // Undefined
 				END
 			END
 		END
@@ -270,6 +274,36 @@ void test_strings(void)
 	zassert_equal(-10, numbers2._Numbers_integer, NULL);
 	zassert_equal(1, strings2._Strings_cborseqPrimitives_cbor_count, NULL);
 	zassert_false(strings2._Strings_cborseqPrimitives_cbor[0]._Primitives_boolval, NULL);
+}
+
+void test_primitives(void)
+{
+	uint8_t payload_prim1[] = {LIST(5), 0xF5, 0xF4, 0xF4, 0xF6, 0xF7, END};
+	uint8_t payload_prim2[] = {LIST(5), 0xF5, 0xF4, 0xF5, 0xF6, 0xF7, END};
+	uint8_t payload_prim_inv3[] = {LIST(5), 0xF7, 0xF4, 0xF4, 0xF6, 0xF7, END};
+	uint8_t payload_prim_inv4[] = {LIST(5), 0xF5, 0xF7, 0xF4, 0xF6, 0xF7, END};
+	uint8_t payload_prim_inv5[] = {LIST(5), 0xF5, 0xF4, 0xF7, 0xF6, 0xF7, END};
+	uint8_t payload_prim_inv6[] = {LIST(5), 0xF5, 0xF4, 0xF5, 0xF7, 0xF7, END};
+	uint8_t payload_prim_inv7[] = {LIST(5), 0xF5, 0xF4, 0xF5, 0xF6, 0xF6, END};
+	uint8_t payload_prim_inv8[] = {LIST(5), 0xF5, 0xF4, 0xF5, 0xF6, 0xF5, END};
+	uint8_t payload_prim_inv9[] = {LIST(5), 0xF5, 0xF4, 0xF6, 0xF6, 0xF7, END};
+	uint8_t payload_prim_inv10[] = {LIST(5), 0xF5, 0xF5, 0xF5, 0xF6, 0xF7, END};
+	uint8_t payload_prim_inv11[] = {LIST(5), 0xF4, 0xF4, 0xF5, 0xF6, 0xF7, END};
+
+	struct Primitives result;
+	size_t len_decode;
+
+	zassert_true(cbor_decode_Prim2(payload_prim1, sizeof(payload_prim1), &result, &len_decode), NULL);
+	zassert_true(cbor_decode_Prim2(payload_prim2, sizeof(payload_prim2), &result, &len_decode), NULL);
+	zassert_false(cbor_decode_Prim2(payload_prim_inv3, sizeof(payload_prim_inv3), &result, &len_decode), NULL);
+	zassert_false(cbor_decode_Prim2(payload_prim_inv4, sizeof(payload_prim_inv4), &result, &len_decode), NULL);
+	zassert_false(cbor_decode_Prim2(payload_prim_inv5, sizeof(payload_prim_inv5), &result, &len_decode), NULL);
+	zassert_false(cbor_decode_Prim2(payload_prim_inv6, sizeof(payload_prim_inv6), &result, &len_decode), NULL);
+	zassert_false(cbor_decode_Prim2(payload_prim_inv7, sizeof(payload_prim_inv7), &result, &len_decode), NULL);
+	zassert_false(cbor_decode_Prim2(payload_prim_inv8, sizeof(payload_prim_inv8), &result, &len_decode), NULL);
+	zassert_false(cbor_decode_Prim2(payload_prim_inv9, sizeof(payload_prim_inv9), &result, &len_decode), NULL);
+	zassert_false(cbor_decode_Prim2(payload_prim_inv10, sizeof(payload_prim_inv10), &result, &len_decode), NULL);
+	zassert_false(cbor_decode_Prim2(payload_prim_inv11, sizeof(payload_prim_inv11), &result, &len_decode), NULL);
 }
 
 void test_string_overflow(void)
@@ -1135,6 +1169,7 @@ void test_main(void)
 			 ztest_unit_test(test_numbers),
 			 ztest_unit_test(test_numbers2),
 			 ztest_unit_test(test_strings),
+			 ztest_unit_test(test_primitives),
 			 ztest_unit_test(test_string_overflow),
 			 ztest_unit_test(test_optional),
 			 ztest_unit_test(test_union),

@@ -503,9 +503,18 @@ static bool primx_expect(zcbor_state_t *state, uint8_t result)
 }
 
 
-bool zcbor_nil_expect(zcbor_state_t *state, void *result)
+bool zcbor_nil_expect(zcbor_state_t *state, void *unused)
 {
 	if (!primx_expect(state, 22)) {
+		ZCBOR_FAIL();
+	}
+	return true;
+}
+
+
+bool zcbor_undefined_expect(zcbor_state_t *state, void *unused)
+{
+	if (!primx_expect(state, 23)) {
 		ZCBOR_FAIL();
 	}
 	return true;
