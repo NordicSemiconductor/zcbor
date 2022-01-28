@@ -69,6 +69,9 @@ union {
 	uint8_t const *payload_end; /**< The end of the payload. This will be
 	                                 checked against payload before
 	                                 processing each element. */
+	bool indefinite_length_array; /**< Is set to true if the decoder is currently
+	                                   decoding the contents of an indefinite-
+	                                   length array. */
 	struct zcbor_state_constant *constant_state; /**< The part of the state that is
 	                                                  not backed up and duplicated. */
 } zcbor_state_t;

@@ -106,6 +106,7 @@ void zcbor_new_state(zcbor_state_t *state_array, uint_fast32_t n_states,
 	state_array[0].payload = payload;
 	state_array[0].payload_end = payload + payload_len;
 	state_array[0].elem_count = elem_count;
+	state_array[0].indefinite_length_array = false;
 	state_array[0].constant_state = NULL;
 	if (n_states > 2) {
 		/* Use the last state as a struct zcbor_state_constant object. */
