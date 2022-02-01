@@ -2598,8 +2598,14 @@ This script requires 'regex' for lookaround functionality not present in 're'.''
 generated files.""")
     code_parser.add_argument(
         "--output-cmake", required=False, type=str,
-        help="""Path to output Cmake file. The filename of the Cmake file without '.cmake' is used
-as the name of the Cmake target in the file.""")
+        help="""Path to output CMake file. The filename of the CMake file without '.cmake' is used
+as the name of the CMake target in the file.
+The CMake file defines a CMake target with the zcbor source files and the
+generated file as sources, and the zcbor header files' and generated header
+files' folders as include_directories.
+Add it to your project via include() in your CMakeLists.txt file, and link the
+target to your program.
+This option works with or without the --copy-sources option.""")
     code_parser.add_argument(
         "-t", "--entry-types", required=True, type=str, nargs="+",
         help="Names of the types which should have their xcode functions exposed.")
