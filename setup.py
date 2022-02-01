@@ -7,9 +7,25 @@
 
 import setuptools
 from pathlib import Path
+from re import sub
 
 
 P_REPO_ROOT = Path(__file__).absolute().parents[0]
+ZCBOR_URL = 'https://github.com/NordicSemiconductor/zcbor'
+
+
+def absolute_links(text):
+    def new_link(match):
+        match_text = match.group(0)
+        path = Path(P_REPO_ROOT, match_text)
+        path_comp = "tree" if path.is_dir() else "blob"
+        url_prefix = f"{ZCBOR_URL}/{path_comp}/{get_version()}/"
+        if (path.exists()):
+            return url_prefix + match_text
+        else:
+            return match_text
+    new_text = sub(r"(?<=\]\().*?(?=\))", new_link, text)
+    return new_text
 
 
 def get_description(title_only=False):
@@ -18,7 +34,7 @@ def get_description(title_only=False):
 
     if p_readme.is_file():
         with p_readme.open(encoding='utf-8') as f:
-            return f.readline().strip() if title_only else f.read()
+            return f.readline().strip() if title_only else absolute_links(f.read())
     return ''
 
 
@@ -46,7 +62,7 @@ setuptools.setup(
     description=get_description(title_only=True),
     long_description=get_description(),
     long_description_content_type='text/markdown',
-    url='https://github.com/NordicSemiconductor/zcbor',
+    url=ZCBOR_URL,
     author='Nordic Semiconductor ASA',
     license='Apache Software License',
     classifiers=[
