@@ -303,8 +303,6 @@ Tests for the conversion functions in the script are implemented with the unitte
 
 There are also test.sh scripts to quickly run all tests.
 [`tests/test.sh`](tests/test.sh) runs all tests, including python tests in [`tests/scripts`](tests/scripts).
-[`tests/decode/test.sh`](tests/decode/test.sh) runs all decoding tests.
-[`tests/encode/test.sh`](tests/encode/test.sh) runs all encoding tests.
 
 These tests are dependent upon the `pycodestyle` package from `pip`.
 Run these scripts with no arguments.
