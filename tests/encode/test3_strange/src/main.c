@@ -48,7 +48,7 @@ void test_numbers(void)
 	numbers._Numbers_minusfivektoplustwohundred = -5000;
 	numbers._Numbers_negint = -2147483648;
 	numbers._Numbers_posint = 0;
-	numbers._Numbers_integer = 1;
+	numbers._Numbers_tagged_int = 1;
 
 	zassert_false(cbor_encode_Numbers(output,
 		sizeof(output), &numbers, &out_len), NULL);
@@ -97,8 +97,8 @@ void test_numbers2(void)
 	};
 	struct Numbers2 numbers2 = {
 		._Numbers2_threebytes = 0x123456,
-		._Numbers2_bigint = 0x0102030405060708,
-		._Numbers2_biguint = 0x1102030405060709,
+		._Numbers2_big_int = 0x0102030405060708,
+		._Numbers2_big_uint = 0x1102030405060709,
 	};
 	uint8_t output[100];
 	size_t out_len;
@@ -253,7 +253,7 @@ void test_strings(void)
 	numbers1._Numbers_minusfivektoplustwohundred = 0;
 	numbers1._Numbers_negint = -2147483648;
 	numbers1._Numbers_posint = 0xFFFFFFFF;
-	numbers1._Numbers_integer = 9;
+	numbers1._Numbers_tagged_int = 9;
 
 	strings1._Strings_optCborStrings_present = true;
 	strings1._Strings_threehundrebytebstr.len = 300;
@@ -275,7 +275,7 @@ void test_strings(void)
 	zassert_true(cbor_encode_Numbers(output2, sizeof(output2), &numbers1, &out_len), NULL);
 	strings1._Strings_cborNumbers.value = output2;
 	strings1._Strings_cborNumbers.len = out_len;
-	numbers1._Numbers_integer = -10;
+	numbers1._Numbers_tagged_int = -10;
 	zassert_true(cbor_encode_Numbers(output1, sizeof(output1), &numbers1, &out_len), NULL);
 	strings2._Strings_cborNumbers.value = output1;
 	strings2._Strings_cborNumbers.len = out_len;

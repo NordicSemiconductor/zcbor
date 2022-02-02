@@ -14,15 +14,15 @@ Numbers = [
 	fourbillion: 0xEE6B2800,
 	negint: nint,
 	posint: uint,
-	integer: #6.65535(int),
+	tagged_int: #6.65535(int),
 ]
 
 Numbers2 = [
 	threebytes: uint .size 4,
-	bigint: int .size 8,
-	biguint: uint .gt 0x100000000,
-	bignint: -0x80000001,
-	bignint2: -0x80000000,
+	big_int: int .size 8,
+	big_uint: uint .gt 0x100000000,
+	big_nint: -0x80000001,
+	big_nint2: -0x80000000,
 ]
 
 Strings = [
@@ -122,4 +122,32 @@ Floats = [
 	pi: 3.1415,
 	e: 2.71828 .size 8,
 	floats: *float,
+]
+
+Prelude = [
+	bytes,
+	text,
+	tdate,
+	time,
+	number,
+	biguint,
+	bignint,
+	bigint,
+	integer,
+	unsigned,
+	decfrac,
+	bigfloat,
+	eb64url,
+	eb64legacy,
+	eb16,
+	encoded-cbor,
+	uri,
+	b64url,
+	b64legacy,
+	regexp,
+	mime-message,
+	cbor-any,
+	float16-32,
+	float32-64,
+	null,
 ]
