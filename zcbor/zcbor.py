@@ -30,6 +30,7 @@ newl_ind = "\n" + indentation
 P_SCRIPT = Path(__file__).absolute().parent
 P_REPO_ROOT = Path(__file__).absolute().parents[1]
 VERSION_path = Path(P_SCRIPT, "VERSION")
+PRELUDE_path = Path(P_SCRIPT, "cddl", "prelude.cddl")
 
 __version__ = VERSION_path.read_text().strip()
 
@@ -316,6 +317,8 @@ class CddlParser:
             or ((self.cbor.value + "_bstr")
                 if self.cbor and self.cbor.type in ["TSTR", "OTHER"] else None)
             or ((self.key.generate_base_name() + self.type.lower()) if self.key else None)
+            or (f"{self.type.lower()}{self.min_size * 8}"
+                if self.min_size and self.min_size == self.max_size else None)
             or self.type.lower()).replace("-", "_"))
         return raw_name
 
@@ -2624,6 +2627,10 @@ This is relevant for the generated code. It is not relevant for converting,
 except when handling data that will be decoded by generated code.
 The default value of this option is 3. Set it to a large number when not relevant.""")
     parser.add_argument(
+        "--no-prelude", required=False, action="store_true", default=False,
+        help=f"""Exclude the standard CDDL prelude from the build. The prelude can be viewed at
+{PRELUDE_path}""")
+    parser.add_argument(
         "-v", "--verbose", required=False, action="store_true", default=False,
         help="Print more information while parsing CDDL and generating code.")
 
@@ -2744,7 +2751,12 @@ If omitted, the format is inferred from the file name.
         help='''Name of the type (from the CDDL) to interpret the data as.''')
     convert_parser.set_defaults(process=process_convert)
 
-    return parser.parse_args()
+    args = parser.parse_args()
+
+    if not args.no_prelude:
+        args.cddl.append(open(PRELUDE_path, 'r'))
+
+    return args
 
 
 def process_code(args):

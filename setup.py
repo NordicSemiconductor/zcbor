@@ -78,7 +78,7 @@ setuptools.setup(
         'console_scripts': ['zcbor=zcbor.zcbor:main'],
     },
     include_package_data=True,
-    package_data={'': ['VERSION']},
+    package_data={'': ['VERSION', 'cddl/prelude.cddl']},
     data_files=[
         ("lib/zcbor/include",
             ("include/zcbor_decode.h", "include/zcbor_encode.h", "include/zcbor_common.h",

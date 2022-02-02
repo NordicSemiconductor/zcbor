@@ -37,6 +37,7 @@ set(py_command
     QuantityRange
     DoubleMap
     Floats
+    Prelude
   --decode
   --git-sha-header
   ${bit_arg}

@@ -12,11 +12,15 @@
 
 #ifdef TEST_INDETERMINATE_LENGTH_ARRAYS
 #define LIST(num) 0x9F /* Use short count 31 (indefinite-length). Note that the 'num' argument is ignored */
+#define LIST2(num) 0x9F /* Use short count 31 (indefinite-length). Note that the 'num' argument is ignored */
+#define LIST3(num) 0x9F /* Use short count 31 (indefinite-length). Note that the 'num' argument is ignored */
 #define MAP(num) 0xBF  /* Use short count 31 (indefinite-length). Note that the 'num' argument is ignored */
 #define END 0xFF,
 #define STR_LEN(len, lists) (len + lists)
 #else
 #define LIST(num) CONCAT_BYTE(0x8, num)
+#define LIST2(num) CONCAT_BYTE(0x9, num)
+#define LIST3(num) 0x98, num
 #define MAP(num) CONCAT_BYTE(0xA, num)
 #define END
 #define STR_LEN(len, lists) (len)
@@ -55,7 +59,7 @@ void test_numbers(void)
 	zassert_equal(-5000, numbers._Numbers_minusfivektoplustwohundred, "%d", numbers._Numbers_minusfivektoplustwohundred);
 	zassert_equal(-2147483648, numbers._Numbers_negint, NULL);
 	zassert_equal(0, numbers._Numbers_posint, NULL);
-	zassert_equal(1, numbers._Numbers_integer, NULL);
+	zassert_equal(1, numbers._Numbers_tagged_int, NULL);
 }
 
 
@@ -122,15 +126,15 @@ void test_numbers2(void)
 		sizeof(payload_numbers2), &numbers2, &decode_len), NULL);
 
 	zassert_equal(0x123456, numbers2._Numbers2_threebytes, NULL);
-	zassert_equal(0x0102030405060708, numbers2._Numbers2_bigint, NULL);
-	zassert_equal(0x1102030405060709, numbers2._Numbers2_biguint, NULL);
+	zassert_equal(0x0102030405060708, numbers2._Numbers2_big_int, NULL);
+	zassert_equal(0x1102030405060709, numbers2._Numbers2_big_uint, NULL);
 
 	zassert_true(cbor_decode_Numbers2(payload_numbers2_1,
 		sizeof(payload_numbers2_1), &numbers2, &decode_len), NULL);
 
 	zassert_equal(0x123456, numbers2._Numbers2_threebytes, NULL);
-	zassert_equal(-0x0102030405060709, numbers2._Numbers2_bigint, NULL);
-	zassert_equal(0x1102030405060709, numbers2._Numbers2_biguint, NULL);
+	zassert_equal(-0x0102030405060709, numbers2._Numbers2_big_int, NULL);
+	zassert_equal(0x1102030405060709, numbers2._Numbers2_big_uint, NULL);
 
 	zassert_false(cbor_decode_Numbers2(payload_numbers2_inv2,
 		sizeof(payload_numbers2_inv2), &numbers2, &decode_len), NULL);
@@ -271,7 +275,7 @@ void test_strings(void)
 	zassert_equal(0, numbers2._Numbers_minusfivektoplustwohundred, NULL);
 	zassert_equal(-2147483648, numbers2._Numbers_negint, NULL);
 	zassert_equal(0xFFFFFFFF, numbers2._Numbers_posint, NULL);
-	zassert_equal(-10, numbers2._Numbers_integer, NULL);
+	zassert_equal(-10, numbers2._Numbers_tagged_int, NULL);
 	zassert_equal(1, strings2._Strings_cborseqPrimitives_cbor_count, NULL);
 	zassert_false(strings2._Strings_cborseqPrimitives_cbor[0]._Primitives_boolval, NULL);
 }
@@ -1275,6 +1279,38 @@ void test_floats(void)
 		floats_payload8_inv, sizeof(floats_payload8_inv), &result, &num_decode), NULL);
 }
 
+void test_prelude(void)
+{
+	uint8_t prelude_payload1[] = {
+		LIST3(25), 0x40 /* empty bstr */, 0x60 /* empty tstr */,
+		0xC0, 0x6A, '2', '0', '2', '2', '-', '0', '2', '-', '2', '2' /* tdate */,
+		0xC1, 0x1A, 0x62, 0x15, 0x5d, 0x6c /* 1645567340 */,
+		0xFA, 0x40, 0x49, 0xe, 0x56 /* 3.1415 */,
+		0xC2, 0x4A, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 /* 0x0102030405060708090A */,
+		0xC3, 0x4A, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9 /* -0x0102030405060708090A */,
+		0xC3, 0x4A, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9 /* -0x0102030405060708090A */,
+		0 /* 0 (integer) */, 0,
+		0xC4, LIST(2), 0x01, 0xC2, 0x4C, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, END /* decfrac: [1, 0x010000000000000000000001] */
+		0xC5, LIST(2), 0x04, 0xC3, 0x4C, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, END /* bigfloat: [4, -0x020000000000000000000001] */
+		0xD5, LIST(2), LIST(1), 0x41, 'a', END LIST(1), 0x41, 'b', END END /* eb64url: [['a']['b']] */
+		0xD6, 0xF6, 0xD7, 0xF6,
+		0xD8, 24, 0x41, 0x0 /* encoded-cbor: 0x0 */,
+		0xD8, 32, 0x71,  'f', 't', 'p', ':', '/', '/', 'e', 'x', 'a', 'm', 'p', 'l', 'e', '.', 'c', 'o', 'm',
+		0xD8, 33, 0x60, 0xD8, 34, 0x60,
+		0xD8, 35, 0x62, '.', '*' /* regexp: ".*" */,
+		0xD8, 36, 0x60, 0xD9, 0xd9, 0xf7, 0xF6,
+		0xFA, 0x40, 0x49, 0xe, 0x56 /* 3.1415 */,
+		0xFA, 0x40, 0x49, 0xe, 0x56 /* 3.1415 */,
+		0xF6,
+		END
+	};
+
+	struct Prelude result;
+	size_t num_decode;
+
+	zassert_true(cbor_decode_Prelude(prelude_payload1, sizeof(prelude_payload1), &result, &num_decode), NULL);
+}
+
 void test_main(void)
 {
 	ztest_test_suite(cbor_decode_test5,
@@ -1296,7 +1332,8 @@ void test_main(void)
 			 ztest_unit_test(test_unabstracted),
 			 ztest_unit_test(test_quantity_range),
 			 ztest_unit_test(test_doublemap),
-			 ztest_unit_test(test_floats)
+			 ztest_unit_test(test_floats),
+			 ztest_unit_test(test_prelude)
 	);
 	ztest_run_test_suite(cbor_decode_test5);
 }
