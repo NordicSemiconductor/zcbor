@@ -32,6 +32,7 @@ set(py_command
   Unabstracted
   QuantityRange
   DoubleMap
+  Floats
   -e
   ${bit_arg}
   )

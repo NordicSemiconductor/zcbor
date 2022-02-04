@@ -16,13 +16,13 @@
  */
 static uint_fast32_t additional_len(uint8_t additional)
 {
-	if (24 <= additional && additional <= 27) {
+	if (ZCBOR_VALUE_IS_1_BYTE <= additional && additional <= ZCBOR_VALUE_IS_8_BYTES) {
 		/* 24 => 1
 		 * 25 => 2
 		 * 26 => 4
 		 * 27 => 8
 		 */
-		return 1 << (additional - 24);
+		return 1 << (additional - ZCBOR_VALUE_IS_1_BYTE);
 	}
 	return 0;
 }
@@ -536,32 +536,96 @@ bool zcbor_bool_expect(zcbor_state_t *state, bool result)
 }
 
 
-bool double_decode(zcbor_state_t *state, double *result)
+bool zcbor_float32_decode(zcbor_state_t *state, float *result)
 {
 	FAIL_IF(state->payload >= state->payload_end);
 	uint8_t major_type = MAJOR_TYPE(*state->payload);
+	uint8_t additional = ADDITIONAL(*state->payload);
 
 	if (major_type != ZCBOR_MAJOR_TYPE_PRIM) {
 		/* Value to be read doesn't have the right type. */
 		ZCBOR_FAIL();
 	}
-	if (!value_extract(state, result, sizeof(*result))) {
+
+	if ((additional != ZCBOR_VALUE_IS_4_BYTES) /* 32-bit floating point number. */
+		|| !value_extract(state, result, sizeof(*result))) {
 		ZCBOR_FAIL();
+	}
+
+	return true;
+}
+
+
+bool zcbor_float32_expect(zcbor_state_t *state, float result)
+{
+	float value;
+
+	if (!zcbor_float32_decode(state, &value)) {
+		ZCBOR_FAIL();
+	}
+	if (value != result) {
+		FAIL_RESTORE();
 	}
 	return true;
 }
 
 
-bool double_expect(zcbor_state_t *state, double *result)
+bool zcbor_float64_decode(zcbor_state_t *state, double *result)
+{
+	FAIL_IF(state->payload >= state->payload_end);
+	uint8_t major_type = MAJOR_TYPE(*state->payload);
+	uint8_t additional = ADDITIONAL(*state->payload);
+
+	if (major_type != ZCBOR_MAJOR_TYPE_PRIM) {
+		/* Value to be read doesn't have the right type. */
+		ZCBOR_FAIL();
+	}
+
+	if ((additional != ZCBOR_VALUE_IS_8_BYTES) /* 64-bit floating point number. */
+		|| !value_extract(state, result, sizeof(*result))) {
+		ZCBOR_FAIL();
+	}
+
+	return true;
+}
+
+
+bool zcbor_float64_expect(zcbor_state_t *state, double result)
 {
 	double value;
 
-	if (!double_decode(state, &value)) {
+	if (!zcbor_float64_decode(state, &value)) {
 		ZCBOR_FAIL();
 	}
-	if (value != *result) {
+	if (value != result) {
 		FAIL_RESTORE();
 	}
+	return true;
+}
+
+
+bool zcbor_float_decode(zcbor_state_t *state, double *result)
+{
+	float float_result;
+
+	if (zcbor_float32_decode(state, &float_result)) {
+		*result = (double)float_result;
+	} else if (!zcbor_float64_decode(state, result)) {
+		ZCBOR_FAIL();
+	}
+
+	return true;
+}
+
+
+bool zcbor_float_expect(zcbor_state_t *state, double result)
+{
+	if (zcbor_float32_expect(state, (float)result)) {
+		/* Do nothing */
+	} else if (!zcbor_float64_expect(state, result)) {
+		ZCBOR_FAIL();
+	}
+
 	return true;
 }
 

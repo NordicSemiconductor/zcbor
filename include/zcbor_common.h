@@ -114,6 +114,11 @@ do {\
 
 
 #define ZCBOR_VALUE_IN_HEADER 23 ///! Values below this are encoded directly in the header.
+#define ZCBOR_VALUE_IS_1_BYTE 24 ///! The next 1 byte contains the value.
+#define ZCBOR_VALUE_IS_2_BYTES 25 ///! The next 2 bytes contain the value.
+#define ZCBOR_VALUE_IS_4_BYTES 26 ///! The next 4 bytes contain the value.
+#define ZCBOR_VALUE_IS_8_BYTES 27 ///! The next 8 bytes contain the value.
+
 #define ZCBOR_BOOL_TO_PRIM 20 ///! In CBOR, false/true have the values 20/21
 
 #define ZCBOR_FLAG_RESTORE 1UL ///! Restore from the backup. Overwrite the current state with the state from the backup.

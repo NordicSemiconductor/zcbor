@@ -461,7 +461,7 @@ bool zcbor_bool_put(zcbor_state_t *state, bool input)
 }
 
 
-bool double_encode(zcbor_state_t *state, double *input)
+bool zcbor_float64_encode(zcbor_state_t *state, const double *input)
 {
 	if (!value_encode(state, ZCBOR_MAJOR_TYPE_PRIM, input,
 			sizeof(*input))) {
@@ -472,9 +472,26 @@ bool double_encode(zcbor_state_t *state, double *input)
 }
 
 
-bool double_put(zcbor_state_t *state, double input)
+bool zcbor_float64_put(zcbor_state_t *state, double input)
 {
-	return double_encode(state, &input);
+	return zcbor_float64_encode(state, &input);
+}
+
+
+bool zcbor_float32_encode(zcbor_state_t *state, const float *input)
+{
+	if (!value_encode(state, ZCBOR_MAJOR_TYPE_PRIM, input,
+			sizeof(*input))) {
+		ZCBOR_FAIL();
+	}
+
+	return true;
+}
+
+
+bool zcbor_float32_put(zcbor_state_t *state, float input)
+{
+	return zcbor_float32_encode(state, &input);
 }
 
 
