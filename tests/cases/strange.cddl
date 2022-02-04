@@ -115,3 +115,11 @@ MyKeys = (
 DoubleMap = {
 	* (uint => { MyKeys })
 }
+
+Floats = [
+	float_32: float32,
+	float_64: float64,
+	pi: 3.1415,
+	e: 2.71828 .size 8,
+	floats: *float,
+]

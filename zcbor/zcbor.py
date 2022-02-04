@@ -541,7 +541,7 @@ class CddlParser:
                 self.max_value = int(value - 1)
             if self.type in ["INT", "NINT"]:
                 self.min_value = int(-1 * (value >> 1) + 1)
-        elif self.type in ["BSTR", "TSTR"]:
+        elif self.type in ["BSTR", "TSTR", "FLOAT"]:
             self.set_size_range(size, size)
         else:
             raise TypeError(".size cannot be applied to %s" % self.type)
@@ -702,13 +702,13 @@ class CddlParser:
             (r'float(?!\w)',
              lambda _: self.type_and_value("FLOAT", lambda: None)),
             (r'float16(?!\w)',
-             lambda _: self.type_value_size("FLOAT", None, 2)),
+             lambda _: self.type_value_size("FLOAT", lambda: None, 2)),
             (r'float32(?!\w)',
-             lambda _: self.type_value_size("FLOAT", None, 4)),
+             lambda _: self.type_value_size("FLOAT", lambda: None, 4)),
             (r'float64(?!\w)',
-             lambda _: self.type_value_size("FLOAT", None, 8)),
+             lambda _: self.type_value_size("FLOAT", lambda: None, 8)),
             (r'\-?\d*\.\d+',
-             lambda num: self.type_and_value("FLOAT", lambda: int(num))),
+             lambda num: self.type_and_value("FLOAT", lambda: float(num))),
             (match_uint + r'\.\.' + match_uint,
              lambda _range: self.type_and_range(
                  "UINT", *map(lambda num: int(num, 0), _range.split("..")))),
@@ -1709,6 +1709,19 @@ class CodeGenerator(CddlXcoder):
                             bit_size = 64
         return bit_size
 
+    def float_type(self):
+        if self.type != "FLOAT":
+            return None
+
+        max_size = self.max_size or 8
+
+        if max_size == 4:
+            return "float"
+        elif max_size == 8:
+            return "double"
+        else:
+            raise TypeError("Floats must have 4 or 8 bytes of precision.")
+
     # Name of the type of this element's actual value variable.
     def val_type_name(self):
         if self.multi_val_condition():
@@ -1720,7 +1733,7 @@ class CodeGenerator(CddlXcoder):
             "INT": lambda: f"int{self.bit_size()}_t",
             "UINT": lambda: f"uint{self.bit_size()}_t",
             "NINT": lambda: f"int{self.bit_size()}_t",
-            "FLOAT": lambda: "float_t",
+            "FLOAT": lambda: self.float_type(),
             "BSTR": lambda: "struct zcbor_string",
             "TSTR": lambda: "struct zcbor_string",
             "BOOL": lambda: "bool",
@@ -1899,6 +1912,22 @@ class CodeGenerator(CddlXcoder):
         tdef = self.anonymous_choice_var()
         return [(tdef, self.enum_type_name())]
 
+    def float_prefix(self):
+        if self.type != "FLOAT":
+            return ""
+
+        min_size = self.min_size or 4
+        max_size = self.max_size or 8
+
+        if max_size == 4:
+            return "float32"
+        elif min_size == 8 and max_size == 8:
+            return "float64"
+        elif min_size <= 4 and max_size == 8:
+            return "float" if self.mode == "decode" else "float64"
+        else:
+            raise TypeError("Floats must have 4 or 8 bytes of precision.")
+
     def single_func_prim_prefix(self):
         if self.type == "OTHER":
             return self.my_types[self.value].single_func_prim_prefix()
@@ -1906,7 +1935,7 @@ class CodeGenerator(CddlXcoder):
             "INT": f"zcbor_int{self.bit_size()}",
             "UINT": f"zcbor_uint{self.bit_size()}",
             "NINT": f"zcbor_int{self.bit_size()}",
-            "FLOAT": f"zcbor_float",
+            "FLOAT": f"zcbor_{self.float_prefix()}",
             "BSTR": f"zcbor_bstr",
             "TSTR": f"zcbor_tstr",
             "BOOL": f"zcbor_bool",

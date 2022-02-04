@@ -1067,6 +1067,65 @@ void test_doublemap(void)
 	zassert_mem_equal(exp_payload_doublemap0, output, out_len, NULL);
 }
 
+void test_floats(void)
+{
+	uint8_t exp_floats_payload2[] = {LIST(4), 0xFA, 0xc7, 0xc0, 0xe6, 0xb7 /* -98765.4321 */,
+			0xFB, 0x41, 0x32, 0xd6, 0x87, 0xe3, 0xd7, 0xa, 0x3d /* 1234567.89 */,
+			0xFB, 0x40, 0x9, 0x21, 0xca, 0xc0, 0x83, 0x12, 0x6f /* 3.1415 */,
+			0xFB, 0x40, 0x5, 0xbf, 0x9, 0x95, 0xaa, 0xf7, 0x90 /* 2.71828 */,
+			END
+	};
+
+	uint8_t exp_floats_payload3[] = {LIST(4), 0xFA, 0x49, 0x96, 0xb4, 0x3f /* 1234567.89 */,
+			0xFB, 0xc0, 0xf8, 0x1c, 0xd6, 0xe9, 0xe1, 0xb0, 0x8a /* -98765.4321 */,
+			0xFB, 0x40, 0x9, 0x21, 0xca, 0xc0, 0x83, 0x12, 0x6f /* 3.1415 */,
+			0xFB, 0x40, 0x5, 0xbf, 0x9, 0x95, 0xaa, 0xf7, 0x90 /* 2.71828 */,
+			END
+	};
+
+	uint8_t exp_floats_payload4[] = {LIST(7), 0xFA, 0x49, 0x96, 0xb4, 0x3f /* 1234567.89 */,
+			0xFB, 0xc0, 0xf8, 0x1c, 0xd6, 0xe9, 0xe1, 0xb0, 0x8a /* -98765.4321 */,
+			0xFB, 0x40, 0x9, 0x21, 0xca, 0xc0, 0x83, 0x12, 0x6f /* 3.1415 */,
+			0xFB, 0x40, 0x5, 0xbf, 0x9, 0x95, 0xaa, 0xf7, 0x90 /* 2.71828 */,
+			0xFB, 0x3f, 0x31, 0xa5, 0x9d, 0xe0, 0x0, 0x0, 0x0 /* 123/456789 */,
+			0xFB, 0x3f, 0x31, 0xa5, 0x9d, 0xd9, 0x57, 0x14, 0x64 /* 123/456789 */,
+			0xFB, 0xbd, 0x50, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 /* -2^(-42) */,
+			END
+	};
+
+	struct Floats input;
+	size_t num_encode;
+	uint8_t output[70];
+
+	input._Floats_float_32 = (float)-98765.4321;
+	input._Floats_float_64 = (double)1234567.89;
+	input._Floats_floats_count = 0;
+	zassert_true(cbor_encode_Floats(
+		output, sizeof(output), &input, &num_encode), NULL);
+	zassert_equal(sizeof(exp_floats_payload2), num_encode, NULL);
+	zassert_mem_equal(exp_floats_payload2, output, num_encode, NULL);
+
+	input._Floats_float_32 = (float)1234567.89;
+	input._Floats_float_64 = (double)-98765.4321;
+	input._Floats_floats_count = 0;
+	zassert_true(cbor_encode_Floats(
+		output, sizeof(output), &input, &num_encode), NULL);
+	zassert_equal(sizeof(exp_floats_payload3), num_encode, NULL);
+	zassert_mem_equal(exp_floats_payload3, output, num_encode, NULL);
+
+	input._Floats_float_32 = (float)1234567.89;
+	input._Floats_float_64 = (double)-98765.4321;
+	input._Floats_floats_count = 3;
+	input._Floats_floats[0] = (float)(123.0/456789.0);
+	input._Floats_floats[1] = (double)(123.0/456789.0);
+	input._Floats_floats[2] = (double)(-1.0/(1LL << 42));
+	zassert_true(cbor_encode_Floats(
+		output, sizeof(output), &input, &num_encode), NULL);
+	zassert_equal(sizeof(exp_floats_payload4), num_encode, NULL);
+	zassert_mem_equal(exp_floats_payload4, output, num_encode, NULL);
+
+}
+
 void test_main(void)
 {
 	ztest_test_suite(cbor_encode_test3,
@@ -1087,7 +1146,8 @@ void test_main(void)
 			 ztest_unit_test(test_string_overflow),
 			 ztest_unit_test(test_quantity_range),
 			 ztest_unit_test(test_unabstracted),
-			 ztest_unit_test(test_doublemap)
+			 ztest_unit_test(test_doublemap),
+			 ztest_unit_test(test_floats)
 	);
 	ztest_run_test_suite(cbor_encode_test3);
 }

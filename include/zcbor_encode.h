@@ -90,8 +90,10 @@ bool zcbor_bool_put(zcbor_state_t *state, bool input);
 bool zcbor_bool_encode(zcbor_state_t *state, const bool *input);
 
 /** Encode a float */
-bool zcbor_float_put(zcbor_state_t *state, double input);
-bool zcbor_float_encode(zcbor_state_t *state, const double *input);
+bool zcbor_float32_put(zcbor_state_t *state, float input);
+bool zcbor_float32_encode(zcbor_state_t *state, const float *input);
+bool zcbor_float64_put(zcbor_state_t *state, double input);
+bool zcbor_float64_encode(zcbor_state_t *state, const double *input);
 
 /** Encode a "nil"/"undefined" primitive value. @p unused should be NULL.
  *

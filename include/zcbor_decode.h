@@ -163,6 +163,10 @@ bool zcbor_bool_decode(zcbor_state_t *state, bool *result);
 bool zcbor_bool_expect(zcbor_state_t *state, bool result);
 
 /** Decode and consume a float */
+bool zcbor_float32_decode(zcbor_state_t *state, float *result);
+bool zcbor_float32_expect(zcbor_state_t *state, float result);
+bool zcbor_float64_decode(zcbor_state_t *state, double *result);
+bool zcbor_float64_expect(zcbor_state_t *state, double result);
 bool zcbor_float_decode(zcbor_state_t *state, double *result);
 bool zcbor_float_expect(zcbor_state_t *state, double result);
 
