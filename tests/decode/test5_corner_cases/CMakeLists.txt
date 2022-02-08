@@ -12,11 +12,11 @@ include(../../cmake/test_template.cmake)
 set(py_command
   ${PYTHON_EXECUTABLE}
   ${CMAKE_CURRENT_LIST_DIR}/../../../zcbor/zcbor.py
-  -c ${CMAKE_CURRENT_LIST_DIR}/../../cases/strange.cddl
+  -c ${CMAKE_CURRENT_LIST_DIR}/../../cases/corner_cases.cddl
   --default-max-qty 6
   code
-  --output-c ${PROJECT_BINARY_DIR}/src/strange.c
-  --output-h ${PROJECT_BINARY_DIR}/include/strange.h
+  --output-c ${PROJECT_BINARY_DIR}/src/corner_cases.c
+  --output-h ${PROJECT_BINARY_DIR}/include/corner_cases.h
   --copy-sources
   -t NestedListMap NestedMapListMap
     Numbers
@@ -50,7 +50,7 @@ execute_process(
 )
 
 add_library(strange
-  ${PROJECT_BINARY_DIR}/src/strange.c
+  ${PROJECT_BINARY_DIR}/src/corner_cases.c
   ${PROJECT_BINARY_DIR}/src/zcbor_decode.c
   ${PROJECT_BINARY_DIR}/src/zcbor_common.c)
 

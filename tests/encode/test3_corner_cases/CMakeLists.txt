@@ -11,10 +11,10 @@ include(../../cmake/test_template.cmake)
 
 set(py_command
   zcbor
-  -c ${CMAKE_CURRENT_LIST_DIR}/../../cases/strange.cddl
+  -c ${CMAKE_CURRENT_LIST_DIR}/../../cases/corner_cases.cddl
   --default-max-qty 6
   code
-  --output-cmake ${PROJECT_BINARY_DIR}/strange.cmake
+  --output-cmake ${PROJECT_BINARY_DIR}/corner_cases.cmake
   --copy-sources
   -t
   NestedListMap NestedMapListMap
@@ -44,12 +44,12 @@ execute_process(
   COMMAND_ERROR_IS_FATAL ANY
   )
 
-include(${PROJECT_BINARY_DIR}/strange.cmake)
+include(${PROJECT_BINARY_DIR}/corner_cases.cmake)
 
-target_link_libraries(strange PRIVATE zephyr_interface)
-target_link_libraries(app PRIVATE strange)
+target_link_libraries(corner_cases PRIVATE zephyr_interface)
+target_link_libraries(app PRIVATE corner_cases)
 
 if (NOT VERBOSE)
   # VERBOSE means including printk which doesn't build with these options.
-  target_compile_options(strange PRIVATE -Wpedantic -Wconversion)
+  target_compile_options(corner_cases PRIVATE -Wpedantic -Wconversion)
 endif()
