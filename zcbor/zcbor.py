@@ -2756,14 +2756,14 @@ If omitted, the format is inferred from the file name.
     if not args.no_prelude:
         args.cddl.append(open(PRELUDE_path, 'r'))
 
+    if hasattr(args, "decode") and (args.decode == args.encode):
+        parser.error("Please specify exactly one of --decode or --encode.")
+
     return args
 
 
 def process_code(args):
     mode = "decode" if args.decode else "encode"
-
-    if args.decode == args.encode:
-        args.error("Please specify exactly one of --decode or --encode.")
 
     print("Parsing files: " + ", ".join((c.name for c in args.cddl)))
 
