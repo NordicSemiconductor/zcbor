@@ -5,7 +5,7 @@
  */
 
 #include <ztest.h>
-#include "strange_encode.h"
+#include "corner_cases_encode.h"
 #include "zcbor_debug.h" // Enables use of print functions when debugging tests.
 
 #define CONCAT_BYTE(a,b) a ## b
