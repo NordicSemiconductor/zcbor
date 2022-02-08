@@ -6,6 +6,7 @@
 
 cmake_minimum_required(VERSION 3.13.1)
 
+set(PROJECT_NAME test1_suit_old_formats)
 include(../../cmake/test_template.cmake)
 
 set(py_command3
