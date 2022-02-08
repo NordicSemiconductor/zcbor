@@ -2756,14 +2756,14 @@ If omitted, the format is inferred from the file name.
     if not args.no_prelude:
         args.cddl.append(open(PRELUDE_path, 'r'))
 
-    return args
+    return args, parser
 
 
-def process_code(args):
+def process_code(args, parser):
     mode = "decode" if args.decode else "encode"
 
     if args.decode == args.encode:
-        args.error("Please specify exactly one of --decode or --encode.")
+        parser.error("Please specify exactly one of --decode or --encode.")
 
     print("Parsing files: " + ", ".join((c.name for c in args.cddl)))
 
@@ -2832,7 +2832,7 @@ def process_code(args):
     renderer.render(output_h, output_c, output_h_types, output_cmake, c_code_dir, h_code_dir)
 
 
-def process_convert(args):
+def process_convert(args, parser):
     cddl_contents = linesep.join((c.read() for c in args.cddl))
     cddl_res = DataTranslator.from_cddl(cddl_contents, args.default_max_qty)
 
@@ -2881,8 +2881,8 @@ def process_convert(args):
 
 
 def main():
-    args = parse_args()
-    args.process(args)
+    args, parser = parse_args()
+    args.process(args, parser)
 
 
 if __name__ == "__main__":
