@@ -532,6 +532,14 @@ class TestCLI(TestCase):
         self.assertEqual(0, call1.returncode)
         self.assertEqual(dumps({"test": bytes.fromhex("1234abcd"), "test2": cbor2.CBORTag(1234, bytes.fromhex("1a2b3c4d")), ("test3",): dumps(1234)}), stdout1)
 
+    def test_decode_encode(self):
+        args = ["zcbor", "--cddl", str(p_map_bstr_cddl), "code", "-d", "-e", "-t", "map"]
+        call1 = Popen(args, stdout=PIPE, stderr=PIPE)
+
+        _, stderr1 = call1.communicate()
+        self.assertNotEqual(0, call1.returncode)
+        self.assertIn(b"error: Please specify exactly one of --decode or --encode", stderr1)
+
 
 class TestOptional(TestCase):
     def test_0(self):
