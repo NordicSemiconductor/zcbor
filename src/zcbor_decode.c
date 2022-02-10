@@ -641,7 +641,7 @@ bool zcbor_float_expect(zcbor_state_t *state, double result)
 }
 
 
-bool zcbor_any_decode(zcbor_state_t *state, void *result)
+bool zcbor_any_skip(zcbor_state_t *state, void *result)
 {
 	zcbor_assert(result == NULL,
 			"'any' type cannot be returned, only skipped.\r\n");
@@ -664,7 +664,7 @@ bool zcbor_any_decode(zcbor_state_t *state, void *result)
 			payload_bak = state->payload;
 			state->elem_count = INDET_LEN_ELEM_COUNT;
 			if (!zcbor_multi_decode(0, INDET_LEN_ELEM_COUNT, &num_decode,
-					(zcbor_decoder_t *)zcbor_any_decode, state,
+					(zcbor_decoder_t *)zcbor_any_skip, state,
 					NULL, 0)
 					|| (state->payload >= state->payload_end)
 					|| !(*(state->payload++) == 0xFF)) {
@@ -698,7 +698,7 @@ bool zcbor_any_decode(zcbor_state_t *state, void *result)
 			temp_elem_count = state->elem_count;
 			state->elem_count = value;
 			if (!zcbor_multi_decode(value, value, &num_decode,
-					(void *)zcbor_any_decode, state,
+					(void *)zcbor_any_skip, state,
 					NULL, 0)) {
 				state->elem_count = elem_count_bak;
 				state->payload = payload_bak;

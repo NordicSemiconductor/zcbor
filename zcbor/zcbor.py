@@ -1956,7 +1956,9 @@ class CodeGenerator(CddlXcoder):
         """Function name for xcoding this type, when it is a primitive type"""
         func_prefix = self.single_func_prim_prefix()
         if self.mode == "decode":
-            if not self.is_unambiguous_value():
+            if self.type == "ANY":
+                func = "zcbor_any_skip"
+            elif not self.is_unambiguous_value():
                 func = f"{func_prefix}_decode"
             elif not union_uint:
                 func = f"{func_prefix}_expect"
