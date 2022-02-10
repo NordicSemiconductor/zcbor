@@ -185,7 +185,7 @@ bool zcbor_undefined_expect(zcbor_state_t *state, void *unused);
  * @param[in]    unused  Unused parameter to maintain signature parity with
  *                       @ref zcbor_decoder_t.
  */
-bool zcbor_any_decode(zcbor_state_t *state, void *unused);
+bool zcbor_any_skip(zcbor_state_t *state, void *unused);
 
 /** Decode and consume a BSTR header.
  *
