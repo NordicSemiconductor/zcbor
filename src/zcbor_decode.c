@@ -34,17 +34,17 @@ static uint_fast32_t additional_len(uint8_t additional)
 #define ADDITIONAL(header_byte) ((header_byte) & 0x1F)
 
 /** The value where the INDET_LEN bit (bit 31) is set, and elem_count is 0.
- *  This represents the minimum value elem_count can have for indeterminate
+ *  This represents the minimum value elem_count can have for indefinite
  *  length arrays. It also functions as a mask for the INDET_LEN bit.
  */
 #define MIN_INDET_LEN_ELEM_COUNT 0x80000000
 
-/** Check the most significant bit to see if we are processing an indeterminate
+/** Check the most significant bit to see if we are processing an indefinite
  *  length array.
  */
 #define INDET_LEN(elem_count) (elem_count >= MIN_INDET_LEN_ELEM_COUNT)
 
-/** Initial value for elem_count for indeterminate length arrays. */
+/** Initial value for elem_count for indefinite length arrays. */
 #define INDET_LEN_ELEM_COUNT 0xFFFFFFF0
 
 
@@ -405,7 +405,7 @@ static bool list_map_start_decode(zcbor_state_t *state,
 	}
 
 	if (ADDITIONAL(*state->payload) == 0x1F) {
-		/* Indeterminate length array. */
+		/* Indefinite length array. */
 		new_elem_count = INDET_LEN_ELEM_COUNT;
 		FAIL_IF(state->elem_count == 0);
 		state->payload++;

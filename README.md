@@ -227,13 +227,13 @@ Major types `pint`, `nint`, `tag`, and `prim` elements have no payload, only _Va
     * 25: Interpret the _Value_ as an IEEE 754 float16.
     * 26: Interpret the _Value_ as an IEEE 754 float32.
     * 27: Interpret the _Value_ as an IEEE 754 float64.
-    * 31: End of an indeterminate-length `list` or `map`.
+    * 31: End of an indefinite-length `list` or `map`.
 
 For `bstr`, `tstr`, `list`, and `map`, the _Value_ describes the length of the _Payload_.
 For `bstr` and `tstr`, the length is in bytes, for `list`, the length is in number of elements, and for `map`, the length is in number of key/value element pairs.
 
 For `list` and `map`, sub elements are regular CBOR elements with their own _Header_, _Value_ and _Payload_. `list`s and `map`s can be recursively encoded.
-If a `list` or `map` has _Additional info_ 31, it is "indeterminate-length", which means it has an "unknown" number of elements.
+If a `list` or `map` has _Additional info_ 31, it is "indefinite-length", which means it has an "unknown" number of elements.
 Instead, its end is marked by a `prim` with _Additional info_ 31 (byte value 0xFF).
 
 Usage Example

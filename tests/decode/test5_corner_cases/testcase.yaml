@@ -2,7 +2,7 @@ tests:
   zcbor.decode.test5_corner_cases:
     platform_allow: native_posix native_posix_64
     tags: zcbor decode
-  zcbor.decode.test5_corner_cases.indeterminate_length_arrays:
+  zcbor.decode.test5_corner_cases.indefinite_length_arrays:
     platform_allow: native_posix native_posix_64
     tags: zcbor decode
-    extra_args: TEST_INDETERMINATE_LENGTH_ARRAYS=1
+    extra_args: TEST_INDEFINITE_LENGTH_ARRAYS=1
