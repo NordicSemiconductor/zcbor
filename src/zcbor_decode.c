@@ -654,6 +654,17 @@ bool zcbor_any_skip(zcbor_state_t *state, void *result)
 	uint_fast32_t temp_elem_count;
 	uint_fast32_t elem_count_bak = state->elem_count;
 	uint8_t const *payload_bak = state->payload;
+	uint64_t tag_dummy;
+
+	payload_bak = state->payload;
+
+	if (!zcbor_multi_decode(0, INDET_LEN_ELEM_COUNT, &num_decode,
+			(zcbor_decoder_t *)zcbor_tag_decode, state,
+			(void *)&tag_dummy, 0)) {
+		state->elem_count = elem_count_bak;
+		state->payload = payload_bak;
+		ZCBOR_FAIL();
+	}
 
 	if ((major_type == ZCBOR_MAJOR_TYPE_MAP) || (major_type == ZCBOR_MAJOR_TYPE_LIST)) {
 		if (additional == ZCBOR_VALUE_IS_INDEFINITE_LENGTH) {
