@@ -58,8 +58,8 @@ target_include_directories(strange PUBLIC ${PROJECT_BINARY_DIR}/include)
 target_link_libraries(strange PRIVATE zephyr_interface)
 target_link_libraries(app PRIVATE strange)
 
-if (TEST_INDETERMINATE_LENGTH_ARRAYS)
-  target_compile_definitions(app PUBLIC TEST_INDETERMINATE_LENGTH_ARRAYS)
+if (TEST_INDEFINITE_LENGTH_ARRAYS)
+  target_compile_definitions(app PUBLIC TEST_INDEFINITE_LENGTH_ARRAYS)
 endif()
 
 if (NOT VERBOSE)

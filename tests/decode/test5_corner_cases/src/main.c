@@ -10,7 +10,7 @@
 
 #define CONCAT_BYTE(a,b) a ## b
 
-#ifdef TEST_INDETERMINATE_LENGTH_ARRAYS
+#ifdef TEST_INDEFINITE_LENGTH_ARRAYS
 #define LIST(num) 0x9F /* Use short count 31 (indefinite-length). Note that the 'num' argument is ignored */
 #define LIST2(num) 0x9F /* Use short count 31 (indefinite-length). Note that the 'num' argument is ignored */
 #define LIST3(num) 0x9F /* Use short count 31 (indefinite-length). Note that the 'num' argument is ignored */
@@ -553,7 +553,7 @@ void test_map(void)
 		END
 	};
 
-	/* Wrong list length. Will not fail for indeterminate length arrays. */
+	/* Wrong list length. Will not fail for indefinite length arrays. */
 	const uint8_t payload_map4_inv[] = {
 		MAP(6), LIST(2), 0x05, 0x06, END 0xF4, // [5,6] => false
 		0x07, 0x01, // 7 => 1
@@ -598,7 +598,7 @@ void test_map(void)
 	zassert_equal(0, map._Map_twotothree[1]._Map_twotothree.len, NULL);
 	zassert_equal(0, map._Map_twotothree[2]._Map_twotothree.len, NULL);
 
-#ifdef TEST_INDETERMINATE_LENGTH_ARRAYS
+#ifdef TEST_INDEFINITE_LENGTH_ARRAYS
 	zassert_true(
 #else
 	zassert_false(
@@ -640,7 +640,7 @@ void test_empty_map(void)
 	zcbor_new_state(&state, 1, payload4, sizeof(payload4), 3);
 
 	zassert_true(cbor_decode_EmptyMap(payload1, sizeof(payload1), NULL, NULL), NULL);
-#ifdef TEST_INDETERMINATE_LENGTH_ARRAYS
+#ifdef TEST_INDEFINITE_LENGTH_ARRAYS
 	zassert_true(cbor_decode_EmptyMap(payload2_inv, sizeof(payload2_inv), NULL, NULL), NULL);
 #else
 	zassert_false(cbor_decode_EmptyMap(payload2_inv, sizeof(payload2_inv), NULL, NULL), NULL);

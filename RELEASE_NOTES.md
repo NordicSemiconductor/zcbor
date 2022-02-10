@@ -95,7 +95,7 @@ Any new bugs, requests, or missing features should be reported as [Github issues
 
 ### C Libraries
  * Refactor cbor_common.c
- * Add support for indeterminate length arrays in cbor_decode.c.
+ * Add support for indefinite length arrays in cbor_decode.c.
 
 ### Tests
  * Move all cddl files into tests/cases
