@@ -1,0 +1,33 @@
+lwm2m_senml = [1* record]
+
+record = {
+	? bn => tstr,        ; Base Name
+	? bt => numeric,     ; Base Time
+	? n => tstr,        ; Name
+	? t => numeric,     ; Time
+	? ( v => numeric // ; Numeric Value
+		vs => tstr //   ; String Value
+		vb => bool //   ; Boolean Value
+		vd => bstr ), ; Data Value
+	* key-value-pair
+}
+
+; now define the generic versions
+key-value-pair = ( label => value )
+
+label = non-b-label / b-label
+non-b-label = tstr / uint
+b-label = tstr / nint
+
+value = tstr / bstr / numeric / bool
+
+; numeric = number / decfrac
+numeric = int
+
+
+bver = -1  n  = 0   s  = 5
+bn  = -2   u  = 1   t  = 6
+bt  = -3   v  = 2   ut = 7
+bu  = -4   vs = 3   vd = 8
+bv  = -5   vb = 4
+bs  = -6
