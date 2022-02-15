@@ -22,11 +22,7 @@ SUIT_Outer_Wrapper = {
 }
 suit-authentication-wrapper = 1
 suit-manifest = 2
-suit-dependency-resolution = 7
-suit-payload-fetch = 8
-suit-install = 9
 suit-text = 13
-suit-coswid = 14
 
 SUIT_Authentication_Wrapper = [ * COSE_Auth ]
 COSE_Auth = COSE_Mac_Tagged /

@@ -292,6 +292,8 @@ class CddlParser:
                 result[key] += value
                 result[key] = result[key].lstrip(slashes)  # strip from front
             else:
+                if key in result:
+                    raise ValueError(f"Duplicate CDDL type found: {key}")
                 result[key] = value
         return dict(result)
 
