@@ -85,6 +85,15 @@ class Test0(Testn):
         self.assertEqual(34768, self.decoded.suit_manifest.suit_common.suit_common_sequence[0].suit_common_sequence.union[0].SUIT_Common_Commands.suit_directive_override_parameters.map[3].suit_parameter_image_size)
 
 
+class Test0_Inv(Testn):
+    def __init__(self, *args, **kwargs):
+        super(Test0_Inv, self).__init__(*args, **kwargs)
+
+    def test_duplicate_type(self):
+        with self.assertRaises(ValueError, msg="Duplicate CDDL type found"):
+            self.decode_file(p_test_vectors12[0], p_manifest12, p_manifest12)
+
+
 class Test1(Testn):
     def __init__(self, *args, **kwargs):
         super(Test1, self).__init__(*args, **kwargs)
