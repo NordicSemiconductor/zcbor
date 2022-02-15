@@ -940,7 +940,7 @@ class CddlXcoder(CddlParser):
         return self.multi_var_condition() or self.repeated_multi_var_condition()
 
     def is_unambiguous_value(self):
-        return (self.type in ["NIL", "UNDEF"]
+        return (self.type in ["NIL", "UNDEF", "ANY"]
                 or (self.type in ["INT", "NINT", "UINT", "FLOAT", "BSTR", "TSTR", "BOOL"]
                     and self.value is not None)
                 or (self.type == "BSTR" and self.cbor is not None and self.cbor.is_unambiguous())
