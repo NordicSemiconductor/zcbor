@@ -115,6 +115,7 @@ static bool value_extract(zcbor_state_t *state,
 		uint_fast32_t len = additional_len(additional);
 
 		FAIL_AND_DECR_IF(len > result_len);
+		FAIL_AND_DECR_IF(len == 0); // additional_len() did not recognize the additional value.
 		FAIL_AND_DECR_IF((state->payload + len)
 				> state->payload_end);
 
