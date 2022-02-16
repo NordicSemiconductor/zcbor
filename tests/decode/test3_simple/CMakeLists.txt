@@ -25,10 +25,15 @@ set(py_command_serial_recovery
   zcbor
   -c ${CMAKE_CURRENT_LIST_DIR}/../../cases/serial_recovery.cddl
   code
-  --output-cmake ${PROJECT_BINARY_DIR}/serial_recovery.cmake
+  --oh ${PROJECT_BINARY_DIR}/include/serial/serial_recovery_decode.h
+  --oht ${PROJECT_BINARY_DIR}/include/serial/serial_recovery_decode_types.h
+  --oc ${PROJECT_BINARY_DIR}/src/serial/serial_recovery_decode.c
   -t Upload
   -d
   ${bit_arg}
+
+  # Testing the --include-prefix option
+  --include-prefix serial
   )
 execute_process(
   COMMAND ${py_command_pet}
@@ -40,8 +45,12 @@ execute_process(
   )
 
 include(${PROJECT_BINARY_DIR}/pet.cmake)
-include(${PROJECT_BINARY_DIR}/serial_recovery.cmake)
+
+zephyr_include_directories(${PROJECT_BINARY_DIR}/include
+  ${CMAKE_CURRENT_LIST_DIR}/../../../include)
+zephyr_sources(${PROJECT_BINARY_DIR}/src/serial/serial_recovery_decode.c
+  ${CMAKE_CURRENT_LIST_DIR}/../../../src/zcbor_decode.c
+  ${CMAKE_CURRENT_LIST_DIR}/../../../src/zcbor_common.c)
 
 target_link_libraries(pet PRIVATE zephyr_interface)
-target_link_libraries(serial_recovery PRIVATE zephyr_interface)
-target_link_libraries(app PRIVATE pet serial_recovery)
+target_link_libraries(app PRIVATE pet)
