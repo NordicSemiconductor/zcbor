@@ -2585,19 +2585,21 @@ target_include_directories({target_name} PUBLIC
     )
 """
 
-    def render(self, h_file, c_file, type_file, cmake_file=None, output_c_dir=None,
+    def render(self, h_file, c_file, type_file, include_prefix, cmake_file=None, output_c_dir=None,
                output_h_dir=None):
-        _, h_name = path.split(h_file.name)
 
         # Create and populate the generated c and h file.
         makedirs("./" + path.dirname(c_file.name), exist_ok=True)
+
+        h_name = Path(include_prefix, Path(h_file.name).name)
+        type_def_name = Path(include_prefix, Path(type_file.name).name)
 
         print("Writing to " + c_file.name)
         c_file.write(self.render_c_file(header_file_name=h_name))
 
         print("Writing to " + h_file.name)
         h_file.write(self.render_h_file(
-            type_def_file=Path(type_file.name).name, header_guard=self.header_guard(h_file.name)))
+            type_def_file=type_def_name, header_guard=self.header_guard(h_file.name)))
 
         print("Writing to " + type_file.name)
         type_file.write(self.render_type_file(header_guard=self.header_guard(type_file.name)))
@@ -2692,8 +2694,10 @@ This option works with or without the --copy-sources option.""")
         "-b", "--default-bit-size", required=False, type=int, default=32, choices=[32, 64],
         help="""Default bit size of integers in code. When integers have no explicit bounds,
 assume they have this bit width. Should follow the bit width of the architecture
-the code will be running on."""
-    )
+the code will be running on.""")
+    code_parser.add_argument(
+        "--include-prefix", default="",
+        help="""When #include'ing generated files, add this path prefix to the filename.""")
     code_parser.set_defaults(process=process_code)
 
     convert_parser = subparsers.add_parser(
@@ -2829,7 +2833,8 @@ def process_code(args):
         c_code_dir = new_c_code_dir
         h_code_dir = new_h_code_dir
 
-    renderer.render(output_h, output_c, output_h_types, output_cmake, c_code_dir, h_code_dir)
+    renderer.render(output_h, output_c, output_h_types, args.include_prefix,
+                    output_cmake, c_code_dir, h_code_dir)
 
 
 def process_convert(args):
