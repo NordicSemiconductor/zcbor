@@ -30,27 +30,18 @@ jobs:
       run: |
         python3 -m unittest run_tests
 
-
-  merge-test:
+  merge-test-1:
     runs-on: ubuntu-latest
-    name: Merge tests
-
+    name: Merge tests 1
     steps:
     - name: Checkout the code
       uses: actions/checkout@v2
 
-    - name: Install west and dependencies
-      run: |
-        pip3 install -U pip
-        pip3 install -U setuptools
-        pip3 install -U -r scripts/requirements.txt
-
-    - name: Generate and install zcbor package
-      run: |
-        python3 setup.py sdist bdist_wheel
-        pip3 install dist/zcbor-*.tar.gz
-        pip3 uninstall -y zcbor
-        pip3 install dist/zcbor-*.whl
+    - name: Prepare and run tests
+      uses: ./.github/actions/prepare_and_run_tests
+      with:
+        tags: unit
+        asserts: both
 
     - name: Run pycodestyle
       run: |
@@ -65,95 +56,71 @@ jobs:
       run: |
         python3 -m unittest run_tests
 
-    - name: Clone zephyr
-      working-directory: tests
-      run: |
-        git clone --depth 1 https://github.com/zephyrproject-rtos/zephyr
+  merge-test-2:
+    runs-on: ubuntu-latest
+    name: Merge tests 2
+    steps:
+    - name: Checkout the code
+      uses: actions/checkout@v2
+    - name: Prepare and run tests
+      uses: ./.github/actions/prepare_and_run_tests
+      with:
+        tags: decode
+        asserts: without
 
-    - name: West init
-      working-directory: tests
-      run: |
-        export ZEPHYR_BASE=$(pwd)/zephyr
-        export ZEPHYR_TOOLCHAIN_VARIANT=host
-        export PATH="$HOME/.local/bin:$PATH"
-        west init -l zephyr
+  merge-test-3:
+    runs-on: ubuntu-latest
+    name: Merge tests 3
+    steps:
+    - name: Checkout the code
+      uses: actions/checkout@v2
+    - name: Prepare and run tests
+      uses: ./.github/actions/prepare_and_run_tests
+      with:
+        tags: decode
+        asserts: with
 
-    - name: Install twister dependencies
-      working-directory: tests
-      run: |
-        export ZEPHYR_BASE=$(pwd)/zephyr
-        pip3 install -U -r $ZEPHYR_BASE/scripts/requirements-build-test.txt
-        pip3 install -U -r $ZEPHYR_BASE/scripts/requirements-run-test.txt
+  merge-test-4:
+    runs-on: ubuntu-latest
+    name: Merge tests 4
+    steps:
+    - name: Checkout the code
+      uses: actions/checkout@v2
+    - name: Prepare and run tests
+      uses: ./.github/actions/prepare_and_run_tests
+      with:
+        tags: encode
+        asserts: without
 
-    - name: Install packages
-      run: |
-        sudo apt update
-        sudo apt install -y gcc-multilib
-
-    - name: Run decode tests
-      working-directory: tests
-      run: |
-        export ZEPHYR_BASE=$(pwd)/zephyr
-        export ZEPHYR_TOOLCHAIN_VARIANT=host
-        $ZEPHYR_BASE/scripts/twister -i -T . -W --platform native_posix --platform native_posix_64 -t decode
-
-    - name: Run encode tests
-      working-directory: tests
-      run: |
-        export ZEPHYR_BASE=$(pwd)/zephyr
-        export ZEPHYR_TOOLCHAIN_VARIANT=host
-        $ZEPHYR_BASE/scripts/twister -i -T . -W --platform native_posix --platform native_posix_64 -t encode
-
-    - name: Run unit tests
-      working-directory: tests
-      run: |
-        export ZEPHYR_BASE=$(pwd)/zephyr
-        export ZEPHYR_TOOLCHAIN_VARIANT=host
-        $ZEPHYR_BASE/scripts/twister -i -T . -W --platform native_posix --platform native_posix_64 -t unit
-
-    - name: Run decode tests with asserts
-      working-directory: tests
-      run: |
-        export ZEPHYR_BASE=$(pwd)/zephyr
-        export ZEPHYR_TOOLCHAIN_VARIANT=host
-        $ZEPHYR_BASE/scripts/twister -i -T . -W --platform native_posix --platform native_posix_64 -t decode -x VERBOSE=ON -x ASSERTS=ON
-
-    - name: Run encode tests with asserts
-      working-directory: tests
-      run: |
-        export ZEPHYR_BASE=$(pwd)/zephyr
-        export ZEPHYR_TOOLCHAIN_VARIANT=host
-        $ZEPHYR_BASE/scripts/twister -i -T . -W --platform native_posix --platform native_posix_64 -t encode -x VERBOSE=ON -x ASSERTS=ON
-
-    - name: Run unit tests with asserts
-      working-directory: tests
-      run: |
-        export ZEPHYR_BASE=$(pwd)/zephyr
-        export ZEPHYR_TOOLCHAIN_VARIANT=host
-        $ZEPHYR_BASE/scripts/twister -i -T . -W --platform native_posix --platform native_posix_64 -t unit -x VERBOSE=ON -x ASSERTS=ON
+  merge-test-5:
+    runs-on: ubuntu-latest
+    name: Merge tests 5
+    steps:
+    - name: Checkout the code
+      uses: actions/checkout@v2
+    - name: Prepare and run tests
+      uses: ./.github/actions/prepare_and_run_tests
+      with:
+        tags: encode
+        asserts: with
 
   release-test:
     runs-on: ubuntu-latest
     name: Release tests
-    needs: [merge-test, merge-test-win]
+    needs:
+    - merge-test-win
+    - merge-test-1
+    - merge-test-2
+    - merge-test-3
+    - merge-test-4
+    - merge-test-5
     if: "startswith(github.head_ref, 'release/')"
-
     steps:
     - name: Checkout the code
       uses: actions/checkout@v2
 
-    - name: Install dependencies
-      run: |
-        pip3 install -U pip
-        pip3 install -U setuptools
-        pip3 install -U -r scripts/requirements-base.txt
-
-    - name: Generate and install zcbor package
-      run: |
-        python3 setup.py sdist bdist_wheel
-        pip3 install dist/zcbor-*.tar.gz
-        pip3 uninstall -y zcbor
-        pip3 install dist/zcbor-*.whl
+    - name: Prepare zcbor
+      uses: ./.github/actions/prepare_and_run_tests
 
     - name: Run python release tests
       working-directory: tests/scripts
