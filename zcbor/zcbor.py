@@ -1538,7 +1538,7 @@ CBOR-formatted bstr, all elements must be bstrs. If not, it is a programmer erro
                         new_key = tuple(new_key)
                     retval[new_key] = new_val
                 else:
-                    retval[key] = val
+                    retval[key] = self._to_cbor_obj(val)
             return retval
         return obj
 
