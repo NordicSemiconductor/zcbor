@@ -526,7 +526,7 @@ class TestCLI(TestCase):
         self.do_testn(5)
 
     def test_map_bstr(self):
-        args = ["zcbor", "--cddl", p_map_bstr_cddl, "convert", "--input", p_map_bstr_yaml, "-t", "map", "--output", "-"]
+        args = ["zcbor", "--cddl", str(p_map_bstr_cddl), "convert", "--input", str(p_map_bstr_yaml), "-t", "map", "--output", "-"]
         call1 = Popen(args, stdout=PIPE)
         stdout1, _ = call1.communicate()
         self.assertEqual(0, call1.returncode)
