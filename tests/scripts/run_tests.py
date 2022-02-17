@@ -38,6 +38,8 @@ p_optional = Path(p_tests, 'cases', 'optional.cddl')
 p_cose = Path(p_tests, 'cases', 'cose.cddl')
 p_manifest14_priv = Path(p_tests, 'cases', 'manifest14.priv')
 p_manifest14_pub = Path(p_tests, 'cases', 'manifest14.pub')
+p_map_bstr_cddl = Path(p_tests, 'cases', 'map_bstr.cddl')
+p_map_bstr_yaml = Path(p_tests, 'cases', 'map_bstr.yaml')
 
 
 class Testn(TestCase):
@@ -522,6 +524,13 @@ class TestCLI(TestCase):
 
     def test_5(self):
         self.do_testn(5)
+
+    def test_map_bstr(self):
+        args = ["zcbor", "--cddl", p_map_bstr_cddl, "convert", "--input", p_map_bstr_yaml, "-t", "map", "--output", "-"]
+        call1 = Popen(args, stdout=PIPE)
+        stdout1, _ = call1.communicate()
+        self.assertEqual(0, call1.returncode)
+        self.assertEqual(dumps({"test": bytes.fromhex("1234abcd"), "test2": cbor2.CBORTag(1234, bytes.fromhex("1a2b3c4d")), ("test3",): dumps(1234)}), stdout1)
 
 
 class TestOptional(TestCase):

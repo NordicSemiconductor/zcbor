@@ -1,0 +1,10 @@
+test:
+  bstr: "1234abcd"
+test2:
+  tag: 1234
+  val:
+    bstr: "1a2b3c4d"
+keyval0:
+  key: ["test3"]
+  val:
+    bstr: 1234

@@ -1,0 +1,5 @@
+map = {
+	"test" => bstr,
+	"test2" => #6.1234(bstr),
+	["test3"] => bstr .cbor 1234,
+}
