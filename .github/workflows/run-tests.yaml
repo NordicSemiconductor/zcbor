@@ -3,6 +3,34 @@ name: Run tests
 on: [pull_request]
 
 jobs:
+  merge-test-win:
+    runs-on: windows-latest
+    name: Merge tests (Windows)
+
+    steps:
+    - name: Checkout the code
+      uses: actions/checkout@v2
+
+    - name: Install west and dependencies
+      run: |
+        pip install -U pip
+        pip install -U setuptools
+        pip install -U wheel
+        pip install -U -r scripts/requirements.txt
+
+    - name: Generate and install zcbor package
+      run: |
+        python setup.py bdist_wheel
+        pip install dist/zcbor-0.3.99-py3-none-any.whl
+        pip uninstall -y zcbor
+        pip install -e .
+
+    - name: Run python tests
+      working-directory: tests/scripts
+      run: |
+        python3 -m unittest run_tests
+
+
   merge-test:
     runs-on: ubuntu-latest
     name: Merge tests
@@ -107,7 +135,7 @@ jobs:
   release-test:
     runs-on: ubuntu-latest
     name: Release tests
-    needs: merge-test
+    needs: [merge-test, merge-test-win]
     if: "startswith(github.head_ref, 'release/')"
 
     steps:

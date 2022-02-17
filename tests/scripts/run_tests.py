@@ -471,7 +471,7 @@ class Test17Inv(Test11Inv):
 
 class TestCLI(TestCase):
     def get_std_args(self, input):
-        return ["zcbor", "--cddl", p_manifest12, "--default-max-qty", "16", "convert", "--input", input, "-t", "SUIT_Envelope_Tagged"]
+        return ["zcbor", "--cddl", str(p_manifest12), "--default-max-qty", "16", "convert", "--input", str(input), "-t", "SUIT_Envelope_Tagged"]
 
     def do_testn(self, n):
         call0 = Popen(self.get_std_args(p_test_vectors12[n]) + ["--output", "-", "--output-as", "cbor"], stdout=PIPE)
