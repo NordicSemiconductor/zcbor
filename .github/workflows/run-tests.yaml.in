@@ -1,0 +1,250 @@
+name: Run tests
+
+on: [pull_request]
+
+anchors:
+  checkout_code: &checkout_code
+    name: Checkout the code
+    uses: actions/checkout@v2
+
+  install_deps: &install_deps
+    name: Install west and dependencies
+    run: |
+      pip3 install -U pip
+      pip3 install -U setuptools
+      pip3 install -U -r scripts/requirements.txt
+
+  install_zcbor: &install_zcbor
+    name: Install zcbor package
+    run: |
+      python3 setup.py bdist_wheel
+      pip3 install dist/zcbor-*.whl
+
+  clone_zephyr: &clone_zephyr
+    name: Clone zephyr
+    working-directory: tests
+    run: |
+      git clone --depth 1 https://github.com/zephyrproject-rtos/zephyr
+
+  west_init: &west_init
+    name: West init
+    working-directory: tests
+    run: |
+      export ZEPHYR_BASE=$(pwd)/zephyr
+      export ZEPHYR_TOOLCHAIN_VARIANT=host
+      export PATH="$HOME/.local/bin:$PATH"
+      west init -l zephyr
+
+  twister_deps: &twister_deps
+    name: Install twister dependencies
+    working-directory: tests
+    run: |
+      export ZEPHYR_BASE=$(pwd)/zephyr
+      pip3 install -U -r $ZEPHYR_BASE/scripts/requirements-build-test.txt
+      pip3 install -U -r $ZEPHYR_BASE/scripts/requirements-run-test.txt
+
+  install_packages: &install_packages
+    name: Install packages
+    run: |
+      sudo apt update
+      sudo apt install -y gcc-multilib
+
+jobs:
+  merge-test-win:
+    runs-on: windows-latest
+    name: Merge tests (Windows)
+
+    steps:
+    - *checkout_code
+    - *install_deps
+
+    - name: Generate and install zcbor package
+      run: |
+        python setup.py bdist_wheel
+        pip install dist/zcbor-0.3.99-py3-none-any.whl
+        pip uninstall -y zcbor
+        pip install -e .
+
+    - name: Run python tests
+      working-directory: tests/scripts
+      run: |
+        python3 -m unittest run_tests
+
+  merge-test-1:
+    runs-on: ubuntu-latest
+    name: Merge tests 1
+
+    steps:
+    - *checkout_code
+    - *install_deps
+
+    - name: Generate and install zcbor package
+      run: |
+        python3 setup.py sdist bdist_wheel
+        pip3 install dist/zcbor-*.tar.gz
+        pip3 uninstall -y zcbor
+        pip3 install dist/zcbor-*.whl
+
+    - name: Run pycodestyle
+      run: |
+        pycodestyle zcbor/zcbor.py --max-line-length=100 --ignore=W191,E101,W503
+        pycodestyle tests/scripts/run_tests.py --max-line-length=100 --ignore=W503,E501,E402
+        pycodestyle tests/scripts/release_test.py --max-line-length=100
+        pycodestyle zcbor/__init__.py --max-line-length=100
+        pycodestyle setup.py --max-line-length=100
+
+    - name: Run python tests
+      working-directory: tests/scripts
+      run: |
+        python3 -m unittest run_tests
+
+    - *clone_zephyr
+    - *west_init
+    - *twister_deps
+    - *install_packages
+
+    - name: Run unit tests
+      working-directory: tests
+      run: |
+        export ZEPHYR_BASE=$(pwd)/zephyr
+        export ZEPHYR_TOOLCHAIN_VARIANT=host
+        $ZEPHYR_BASE/scripts/twister -i -T . -W --platform native_posix --platform native_posix_64 -t unit
+
+    - name: Run unit tests with asserts
+      working-directory: tests
+      run: |
+        export ZEPHYR_BASE=$(pwd)/zephyr
+        export ZEPHYR_TOOLCHAIN_VARIANT=host
+        $ZEPHYR_BASE/scripts/twister -i -T . -W --platform native_posix --platform native_posix_64 -t unit -x VERBOSE=ON
+
+  merge-test-2:
+    runs-on: ubuntu-latest
+    name: Merge tests 2
+
+    steps:
+    - *checkout_code
+    - *install_deps
+    - *install_zcbor
+    - *clone_zephyr
+    - *west_init
+    - *twister_deps
+    - *install_packages
+
+    - name: Run decode tests
+      working-directory: tests
+      run: |
+        export ZEPHYR_BASE=$(pwd)/zephyr
+        export ZEPHYR_TOOLCHAIN_VARIANT=host
+        $ZEPHYR_BASE/scripts/twister -i -T . -W --platform native_posix --platform native_posix_64 -t decode
+
+  merge-test-3:
+    runs-on: ubuntu-latest
+    name: Merge tests 3
+
+    steps:
+    - *checkout_code
+    - *install_deps
+    - *install_zcbor
+    - *clone_zephyr
+    - *west_init
+    - *twister_deps
+    - *install_packages
+
+    - name: Run encode tests
+      working-directory: tests
+      run: |
+        export ZEPHYR_BASE=$(pwd)/zephyr
+        export ZEPHYR_TOOLCHAIN_VARIANT=host
+        $ZEPHYR_BASE/scripts/twister -i -T . -W --platform native_posix --platform native_posix_64 -t encode
+
+  merge-test-4:
+    runs-on: ubuntu-latest
+    name: Merge tests 4
+
+    steps:
+    - *checkout_code
+    - *install_deps
+    - *install_zcbor
+    - *clone_zephyr
+    - *west_init
+    - *twister_deps
+    - *install_packages
+
+    - name: Run decode tests with asserts
+      working-directory: tests
+      run: |
+        export ZEPHYR_BASE=$(pwd)/zephyr
+        export ZEPHYR_TOOLCHAIN_VARIANT=host
+        $ZEPHYR_BASE/scripts/twister -i -T . -W --platform native_posix --platform native_posix_64 -t decode -x VERBOSE=ON
+
+  merge-test-5:
+    runs-on: ubuntu-latest
+    name: Merge tests 5
+
+    steps:
+    - *checkout_code
+    - *install_deps
+    - *install_zcbor
+    - *clone_zephyr
+    - *west_init
+    - *twister_deps
+    - *install_packages
+
+    - name: Run encode tests with asserts
+      working-directory: tests
+      run: |
+        export ZEPHYR_BASE=$(pwd)/zephyr
+        export ZEPHYR_TOOLCHAIN_VARIANT=host
+        $ZEPHYR_BASE/scripts/twister -i -T . -W --platform native_posix --platform native_posix_64 -t encode -x VERBOSE=ON
+
+
+  release-test:
+    runs-on: ubuntu-latest
+    name: Release tests
+    needs: [merge-test-win, merge-test-1, merge-test-2, merge-test-3, merge-test-4, merge-test-5]
+    if: "startswith(github.head_ref, 'release/')"
+
+    steps:
+    - name: Checkout the code
+      uses: actions/checkout@v2
+
+    - name: Install dependencies
+      run: |
+        pip3 install -U pip
+        pip3 install -U setuptools
+        pip3 install -U -r scripts/requirements-base.txt
+
+    - name: Generate and install zcbor package
+      run: |
+        python3 setup.py sdist bdist_wheel
+        pip3 install dist/zcbor-*.tar.gz
+        pip3 uninstall -y zcbor
+        pip3 install dist/zcbor-*.whl
+
+    - name: Run python release tests
+      working-directory: tests/scripts
+      run: |
+        echo -n ${{ github.head_ref }} > HEAD_REF
+        python3 -m unittest release_test
+        rm HEAD_REF
+
+    - name: Install packages
+      run: |
+        sudo apt update
+        sudo apt install -y gcc-multilib afl++
+
+    - name: Run manifest12 fuzz tests
+      working-directory: tests/fuzz
+      run: |
+        ./test-afl.sh 3200 32 manifest12
+
+    - name: Run pet fuzz tests
+      working-directory: tests/fuzz
+      run: |
+        ./test-afl.sh 400 32 pet
+
+    - name: Upload release files
+      uses: actions/upload-artifact@v2
+      with:
+        name: zcbor-release
+        path: dist/*
