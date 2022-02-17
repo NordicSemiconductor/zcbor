@@ -18,9 +18,13 @@ def absolute_links(text):
     def new_link(match):
         match_text = match.group(0)
         path = Path(P_REPO_ROOT, match_text)
-        path_comp = "tree" if path.is_dir() else "blob"
-        url_prefix = f"{ZCBOR_URL}/{path_comp}/{get_version()}/"
-        if (path.exists()):
+        try:
+            path_exists = path.exists()
+        except OSError:
+            path_exists = False
+        if path_exists:
+            path_comp = "tree" if path.is_dir() else "blob"
+            url_prefix = f"{ZCBOR_URL}/{path_comp}/{get_version()}/"
             return url_prefix + match_text
         else:
             return match_text
