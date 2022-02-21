@@ -48,6 +48,8 @@ ZCBOR_STATE_D(decode_state, n, payload, payload_len, elem_count);
 ZCBOR_STATE_E(encode_state, n, payload, payload_len, 0);
 ```
 
+The CBOR libraries assume little-endianness by default, but you can define ZCBOR_BIG_ENDIAN to change this.
+
 Schema-driven data manipulation and code generation
 ===================================================
 
