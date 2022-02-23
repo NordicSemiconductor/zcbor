@@ -6,7 +6,7 @@
 
 cmake_minimum_required(VERSION 3.13.1)
 
-set(PROJECT_NAME test1_unit_tests)
+project(test1_unit_tests)
 include(../../cmake/test_template.cmake)
 
 FILE(GLOB zcbor_sources ../../../src/*.c)

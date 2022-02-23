@@ -6,7 +6,7 @@
 
 cmake_minimum_required(VERSION 3.13.1)
 
-set(PROJECT_NAME test7_suit9_simple)
+project(test7_suit9_simple)
 include(../../cmake/test_template.cmake)
 
 set(py_command
