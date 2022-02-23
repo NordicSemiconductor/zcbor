@@ -6,7 +6,7 @@
 
 cmake_minimum_required(VERSION 3.13.1)
 
-set(PROJECT_NAME test3_simple)
+project(test3_simple)
 include(../../cmake/test_template.cmake)
 
 target_sources(app PRIVATE
