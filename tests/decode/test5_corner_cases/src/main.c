@@ -635,9 +635,8 @@ void test_empty_map(void)
 	const uint8_t payload3_inv[] = {MAP(1), 0, END};
 	const uint8_t payload4[] = {MAP(0), END MAP(0), END MAP(0), END};
 	uint_fast32_t num_decode;
-	zcbor_state_t state;
 
-	zcbor_new_state(&state, 1, payload4, sizeof(payload4), 3);
+	ZCBOR_STATE_D(state, 0, payload4, sizeof(payload4), 3);
 
 	zassert_true(cbor_decode_EmptyMap(payload1, sizeof(payload1), NULL, NULL), NULL);
 #ifdef TEST_INDEFINITE_LENGTH_ARRAYS

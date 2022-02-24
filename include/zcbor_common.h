@@ -202,12 +202,14 @@ bool zcbor_union_end_code(zcbor_state_t *state);
 /** Initialize a state with backups.
  *  One of the states in the array is used as a struct zcbor_state_constant object.
  *  This means that you get a state with (n_states - 2) backups.
- *  It also means that (n_states = 2) is an invalid input, which is handled as
- *  if (n_states = 1).
+ *  The constant state is mandatory so n_states must be at least 2.
  *  payload, payload_len, and elem_count are used to initialize the first state.
  *  in the array, which is the state that can be passed to cbor functions.
+ *
+ *  @retval false  if n_states < 2
+ *  @retval true   otherwise
  */
-void zcbor_new_state(zcbor_state_t *state_array, uint_fast32_t n_states,
+bool zcbor_new_state(zcbor_state_t *state_array, uint_fast32_t n_states,
 		const uint8_t *payload, size_t payload_len, uint_fast32_t elem_count);
 
 #endif /* ZCBOR_COMMON_H__ */

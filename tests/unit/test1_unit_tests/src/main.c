@@ -14,51 +14,49 @@ void test_int64(void)
 	uint8_t payload[100] = {0};
 	int64_t int64;
 	int32_t int32;
-	zcbor_state_t state_d;
-	zcbor_state_t state_e;
 
-	zcbor_new_state(&state_e, 1, payload, sizeof(payload), 0);
-	zcbor_new_state(&state_d, 1, payload, sizeof(payload), 10);
+	ZCBOR_STATE_E(state_e, 0, payload, sizeof(payload), 0);
+	ZCBOR_STATE_D(state_d, 0, payload, sizeof(payload), 10);
 
-	zassert_true(zcbor_int64_put(&state_e, 5), NULL);
-	zassert_false(zcbor_int64_expect(&state_d, 4), NULL);
-	zassert_false(zcbor_int64_expect(&state_d, 6), NULL);
-	zassert_false(zcbor_int64_expect(&state_d, -5), NULL);
-	zassert_false(zcbor_int64_expect(&state_d, -6), NULL);
-	zassert_true(zcbor_int64_expect(&state_d, 5), NULL);
+	zassert_true(zcbor_int64_put(state_e, 5), NULL);
+	zassert_false(zcbor_int64_expect(state_d, 4), NULL);
+	zassert_false(zcbor_int64_expect(state_d, 6), NULL);
+	zassert_false(zcbor_int64_expect(state_d, -5), NULL);
+	zassert_false(zcbor_int64_expect(state_d, -6), NULL);
+	zassert_true(zcbor_int64_expect(state_d, 5), NULL);
 
-	zassert_true(zcbor_int32_put(&state_e, 5), NULL);
-	zassert_true(zcbor_int64_expect(&state_d, 5), NULL);
+	zassert_true(zcbor_int32_put(state_e, 5), NULL);
+	zassert_true(zcbor_int64_expect(state_d, 5), NULL);
 
-	zassert_true(zcbor_int64_put(&state_e, 5), NULL);
-	zassert_true(zcbor_int32_expect(&state_d, 5), NULL);
+	zassert_true(zcbor_int64_put(state_e, 5), NULL);
+	zassert_true(zcbor_int32_expect(state_d, 5), NULL);
 
-	zassert_true(zcbor_int64_put(&state_e, 5000000000), NULL);
-	zassert_false(zcbor_int32_decode(&state_d, &int32), NULL);
-	zassert_true(zcbor_int64_decode(&state_d, &int64), NULL);
+	zassert_true(zcbor_int64_put(state_e, 5000000000), NULL);
+	zassert_false(zcbor_int32_decode(state_d, &int32), NULL);
+	zassert_true(zcbor_int64_decode(state_d, &int64), NULL);
 	zassert_equal(int64, 5000000000, NULL);
 
-	zassert_true(zcbor_int64_encode(&state_e, &int64), NULL);
-	zassert_false(zcbor_int64_expect(&state_d, 5000000001), NULL);
-	zassert_true(zcbor_int64_expect(&state_d, 5000000000), NULL);
+	zassert_true(zcbor_int64_encode(state_e, &int64), NULL);
+	zassert_false(zcbor_int64_expect(state_d, 5000000001), NULL);
+	zassert_true(zcbor_int64_expect(state_d, 5000000000), NULL);
 
-	zassert_true(zcbor_int64_put(&state_e, 0x80000000), NULL);
-	zassert_false(zcbor_int32_decode(&state_d, &int32), NULL);
-	zassert_true(zcbor_uint32_expect(&state_d, 0x80000000), NULL);
+	zassert_true(zcbor_int64_put(state_e, 0x80000000), NULL);
+	zassert_false(zcbor_int32_decode(state_d, &int32), NULL);
+	zassert_true(zcbor_uint32_expect(state_d, 0x80000000), NULL);
 
-	zassert_true(zcbor_int32_put(&state_e, -505), NULL);
-	zassert_true(zcbor_int64_expect(&state_d, -505), NULL);
+	zassert_true(zcbor_int32_put(state_e, -505), NULL);
+	zassert_true(zcbor_int64_expect(state_d, -505), NULL);
 
-	zassert_true(zcbor_int64_put(&state_e, -5000000000000), NULL);
-	zassert_false(zcbor_int64_expect(&state_d, -5000000000001), NULL);
-	zassert_false(zcbor_int64_expect(&state_d, -4999999999999), NULL);
-	zassert_false(zcbor_int64_expect(&state_d, 5000000000000), NULL);
-	zassert_false(zcbor_int64_expect(&state_d, 4999999999999), NULL);
-	zassert_true(zcbor_int64_expect(&state_d, -5000000000000), NULL);
+	zassert_true(zcbor_int64_put(state_e, -5000000000000), NULL);
+	zassert_false(zcbor_int64_expect(state_d, -5000000000001), NULL);
+	zassert_false(zcbor_int64_expect(state_d, -4999999999999), NULL);
+	zassert_false(zcbor_int64_expect(state_d, 5000000000000), NULL);
+	zassert_false(zcbor_int64_expect(state_d, 4999999999999), NULL);
+	zassert_true(zcbor_int64_expect(state_d, -5000000000000), NULL);
 
-	zassert_true(zcbor_uint64_put(&state_e, ((uint64_t)INT64_MAX + 1)), NULL);
-	zassert_false(zcbor_int64_decode(&state_d, &int64), NULL);
-	zassert_true(zcbor_uint64_expect(&state_d, ((uint64_t)INT64_MAX + 1)), NULL);
+	zassert_true(zcbor_uint64_put(state_e, ((uint64_t)INT64_MAX + 1)), NULL);
+	zassert_false(zcbor_int64_decode(state_d, &int64), NULL);
+	zassert_true(zcbor_uint64_expect(state_d, ((uint64_t)INT64_MAX + 1)), NULL);
 
 }
 
@@ -68,33 +66,31 @@ void test_uint64(void)
 	uint8_t payload[100] = {0};
 	uint64_t uint64;
 	uint32_t uint32;
-	zcbor_state_t state_d;
-	zcbor_state_t state_e;
 
-	zcbor_new_state(&state_e, 1, payload, sizeof(payload), 0);
-	zcbor_new_state(&state_d, 1, payload, sizeof(payload), 10);
+	ZCBOR_STATE_E(state_e, 0, payload, sizeof(payload), 0);
+	ZCBOR_STATE_D(state_d, 0, payload, sizeof(payload), 10);
 
-	zassert_true(zcbor_uint64_put(&state_e, 5), NULL);
-	zassert_false(zcbor_uint64_expect(&state_d, 4), NULL);
-	zassert_false(zcbor_uint64_expect(&state_d, 6), NULL);
-	zassert_false(zcbor_uint64_expect(&state_d, -5), NULL);
-	zassert_false(zcbor_uint64_expect(&state_d, -6), NULL);
-	zassert_true(zcbor_uint64_expect(&state_d, 5), NULL);
+	zassert_true(zcbor_uint64_put(state_e, 5), NULL);
+	zassert_false(zcbor_uint64_expect(state_d, 4), NULL);
+	zassert_false(zcbor_uint64_expect(state_d, 6), NULL);
+	zassert_false(zcbor_uint64_expect(state_d, -5), NULL);
+	zassert_false(zcbor_uint64_expect(state_d, -6), NULL);
+	zassert_true(zcbor_uint64_expect(state_d, 5), NULL);
 
-	zassert_true(zcbor_uint32_put(&state_e, 5), NULL);
-	zassert_true(zcbor_uint64_expect(&state_d, 5), NULL);
+	zassert_true(zcbor_uint32_put(state_e, 5), NULL);
+	zassert_true(zcbor_uint64_expect(state_d, 5), NULL);
 
-	zassert_true(zcbor_uint64_put(&state_e, 5), NULL);
-	zassert_true(zcbor_uint32_expect(&state_d, 5), NULL);
+	zassert_true(zcbor_uint64_put(state_e, 5), NULL);
+	zassert_true(zcbor_uint32_expect(state_d, 5), NULL);
 
-	zassert_true(zcbor_uint64_put(&state_e, UINT64_MAX), NULL);
-	zassert_false(zcbor_uint32_decode(&state_d, &uint32), NULL);
-	zassert_true(zcbor_uint64_decode(&state_d, &uint64), NULL);
+	zassert_true(zcbor_uint64_put(state_e, UINT64_MAX), NULL);
+	zassert_false(zcbor_uint32_decode(state_d, &uint32), NULL);
+	zassert_true(zcbor_uint64_decode(state_d, &uint64), NULL);
 	zassert_equal(uint64, UINT64_MAX, NULL);
 
-	zassert_true(zcbor_uint64_encode(&state_e, &uint64), NULL);
-	zassert_false(zcbor_uint64_expect(&state_d, (UINT64_MAX - 1)), NULL);
-	zassert_true(zcbor_uint64_expect(&state_d, UINT64_MAX), NULL);
+	zassert_true(zcbor_uint64_encode(state_e, &uint64), NULL);
+	zassert_false(zcbor_uint64_expect(state_d, (UINT64_MAX - 1)), NULL);
+	zassert_true(zcbor_uint64_expect(state_d, UINT64_MAX), NULL);
 }
 
 
@@ -111,8 +107,6 @@ void test_size64(void)
 	uint8_t *large_string = malloc(STR_SIZE);
 	struct zcbor_string tstr = {.value = large_string, .len = STR_SIZE};
 	struct zcbor_string tstr_res;
-	zcbor_state_t state_d;
-	zcbor_state_t state_e;
 
 	for (int i = 0; i < 1000; i++) {
 		large_string[i] = i % 256;
@@ -123,12 +117,12 @@ void test_size64(void)
 		large_payload[i + 9] = 0;
 	}
 
-	zcbor_new_state(&state_e, 1, large_payload, PAYL_SIZE, 0);
-	zcbor_new_state(&state_d, 1, large_payload, PAYL_SIZE, 10);
+	ZCBOR_STATE_E(state_e, 0, large_payload, PAYL_SIZE, 0);
+	ZCBOR_STATE_D(state_d, 0, large_payload, PAYL_SIZE, 10);
 
-	zassert_true(zcbor_tstr_encode(&state_e, &tstr), NULL);
-	zassert_false(zcbor_bstr_decode(&state_d, &tstr_res), NULL);
-	zassert_true(zcbor_tstr_decode(&state_d, &tstr_res), NULL);
+	zassert_true(zcbor_tstr_encode(state_e, &tstr), NULL);
+	zassert_false(zcbor_bstr_decode(state_d, &tstr_res), NULL);
+	zassert_true(zcbor_tstr_decode(state_d, &tstr_res), NULL);
 	zassert_equal(tstr_res.len, tstr.len, NULL);
 	zassert_equal_ptr(tstr_res.value, &large_payload[9], NULL);
 	zassert_mem_equal(tstr_res.value, large_string, tstr.len, NULL);
