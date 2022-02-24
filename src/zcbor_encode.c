@@ -437,6 +437,18 @@ bool zcbor_map_end_encode(zcbor_state_t *state, uint_fast32_t max_num)
 }
 
 
+bool zcbor_list_map_end_force_encode(zcbor_state_t *state)
+{
+#ifdef ZCBOR_CANONICAL
+	if (!zcbor_process_backup(state, ZCBOR_FLAG_RESTORE | ZCBOR_FLAG_CONSUME,
+			ZCBOR_MAX_ELEM_COUNT)) {
+		ZCBOR_FAIL();
+	}
+#endif
+	return true;
+}
+
+
 bool zcbor_nil_put(zcbor_state_t *state, const void *unused)
 {
 	(void)unused;

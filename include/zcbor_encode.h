@@ -150,6 +150,9 @@ bool zcbor_map_start_encode(zcbor_state_t *state, uint_fast32_t max_num);
  *    the list/map header. If the header ends up a different size than expected,
  *    the list/map contents are moved using memmove().
  *
+ * Use @ref zcbor_list_map_end_force_encode to forcibly consume the backup if
+ * something has gone wrong.
+ *
  * @param[inout] state    The current state of the encoding.
  * @param[in]    max_num  The maximum number of members in the list/map. Must be
  *                        equal to the max_num provided to the corresponding
@@ -158,6 +161,7 @@ bool zcbor_map_start_encode(zcbor_state_t *state, uint_fast32_t max_num);
  */
 bool zcbor_list_end_encode(zcbor_state_t *state, uint_fast32_t max_num);
 bool zcbor_map_end_encode(zcbor_state_t *state, uint_fast32_t max_num);
+bool zcbor_list_map_end_force_encode(zcbor_state_t *state);
 
 /** Encode 0 or more elements with the same type and constraints.
  *

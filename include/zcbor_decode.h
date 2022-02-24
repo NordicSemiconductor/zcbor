@@ -164,11 +164,15 @@ bool zcbor_map_start_decode(zcbor_state_t *state);
  * Check that the list/map had the correct number of elements, and restore the
  * previous element count from the backup.
  *
+ * Use @ref zcbor_list_map_end_force_decode to forcibly consume the backup if
+ * something has gone wrong.
+ *
  * @retval true   Everything ok.
  * @retval false  Element count not correct.
  */
 bool zcbor_list_end_decode(zcbor_state_t *state);
 bool zcbor_map_end_decode(zcbor_state_t *state);
+bool zcbor_list_map_end_force_decode(zcbor_state_t *state);
 
 /** Decode 0 or more elements with the same type and constraints.
  *

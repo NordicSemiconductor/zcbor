@@ -476,6 +476,18 @@ bool zcbor_map_end_decode(zcbor_state_t *state)
 }
 
 
+bool zcbor_list_map_end_force_decode(zcbor_state_t *state)
+{
+	if (!zcbor_process_backup(state,
+			ZCBOR_FLAG_RESTORE | ZCBOR_FLAG_CONSUME | ZCBOR_FLAG_TRANSFER_PAYLOAD,
+			ZCBOR_MAX_ELEM_COUNT)) {
+		ZCBOR_FAIL();
+	}
+
+	return true;
+}
+
+
 static bool primx_expect(zcbor_state_t *state, uint8_t result)
 {
 	FAIL_IF(state->payload >= state->payload_end);

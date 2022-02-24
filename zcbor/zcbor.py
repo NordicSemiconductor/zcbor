@@ -2116,6 +2116,7 @@ class CodeGenerator(CddlXcoder):
     def xcode_list(self):
         start_func = f"zcbor_{self.type.lower()}_start_{self.mode}"
         end_func = f"zcbor_{self.type.lower()}_end_{self.mode}"
+        end_func_force = f"zcbor_list_map_end_force_{self.mode}"
         assert start_func in [
             "zcbor_list_start_decode", "zcbor_list_start_encode",
             "zcbor_map_start_decode", "zcbor_map_start_encode"]
@@ -2124,12 +2125,13 @@ class CodeGenerator(CddlXcoder):
             "zcbor_map_end_decode", "zcbor_map_end_encode"]
         assert self.type in ["LIST", "MAP"], \
             "Expected LIST or MAP type, was %s." % self.type
-        min_counts, max_counts = zip(
+        _, max_counts = zip(
             *(child.list_counts() for child in self.value)) if self.value else ((0,), (0,))
         count_arg = f', {str(sum(max_counts))}' if self.mode == 'encode' else ''
-        with_children = "(%s && (int_res = (%s), ((%s) && int_res)))" % (
+        with_children = "(%s && ((%s) || (%s, false)) && %s)" % (
             f"{start_func}(state{count_arg})",
             f"{newl_ind}&& ".join(child.full_xcode() for child in self.value),
+            f"{end_func_force}(state)",
             f"{end_func}(state{count_arg})")
         without_children = "(%s && %s)" % (
             f"{start_func}(state{count_arg})",
