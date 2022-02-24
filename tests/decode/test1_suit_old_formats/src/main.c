@@ -109,7 +109,7 @@ void test_1(void)
 		0x0b, 0x5e, 0x6a, 0x1d, 0x2c, 0xa3, 0x9f, 0x74,
 		0x98, 0xb6, 0xa6, 0xa7, 0xbe, 0x8d, 0x8d, 0x67,
 	};
-	zassert_true(cbor_decode_OuterWrapper(test_vector2,
+	zassert_equal(ZCBOR_SUCCESS, cbor_decode_OuterWrapper(test_vector2,
 				sizeof(test_vector2),
 				&outerwrapper, &decode_len),
 			"test_vector2 failed");
@@ -157,7 +157,7 @@ void test_2(void)
 		"sed tincidunt ante, a sodales ligula. Phasellus ullamcorper "
 		"odio commodo ipsum egestas, vitae lacinia leo ornare. "
 		"Suspendisse posuere sed.";
-	zassert_true(cbor_decode_OuterWrapper(test_vector3,
+	zassert_equal(ZCBOR_SUCCESS, cbor_decode_OuterWrapper(test_vector3,
 				sizeof(test_vector3),
 				&outerwrapper, &decode_len),
 			"test_vector3 failed");
@@ -203,7 +203,7 @@ void test_3(void)
 	size_t decode_len;
 	char expected_uri[] = "http://example.com/file.bin";
 	memset(&outerwrapper4, 0, sizeof(struct SUIT_Outer_Wrapper));
-	zassert_true(cbor_decode_SUIT_Outer_Wrapper(test_vector4,
+	zassert_equal(ZCBOR_SUCCESS, cbor_decode_SUIT_Outer_Wrapper(test_vector4,
 		sizeof(test_vector4), &outerwrapper4, &decode_len), "test_vector failed");
 	zassert_equal(sizeof(test_vector4), decode_len, NULL);
 	zassert_equal(2,

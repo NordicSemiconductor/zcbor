@@ -61,7 +61,7 @@ void test_suit14_ex0_auth(void)
 		0x7d, 0x05, 0x2b, 0x42, 0xdb, 0x6b, 0x72, 0x87,
 	};
 
-	zassert_true(cbor_decode_SUIT_Envelope_Tagged(example0, sizeof(example0), &envelope, &out_len), NULL);
+	zassert_equal(ZCBOR_SUCCESS, cbor_decode_SUIT_Envelope_Tagged(example0, sizeof(example0), &envelope, &out_len), NULL);
 	zassert_equal(sizeof(example0), out_len, NULL);
 
 	digest = &envelope._SUIT_Envelope_suit_authentication_wrapper_cbor._SUIT_Authentication_SUIT_Digest_bstr_cbor;
@@ -126,18 +126,18 @@ void test_suit14_ex0_common_sequence(void)
 		| (1 << _suit_reporting_bits_suit_send_sysinfo_success)
 		| (1 << _suit_reporting_bits_suit_send_sysinfo_failure));
 
-	zassert_true(cbor_decode_SUIT_Envelope_Tagged(example0, sizeof(example0), &envelope, &out_len), NULL);
+	zassert_equal(ZCBOR_SUCCESS, cbor_decode_SUIT_Envelope_Tagged(example0, sizeof(example0), &envelope, &out_len), NULL);
 	zassert_equal(sizeof(example0), out_len, NULL);
-	zassert_true(cbor_decode_SUIT_Manifest(envelope._SUIT_Envelope_suit_manifest.value,
+	zassert_equal(ZCBOR_SUCCESS, cbor_decode_SUIT_Manifest(envelope._SUIT_Envelope_suit_manifest.value,
 		envelope._SUIT_Envelope_suit_manifest.len, &manifest, &out_len), NULL);
 	zassert_equal(envelope._SUIT_Envelope_suit_manifest.len, out_len, NULL);
 	zassert_true(manifest._SUIT_Manifest_suit_common_cbor._SUIT_Common_suit_components_present, NULL);
 	zassert_true(manifest._SUIT_Manifest_suit_common_cbor._SUIT_Common_suit_common_sequence_present, NULL);
-	zassert_true(cbor_decode_SUIT_Common_Sequence(
+	zassert_equal(ZCBOR_SUCCESS, cbor_decode_SUIT_Common_Sequence(
 		manifest._SUIT_Manifest_suit_common_cbor._SUIT_Common_suit_common_sequence._SUIT_Common_suit_common_sequence.value,
 		manifest._SUIT_Manifest_suit_common_cbor._SUIT_Common_suit_common_sequence._SUIT_Common_suit_common_sequence.len,
 		&common_sequence, &out_len), NULL);
-	zassert_true(cbor_decode_SUIT_Command_Sequence(
+	zassert_equal(ZCBOR_SUCCESS, cbor_decode_SUIT_Command_Sequence(
 		manifest._SUIT_Manifest_suit_common_cbor._SUIT_Common_suit_common_sequence._SUIT_Common_suit_common_sequence.value,
 		manifest._SUIT_Manifest_suit_common_cbor._SUIT_Common_suit_common_sequence._SUIT_Common_suit_common_sequence.len,
 		&command_sequence, &out_len), NULL);
@@ -242,21 +242,21 @@ void test_suit14_ex0_common_sequence_as_command_sequence(void)
 		| (1 << _suit_reporting_bits_suit_send_sysinfo_success)
 		| (1 << _suit_reporting_bits_suit_send_sysinfo_failure));
 
-	zassert_true(cbor_decode_SUIT_Envelope_Tagged(example0, sizeof(example0), &envelope, &out_len), NULL);
+	zassert_equal(ZCBOR_SUCCESS, cbor_decode_SUIT_Envelope_Tagged(example0, sizeof(example0), &envelope, &out_len), NULL);
 	zassert_equal(sizeof(example0), out_len, NULL);
-	zassert_true(cbor_decode_SUIT_Manifest(envelope._SUIT_Envelope_suit_manifest.value,
+	zassert_equal(ZCBOR_SUCCESS, cbor_decode_SUIT_Manifest(envelope._SUIT_Envelope_suit_manifest.value,
 		envelope._SUIT_Envelope_suit_manifest.len, &manifest, &out_len), NULL);
 	zassert_equal(envelope._SUIT_Envelope_suit_manifest.len, out_len, NULL);
 	zassert_true(manifest._SUIT_Manifest_suit_common_cbor._SUIT_Common_suit_components_present, NULL);
 	zassert_true(manifest._SUIT_Manifest_suit_common_cbor._SUIT_Common_suit_common_sequence_present, NULL);
-	zassert_true(cbor_decode_SUIT_Common_Sequence(
+	zassert_equal(ZCBOR_SUCCESS, cbor_decode_SUIT_Common_Sequence(
 		manifest._SUIT_Manifest_suit_common_cbor._SUIT_Common_suit_common_sequence._SUIT_Common_suit_common_sequence.value,
 		manifest._SUIT_Manifest_suit_common_cbor._SUIT_Common_suit_common_sequence._SUIT_Common_suit_common_sequence.len,
 		&common_sequence, &out_len), NULL);
 	zassert_equal(
 		manifest._SUIT_Manifest_suit_common_cbor._SUIT_Common_suit_common_sequence._SUIT_Common_suit_common_sequence.len,
 		out_len, NULL);
-	zassert_true(cbor_decode_SUIT_Command_Sequence(
+	zassert_equal(ZCBOR_SUCCESS, cbor_decode_SUIT_Command_Sequence(
 		manifest._SUIT_Manifest_suit_common_cbor._SUIT_Common_suit_common_sequence._SUIT_Common_suit_common_sequence.value,
 		manifest._SUIT_Manifest_suit_common_cbor._SUIT_Common_suit_common_sequence._SUIT_Common_suit_common_sequence.len,
 		&command_sequence, &out_len), NULL);
@@ -344,16 +344,16 @@ void test_suit14_ex0_validate_run(void)
 		| (1 << _suit_reporting_bits_suit_send_sysinfo_failure));
 	uint32_t exp_rep_policy2 = (1 << _suit_reporting_bits_suit_send_record_failure);
 
-	zassert_true(cbor_decode_SUIT_Envelope_Tagged(example0, sizeof(example0), &envelope, &out_len), NULL);
+	zassert_equal(ZCBOR_SUCCESS, cbor_decode_SUIT_Envelope_Tagged(example0, sizeof(example0), &envelope, &out_len), NULL);
 	zassert_equal(sizeof(example0), out_len, NULL);
-	zassert_true(cbor_decode_SUIT_Manifest(envelope._SUIT_Envelope_suit_manifest.value,
+	zassert_equal(ZCBOR_SUCCESS, cbor_decode_SUIT_Manifest(envelope._SUIT_Envelope_suit_manifest.value,
 		envelope._SUIT_Envelope_suit_manifest.len, &manifest, &out_len), NULL);
 	zassert_equal(envelope._SUIT_Envelope_suit_manifest.len, out_len, NULL);
 	zassert_true(manifest._SUIT_Manifest__SUIT_Unseverable_Members._SUIT_Unseverable_Members_suit_validate_present, NULL);
 	zassert_false(manifest._SUIT_Manifest__SUIT_Unseverable_Members._SUIT_Unseverable_Members_suit_load_present, NULL);
 	zassert_true(manifest._SUIT_Manifest__SUIT_Unseverable_Members._SUIT_Unseverable_Members_suit_run_present, NULL);
 
-	zassert_true(cbor_decode_SUIT_Command_Sequence(
+	zassert_equal(ZCBOR_SUCCESS, cbor_decode_SUIT_Command_Sequence(
 		manifest._SUIT_Manifest__SUIT_Unseverable_Members._SUIT_Unseverable_Members_suit_validate._SUIT_Unseverable_Members_suit_validate.value,
 		manifest._SUIT_Manifest__SUIT_Unseverable_Members._SUIT_Unseverable_Members_suit_validate._SUIT_Unseverable_Members_suit_validate.len,
 		&command_sequence, &out_len), NULL);
@@ -368,7 +368,7 @@ void test_suit14_ex0_validate_run(void)
 	zassert_equal(exp_rep_policy1,
 		condition->_SUIT_Condition___suit_condition_image_match__SUIT_Rep_Policy, NULL);
 
-	zassert_true(cbor_decode_SUIT_Command_Sequence(
+	zassert_equal(ZCBOR_SUCCESS, cbor_decode_SUIT_Command_Sequence(
 		manifest._SUIT_Manifest__SUIT_Unseverable_Members._SUIT_Unseverable_Members_suit_run._SUIT_Unseverable_Members_suit_run.value,
 		manifest._SUIT_Manifest__SUIT_Unseverable_Members._SUIT_Unseverable_Members_suit_run._SUIT_Unseverable_Members_suit_run.len,
 		&command_sequence, &out_len), NULL);

@@ -94,7 +94,7 @@ static struct SUIT_Manifest manifest;
 
 void test_suit9_simple2(void)
 {
-	bool res;
+	uint_fast8_t res;
 
 	zcbor_print("test_vector at: 0x%zx\r\n", (size_t)test_vector2);
 	zcbor_print("test_vector end at: 0x%zx\r\n",
@@ -102,19 +102,19 @@ void test_suit9_simple2(void)
 	memset(&envelope1, 0, sizeof(envelope1));
 	res = cbor_decode_SUIT_Envelope(test_vector2,
 					sizeof(test_vector2), &envelope1, NULL);
-	zassert_true(res, "top-level decoding failed.");
+	zassert_equal(ZCBOR_SUCCESS, res, "top-level decoding failed.");
 
 	res = cbor_decode_SUIT_Manifest(
 		envelope1._SUIT_Envelope_suit_manifest.value,
 		envelope1._SUIT_Envelope_suit_manifest.len, &manifest, NULL);
 
-	zassert_true(res, "manifest decoding failed.");
+	zassert_equal(ZCBOR_SUCCESS, res, "manifest decoding failed.");
 }
 
 
 void test_suit9_simple5(void)
 {
-	bool res;
+	uint_fast8_t res;
 
 	zcbor_print("test_vector at: 0x%zx\r\n", (size_t)test_vector5);
 	zcbor_print("test_vector end at: 0x%zx\r\n",
@@ -122,13 +122,13 @@ void test_suit9_simple5(void)
 	memset(&envelope1, 0, sizeof(envelope1));
 	res = cbor_decode_SUIT_Envelope(test_vector5,
 					sizeof(test_vector5), &envelope1, NULL);
-	zassert_true(res, "top-level decoding failed.");
+	zassert_equal(ZCBOR_SUCCESS, res, "top-level decoding failed.");
 
 	res = cbor_decode_SUIT_Manifest(
 		envelope1._SUIT_Envelope_suit_manifest.value,
 		envelope1._SUIT_Envelope_suit_manifest.len, &manifest, NULL);
 
-	zassert_true(res, "manifest decoding failed.");
+	zassert_equal(ZCBOR_SUCCESS, res, "manifest decoding failed.");
 }
 
 void test_main(void)

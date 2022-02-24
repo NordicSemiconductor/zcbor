@@ -170,7 +170,7 @@ void test_pet(void)
 	size_t out_len;
 
 	/* Check that encoding succeeded. */
-	zassert_true(cbor_encode_Pet(output, sizeof(output), &pet, &out_len), NULL);
+	zassert_equal(ZCBOR_SUCCESS, cbor_encode_Pet(output, sizeof(output), &pet, &out_len), NULL);
 
 	/* Check that the resulting length is correct. */
 	zassert_equal(sizeof(exp_output), out_len, NULL);
