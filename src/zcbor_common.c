@@ -100,19 +100,25 @@ bool zcbor_union_end_code(zcbor_state_t *state)
 	return true;
 }
 
-void zcbor_new_state(zcbor_state_t *state_array, uint_fast32_t n_states,
+bool zcbor_new_state(zcbor_state_t *state_array, uint_fast32_t n_states,
 		const uint8_t *payload, size_t payload_len, uint_fast32_t elem_count)
 {
 	state_array[0].payload = payload;
 	state_array[0].payload_end = payload + payload_len;
 	state_array[0].elem_count = elem_count;
 	state_array[0].indefinite_length_array = false;
-	state_array[0].constant_state = NULL;
-	if (n_states > 2) {
-		/* Use the last state as a struct zcbor_state_constant object. */
-		state_array[0].constant_state = (struct zcbor_state_constant *)&state_array[n_states - 1];
-		state_array[0].constant_state->backup_list = &state_array[1];
-		state_array[0].constant_state->num_backups = n_states - 2;
-		state_array[0].constant_state->current_backup = 0;
+
+	if(n_states < 2) {
+		return false;
 	}
+
+	/* Use the last state as a struct zcbor_state_constant object. */
+	state_array[0].constant_state = (struct zcbor_state_constant *)&state_array[n_states - 1];
+	state_array[0].constant_state->backup_list = NULL;
+	state_array[0].constant_state->num_backups = n_states - 2;
+	state_array[0].constant_state->current_backup = 0;
+	if (n_states > 2) {
+		state_array[0].constant_state->backup_list = &state_array[1];
+	}
+	return true;
 }
