@@ -13,6 +13,10 @@ if (VERBOSE)
   zephyr_compile_definitions(ZCBOR_VERBOSE)
 endif()
 
+if (ASSERTS)
+  zephyr_compile_definitions(ZCBOR_ASSERTS)
+endif()
+
 if (CANONICAL)
   zephyr_compile_definitions(ZCBOR_CANONICAL)
 endif()

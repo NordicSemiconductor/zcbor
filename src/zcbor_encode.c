@@ -27,7 +27,7 @@ static uint8_t log2ceil(uint_fast32_t val)
 		case 8: return 3;
 	}
 
-	zcbor_assert(false, "Should not come here.\r\n");
+	zcbor_print("Should not come here.\r\n");
 	return 0;
 }
 

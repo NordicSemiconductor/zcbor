@@ -25,21 +25,31 @@ struct zcbor_string
 #define zcbor_trace() (printk("bytes left: %zu, byte: 0x%x, elem_count: 0x%" PRIxFAST32 ", %s:%d\n",\
 	(size_t)state->payload_end - (size_t)state->payload, *state->payload, \
 	state->elem_count, __FILE__, __LINE__))
-#define zcbor_assert(expr, ...) \
+
+#define zcbor_print_assert(expr, ...) \
 do { \
-	if (!(expr)) { \
-		printk("ASSERTION \n  \"" #expr \
-			"\"\nfailed at %s:%d with message:\n  ", \
-			__FILE__, __LINE__); \
-		printk(__VA_ARGS__);\
-		return false; \
-	} \
+	printk("ASSERTION \n  \"" #expr \
+		"\"\nfailed at %s:%d with message:\n  ", \
+		__FILE__, __LINE__); \
+	printk(__VA_ARGS__);\
 } while(0)
 #define zcbor_print(...) printk(__VA_ARGS__)
 #else
 #define zcbor_trace() ((void)state)
-#define zcbor_assert(...)
+#define zcbor_print_assert(...)
 #define zcbor_print(...)
+#endif
+
+#ifdef ZCBOR_ASSERTS
+#define zcbor_assert(expr, ...) \
+do { \
+	if (!(expr)) { \
+		zcbor_print_assert(expr, __VA_ARGS__); \
+		ZCBOR_FAIL(); \
+	} \
+} while(0)
+#else
+#define zcbor_assert(expr, ...)
 #endif
 
 #ifndef MIN
