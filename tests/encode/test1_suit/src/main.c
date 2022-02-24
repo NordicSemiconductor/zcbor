@@ -247,16 +247,16 @@ void test_command_sequence(struct zcbor_string *sequence_str,
 	zcbor_print("\r\ntest %s\r\n", name);
 
 	memset(&sequence1, 0, sizeof(sequence1));
-	bool res = cbor_decode_SUIT_Command_Sequence(sequence_str->value,
+	uint_fast8_t res = cbor_decode_SUIT_Command_Sequence(sequence_str->value,
 		sequence_str->len,
 		&sequence1, NULL);
-	zassert_true(res, NULL);
+	zassert_equal(ZCBOR_SUCCESS, res, NULL);
 
 
 	res = cbor_encode_SUIT_Command_Sequence(output,
 		sizeof(output),
 		&sequence1, &out_len);
-	zassert_true(res, NULL);
+	zassert_equal(ZCBOR_SUCCESS, res, NULL);
 	zassert_equal(sequence_str->len, out_len, "%d != %d\r\n", sequence_str->len, out_len);
 	zassert_mem_equal(sequence_str->value,
 		output,
@@ -335,14 +335,14 @@ void test_manifest(const uint8_t *input, uint32_t len)
 	bool load_present;
 	struct zcbor_string *run;
 	bool run_present;
-	bool res;
+	uint_fast8_t res;
 	size_t out_len;
 
 	zcbor_print("test_vector at: 0x%zx\r\n", (size_t)input);
 	zcbor_print("test_vector end at: 0x%zx\r\n",
 				((size_t)input) + len);
 	res = cbor_decode_SUIT_Outer_Wrapper(input, len, &outerwrapper1, NULL);
-	zassert_true(res, "top-level decoding failed.");
+	zassert_equal(ZCBOR_SUCCESS, res, "top-level decoding failed.");
 
 	dependency1 = &outerwrapper1
 		._SUIT_Outer_Wrapper_suit_dependency_resolution
@@ -438,7 +438,7 @@ void test_manifest(const uint8_t *input, uint32_t len)
 
 	res = cbor_encode_SUIT_Outer_Wrapper(output,
 					sizeof(output), &outerwrapper1, &out_len);
-	zassert_true(res, "top-level encoding failed.");
+	zassert_equal(ZCBOR_SUCCESS, res, "top-level encoding failed.");
 	zassert_equal(len, out_len, NULL);
 	zassert_mem_equal(input, output, len, NULL);
 }

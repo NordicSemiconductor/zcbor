@@ -2345,18 +2345,11 @@ class CodeGenerator(CddlXcoder):
     def public_xcode_func_sig(self):
         type_name = self.type_name()
         return f"""
-bool cbor_{self.xcode_func_name()}(
+uint_fast8_t cbor_{self.xcode_func_name()}(
 		{"const " if self.mode == "decode" else ""}uint8_t *payload, size_t payload_len,
 		{"" if self.mode == "decode" else "const "}{type_name if type_name else "void"} *{
             struct_ptr_name(self.mode)},
 		{"size_t *payload_len_out"})"""
-
-    def type_test_xcode_func_sig(self):
-        type_name = self.type_name()
-        return f"""
-__attribute__((unused)) static bool type_test_{self.xcode_func_name()}(
-		{"" if self.mode == "decode" else "const "}{type_name if type_name else "void"} *{
-            struct_ptr_name(self.mode)})"""
 
 
 class CodeRenderer():
@@ -2491,7 +2484,11 @@ static bool {xcoder.func_name}(
 				(size_t)states[0].payload - (size_t)payload);
 	}}
 
-	return ret;
+	if (!ret) {{
+		uint_fast8_t ret = zcbor_pop_error(states);
+		return (ret == ZCBOR_SUCCESS) ? ZCBOR_ERR_UNKNOWN : ret;
+	}}
+	return ZCBOR_SUCCESS;
 }}"""
 
     # Render the entire generated C file contents.

@@ -58,7 +58,7 @@ void test_senml(void)
 		0x00, 0x63, 'B', 'a', 'r', 0x06, 0x07, 0x04, 0xF5, END END
 	};
 
-	zassert_true(cbor_encode_lwm2m_senml(payload, sizeof(payload), &input, &encode_len), NULL);
+	zassert_equal(ZCBOR_SUCCESS, cbor_encode_lwm2m_senml(payload, sizeof(payload), &input, &encode_len), NULL);
 	zassert_equal(sizeof(exp_payload1), encode_len, NULL);
 	zassert_mem_equal(payload, exp_payload1, encode_len, NULL);
 }
