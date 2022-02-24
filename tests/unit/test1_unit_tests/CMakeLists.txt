@@ -15,3 +15,4 @@ target_sources(app PRIVATE
 
 target_include_directories(app PRIVATE ../../../include)
 
+zephyr_compile_definitions(ZCBOR_STOP_ON_ERROR)
