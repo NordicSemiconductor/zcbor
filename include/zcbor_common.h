@@ -90,6 +90,7 @@ struct zcbor_state_constant {
 	zcbor_state_t *backup_list;
 	uint_fast32_t current_backup;
 	uint_fast32_t num_backups;
+	uint_fast8_t error;
 };
 
 /** Function pointer type used with zcbor_multi_decode.
@@ -125,6 +126,21 @@ do {\
 	return false; \
 } while(0)
 
+#define ZCBOR_ERR(err) \
+do { \
+	zcbor_error(state, err); \
+	ZCBOR_FAIL(); \
+} while(0)
+
+#define ZCBOR_ERR_IF(expr, err) \
+do {\
+	if (expr) { \
+		ZCBOR_ERR(err); \
+	} \
+} while(0)
+
+#define ZCBOR_CHECK_PAYLOAD() \
+	ZCBOR_ERR_IF(state->payload >= state->payload_end, ZCBOR_ERR_NO_PAYLOAD)
 
 #define ZCBOR_VALUE_IN_HEADER 23 ///! Values below this are encoded directly in the header.
 #define ZCBOR_VALUE_IS_1_BYTE 24 ///! The next 1 byte contains the value.
@@ -139,6 +155,22 @@ do {\
 #define ZCBOR_FLAG_CONSUME 2UL ///! Consume the backup. Remove the backup from the stack of backups.
 #define ZCBOR_FLAG_TRANSFER_PAYLOAD 4UL ///! Keep the pre-restore payload after restoring.
 
+#define ZCBOR_SUCCESS 0
+#define ZCBOR_ERR_NO_BACKUP_MEM 1
+#define ZCBOR_ERR_NO_BACKUP_ACTIVE 2
+#define ZCBOR_ERR_LOW_ELEM_COUNT 3
+#define ZCBOR_ERR_HIGH_ELEM_COUNT 4
+#define ZCBOR_ERR_INT_SIZE 5
+#define ZCBOR_ERR_FLOAT_SIZE 6
+#define ZCBOR_ERR_ADDITIONAL_INVAL 7 ///! > 27
+#define ZCBOR_ERR_NO_PAYLOAD 8
+#define ZCBOR_ERR_PAYLOAD_NOT_CONSUMED 9
+#define ZCBOR_ERR_WRONG_TYPE 10
+#define ZCBOR_ERR_WRONG_VALUE 11
+#define ZCBOR_ERR_WRONG_RANGE 12
+#define ZCBOR_ERR_ITERATIONS 13
+#define ZCBOR_ERR_ASSERTION 14
+#define ZCBOR_ERR_UNKNOWN 31
 
 /** The largest possible elem_count. */
 #ifdef UINT_FAST32_MAX
@@ -211,5 +243,23 @@ bool zcbor_union_end_code(zcbor_state_t *state);
  */
 bool zcbor_new_state(zcbor_state_t *state_array, uint_fast32_t n_states,
 		const uint8_t *payload, size_t payload_len, uint_fast32_t elem_count);
+
+
+/** Return the current error state, replacing it with SUCCESS. */
+static inline uint_fast8_t zcbor_pop_error(zcbor_state_t *state)
+{
+	uint_fast8_t err = state->constant_state->error;
+
+	state->constant_state->error = ZCBOR_SUCCESS;
+	return err;
+}
+
+/** Write the provided error to the error state. */
+static inline void zcbor_error(zcbor_state_t *state, uint_fast8_t err)
+{
+	if (zcbor_check_error(state)) {
+		state->constant_state->error = err;
+	}
+}
 
 #endif /* ZCBOR_COMMON_H__ */

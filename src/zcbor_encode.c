@@ -14,6 +14,7 @@
 _Static_assert((sizeof(size_t) == sizeof(void *)),
 	"This code needs size_t to be the same length as pointers.");
 
+
 static uint8_t log2ceil(uint_fast32_t val)
 {
 	switch(val) {
@@ -39,9 +40,7 @@ static uint8_t get_additional(uint_fast32_t len, uint8_t value0)
 static bool encode_header_byte(zcbor_state_t *state,
 	zcbor_major_type_t major_type, uint8_t additional)
 {
-	if ((state->payload + 1) > state->payload_end) {
-		ZCBOR_FAIL();
-	}
+	ZCBOR_CHECK_PAYLOAD();
 
 	zcbor_assert(additional < 32, NULL);
 
@@ -62,7 +61,7 @@ static bool value_encode_len(zcbor_state_t *state, zcbor_major_type_t major_type
 	uint_fast32_t encoded_len = get_encoded_len(result, result_len);
 
 	if ((state->payload + 1 + encoded_len) > state->payload_end) {
-		ZCBOR_FAIL();
+		ZCBOR_ERR(ZCBOR_ERR_NO_PAYLOAD);
 	}
 
 	if (!encode_header_byte(state, major_type,
@@ -233,13 +232,13 @@ bool zcbor_uint64_put(zcbor_state_t *state, uint64_t input)
 }
 
 
-static bool strx_start_encode(zcbor_state_t *state,
+static bool str_start_encode(zcbor_state_t *state,
 		const struct zcbor_string *input, zcbor_major_type_t major_type)
 {
 	if (input->value && ((get_result_len(&input->len, sizeof(input->len))
 			+ 1 + input->len + (size_t)state->payload)
 			> (size_t)state->payload_end)) {
-		ZCBOR_FAIL();
+		ZCBOR_ERR(ZCBOR_ERR_NO_PAYLOAD);
 	}
 	if (!value_encode(state, major_type, &input->len, sizeof(input->len))) {
 		ZCBOR_FAIL();
@@ -307,10 +306,10 @@ bool zcbor_bstr_end_encode(zcbor_state_t *state)
 static bool str_encode(zcbor_state_t *state,
 		const struct zcbor_string *input, zcbor_major_type_t major_type)
 {
-	if (!strx_start_encode(state, input, major_type)) {
-		ZCBOR_FAIL();
-	}
 	if (input->len > (state->payload_end - state->payload)) {
+		ZCBOR_ERR(ZCBOR_ERR_NO_PAYLOAD);
+	}
+	if (!str_start_encode(state, input, major_type)) {
 		ZCBOR_FAIL();
 	}
 	if (state->payload_mut != input->value) {
@@ -538,7 +537,7 @@ bool zcbor_multi_encode_minmax(uint_fast32_t min_encode,
 	if ((*num_encode >= min_encode) && (*num_encode <= max_encode)) {
 		return zcbor_multi_encode(*num_encode, encoder, state, input, result_len);
 	} else {
-		ZCBOR_FAIL();
+		ZCBOR_ERR(ZCBOR_ERR_ITERATIONS);
 	}
 }
 

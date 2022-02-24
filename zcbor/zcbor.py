@@ -2160,7 +2160,8 @@ class CodeGenerator(CddlXcoder):
                 func = f"zcbor_uint32_{self.mode}"
                 return "((%s) && (%s))" % (
                     f"({func}(state, (uint32_t *)&{self.choice_var_access()}))",
-                    f"{newl_ind}|| ".join(lines), )
+                    "((" + f"{newl_ind}|| ".join(lines)
+                         + ") || (zcbor_error(state, ZCBOR_ERR_WRONG_VALUE), false))",)
             child_values = ["(%s && ((%s = %s) || 1))" %
                             (child.full_xcode(
                                 union_uint="EXPECT" if child.is_uint_disambiguated() else None),
@@ -2239,6 +2240,11 @@ class CodeGenerator(CddlXcoder):
                 range_checks.append(f"({access}.len <= {self.max_size})")
         elif self.type == "OTHER":
             range_checks.extend(self.my_types[self.value].range_checks(access))
+
+        if range_checks:
+            range_checks[0] = "((" + range_checks[0]
+            range_checks[-1] = range_checks[-1] \
+                + ") || (zcbor_error(state, ZCBOR_ERR_WRONG_RANGE), false))"
 
         return range_checks
 
