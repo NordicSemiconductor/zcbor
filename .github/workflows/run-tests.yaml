@@ -116,21 +116,21 @@ jobs:
       run: |
         export ZEPHYR_BASE=$(pwd)/zephyr
         export ZEPHYR_TOOLCHAIN_VARIANT=host
-        $ZEPHYR_BASE/scripts/twister -i -T . -W --platform native_posix --platform native_posix_64 -t decode -x VERBOSE=ON
+        $ZEPHYR_BASE/scripts/twister -i -T . -W --platform native_posix --platform native_posix_64 -t decode -x VERBOSE=ON -x ASSERTS=ON
 
     - name: Run encode tests with asserts
       working-directory: tests
       run: |
         export ZEPHYR_BASE=$(pwd)/zephyr
         export ZEPHYR_TOOLCHAIN_VARIANT=host
-        $ZEPHYR_BASE/scripts/twister -i -T . -W --platform native_posix --platform native_posix_64 -t encode -x VERBOSE=ON
+        $ZEPHYR_BASE/scripts/twister -i -T . -W --platform native_posix --platform native_posix_64 -t encode -x VERBOSE=ON -x ASSERTS=ON
 
     - name: Run unit tests with asserts
       working-directory: tests
       run: |
         export ZEPHYR_BASE=$(pwd)/zephyr
         export ZEPHYR_TOOLCHAIN_VARIANT=host
-        $ZEPHYR_BASE/scripts/twister -i -T . -W --platform native_posix --platform native_posix_64 -t unit -x VERBOSE=ON
+        $ZEPHYR_BASE/scripts/twister -i -T . -W --platform native_posix --platform native_posix_64 -t unit -x VERBOSE=ON -x ASSERTS=ON
 
   release-test:
     runs-on: ubuntu-latest
