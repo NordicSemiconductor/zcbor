@@ -88,6 +88,7 @@ static bool value_extract(zcbor_state_t *state,
 	zcbor_assert(result_len != 0, "0-length result not supported.\r\n");
 	zcbor_assert(result != NULL, NULL);
 
+	ZCBOR_CHECK_ERROR();
 	ZCBOR_ERR_IF((state->elem_count == 0), ZCBOR_ERR_LOW_ELEM_COUNT);
 	ZCBOR_ERR_IF(state->payload >= state->payload_end, ZCBOR_ERR_NO_PAYLOAD);
 
@@ -379,6 +380,7 @@ static bool list_map_start_decode(zcbor_state_t *state,
 	uint_fast32_t new_elem_count;
 	bool indefinite_length_array = false;
 
+	ZCBOR_CHECK_ERROR();
 	ZCBOR_CHECK_PAYLOAD();
 	CHECK_MAJOR_TYPE(exp_major_type);
 
@@ -439,6 +441,8 @@ static bool array_end_expect(zcbor_state_t *state)
 static bool list_map_end_decode(zcbor_state_t *state)
 {
 	uint_fast32_t max_elem_count = 0;
+
+	ZCBOR_CHECK_ERROR();
 	if (state->indefinite_length_array) {
 		if (!array_end_expect(state)) {
 			ZCBOR_FAIL();
@@ -627,6 +631,7 @@ bool zcbor_any_skip(zcbor_state_t *state, void *result)
 	zcbor_assert(result == NULL,
 			"'any' type cannot be returned, only skipped.\r\n");
 
+	ZCBOR_CHECK_ERROR();
 	ZCBOR_CHECK_PAYLOAD();
 	uint8_t major_type = MAJOR_TYPE(*state->payload);
 	uint8_t additional = ADDITIONAL(*state->payload);
@@ -742,6 +747,7 @@ bool zcbor_multi_decode(uint_fast32_t min_decode,
 		void *result,
 		uint_fast32_t result_len)
 {
+	ZCBOR_CHECK_ERROR();
 	for (uint_fast32_t i = 0; i < max_decode; i++) {
 		uint8_t const *payload_bak = state->payload;
 		uint_fast32_t elem_count_bak = state->elem_count;

@@ -18,6 +18,8 @@ _Static_assert((sizeof(zcbor_state_t) >= sizeof(struct zcbor_state_constant)),
 
 bool zcbor_new_backup(zcbor_state_t *state, uint_fast32_t new_elem_count)
 {
+	ZCBOR_CHECK_ERROR();
+
 	if ((state->constant_state->current_backup)
 		>= state->constant_state->num_backups) {
 		ZCBOR_ERR(ZCBOR_ERR_NO_BACKUP_MEM);
@@ -43,6 +45,8 @@ bool zcbor_process_backup(zcbor_state_t *state, uint32_t flags,
 {
 	const uint8_t *payload = state->payload;
 	const uint_fast32_t elem_count = state->elem_count;
+
+	ZCBOR_CHECK_ERROR();
 
 	if (state->constant_state->current_backup == 0) {
 		ZCBOR_ERR(ZCBOR_ERR_NO_BACKUP_ACTIVE);
@@ -118,6 +122,9 @@ bool zcbor_new_state(zcbor_state_t *state_array, uint_fast32_t n_states,
 	state_array[0].constant_state->num_backups = n_states - 2;
 	state_array[0].constant_state->current_backup = 0;
 	state_array[0].constant_state->error = ZCBOR_SUCCESS;
+#ifdef ZCBOR_STOP_ON_ERROR
+	state_array[0].constant_state->stop_on_error = false;
+#endif
 	if (n_states > 2) {
 		state_array[0].constant_state->backup_list = &state_array[1];
 	}

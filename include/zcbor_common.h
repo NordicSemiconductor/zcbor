@@ -91,6 +91,9 @@ struct zcbor_state_constant {
 	uint_fast32_t current_backup;
 	uint_fast32_t num_backups;
 	uint_fast8_t error;
+#ifdef ZCBOR_STOP_ON_ERROR
+	bool stop_on_error;
+#endif
 };
 
 /** Function pointer type used with zcbor_multi_decode.
@@ -141,6 +144,17 @@ do {\
 
 #define ZCBOR_CHECK_PAYLOAD() \
 	ZCBOR_ERR_IF(state->payload >= state->payload_end, ZCBOR_ERR_NO_PAYLOAD)
+
+#ifdef ZCBOR_STOP_ON_ERROR
+#define ZCBOR_CHECK_ERROR()  \
+do { \
+	if (!zcbor_check_error(state)) { \
+		ZCBOR_FAIL(); \
+	} \
+} while(0)
+#else
+#define ZCBOR_CHECK_ERROR()
+#endif
 
 #define ZCBOR_VALUE_IN_HEADER 23 ///! Values below this are encoded directly in the header.
 #define ZCBOR_VALUE_IS_1_BYTE 24 ///! The next 1 byte contains the value.
@@ -202,6 +216,7 @@ enum zcbor_rfc8949_tag {
 	ZCBOR_TAG_CBOR =        55799, ///! (any)             Self-described CBOR
 };
 
+
 /** Take a backup of the current state. Overwrite the current elem_count. */
 bool zcbor_new_backup(zcbor_state_t *state, uint_fast32_t new_elem_count);
 
@@ -244,6 +259,13 @@ bool zcbor_union_end_code(zcbor_state_t *state);
 bool zcbor_new_state(zcbor_state_t *state_array, uint_fast32_t n_states,
 		const uint8_t *payload, size_t payload_len, uint_fast32_t elem_count);
 
+#ifdef ZCBOR_STOP_ON_ERROR
+/** Check stored error and fail if present, but only if stop_on_error is true. */
+static inline bool zcbor_check_error(zcbor_state_t *state)
+{
+	return !(state->constant_state->stop_on_error && state->constant_state->error);
+}
+#endif
 
 /** Return the current error state, replacing it with SUCCESS. */
 static inline uint_fast8_t zcbor_pop_error(zcbor_state_t *state)
@@ -257,7 +279,10 @@ static inline uint_fast8_t zcbor_pop_error(zcbor_state_t *state)
 /** Write the provided error to the error state. */
 static inline void zcbor_error(zcbor_state_t *state, uint_fast8_t err)
 {
-	if (zcbor_check_error(state)) {
+#ifdef ZCBOR_STOP_ON_ERROR
+	if (zcbor_check_error(state))
+#endif
+	{
 		state->constant_state->error = err;
 	}
 }

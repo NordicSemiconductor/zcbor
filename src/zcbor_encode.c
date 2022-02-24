@@ -40,6 +40,7 @@ static uint8_t get_additional(uint_fast32_t len, uint8_t value0)
 static bool encode_header_byte(zcbor_state_t *state,
 	zcbor_major_type_t major_type, uint8_t additional)
 {
+	ZCBOR_CHECK_ERROR();
 	ZCBOR_CHECK_PAYLOAD();
 
 	zcbor_assert(additional < 32, NULL);
@@ -547,6 +548,7 @@ bool zcbor_multi_encode(uint_fast32_t num_encode,
 		const void *input,
 		uint_fast32_t result_len)
 {
+	ZCBOR_CHECK_ERROR();
 	for (uint_fast32_t i = 0; i < num_encode; i++) {
 		if (!encoder(state, (const uint8_t *)input + i*result_len)) {
 			ZCBOR_FAIL();
