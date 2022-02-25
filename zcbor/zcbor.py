@@ -2353,20 +2353,24 @@ uint_fast8_t cbor_{self.xcode_func_name()}(
 
 
 class CodeRenderer():
-    def __init__(self, entry_types, mode, print_time, default_max_qty, git_sha=''):
+    def __init__(self, entry_types, modes, print_time, default_max_qty, git_sha=''):
         self.entry_types = entry_types
-        self.mode = mode
         self.print_time = print_time
         self.default_max_qty = default_max_qty
 
+        self.sorted_types = dict()
+        self.functions = dict()
+        self.type_defs = dict()
+
         # Sort type definitions so the typedefs will come in the correct order in the header file
         # and the function in the correct order in the c file.
-        self.sorted_types = list(sorted(
-            self.entry_types, key=lambda _type: _type.depends_on(), reverse=False))
+        for mode in modes:
+            self.sorted_types[mode] = list(sorted(
+                self.entry_types[mode], key=lambda _type: _type.depends_on(), reverse=False))
 
-        self.functions = self.unique_funcs()
-        self.functions = self.used_funcs()
-        self.type_defs = self.unique_types()
+            self.functions[mode] = self.unique_funcs(mode)
+            self.functions[mode] = self.used_funcs(mode)
+            self.type_defs[mode] = self.unique_types(mode)
 
         self.version = __version__
 
@@ -2378,10 +2382,10 @@ class CodeRenderer():
 
     # Return a list of typedefs for all defined types, with duplicate typedefs
     # removed.
-    def unique_types(self):
+    def unique_types(self, mode):
         type_names = {}
         out_types = []
-        for mtype in self.sorted_types:
+        for mtype in self.sorted_types[mode]:
             for type_def in mtype.type_def():
                 type_name = type_def[1]
                 if type_name not in type_names.keys():
@@ -2397,10 +2401,10 @@ class CodeRenderer():
 
     # Return a list of encoder/decoder functions for all defined types, with duplicate
     # functions removed.
-    def unique_funcs(self):
+    def unique_funcs(self, mode):
         func_names = {}
         out_types = []
-        for mtype in self.sorted_types:
+        for mtype in self.sorted_types[mode]:
             xcoders = list(mtype.xcoders())
             for funcType in xcoders:
                 func_xcode = funcType[0]
@@ -2418,41 +2422,29 @@ class CodeRenderer():
 
     # Return a list of encoder/decoder functions for all defined types, with unused
     # functions removed.
-    def used_funcs(self):
+    def used_funcs(self, mode):
         mod_entry_types = [
             XcoderTuple(
                 func_type.xcode(),
                 func_type.xcode_func_name(),
-                func_type.type_name()) for func_type in self.entry_types]
+                func_type.type_name()) for func_type in self.entry_types[mode]]
         out_types = [func_type for func_type in mod_entry_types]
         full_code = "".join([func_type[0] for func_type in mod_entry_types])
-        for func_type in reversed(self.functions):
+        for func_type in reversed(self.functions[mode]):
             func_name = func_type[1]
             if func_type not in mod_entry_types and search(r"%s\W" % func_name, full_code):
                 full_code += func_type[0]
                 out_types.append(func_type)
         return list(reversed(out_types))
 
-    # Return a list of typedefs for all defined types, with unused types removed.
-    def used_types(self, type_defs, entry_types):
-        out_types = [typeDef for typeDef in entry_types]
-        full_code = "".join(["".join(typeDef[0]) for typeDef in entry_types])
-        for typeDef in reversed(type_defs):
-            type_name = typeDef[1]
-            if typeDef not in entry_types and search(r"%s\W" % type_name, full_code):
-                full_code += "".join(typeDef[0])
-                out_types.append(typeDef)
-        return list(reversed(out_types))
-
     # Render a single decoding function with signature and body.
-    def render_function(self, xcoder):
+    def render_function(self, xcoder, mode):
         body = xcoder.body
-        temp_count = body.count('temp_elem_count')
         return f"""
 static bool {xcoder.func_name}(
-		zcbor_state_t *state, {"" if self.mode == "decode" else "const "}{
+		zcbor_state_t *state, {"" if mode == "decode" else "const "}{
             xcoder.type_name
-            if struct_ptr_name(self.mode) in body else "void"} *{struct_ptr_name(self.mode)})
+            if struct_ptr_name(mode) in body else "void"} *{struct_ptr_name(mode)})
 {{
 	zcbor_print("%s\\r\\n", __func__);
 	{"struct zcbor_string tmp_str;" if "tmp_str" in body else ""}
@@ -2467,8 +2459,8 @@ static bool {xcoder.func_name}(
 }}""".replace("	\n", "")  # call replace() to remove empty lines.
 
     # Render a single entry function (API function) with signature and body.
-    def render_entry_function(self, xcoder):
-        func_name, func_arg = (xcoder.xcode_func_name(), struct_ptr_name(self.mode))
+    def render_entry_function(self, xcoder, mode):
+        func_name, func_arg = (xcoder.xcode_func_name(), struct_ptr_name(mode))
         return f"""
 {xcoder.public_xcode_func_sig()}
 {{
@@ -2492,7 +2484,7 @@ static bool {xcoder.func_name}(
 }}"""
 
     # Render the entire generated C file contents.
-    def render_c_file(self, header_file_name):
+    def render_c_file(self, header_file_name, mode):
         return f"""/*
  * Generated using zcbor version {self.version}
  * https://github.com/NordicSemiconductor/zcbor{'''
@@ -2504,20 +2496,20 @@ static bool {xcoder.func_name}(
 #include <stdbool.h>
 #include <stddef.h>
 #include <string.h>
-#include "zcbor_{self.mode}.h"
+#include "zcbor_{mode}.h"
 #include "{header_file_name}"
 
 #if DEFAULT_MAX_QTY != {self.default_max_qty}
 #error "The type file was generated with a different default_max_qty than this file"
 #endif
 
-{linesep.join([self.render_function(xcoder) for xcoder in self.functions])}
+{linesep.join([self.render_function(xcoder, mode) for xcoder in self.functions[mode]])}
 
-{linesep.join([self.render_entry_function(xcoder) for xcoder in self.entry_types])}
+{linesep.join([self.render_entry_function(xcoder, mode) for xcoder in self.entry_types[mode]])}
 """
 
     # Render the entire generated header file contents.
-    def render_h_file(self, type_def_file, header_guard):
+    def render_h_file(self, type_def_file, header_guard, mode):
         return \
             f"""/*
  * Generated using zcbor version {self.version}
@@ -2533,20 +2525,21 @@ static bool {xcoder.func_name}(
 #include <stdbool.h>
 #include <stddef.h>
 #include <string.h>
-#include "zcbor_{self.mode}.h"
+#include "zcbor_{mode}.h"
 #include "{type_def_file}"
 
 #if DEFAULT_MAX_QTY != {self.default_max_qty}
 #error "The type file was generated with a different default_max_qty than this file"
 #endif
 
-{(linesep+linesep).join([f"{xcoder.public_xcode_func_sig()};" for xcoder in self.entry_types])}
+{(linesep+linesep).join(
+    [f"{xcoder.public_xcode_func_sig()};" for xcoder in self.entry_types[mode]])}
 
 
 #endif /* {header_guard} */
 """
 
-    def render_type_file(self, header_guard):
+    def render_type_file(self, header_guard, mode):
         return \
             f"""/*
  * Generated using zcbor version {self.version}
@@ -2562,7 +2555,7 @@ static bool {xcoder.func_name}(
 #include <stdbool.h>
 #include <stddef.h>
 #include <string.h>
-#include "zcbor_{self.mode}.h"
+#include "zcbor_{mode}.h"
 
 /** Which value for --default-max-qty this file was created with.
  *
@@ -2574,13 +2567,15 @@ static bool {xcoder.func_name}(
 #define DEFAULT_MAX_QTY {self.default_max_qty}
 
 {(linesep+linesep).join(
-    [f"{typedef[1]} {{{linesep}{linesep.join(typedef[0][1:])};" for typedef in self.type_defs])}
+    [f"{typedef[1]} {{{linesep}{linesep.join(typedef[0][1:])};"
+        for typedef in self.type_defs[mode]])}
 
 
 #endif /* {header_guard} */
 """
 
-    def render_cmake_file(self, target_name, h_file, c_file, type_file, output_c_dir, output_h_dir):
+    def render_cmake_file(self, target_name, h_files, c_files, type_file,
+                          output_c_dir, output_h_dir):
         return \
             f"""\
 #
@@ -2594,38 +2589,41 @@ target_sources({target_name} PRIVATE
     {Path(output_c_dir, "zcbor_decode.c")}
     {Path(output_c_dir, "zcbor_encode.c")}
     {Path(output_c_dir, "zcbor_common.c")}
-    {c_file.name}
+    {(linesep + "    ").join((c.name for c in c_files.values()))}
     )
 target_include_directories({target_name} PUBLIC
     {(linesep + "    ").join(set((str(Path(output_h_dir)),
                                   str(Path(type_file.name).parent),
-                                  str(Path(h_file.name).parent))))}
+                                  *(str(Path(h.name).parent) for h in h_files.values()))))}
     )
 """
 
-    def render(self, h_file, c_file, type_file, include_prefix, cmake_file=None, output_c_dir=None,
-               output_h_dir=None):
+    def render(self, modes, h_files, c_files, type_file, include_prefix, cmake_file=None,
+               output_c_dir=None, output_h_dir=None):
+        for mode in modes:
+            h_name = Path(include_prefix, Path(h_files[mode].name).name)
 
-        # Create and populate the generated c and h file.
-        makedirs("./" + path.dirname(c_file.name), exist_ok=True)
+            # Create and populate the generated c and h file.
+            makedirs("./" + path.dirname(c_files[mode].name), exist_ok=True)
 
-        h_name = Path(include_prefix, Path(h_file.name).name)
-        type_def_name = Path(include_prefix, Path(type_file.name).name)
+            type_def_name = Path(include_prefix, Path(type_file.name).name)
 
-        print("Writing to " + c_file.name)
-        c_file.write(self.render_c_file(header_file_name=h_name))
+            print("Writing to " + c_files[mode].name)
+            c_files[mode].write(self.render_c_file(h_name, mode))
 
-        print("Writing to " + h_file.name)
-        h_file.write(self.render_h_file(
-            type_def_file=type_def_name, header_guard=self.header_guard(h_file.name)))
+            print("Writing to " + h_files[mode].name)
+            h_files[mode].write(self.render_h_file(
+                type_def_name,
+                self.header_guard(h_files[mode].name), mode))
 
         print("Writing to " + type_file.name)
-        type_file.write(self.render_type_file(header_guard=self.header_guard(type_file.name)))
+        type_file.write(self.render_type_file(self.header_guard(type_file.name), mode))
 
         if cmake_file:
             print("Writing to " + cmake_file.name)
             cmake_file.write(self.render_cmake_file(
-                Path(cmake_file.name).stem, h_file, c_file, type_file, output_c_dir, output_h_dir))
+                Path(cmake_file.name).stem, h_files, c_files, type_file,
+                output_c_dir, output_h_dir))
 
 
 def parse_args():
@@ -2673,15 +2671,19 @@ This script requires 'regex' for lookaround functionality not present in 're'.''
         formatter_class=RawDescriptionHelpFormatter)
 
     code_parser.add_argument(
-        "--output-c", "--oc", required=False, type=str, help="Path to output C file.")
+        "--output-c", "--oc", required=False, type=str,
+        help="""Path to output C file. If both --decode and --encode are specified, _decode and
+_encode will be appended to the filename when creating the two files.""")
     code_parser.add_argument(
-        "--output-h", "--oh", required=False, type=str, help="Path to output header file.")
+        "--output-h", "--oh", required=False, type=str,
+        help="""Path to output header file. If both --decode and --encode are specified, _decode and
+_encode will be appended to the filename when creating the two files""")
     code_parser.add_argument(
         "--output-h-types", "--oht", required=False, type=str,
         help="Path to output header file with typedefs (shared between decode and encode).")
     code_parser.add_argument(
         "--copy-sources", required=False, action="store_true", default=False,
-        help="""Copy the non generated source files into the same directories as the
+        help="""Copy the non-generated source files (zcbor_*.c/h) into the same directories as the
 generated files.""")
     code_parser.add_argument(
         "--output-cmake", required=False, type=str,
@@ -2698,10 +2700,10 @@ This option works with or without the --copy-sources option.""")
         help="Names of the types which should have their xcode functions exposed.")
     code_parser.add_argument(
         "-d", "--decode", required=False, action="store_true", default=False,
-        help="Generate decoding code.")
+        help="Generate decoding code. Either --decode or --encode or both must be specified.")
     code_parser.add_argument(
         "-e", "--encode", required=False, action="store_true", default=False,
-        help="Generate encoding code.")
+        help="Generate encoding code. Either --decode or --encode or both must be specified.")
     code_parser.add_argument(
         "--time-header", required=False, action="store_true", default=False,
         help="Put the current time in a comment in the generated files.")
@@ -2778,25 +2780,33 @@ If omitted, the format is inferred from the file name.
     if not args.no_prelude:
         args.cddl.append(open(PRELUDE_path, 'r'))
 
-    if hasattr(args, "decode") and (args.decode == args.encode):
-        parser.error("Please specify exactly one of --decode or --encode.")
+    if hasattr(args, "decode") and not args.decode and not args.encode:
+        parser.error("Please specify at least one of --decode or --encode.")
 
     return args
 
 
 def process_code(args):
-    mode = "decode" if args.decode else "encode"
+    modes = list()
+    if args.decode:
+        modes.append("decode")
+    if args.encode:
+        modes.append("encode")
 
     print("Parsing files: " + ", ".join((c.name for c in args.cddl)))
 
     cddl_contents = linesep.join((c.read() for c in args.cddl))
 
-    cddl_res = CodeGenerator.from_cddl(
-        mode, cddl_contents, args.default_max_qty, mode, args.entry_types, args.default_bit_size)
+    cddl_res = dict()
+    for mode in modes:
+        cddl_res[mode] = CodeGenerator.from_cddl(
+            mode, cddl_contents, args.default_max_qty, mode, args.entry_types,
+            args.default_bit_size)
 
     # Parsing is done, pretty print the result.
     verbose_print(args.verbose, "Parsed CDDL types:")
-    verbose_pprint(args.verbose, cddl_res.my_types)
+    for mode in modes:
+        verbose_pprint(args.verbose, cddl_res[mode].my_types)
 
     git_sha = ''
     if args.git_sha_header:
@@ -2814,24 +2824,37 @@ def process_code(args):
     if args.output_cmake:
         cmake_dir = Path(args.output_cmake).parent
         output_cmake = create_and_open(args.output_cmake)
-        filenames = Path(args.output_cmake).parts[-1].replace(".cmake", "") \
-            + ("_decode" if args.decode else "_encode")
+        filenames = Path(args.output_cmake).parts[-1].replace(".cmake", "")
     else:
         output_cmake = None
 
-    output_c = create_and_open(args.output_c or Path(cmake_dir, 'src', f'{filenames}.c'))
-    output_h = create_and_open(args.output_h or Path(cmake_dir, 'include', f'{filenames}.h'))
+    def add_mode_to_fname(filename, mode):
+        name = Path(filename).stem + "_" + mode + Path(filename).suffix
+        return Path(filename).with_name(name)
 
-    out_c = Path(output_c.name)
-    out_h = Path(output_h.name)
+    output_c = dict()
+    output_h = dict()
+    out_c = args.output_c if (len(modes) == 1 and args.output_c) else None
+    out_h = args.output_h if (len(modes) == 1 and args.output_h) else None
+    for mode in modes:
+        output_c[mode] = create_and_open(
+            out_c or add_mode_to_fname(
+                args.output_c or Path(cmake_dir, 'src', f'{filenames}.c'), mode))
+        output_h[mode] = create_and_open(
+            out_h or add_mode_to_fname(
+                args.output_h or Path(cmake_dir, 'include', f'{filenames}.h'), mode))
+
+    out_c_parent = Path(output_c[modes[0]].name).parent
+    out_h_parent = Path(output_h[modes[0]].name).parent
 
     output_h_types = create_and_open(
         args.output_h_types
-        or (args.output_h and out_h.with_name(out_h.stem + "_types.h"))
+        or (args.output_h and Path(args.output_h).with_name(Path(args.output_h).stem + "_types.h"))
         or Path(cmake_dir, 'include', filenames + '_types.h'))
 
-    renderer = CodeRenderer(entry_types=[cddl_res.my_types[entry] for entry in args.entry_types],
-                            mode=mode, print_time=args.time_header,
+    renderer = CodeRenderer(entry_types={mode: [cddl_res[mode].my_types[entry]
+                                         for entry in args.entry_types] for mode in modes},
+                            modes=modes, print_time=args.time_header,
                             default_max_qty=args.default_max_qty, git_sha=git_sha,
                             )
 
@@ -2839,8 +2862,8 @@ def process_code(args):
     h_code_dir = Path(c_code_root, "include")
 
     if args.copy_sources:
-        new_c_code_dir = out_c.parent
-        new_h_code_dir = out_h.parent
+        new_c_code_dir = out_c_parent
+        new_h_code_dir = out_h_parent
         copyfile(Path(c_code_dir, "zcbor_decode.c"), Path(new_c_code_dir, "zcbor_decode.c"))
         copyfile(Path(c_code_dir, "zcbor_encode.c"), Path(new_c_code_dir, "zcbor_encode.c"))
         copyfile(Path(c_code_dir, "zcbor_common.c"), Path(new_c_code_dir, "zcbor_common.c"))
@@ -2851,7 +2874,7 @@ def process_code(args):
         c_code_dir = new_c_code_dir
         h_code_dir = new_h_code_dir
 
-    renderer.render(output_h, output_c, output_h_types, args.include_prefix,
+    renderer.render(modes, output_h, output_c, output_h_types, args.include_prefix,
                     output_cmake, c_code_dir, h_code_dir)
 
 

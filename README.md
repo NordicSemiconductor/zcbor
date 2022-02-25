@@ -440,14 +440,18 @@ This script requires 'regex' for lookaround functionality not present in 're'.
 optional arguments:
   -h, --help            show this help message and exit
   --output-c OUTPUT_C, --oc OUTPUT_C
-                        Path to output C file.
+                        Path to output C file. If both --decode and --encode
+                        are specified, _decode and _encode will be appended to
+                        the filename when creating the two files.
   --output-h OUTPUT_H, --oh OUTPUT_H
-                        Path to output header file.
+                        Path to output header file. If both --decode and
+                        --encode are specified, _decode and _encode will be
+                        appended to the filename when creating the two files
   --output-h-types OUTPUT_H_TYPES, --oht OUTPUT_H_TYPES
                         Path to output header file with typedefs (shared
                         between decode and encode).
-  --copy-sources        Copy the non generated source files into the same
-                        directories as the generated files.
+  --copy-sources        Copy the non-generated source files (zcbor_*.c/h) into
+                        the same directories as the generated files.
   --output-cmake OUTPUT_CMAKE
                         Path to output CMake file. The filename of the CMake
                         file without '.cmake' is used as the name of the CMake
@@ -462,8 +466,10 @@ optional arguments:
   -t ENTRY_TYPES [ENTRY_TYPES ...], --entry-types ENTRY_TYPES [ENTRY_TYPES ...]
                         Names of the types which should have their xcode
                         functions exposed.
-  -d, --decode          Generate decoding code.
-  -e, --encode          Generate encoding code.
+  -d, --decode          Generate decoding code. Either --decode or --encode or
+                        both must be specified.
+  -e, --encode          Generate encoding code. Either --decode or --encode or
+                        both must be specified.
   --time-header         Put the current time in a comment in the generated
                         files.
   --git-sha-header      Put the current git sha of zcbor in a comment in the
