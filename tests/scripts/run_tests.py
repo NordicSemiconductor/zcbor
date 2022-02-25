@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-from unittest import TestCase, main
+from unittest import TestCase, main, skipIf
 from subprocess import Popen, PIPE
 from re import sub
 from pathlib import Path
@@ -13,6 +13,7 @@ from pprint import pprint
 # from ecdsa import VerifyingKey
 from hashlib import sha256
 import cbor2
+from sys import platform, exit
 
 
 try:
@@ -23,8 +24,7 @@ The zcbor package must be installed to run these tests.
 During development, install with `python3 setup.py develop` to install in a way
 that picks up changes in the files without having to reinstall.
 """)
-    import sys
-    sys.exit(1)
+    exit(1)
 
 
 p_root = Path(__file__).absolute().parents[2]
@@ -40,6 +40,8 @@ p_manifest14_priv = Path(p_tests, 'cases', 'manifest14.priv')
 p_manifest14_pub = Path(p_tests, 'cases', 'manifest14.pub')
 p_map_bstr_cddl = Path(p_tests, 'cases', 'map_bstr.cddl')
 p_map_bstr_yaml = Path(p_tests, 'cases', 'map_bstr.yaml')
+p_README = Path(p_root, 'README.md')
+p_add_helptext = Path(p_root, 'add_helptext.py')
 
 
 class Testn(TestCase):
@@ -553,6 +555,16 @@ class TestOptional(TestCase):
         decoded = cddl.decode_str_yaml(test_yaml)
         self.assertEqual(decoded.mem_config[0].READ.union_choice, "uint0")
         self.assertEqual(decoded.mem_config[0].N, [5])
+
+
+class TestREADME(TestCase):
+    @skipIf(platform.startswith("win"), "Skip on Windows because of path/newline issues.")
+    def test_cli_doc(self):
+        with open(p_README, 'r') as f:
+            readme_contents = f.read()
+        add_help = Popen(["python3", p_add_helptext, "--check"])
+        add_help.communicate()
+        self.assertEqual(0, add_help.returncode)
 
 
 if __name__ == "__main__":

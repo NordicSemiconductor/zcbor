@@ -356,3 +356,166 @@ These tests are dependent upon the `pycodestyle` package from `pip`.
 Run these scripts with no arguments.
 
 To set up the environment to run the ztest tests, follow [Zephyr's Getting Started Guide](https://docs.zephyrproject.org/latest/getting_started/index.html), or see the workflow in the [`.github`](.github) directory.
+
+Command line documentation
+==========================
+
+Added via `add_helptext.py`
+
+zcbor --help
+------------
+
+```
+usage: zcbor [-h] [--version] -c CDDL [--default-max-qty DEFAULT_MAX_QTY]
+             [--no-prelude] [-v]
+             {code,convert} ...
+
+Parse a CDDL file and validate/convert between YAML, JSON, and CBOR. Can also
+generate C code for validation/encoding/decoding of CBOR.
+
+positional arguments:
+  {code,convert}
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --version             show program's version number and exit
+  -c CDDL, --cddl CDDL  Path to one or more input CDDL file(s). Passing
+                        multiple files is equivalent to concatenating them.
+  --default-max-qty DEFAULT_MAX_QTY, --dq DEFAULT_MAX_QTY
+                        Default maximum number of repetitions when no maximum
+                        is specified. This is needed to construct complete C
+                        types. This is relevant for the generated code. It is
+                        not relevant for converting, except when handling data
+                        that will be decoded by generated code. The default
+                        value of this option is 3. Set it to a large number
+                        when not relevant.
+  --no-prelude          Exclude the standard CDDL prelude from the build. The
+                        prelude can be viewed at zcbor/cddl/prelude.cddl in
+                        the repo, or together with the script.
+  -v, --verbose         Print more information while parsing CDDL and
+                        generating code.
+
+```
+
+zcbor code --help
+-----------------
+
+```
+usage: zcbor code [-h] [--output-c OUTPUT_C] [--output-h OUTPUT_H]
+                  [--output-h-types OUTPUT_H_TYPES] [--copy-sources]
+                  [--output-cmake OUTPUT_CMAKE] -t ENTRY_TYPES
+                  [ENTRY_TYPES ...] [-d] [-e] [--time-header]
+                  [--git-sha-header] [-b {32,64}]
+                  [--include-prefix INCLUDE_PREFIX]
+
+Parse a CDDL file and produce C code that validates and xcodes CBOR.
+The output from this script is a C file and a header file. The header file
+contains typedefs for all the types specified in the cddl input file, as well
+as declarations to xcode functions for the types designated as entry types when
+running the script. The c file contains all the code for decoding and validating
+the types in the CDDL input file. All types are validated as they are xcoded.
+
+Where a `bstr .cbor <Type>` is specified in the CDDL, AND the Type is an entry
+type, the xcoder will not xcode the string, only provide a pointer into the
+payload buffer. This is useful to reduce the size of typedefs, or to break up
+decoding. Using this mechanism is necessary when the CDDL contains self-
+referencing types, since the C type cannot be self referencing.
+
+This script requires 'regex' for lookaround functionality not present in 're'.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --output-c OUTPUT_C, --oc OUTPUT_C
+                        Path to output C file.
+  --output-h OUTPUT_H, --oh OUTPUT_H
+                        Path to output header file.
+  --output-h-types OUTPUT_H_TYPES, --oht OUTPUT_H_TYPES
+                        Path to output header file with typedefs (shared
+                        between decode and encode).
+  --copy-sources        Copy the non generated source files into the same
+                        directories as the generated files.
+  --output-cmake OUTPUT_CMAKE
+                        Path to output CMake file. The filename of the CMake
+                        file without '.cmake' is used as the name of the CMake
+                        target in the file. The CMake file defines a CMake
+                        target with the zcbor source files and the generated
+                        file as sources, and the zcbor header files' and
+                        generated header files' folders as
+                        include_directories. Add it to your project via
+                        include() in your CMakeLists.txt file, and link the
+                        target to your program. This option works with or
+                        without the --copy-sources option.
+  -t ENTRY_TYPES [ENTRY_TYPES ...], --entry-types ENTRY_TYPES [ENTRY_TYPES ...]
+                        Names of the types which should have their xcode
+                        functions exposed.
+  -d, --decode          Generate decoding code.
+  -e, --encode          Generate encoding code.
+  --time-header         Put the current time in a comment in the generated
+                        files.
+  --git-sha-header      Put the current git sha of zcbor in a comment in the
+                        generated files.
+  -b {32,64}, --default-bit-size {32,64}
+                        Default bit size of integers in code. When integers
+                        have no explicit bounds, assume they have this bit
+                        width. Should follow the bit width of the architecture
+                        the code will be running on.
+  --include-prefix INCLUDE_PREFIX
+                        When #include'ing generated files, add this path
+                        prefix to the filename.
+
+```
+
+zcbor convert --help
+--------------------
+
+```
+usage: zcbor convert [-h] -i INPUT [--input-as {yaml,json,cbor,cborhex}]
+                     [-o OUTPUT] [--output-as {yaml,json,cbor,cborhex,c_code}]
+                     [--c-code-var-name C_CODE_VAR_NAME] -t ENTRY_TYPE
+
+Parse a CDDL file and verify/convert between CBOR and YAML/JSON. The script
+decodes the CBOR/YAML/JSON data from a file or stdin and verifies that it
+conforms to the CDDL description. The script fails if the data does not
+conform. The script can also be used to just verify. JSON and YAML do not
+support all data types that CBOR/CDDL supports. bytestrings (BSTR), tags, and
+maps with non-text keys need special handling: All strings in JSON/YAML are
+text strings. If a BSTR is needed, use a dict with a single entry, with "bstr"
+as the key, and the byte string (as a hex string) as the value, e.g. {"bstr":
+"0123456789abcdef"}. The value can also be another type, e.g. which will be
+interpreted as a BSTR with the given value as contents (in cddl: 'bstr .cbor
+SomeType'). E.g. {"bstr": ["first element", 2, [3]]} Dicts in JSON/YAML only
+support text strings for keys, so if a dict needs other types of keys,
+encapsulate the key and value into a dict (n is an arbitrary integer): e.g.
+{"name": "foo", "keyvaln": {"key": 123, "val": "bar"}} which will conform to
+the CDDL {tstr => tstr, int => tstr}. Lastly, tags are specified by a dict
+with two elements, e.g. {"tag": 1234, "value": ["tagged string within list"]}
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -i INPUT, --input INPUT
+                        Input data file. The option --input-as specifies how
+                        to interpret the contents. Use "-" to indicate stdin.
+  --input-as {yaml,json,cbor,cborhex}
+                        Which format to interpret the input file as. If
+                        omitted, the format is inferred from the file name.
+                        .yaml, .yml => YAML, .json => JSON, .cborhex => CBOR
+                        as hex string, everything else => CBOR
+  -o OUTPUT, --output OUTPUT
+                        Output data file. The option --output-as specifies how
+                        to interpret the contents. If --output is omitted, no
+                        conversion is done, only verification of the input.
+                        Use "-" to indicate stdout.
+  --output-as {yaml,json,cbor,cborhex,c_code}
+                        Which format to interpret the output file as. If
+                        omitted, the format is inferred from the file name.
+                        .yaml, .yml => YAML, .json => JSON, .c, .h => C code,
+                        .cborhex => CBOR as hex string, everything else =>
+                        CBOR
+  --c-code-var-name C_CODE_VAR_NAME
+                        Only relevant together with '--output-as c_code' or .c
+                        files.
+  -t ENTRY_TYPE, --entry-type ENTRY_TYPE
+                        Name of the type (from the CDDL) to interpret the data
+                        as.
+
+```
