@@ -2631,7 +2631,7 @@ The default value of this option is 3. Set it to a large number when not relevan
     parser.add_argument(
         "--no-prelude", required=False, action="store_true", default=False,
         help=f"""Exclude the standard CDDL prelude from the build. The prelude can be viewed at
-{PRELUDE_path}""")
+{PRELUDE_path.relative_to(P_REPO_ROOT)} in the repo, or together with the script.""")
     parser.add_argument(
         "-v", "--verbose", required=False, action="store_true", default=False,
         help="Print more information while parsing CDDL and generating code.")
