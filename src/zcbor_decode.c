@@ -454,7 +454,7 @@ static bool array_end_expect(zcbor_state_t *state)
 }
 
 
-bool list_map_end_decode(zcbor_state_t *state)
+static bool list_map_end_decode(zcbor_state_t *state)
 {
 	uint_fast32_t max_elem_count = 0;
 	if (state->indefinite_length_array) {
