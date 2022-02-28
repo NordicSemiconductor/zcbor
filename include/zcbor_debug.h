@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef CBOR_DEBUG_H__
-#define CBOR_DEBUG_H__
+#ifndef ZCBOR_DEBUG_H__
+#define ZCBOR_DEBUG_H__
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -57,4 +57,4 @@ static void zcbor_print_compare_strings_diff(const uint8_t *str1, const uint8_t 
 	}
 }
 
-#endif /* CBOR_DEBUG_H__ */
+#endif /* ZCBOR_DEBUG_H__ */
