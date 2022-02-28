@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef CBOR_ENCODE_H__
-#define CBOR_ENCODE_H__
+#ifndef ZCBOR_ENCODE_H__
+#define ZCBOR_ENCODE_H__
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -249,4 +249,4 @@ void zcbor_new_encode_state(zcbor_state_t *state_array, uint32_t n_states,
 zcbor_state_t name[((num_backups) + 2)]; \
 zcbor_new_encode_state(name, ARRAY_SIZE(name), payload, payload_size, elem_count)
 
-#endif /* CBOR_ENCODE_H__ */
+#endif /* ZCBOR_ENCODE_H__ */

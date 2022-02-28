@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef CBOR_COMMON_H__
-#define CBOR_COMMON_H__
+#ifndef ZCBOR_COMMON_H__
+#define ZCBOR_COMMON_H__
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -198,4 +198,4 @@ bool zcbor_union_end_code(zcbor_state_t *state);
 void zcbor_new_state(zcbor_state_t *state_array, uint_fast32_t n_states,
 		const uint8_t *payload, size_t payload_len, uint_fast32_t elem_count);
 
-#endif /* CBOR_COMMON_H__ */
+#endif /* ZCBOR_COMMON_H__ */
