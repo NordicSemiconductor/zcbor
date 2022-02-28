@@ -34,7 +34,11 @@ static uint_fast32_t additional_len(uint8_t additional)
 #define ADDITIONAL(header_byte) ((header_byte) & 0x1F)
 
 /** The largest possible elem_count. */
+#ifdef UINT_FAST32_MAX
 #define MAX_ELEM_COUNT UINT_FAST32_MAX
+#else
+#define MAX_ELEM_COUNT ((uint_fast32_t)(-1L))
+#endif
 
 /** Initial value for elem_count for when it just needs to be large. */
 #define LARGE_ELEM_COUNT (MAX_ELEM_COUNT - 16)
