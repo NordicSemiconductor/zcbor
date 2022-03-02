@@ -50,6 +50,20 @@ ZCBOR_STATE_E(encode_state, n, payload, payload_len, 0);
 
 The CBOR libraries assume little-endianness by default, but you can define ZCBOR_BIG_ENDIAN to change this.
 
+Configuration
+-------------
+
+The C library has a few compile-time configuration options.
+These configuration options can be enabled by adding them as compile definitions to the build.
+
+Name                      | Description
+------------------------- | -----------
+`ZCBOR_CANONICAL`         | When encoding lists and maps, do not use indefinite length encoding. Enabling `ZCBOR_CANONICAL` increases code size and makes the encoding library more often use state backups.
+`ZCBOR_VERBOSE`           | Print messages on encoding/decoding errors (`zcbor_print()`), and also a trace message (`zcbor_trace()`) for each decoded value, and in each generated function (when using code generation). Requires `printk` as found in Zephyr.
+`ZCBOR_ASSERTS`           | Enable asserts (`zcbor_assert()`). When they fail, the assert statements instruct the current function to return a `ZCBOR_ERR_ASSERTION` error. If `ZCBOR_VERBOSE` is enabled, a message is printed.
+`ZCBOR_STOP_ON_ERROR`     | Enable the `stop_on_error` functionality. This makes all functions abort their execution if called when an error has already happened.
+`ZCBOR_BIG_ENDIAN`        | All decoded values are returned as big-endian.
+
 Schema-driven data manipulation and code generation
 ===================================================
 
