@@ -2200,6 +2200,17 @@ class CodeGenerator(CddlXcoder):
         return [f"zcbor_tag_{self.mode if (self.mode == 'encode') else 'expect'}(state, {tag})"
                 for tag in self.tags]
 
+    # Appends ULL or LL if a value exceeding 32-bits is used
+    def value_suffix(self, value):
+        if self.type == "INT" or self.type == "NINT":
+            if value > 2147483648 or value < -2147483647:
+                return "LL"
+        elif self.type == "UINT":
+            if value > 4294967295:
+                return "ULL"
+
+        return ""
+
     def range_checks(self, access):
         if self.type != "OTHER" and self.value is not None:
             return []
@@ -2208,9 +2219,11 @@ class CodeGenerator(CddlXcoder):
 
         if self.type in ["INT", "UINT", "NINT", "FLOAT", "BOOL"]:
             if self.min_value is not None:
-                range_checks.append(f"({access} >= {self.min_value})")
+                range_checks.append(f"({access} >= {self.min_value}"
+                                    f"{self.value_suffix(self.min_value)})")
             if self.max_value is not None:
-                range_checks.append(f"({access} <= {self.max_value})")
+                range_checks.append(f"({access} <= {self.max_value}"
+                                    f"{self.value_suffix(self.max_value)})")
             if self.bits:
                 range_checks.append(
                     f"!({access} & ~("
