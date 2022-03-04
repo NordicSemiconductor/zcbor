@@ -139,6 +139,18 @@ do {\
 #define ZCBOR_FLAG_CONSUME 2UL ///! Consume the backup. Remove the backup from the stack of backups.
 #define ZCBOR_FLAG_TRANSFER_PAYLOAD 4UL ///! Keep the pre-restore payload after restoring.
 
+
+/** The largest possible elem_count. */
+#ifdef UINT_FAST32_MAX
+#define ZCBOR_MAX_ELEM_COUNT UINT_FAST32_MAX
+#else
+#define ZCBOR_MAX_ELEM_COUNT ((uint_fast32_t)(-1L))
+#endif
+
+/** Initial value for elem_count for when it just needs to be large. */
+#define ZCBOR_LARGE_ELEM_COUNT (ZCBOR_MAX_ELEM_COUNT - 16)
+
+
 /** Values defined by RFC8949 via www.iana.org/assignments/cbor-tags/cbor-tags.xhtml */
 enum zcbor_rfc8949_tag {
 	ZCBOR_TAG_TIME_TSTR =       0, ///! text string       Standard date/time string
