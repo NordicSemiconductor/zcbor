@@ -87,10 +87,11 @@ void test_numbers(void)
 void test_numbers2(void)
 {
 	const uint8_t exp_payload_numbers2[] = {
-		LIST(5),
+		LIST(6),
 			0x1A, 0x00, 0x12, 0x34, 0x56, // 0x123456
 			0x1B, 0x01, 2, 3, 4, 5, 6, 7, 8, // 0x0102030405060708
 			0x1B, 0x11, 2, 3, 4, 5, 6, 7, 9, // 0x1102030405060709
+			0x00, // 0
 			0x3A, 0x80, 0x00, 0x00, 0x00, // -0x8000_0001
 			0x3A, 0x7F, 0xFF, 0xFF, 0xFF, // -0x8000_0000
 		END
@@ -99,6 +100,7 @@ void test_numbers2(void)
 		._Numbers2_threebytes = 0x123456,
 		._Numbers2_big_int = 0x0102030405060708,
 		._Numbers2_big_uint = 0x1102030405060709,
+		._Numbers2_big_uint2 = 0,
 	};
 	uint8_t output[100];
 	size_t out_len;

@@ -74,57 +74,73 @@ void test_numbers2(void)
 {
 	size_t decode_len = 0xFFFFFFFF;
 	const uint8_t payload_numbers2[] = {
-		LIST(5),
+		LIST(6),
 			0x1A, 0x00, 0x12, 0x34, 0x56, // 0x123456
 			0x1B, 0x01, 2, 3, 4, 5, 6, 7, 8, // 0x0102030405060708
 			0x1B, 0x11, 2, 3, 4, 5, 6, 7, 9, // 0x1102030405060709
+			0x00, // 0
 			0x3A, 0x80, 0x00, 0x00, 0x00, // -0x8000_0001
 			0x3A, 0x7F, 0xFF, 0xFF, 0xFF, // -0x8000_0000
 		END
 	};
 	const uint8_t payload_numbers2_1[] = {
-		LIST(5),
+		LIST(6),
 			0x1A, 0x00, 0x12, 0x34, 0x56, // 0x123456
 			0x3B, 0x01, 2, 3, 4, 5, 6, 7, 8, // -0x0102030405060709
 			0x1B, 0x11, 2, 3, 4, 5, 6, 7, 9, // 0x1102030405060709
+			0x1B, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, // 0xFFFFFFFFFFFFFFFF
 			0x3A, 0x80, 0x00, 0x00, 0x00, // -0x8000_0001
 			0x3A, 0x7F, 0xFF, 0xFF, 0xFF, // -0x8000_0000
 		END
 	};
 	const uint8_t payload_numbers2_inv2[] = {
-		LIST(5),
+		LIST(6),
 			0x1A, 0x00, 0x12, 0x34, 0x56, // 0x123456
 			0x1B, 0x01, 2, 3, 4, 5, 6, 7, 8, // 0x0102030405060708
+			0x1B, 0x11, 2, 3, 4, 5, 6, 7, 9, // 0x1102030405060709
 			0x1B, 0x11, 2, 3, 4, 5, 6, 7, 9, // 0x1102030405060709
 			0x3A, 0x80, 0x00, 0x00, 0x01, // -0x8000_0002 INV
 			0x3A, 0x7F, 0xFF, 0xFF, 0xFF, // -0x8000_0000
 		END
 	};
 	const uint8_t payload_numbers2_inv3[] = {
-		LIST(5),
+		LIST(6),
 			0x1A, 0x00, 0x12, 0x34, 0x56, // 0x123456
 			0x1B, 0x01, 2, 3, 4, 5, 6, 7, 8, // 0x0102030405060708
+			0x1B, 0x11, 2, 3, 4, 5, 6, 7, 9, // 0x1102030405060709
 			0x1B, 0x11, 2, 3, 4, 5, 6, 7, 9, // 0x1102030405060709
 			0x3A, 0x7F, 0xFF, 0xFF, 0xFF, // -0x8000_0000 INV
 			0x3A, 0x7F, 0xFF, 0xFF, 0xFF, // -0x8000_0000
 		END
 	};
 	const uint8_t payload_numbers2_inv4[] = {
-		LIST(5),
+		LIST(6),
 			0x1A, 0x00, 0x12, 0x34, 0x56, // 0x123456
 			0x1B, 0x01, 2, 3, 4, 5, 6, 7, 8, // 0x0102030405060708
 			0x1A, 0x00, 0x12, 0x34, 0x56, // 0x123456 INV
+			0x1B, 0x11, 2, 3, 4, 5, 6, 7, 9, // 0x1102030405060709
 			0x3A, 0x80, 0x00, 0x00, 0x00, // -0x8000_0001
 			0x3A, 0x7F, 0xFF, 0xFF, 0xFF, // -0x8000_0000
 		END
 	};
 	const uint8_t payload_numbers2_inv5[] = {
-		LIST(5),
+		LIST(6),
 			0x1A, 0x00, 0x12, 0x34, 0x56, // 0x123456
 			0x1B, 0x01, 2, 3, 4, 5, 6, 7, 8, // 0x0102030405060708
 			0x1B, 0x11, 2, 3, 4, 5, 6, 7, 9, // 0x1102030405060709
+			0x1B, 0x11, 2, 3, 4, 5, 6, 7, 9, // 0x1102030405060709
 			0x3A, 0x80, 0x00, 0x00, 0x00, // -0x8000_0001
 			0x3A, 0x80, 0x00, 0x00, 0x00, // -0x8000_0001 INV
+		END
+	};
+	const uint8_t payload_numbers2_inv6[] = {
+		LIST(6),
+			0x1A, 0x00, 0x12, 0x34, 0x56, // 0x123456
+			0x3B, 0x01, 2, 3, 4, 5, 6, 7, 8, // -0x0102030405060709
+			0x1B, 0x11, 2, 3, 4, 5, 6, 7, 9, // 0x1102030405060709
+			0x20, // -1
+			0x3A, 0x80, 0x00, 0x00, 0x00, // -0x8000_0001
+			0x3A, 0x7F, 0xFF, 0xFF, 0xFF, // -0x8000_0000
 		END
 	};
 	struct Numbers2 numbers2;
@@ -135,6 +151,7 @@ void test_numbers2(void)
 	zassert_equal(0x123456, numbers2._Numbers2_threebytes, NULL);
 	zassert_equal(0x0102030405060708, numbers2._Numbers2_big_int, NULL);
 	zassert_equal(0x1102030405060709, numbers2._Numbers2_big_uint, NULL);
+	zassert_equal(0, numbers2._Numbers2_big_uint2, NULL);
 
 	zassert_equal(ZCBOR_SUCCESS, cbor_decode_Numbers2(payload_numbers2_1,
 		sizeof(payload_numbers2_1), &numbers2, &decode_len), NULL);
@@ -142,6 +159,7 @@ void test_numbers2(void)
 	zassert_equal(0x123456, numbers2._Numbers2_threebytes, NULL);
 	zassert_equal(-0x0102030405060709, numbers2._Numbers2_big_int, NULL);
 	zassert_equal(0x1102030405060709, numbers2._Numbers2_big_uint, NULL);
+	zassert_equal(0xFFFFFFFFFFFFFFFF, numbers2._Numbers2_big_uint2, NULL);
 
 	uint_fast8_t ret = cbor_decode_Numbers2(payload_numbers2_inv2,
 		sizeof(payload_numbers2_inv2), &numbers2, &decode_len);
@@ -156,6 +174,9 @@ void test_numbers2(void)
 
 	zassert_equal(ZCBOR_ERR_WRONG_VALUE, cbor_decode_Numbers2(payload_numbers2_inv5,
 		sizeof(payload_numbers2_inv5), &numbers2, &decode_len), NULL);
+
+	zassert_false(cbor_decode_Numbers2(payload_numbers2_inv6,
+		sizeof(payload_numbers2_inv6), &numbers2, &decode_len), NULL);
 }
 
 void test_strings(void)
