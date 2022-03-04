@@ -33,16 +33,6 @@ static uint_fast32_t additional_len(uint8_t additional)
 /** Extract the additional info, i.e. the last 5 bits of the header byte. */
 #define ADDITIONAL(header_byte) ((header_byte) & 0x1F)
 
-/** The largest possible elem_count. */
-#ifdef UINT_FAST32_MAX
-#define MAX_ELEM_COUNT UINT_FAST32_MAX
-#else
-#define MAX_ELEM_COUNT ((uint_fast32_t)(-1L))
-#endif
-
-/** Initial value for elem_count for when it just needs to be large. */
-#define LARGE_ELEM_COUNT (MAX_ELEM_COUNT - 16)
-
 
 #define FAIL_AND_DECR_IF(expr) \
 do {\
@@ -327,7 +317,7 @@ bool zcbor_bstr_end_decode(zcbor_state_t *state)
 	}
 	if (!zcbor_process_backup(state,
 			ZCBOR_FLAG_RESTORE | ZCBOR_FLAG_CONSUME | ZCBOR_FLAG_TRANSFER_PAYLOAD,
-			MAX_ELEM_COUNT)) {
+			ZCBOR_MAX_ELEM_COUNT)) {
 		ZCBOR_FAIL();
 	}
 
@@ -402,7 +392,7 @@ static bool list_map_start_decode(zcbor_state_t *state,
 
 	if (ADDITIONAL(*state->payload) == 0x1F) {
 		/* Indefinite length array. */
-		new_elem_count = LARGE_ELEM_COUNT;
+		new_elem_count = ZCBOR_LARGE_ELEM_COUNT;
 		FAIL_IF(state->elem_count == 0);
 		indefinite_length_array = true;
 		state->payload++;
@@ -434,7 +424,7 @@ bool zcbor_map_start_decode(zcbor_state_t *state)
 	bool ret = list_map_start_decode(state, ZCBOR_MAJOR_TYPE_MAP);
 
 	if (ret && !state->indefinite_length_array) {
-		if (state->elem_count >= (MAX_ELEM_COUNT / 2)) {
+		if (state->elem_count >= (ZCBOR_MAX_ELEM_COUNT / 2)) {
 			/* The new elem_count is too large. */
 			FAIL_RESTORE();
 		}
@@ -461,7 +451,7 @@ static bool list_map_end_decode(zcbor_state_t *state)
 		if (!array_end_expect(state)) {
 			ZCBOR_FAIL();
 		}
-		max_elem_count = MAX_ELEM_COUNT;
+		max_elem_count = ZCBOR_MAX_ELEM_COUNT;
 		state->indefinite_length_array = false;
 	}
 	if (!zcbor_process_backup(state,
@@ -661,7 +651,7 @@ bool zcbor_any_skip(zcbor_state_t *state, void *result)
 
 	payload_bak = state->payload;
 
-	if (!zcbor_multi_decode(0, LARGE_ELEM_COUNT, &num_decode,
+	if (!zcbor_multi_decode(0, ZCBOR_LARGE_ELEM_COUNT, &num_decode,
 			(zcbor_decoder_t *)zcbor_tag_decode, state,
 			(void *)&tag_dummy, 0)) {
 		state->elem_count = elem_count_bak;
@@ -676,8 +666,8 @@ bool zcbor_any_skip(zcbor_state_t *state, void *result)
 			state->elem_count--;
 			temp_elem_count = state->elem_count;
 			payload_bak = state->payload;
-			state->elem_count = LARGE_ELEM_COUNT;
-			if (!zcbor_multi_decode(0, LARGE_ELEM_COUNT, &num_decode,
+			state->elem_count = ZCBOR_LARGE_ELEM_COUNT;
+			if (!zcbor_multi_decode(0, ZCBOR_LARGE_ELEM_COUNT, &num_decode,
 					(zcbor_decoder_t *)zcbor_any_skip, state,
 					NULL, 0)
 					|| (state->payload >= state->payload_end)
