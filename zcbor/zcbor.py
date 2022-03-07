@@ -2673,14 +2673,22 @@ This script requires 'regex' for lookaround functionality not present in 're'.''
     code_parser.add_argument(
         "--output-c", "--oc", required=False, type=str,
         help="""Path to output C file. If both --decode and --encode are specified, _decode and
-_encode will be appended to the filename when creating the two files.""")
+_encode will be appended to the filename when creating the two files. If not
+specified, the path and name will be based on the --output-cmake file. A 'src'
+directory will be created next to the cmake file, and the C file will be
+placed there with the same name (except the file extension) as the cmake file.""")
     code_parser.add_argument(
         "--output-h", "--oh", required=False, type=str,
         help="""Path to output header file. If both --decode and --encode are specified, _decode and
-_encode will be appended to the filename when creating the two files""")
+_encode will be appended to the filename when creating the two files. If not
+specified, the path and name will be based on the --output-cmake file. An 'include'
+directory will be created next to the cmake file, and the C file will be
+placed there with the same name (except the file extension) as the cmake file.""")
     code_parser.add_argument(
         "--output-h-types", "--oht", required=False, type=str,
-        help="Path to output header file with typedefs (shared between decode and encode).")
+        help="""Path to output header file with typedefs (shared between decode and encode).
+If not specified, the path and name will be taken from the output header file
+(--output-h), with '_types' added to the file name.""")
     code_parser.add_argument(
         "--copy-sources", required=False, action="store_true", default=False,
         help="""Copy the non-generated source files (zcbor_*.c/h) into the same directories as the

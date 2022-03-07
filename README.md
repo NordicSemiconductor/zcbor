@@ -442,14 +442,26 @@ optional arguments:
   --output-c OUTPUT_C, --oc OUTPUT_C
                         Path to output C file. If both --decode and --encode
                         are specified, _decode and _encode will be appended to
-                        the filename when creating the two files.
+                        the filename when creating the two files. If not
+                        specified, the path and name will be based on the
+                        --output-cmake file. A 'src' directory will be created
+                        next to the cmake file, and the C file will be placed
+                        there with the same name (except the file extension)
+                        as the cmake file.
   --output-h OUTPUT_H, --oh OUTPUT_H
                         Path to output header file. If both --decode and
                         --encode are specified, _decode and _encode will be
-                        appended to the filename when creating the two files
+                        appended to the filename when creating the two files.
+                        If not specified, the path and name will be based on
+                        the --output-cmake file. An 'include' directory will
+                        be created next to the cmake file, and the C file will
+                        be placed there with the same name (except the file
+                        extension) as the cmake file.
   --output-h-types OUTPUT_H_TYPES, --oht OUTPUT_H_TYPES
                         Path to output header file with typedefs (shared
-                        between decode and encode).
+                        between decode and encode). If not specified, the path
+                        and name will be taken from the output header file
+                        (--output-h), with '_types' added to the file name.
   --copy-sources        Copy the non-generated source files (zcbor_*.c/h) into
                         the same directories as the generated files.
   --output-cmake OUTPUT_CMAKE
