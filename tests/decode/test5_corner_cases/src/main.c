@@ -181,6 +181,100 @@ void test_numbers2(void)
 		sizeof(payload_numbers2_inv6), &numbers2, &decode_len), NULL);
 }
 
+void test_number_map(void)
+{
+	size_t decode_len = 0xFFFFFFFF;
+	const uint8_t payload_number_map1[] = {
+		MAP(3),
+			0x64, 'b', 'y', 't', 'e',
+			0x18, 42,
+			0x69, 'o', 'p', 't', '_', 's', 'h', 'o', 'r', 't',
+			0x19, 0x12, 0x34,
+			0x68, 'o', 'p', 't', '_', 'c', 'b', 'o', 'r',
+			0x45, 0x1A, 0x12, 0x34, 0x56, 0x78,
+		END
+	};
+	const uint8_t payload_number_map2[] = {
+		MAP(1),
+			0x64, 'b', 'y', 't', 'e',
+			0x04,
+		END
+	};
+	const uint8_t payload_number_map3[] = {
+		MAP(2),
+			0x64, 'b', 'y', 't', 'e',
+			0x18, 42,
+			0x69, 'o', 'p', 't', '_', 's', 'h', 'o', 'r', 't',
+			0x12,
+		END
+	};
+	const uint8_t payload_number_map4_inv[] = {
+		MAP(2),
+			0x64, 'b', 'y', 't', 'e',
+			0x19, 42, 42,
+		END
+	};
+	const uint8_t payload_number_map5_inv[] = {
+		MAP(2),
+			0x64, 'b', 'y', 't', 'e',
+			0x18, 42,
+			0x69, 'o', 'p', 't', '_', 's', 'h', 'o', 'r', 't',
+			0x1A, 0x12, 0x34, 0x56, 0x78,
+		END
+	};
+	const uint8_t payload_number_map6_inv[] = {
+		MAP(2),
+			0x64, 'b', 'y', 't', 'e',
+			0x18, 42,
+			0x68, 'o', 'p', 't', '_', 'c', 'b', 'o', 'r',
+			0x43, 0x19, 0x12, 0x34,
+		END
+	};
+	const uint8_t payload_number_map7_inv[] = {
+		MAP(1),
+			0x64, 'B', 'y', 't', 'e',
+			0x04,
+		END
+	};
+
+	struct NumberMap number_map;
+
+	zassert_equal(ZCBOR_SUCCESS, cbor_decode_NumberMap(payload_number_map1,
+		sizeof(payload_number_map1), &number_map, &decode_len), NULL);
+	zassert_equal(42, number_map._NumberMap_byte, NULL);
+	zassert_true(number_map._NumberMap_opt_short_present, NULL);
+	zassert_equal(0x1234, number_map._NumberMap_opt_short._NumberMap_opt_short, NULL);
+	zassert_true(number_map._NumberMap_opt_cbor_present, NULL);
+	zassert_equal(0x12345678, number_map._NumberMap_opt_cbor._NumberMap_opt_cbor_cbor, NULL);
+
+	zassert_equal(ZCBOR_SUCCESS, cbor_decode_NumberMap(payload_number_map2,
+		sizeof(payload_number_map2), &number_map, &decode_len), NULL);
+	zassert_equal(4, number_map._NumberMap_byte, NULL);
+	zassert_false(number_map._NumberMap_opt_short_present, NULL);
+	zassert_false(number_map._NumberMap_opt_cbor_present, NULL);
+
+	zassert_equal(ZCBOR_SUCCESS, cbor_decode_NumberMap(payload_number_map3,
+		sizeof(payload_number_map3), &number_map, &decode_len), NULL);
+	zassert_equal(42, number_map._NumberMap_byte, NULL);
+	zassert_true(number_map._NumberMap_opt_short_present, NULL);
+	zassert_equal(0x12, number_map._NumberMap_opt_short._NumberMap_opt_short, NULL);
+	zassert_false(number_map._NumberMap_opt_cbor_present, NULL);
+
+	zassert_equal(ZCBOR_ERR_WRONG_RANGE, cbor_decode_NumberMap(payload_number_map4_inv,
+		sizeof(payload_number_map4_inv), &number_map, &decode_len), NULL);
+
+	int res = cbor_decode_NumberMap(payload_number_map5_inv,
+		sizeof(payload_number_map5_inv), &number_map, &decode_len);
+	zassert_equal(ARR_ERR1, res, "%d\r\n", res);
+
+	zassert_equal(ARR_ERR1, cbor_decode_NumberMap(payload_number_map6_inv,
+		sizeof(payload_number_map6_inv), &number_map, &decode_len), NULL);
+
+	res = cbor_decode_NumberMap(payload_number_map7_inv,
+		sizeof(payload_number_map7_inv), &number_map, &decode_len);
+	zassert_equal(ZCBOR_ERR_WRONG_VALUE, res, "%d\r\n", res);
+}
+
 void test_strings(void)
 {
 	const uint8_t payload_strings1[] = {
@@ -1458,6 +1552,7 @@ void test_main(void)
 	ztest_test_suite(cbor_decode_test5,
 			 ztest_unit_test(test_numbers),
 			 ztest_unit_test(test_numbers2),
+			 ztest_unit_test(test_number_map),
 			 ztest_unit_test(test_strings),
 			 ztest_unit_test(test_primitives),
 			 ztest_unit_test(test_string_overflow),

@@ -26,6 +26,13 @@ Numbers2 = [
 	big_nint2: -0x80000000,
 ]
 
+; Using .size and .cbor together with maps.
+NumberMap = {
+	"byte" => uint .size 1,
+	? "opt_short" => uint .size 2,
+	? "opt_cbor" => bstr .size 5 .cbor (uint .size 4),
+}
+
 Strings = [
 	hello: "hello",
 	threehundrebytebstr: bstr .size 300,

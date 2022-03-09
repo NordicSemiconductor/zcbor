@@ -112,6 +112,85 @@ void test_numbers2(void)
 	zassert_mem_equal(exp_payload_numbers2, output, sizeof(exp_payload_numbers2), NULL);
 }
 
+void test_number_map(void)
+{
+	size_t encode_len = 0xFFFFFFFF;
+	const uint8_t exp_payload_number_map1[] = {
+		MAP(3),
+			0x64, 'b', 'y', 't', 'e',
+			0x18, 42,
+			0x69, 'o', 'p', 't', '_', 's', 'h', 'o', 'r', 't',
+			0x19, 0x12, 0x34,
+			0x68, 'o', 'p', 't', '_', 'c', 'b', 'o', 'r',
+			0x45, 0x1A, 0x12, 0x34, 0x56, 0x78,
+		END
+	};
+
+	const uint8_t exp_payload_number_map2[] = {
+		MAP(2),
+			0x64, 'b', 'y', 't', 'e',
+			0x18, 42,
+			0x68, 'o', 'p', 't', '_', 'c', 'b', 'o', 'r',
+			0x45, 0x1A, 0x12, 0x34, 0x56, 0x78,
+		END
+	};
+
+	uint8_t payload[80];
+
+	struct NumberMap number_map1 = {
+		._NumberMap_byte = 42,
+		._NumberMap_opt_short_present = true,
+		._NumberMap_opt_short._NumberMap_opt_short = 0x1234,
+		._NumberMap_opt_cbor_present = true,
+		._NumberMap_opt_cbor._NumberMap_opt_cbor_cbor = 0x12345678,
+	};
+
+	int res = cbor_encode_NumberMap(payload,
+		sizeof(payload), &number_map1, &encode_len);
+	zassert_equal(ZCBOR_SUCCESS, res, "%d\r\n", res);
+	zassert_equal(encode_len, sizeof(exp_payload_number_map1), NULL);
+	zassert_mem_equal(payload, exp_payload_number_map1, encode_len, NULL);
+
+	struct NumberMap number_map2 = {
+		._NumberMap_byte = 42,
+		._NumberMap_opt_short_present = false,
+		._NumberMap_opt_cbor_present = true,
+		._NumberMap_opt_cbor._NumberMap_opt_cbor_cbor = 0x12345678,
+	};
+
+	res = cbor_encode_NumberMap(payload,
+		sizeof(payload), &number_map2, &encode_len);
+	zassert_equal(ZCBOR_SUCCESS, res, "%d\r\n", res);
+	zassert_equal(encode_len, sizeof(exp_payload_number_map2), NULL);
+	zassert_mem_equal(payload, exp_payload_number_map2, encode_len, NULL);
+
+	struct NumberMap number_map3 = {
+		._NumberMap_byte = 42,
+		._NumberMap_opt_short_present = false,
+		._NumberMap_opt_cbor_present = true,
+		._NumberMap_opt_cbor._NumberMap_opt_cbor.value = (uint8_t[]){0x1A, 0x12, 0x34, 0x56, 0x78},
+		._NumberMap_opt_cbor._NumberMap_opt_cbor.len = 5,
+	};
+
+	res = cbor_encode_NumberMap(payload,
+		sizeof(payload), &number_map3, &encode_len);
+	zassert_equal(ZCBOR_SUCCESS, res, "%d\r\n", res);
+	zassert_equal(encode_len, sizeof(exp_payload_number_map2), NULL);
+	zassert_mem_equal(payload, exp_payload_number_map2, encode_len, NULL);
+
+	struct NumberMap number_map4_inv = {
+		._NumberMap_byte = 42,
+		._NumberMap_opt_short_present = false,
+		._NumberMap_opt_cbor_present = true,
+		._NumberMap_opt_cbor._NumberMap_opt_cbor.value = (uint8_t[]){0x19, 0x12, 0x34},
+		._NumberMap_opt_cbor._NumberMap_opt_cbor.len = 3,
+	};
+
+	res = cbor_encode_NumberMap(payload,
+		sizeof(payload), &number_map4_inv, &encode_len);
+	zassert_equal(ZCBOR_ERR_WRONG_RANGE, res, "%d\r\n", res);
+}
+
 
 void test_strings(void)
 {
@@ -1163,6 +1242,7 @@ void test_main(void)
 	ztest_test_suite(cbor_encode_test3,
 			 ztest_unit_test(test_numbers),
 			 ztest_unit_test(test_numbers2),
+			 ztest_unit_test(test_number_map),
 			 ztest_unit_test(test_strings),
 			 ztest_unit_test(test_primitives),
 			 ztest_unit_test(test_optional),
