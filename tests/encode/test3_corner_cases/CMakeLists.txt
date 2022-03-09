@@ -20,6 +20,7 @@ set(py_command
   NestedListMap NestedMapListMap
   Numbers
   Numbers2
+  NumberMap
   Strings
   Prim2
   Optional

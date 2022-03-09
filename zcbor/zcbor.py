@@ -924,7 +924,9 @@ class CddlXcoder(CddlParser):
         return False
 
     def set_skipped(self, skipped):
-        if self.range_check_condition() and self.repeated_single_func_impl_condition():
+        if self.range_check_condition() \
+           and self.repeated_single_func_impl_condition() \
+           and not self.key:
             self.skipped = True
         else:
             self.skipped = skipped
