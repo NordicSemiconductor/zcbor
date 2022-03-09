@@ -38,6 +38,7 @@ set(py_command
     DoubleMap
     Floats
     Prelude
+    CBORBstr
   --decode
   --git-sha-header
   ${bit_arg}

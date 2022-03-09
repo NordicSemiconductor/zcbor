@@ -284,20 +284,27 @@ bool zcbor_bstr_start_encode(zcbor_state_t *state)
 }
 
 
-bool zcbor_bstr_end_encode(zcbor_state_t *state)
+bool zcbor_bstr_end_encode(zcbor_state_t *state, struct zcbor_string *result)
 {
 	const uint8_t *payload = state->payload;
-	struct zcbor_string value;
+	struct zcbor_string dummy_value;
+
+	if (result == NULL) {
+		/* Use a dummy value for the sake of the length calculation below.
+		 * Will not be returned.
+		 */
+		result = &dummy_value;
+	}
 
 	if (!zcbor_process_backup(state, ZCBOR_FLAG_RESTORE | ZCBOR_FLAG_CONSUME, 0xFFFFFFFF)) {
 		ZCBOR_FAIL();
 	}
 
-	value.value = state->payload_end - remaining_str_len(state);
-	value.len = (size_t)payload - (size_t)value.value;
+	result->value = state->payload_end - remaining_str_len(state);
+	result->len = (size_t)payload - (size_t)result->value;
 
 	/* Reencode header of list now that we know the number of elements. */
-	if (!zcbor_bstr_encode(state, &value)) {
+	if (!zcbor_bstr_encode(state, result)) {
 		ZCBOR_FAIL();
 	}
 	return true;

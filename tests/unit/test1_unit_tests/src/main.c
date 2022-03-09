@@ -210,7 +210,7 @@ void test_stop_on_error(void)
 	zassert_false(zcbor_nil_put(state_e, NULL), NULL);
 	zassert_false(zcbor_undefined_put(state_e, NULL), NULL);
 	zassert_false(zcbor_bstr_start_encode(state_e), NULL);
-	zassert_false(zcbor_bstr_end_encode(state_e), NULL);
+	zassert_false(zcbor_bstr_end_encode(state_e, NULL), NULL);
 	zassert_false(zcbor_list_start_encode(state_e, 1), NULL);
 	zassert_false(zcbor_map_start_encode(state_e, 0), NULL);
 	zassert_false(zcbor_map_end_encode(state_e, 0), NULL);
@@ -247,7 +247,7 @@ void test_stop_on_error(void)
 	zassert_true(zcbor_nil_put(state_e, NULL), NULL);
 	zassert_true(zcbor_undefined_put(state_e, NULL), NULL);
 	zassert_true(zcbor_bstr_start_encode(state_e), NULL);
-	zassert_true(zcbor_bstr_end_encode(state_e), NULL);
+	zassert_true(zcbor_bstr_end_encode(state_e, NULL), NULL);
 	zassert_true(zcbor_list_start_encode(state_e, 1), NULL);
 	zassert_true(zcbor_map_start_encode(state_e, 0), NULL);
 	zassert_true(zcbor_map_end_encode(state_e, 0), NULL);
@@ -527,7 +527,7 @@ void test_bstr_cbor_fragments(void)
 	zassert_true(zcbor_bool_put(state_e, true), NULL); // 1 B
 	zassert_true(zcbor_nil_put(state_e, NULL), NULL); // 1 B
 	zassert_true(zcbor_list_end_encode(state_e, 2), NULL); // 1 B
-	zassert_true(zcbor_bstr_end_encode(state_e), NULL); // 0 B
+	zassert_true(zcbor_bstr_end_encode(state_e, NULL), NULL); // 0 B
 
 	ZCBOR_STATE_D(state_d, 2, payload, 8, 1);
 	ZCBOR_STATE_D(state_d2, 0, payload, sizeof(payload), 1);

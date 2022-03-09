@@ -776,9 +776,13 @@ class CddlParser:
              lambda value: self.set_value(lambda: int(value, 0))),
             (r'\.eq \"(?P<item>.*?)(?<!\\)\"',
              lambda value: self.set_value(lambda: value)),
-            (r'\.cbor (?P<item>[\w-]+)',
+            (r'\.cbor (\((?P<item>(?>[^\(\)]+|(?1))*)\))',
              lambda type_str: self.set_cbor(self.parse(type_str)[0], False)),
-            (r'\.cborseq (?P<item>[\w-]+)',
+            (r'\.cbor (?P<item>[^\s,]+)',
+             lambda type_str: self.set_cbor(self.parse(type_str)[0], False)),
+            (r'\.cborseq (\((?P<item>(?>[^\(\)]+|(?1))*)\))',
+             lambda type_str: self.set_cbor(self.parse(type_str)[0], True)),
+            (r'\.cborseq (?P<item>[^\s,]+)',
              lambda type_str: self.set_cbor(self.parse(type_str)[0], True)),
             (r'\.bits (?P<item>[\w-]+)',
              lambda bits_str: self.set_bits(bits_str))
@@ -2193,14 +2197,18 @@ class CodeGenerator(CddlXcoder):
         if self.cbor_var_condition():
             access_arg = f', {deref_if_not_null(self.val_access())}' if self.mode == 'decode' \
                 else ''
+            res_arg = f', &tmp_str' if self.mode == 'encode' \
+                else ''
             xcode_cbor = "(%s)" % ((newl_ind + "&& ").join(
-                [f"(int_res = (zcbor_bstr_start_{self.mode}(state{access_arg})",
-                 f"{self.cbor.full_xcode()})), zcbor_bstr_end_{self.mode}(state), int_res"]))
-            if self.mode == "decode":
+                [f"zcbor_bstr_start_{self.mode}(state{access_arg})",
+                 f"(int_res = ({self.cbor.full_xcode()}), "
+                 f"zcbor_bstr_end_{self.mode}(state{res_arg}), int_res)"]))
+            if self.mode == "decode" or self.is_unambiguous():
                 return xcode_cbor
             else:
                 return f"({self.val_access()}.value " \
-                    f"? ({self.xcode_single_func_prim()}) : ({xcode_cbor}))"
+                    f"? (memcpy(&tmp_str, &{self.val_access()}, sizeof(tmp_str)), " \
+                    f"{self.xcode_single_func_prim()}) : ({xcode_cbor}))"
         return self.xcode_single_func_prim()
 
     def xcode_tags(self):
@@ -2281,6 +2289,9 @@ class CodeGenerator(CddlXcoder):
         if self.mode == "decode":
             xcoders.append(xcoder())
             xcoders.extend(range_checks)
+        elif self.type == "BSTR" and self.cbor:
+            xcoders.append(xcoder())
+            xcoders.extend(self.range_checks("tmp_str"))
         else:
             xcoders.extend(range_checks)
             xcoders.append(xcoder())
