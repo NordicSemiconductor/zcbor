@@ -18,6 +18,7 @@
 #define ARR_ERR1 ZCBOR_ERR_WRONG_TYPE
 #define ARR_ERR2 ZCBOR_ERR_NO_PAYLOAD
 #define ARR_ERR3 ZCBOR_ERR_WRONG_TYPE
+#define ARR_ERR4 ZCBOR_ERR_PAYLOAD_NOT_CONSUMED
 #define END 0xFF,
 #define STR_LEN(len, lists) (len + lists)
 #else
@@ -28,6 +29,7 @@
 #define ARR_ERR1 ZCBOR_ERR_HIGH_ELEM_COUNT
 #define ARR_ERR2 ZCBOR_ERR_HIGH_ELEM_COUNT
 #define ARR_ERR3 ZCBOR_ERR_NO_PAYLOAD
+#define ARR_ERR4 ZCBOR_ERR_NO_PAYLOAD
 #define END
 #define STR_LEN(len, lists) (len)
 #endif
@@ -1376,6 +1378,81 @@ void test_prelude(void)
 	zassert_equal(ZCBOR_SUCCESS, cbor_decode_Prelude(prelude_payload1, sizeof(prelude_payload1), &result, &num_decode), NULL);
 }
 
+/** Testing that the generated code correctly enforces the restrictions that are
+ *  specified inside the .cbor statements. I.e. that it checks that the string and
+ *  float values are correct.
+*/
+void test_cbor_bstr(void)
+{
+
+#ifdef TEST_INDEFINITE_LENGTH_ARRAYS
+#define CBOR_BSTR_LEN(len) (len + 1)
+#else
+#define CBOR_BSTR_LEN(len) len
+#endif
+	uint8_t cbor_bstr_payload1[] = {
+		0x58, CBOR_BSTR_LEN(31),
+			LIST(3),
+				0x46, 0x65, 'H', 'e', 'l', 'l', 'o',
+				0x49, 0xFB, 0x40, 0x9, 0x21, 0xca, 0xc0, 0x83, 0x12, 0x6f /* 3.1415 */,
+				0x4C, 0xC2, 0x4A, 0x42, 2, 3, 4, 5, 6, 7, 8, 9, 10 /* 0x4202030405060708090A */,
+			END
+	};
+
+	uint8_t cbor_bstr_payload2_inv[] = {
+		0x58, CBOR_BSTR_LEN(31),
+			LIST(3),
+				0x46, 0x65, 'Y', 'e', 'l', 'l', 'o',
+				0x49, 0xFB, 0x40, 0x9, 0x21, 0xca, 0xc0, 0x83, 0x12, 0x6f /* 3.1415 */,
+				0x4C, 0xC2, 0x4A, 0x42, 2, 3, 4, 5, 6, 7, 8, 9, 10 /* 0x4202030405060708090A */,
+			END
+	};
+
+	uint8_t cbor_bstr_payload3_inv[] = {
+		0x58, CBOR_BSTR_LEN(31),
+			LIST(3),
+				0x46, 0x65, 'H', 'e', 'l', 'l', 'o',
+				0x49, 0xFB, 0x40, 0x9, 0x21, 0xca, 0, 0, 0, 0 /* 3.1415 */,
+				0x4C, 0xC2, 0x4A, 0x42, 2, 3, 4, 5, 6, 7, 8, 9, 10 /* 0x4202030405060708090A */,
+			END
+	};
+
+	uint8_t cbor_bstr_payload4_inv[] = {
+		0x58, CBOR_BSTR_LEN(18),
+			LIST(3),
+				0x46, 0x65, 'H', 'e', 'l', 'l', 'o',
+				0x49, 0xFB, 0x40, 0x9, 0x21, 0xca, 0xc0, 0x83, 0x12, 0x6f /* 3.1415 */,
+			END
+	};
+
+	uint8_t cbor_bstr_payload5_inv[] = {
+		0x58, CBOR_BSTR_LEN(18),
+			LIST(2),
+				0x46, 0x65, 'H', 'e', 'l', 'l', 'o',
+				0x49, 0xFB, 0x40, 0x9, 0x21, 0xca, 0xc0, 0x83, 0x12, 0x6f /* 3.1415 */,
+			END
+	};
+
+	struct CBORBstr result;
+	size_t num_decode;
+
+	zassert_equal(ZCBOR_SUCCESS, cbor_decode_CBORBstr(cbor_bstr_payload1, sizeof(cbor_bstr_payload1), &result, &num_decode), NULL);
+	zassert_equal(&cbor_bstr_payload1[2], result._CBORBstr.value, NULL);
+	zassert_equal(&cbor_bstr_payload1[21], result.__hello_big_uint_bstr.value, NULL);
+	zassert_equal(&cbor_bstr_payload1[23], result.__hello_big_uint_bstr_cbor.value, NULL);
+
+	int res = cbor_decode_CBORBstr(cbor_bstr_payload2_inv, sizeof(cbor_bstr_payload2_inv), &result, &num_decode);
+	zassert_equal(ZCBOR_ERR_PAYLOAD_NOT_CONSUMED, res, "%d\r\n", res);
+
+	zassert_equal(ZCBOR_ERR_PAYLOAD_NOT_CONSUMED, cbor_decode_CBORBstr(cbor_bstr_payload3_inv, sizeof(cbor_bstr_payload3_inv), &result, &num_decode), NULL);
+
+	res = cbor_decode_CBORBstr(cbor_bstr_payload4_inv, sizeof(cbor_bstr_payload4_inv), &result, &num_decode);
+	zassert_equal(ARR_ERR4, res, "%d\r\n", res);
+
+	res = cbor_decode_CBORBstr(cbor_bstr_payload5_inv, sizeof(cbor_bstr_payload5_inv), &result, &num_decode);
+	zassert_equal(ARR_ERR4, res, "%d\r\n", res);
+}
+
 void test_main(void)
 {
 	ztest_test_suite(cbor_decode_test5,
@@ -1398,7 +1475,8 @@ void test_main(void)
 			 ztest_unit_test(test_quantity_range),
 			 ztest_unit_test(test_doublemap),
 			 ztest_unit_test(test_floats),
-			 ztest_unit_test(test_prelude)
+			 ztest_unit_test(test_prelude),
+			 ztest_unit_test(test_cbor_bstr)
 	);
 	ztest_run_test_suite(cbor_decode_test5);
 }

@@ -1128,6 +1128,36 @@ void test_floats(void)
 
 }
 
+void test_cbor_bstr(void)
+{
+	uint8_t exp_cbor_bstr_payload1[] = {
+#ifdef ZCBOR_CANONICAL
+		0x58, 31,
+#else
+		0x58, 32,
+#endif
+			LIST(3),
+				0x46, 0x65, 'H', 'e', 'l', 'l', 'o',
+				0x49, 0xFB, 0x40, 0x9, 0x21, 0xca, 0xc0, 0x83, 0x12, 0x6f /* 3.1415 */,
+				0x4C, 0xC2, 0x4A, 0x42, 2, 3, 4, 5, 6, 7, 8, 9, 10 /* 0x4202030405060708090A */,
+			END
+	};
+
+	struct CBORBstr input = {0};
+	size_t num_encode;
+	uint8_t output[70];
+
+	input.__hello_big_uint_bstr_cbor.value = (uint8_t []){0x42, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+	input.__hello_big_uint_bstr_cbor.len = 10;
+
+	zassert_equal(ZCBOR_SUCCESS, cbor_encode_CBORBstr(output, sizeof(output), &input, &num_encode), NULL);
+
+	zcbor_print_compare_strings(exp_cbor_bstr_payload1, output, num_encode);
+
+	zassert_equal(sizeof(exp_cbor_bstr_payload1), num_encode, "%d != %d\r\n", sizeof(exp_cbor_bstr_payload1), num_encode);
+	zassert_mem_equal(exp_cbor_bstr_payload1, output, num_encode, NULL);
+}
+
 void test_main(void)
 {
 	ztest_test_suite(cbor_encode_test3,
@@ -1148,7 +1178,8 @@ void test_main(void)
 			 ztest_unit_test(test_string_overflow),
 			 ztest_unit_test(test_quantity_range),
 			 ztest_unit_test(test_doublemap),
-			 ztest_unit_test(test_floats)
+			 ztest_unit_test(test_floats),
+			 ztest_unit_test(test_cbor_bstr)
 	);
 	ztest_run_test_suite(cbor_encode_test3);
 }

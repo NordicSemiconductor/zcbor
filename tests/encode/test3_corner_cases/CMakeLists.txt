@@ -35,6 +35,7 @@ set(py_command
   QuantityRange
   DoubleMap
   Floats
+  CBORBstr
   -e
   ${bit_arg}
   )

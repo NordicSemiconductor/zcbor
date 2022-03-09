@@ -152,3 +152,10 @@ Prelude = [
 	float32-64,
 	null,
 ]
+
+; Testing complex .cbor statements, including nested .cbor.
+CBORBstr = bstr .cbor ([
+	hello: bstr .cbor "Hello",
+	pi: bstr .cbor 3.1415,
+	big_uint_bstr: (bstr .cbor biguint),
+])

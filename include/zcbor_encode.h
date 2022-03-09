@@ -134,7 +134,7 @@ bool zcbor_bstr_start_encode(zcbor_state_t *state);
  *
  * Restore element count from backup.
  */
-bool zcbor_bstr_end_encode(zcbor_state_t *state);
+bool zcbor_bstr_end_encode(zcbor_state_t *state, struct zcbor_string *result);
 
 /** Encode a list/map header.
  *
