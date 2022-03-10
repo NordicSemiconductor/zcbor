@@ -138,7 +138,7 @@ void test_numbers2(void)
 			0x1A, 0x00, 0x12, 0x34, 0x56, // 0x123456
 			0x3B, 0x01, 2, 3, 4, 5, 6, 7, 8, // -0x0102030405060709
 			0x1B, 0x11, 2, 3, 4, 5, 6, 7, 9, // 0x1102030405060709
-			0x20, // -1
+			0x20, // -1 INV
 			0x3A, 0x80, 0x00, 0x00, 0x00, // -0x8000_0001
 			0x3A, 0x7F, 0xFF, 0xFF, 0xFF, // -0x8000_0000
 		END
@@ -175,7 +175,7 @@ void test_numbers2(void)
 	zassert_equal(ZCBOR_ERR_WRONG_VALUE, cbor_decode_Numbers2(payload_numbers2_inv5,
 		sizeof(payload_numbers2_inv5), &numbers2, &decode_len), NULL);
 
-	zassert_false(cbor_decode_Numbers2(payload_numbers2_inv6,
+	zassert_equal(ZCBOR_ERR_WRONG_TYPE, cbor_decode_Numbers2(payload_numbers2_inv6,
 		sizeof(payload_numbers2_inv6), &numbers2, &decode_len), NULL);
 }
 
