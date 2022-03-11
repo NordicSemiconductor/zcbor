@@ -1,4 +1,4 @@
-# zcbor v. 0.3.99
+# zcbor v. 0.4.0
 
 **cddl-gen has been renamed to zcbor!**
 
