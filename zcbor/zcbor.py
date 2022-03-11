@@ -14,7 +14,7 @@ from argparse import ArgumentParser, RawDescriptionHelpFormatter, FileType
 from datetime import datetime
 from copy import copy
 from itertools import tee
-from cbor2 import loads, dumps, CBORTag, load, CBORDecodeValueError, CBORDecodeEOF
+from cbor2 import loads, dumps, CBORTag, load, CBORDecodeValueError, CBORDecodeEOF, undefined
 from yaml import safe_load as yaml_load, dump as yaml_dump
 from json import loads as json_load, dumps as json_dump
 from io import BytesIO
@@ -1236,8 +1236,8 @@ class DataTranslator(CddlXcoder):
             "TSTR": lambda: str,
             "BSTR": lambda: bytes,
             "NIL": lambda: type(None),
-            "UNDEF": lambda: type(None),
-            "ANY": lambda: (int, float, str, bytes, type(None), bool, list, dict),
+            "UNDEF": lambda: type(undefined),
+            "ANY": lambda: (int, float, str, bytes, type(None), type(undefined), bool, list, dict),
             "BOOL": lambda: bool,
             "LIST": lambda: (tuple, list),
             "MAP": lambda: dict,
@@ -1518,6 +1518,8 @@ CBOR-formatted bstr, all elements must be bstrs. If not, it is a programmer erro
     # that cbor2 understands.
     def _to_cbor_obj(self, obj):
         if isinstance(obj, list):
+            if len(obj) == 1 and obj[0] == "zcbor_undefined":
+                return undefined
             return [self._to_cbor_obj(elem) for elem in obj]
         elif isinstance(obj, dict):
             if ["bstr"] == list(obj.keys()):
@@ -1571,6 +1573,8 @@ CBOR-formatted bstr, all elements must be bstrs. If not, it is a programmer erro
             return {"bstr": bstr_obj}
         elif isinstance(obj, CBORTag):
             return {"tag": obj.tag, "val": self._from_cbor_obj(obj.value)}
+        elif obj is undefined:
+            return ["zcbor_undefined"]
         assert not isinstance(obj, bytes)
         return obj
 
@@ -2752,8 +2756,10 @@ needs other types of keys, encapsulate the key and value into a dict (n is an ar
 e.g. {"name": "foo", "keyvaln": {"key": 123, "val": "bar"}}
 which will conform to the CDDL {tstr => tstr, int => tstr}.
 
-Lastly, tags are specified by a dict with two elements, e.g.
-{"tag": 1234, "value": ["tagged string within list"]}''')
+Tags are specified by a dict with two elements, e.g.
+{"tag": 1234, "value": ["tagged string within list"]}
+
+'undefined' is specified as a list with a single text entry: "zcbor_undefined".''')
 
     convert_parser.add_argument(
         "-i", "--input", required=True, type=str,

@@ -519,8 +519,10 @@ SomeType'). E.g. {"bstr": ["first element", 2, [3]]} Dicts in JSON/YAML only
 support text strings for keys, so if a dict needs other types of keys,
 encapsulate the key and value into a dict (n is an arbitrary integer): e.g.
 {"name": "foo", "keyvaln": {"key": 123, "val": "bar"}} which will conform to
-the CDDL {tstr => tstr, int => tstr}. Lastly, tags are specified by a dict
-with two elements, e.g. {"tag": 1234, "value": ["tagged string within list"]}
+the CDDL {tstr => tstr, int => tstr}. Tags are specified by a dict with two
+elements, e.g. {"tag": 1234, "value": ["tagged string within list"]}
+'undefined' is specified as a list with a single text entry:
+"zcbor_undefined".
 
 optional arguments:
   -h, --help            show this help message and exit
