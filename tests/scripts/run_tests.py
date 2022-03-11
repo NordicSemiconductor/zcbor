@@ -14,6 +14,7 @@ from pprint import pprint
 from hashlib import sha256
 import cbor2
 from sys import platform, exit
+from yaml import safe_load
 
 
 try:
@@ -35,6 +36,7 @@ p_manifest16 = Path(p_tests, 'cases', 'manifest16.cddl')
 p_test_vectors12 = tuple(Path(p_tests, 'cases', f'manifest12_example{i}.cborhex') for i in range(6))
 p_test_vectors14 = tuple(Path(p_tests, 'cases', f'manifest14_example{i}.cborhex') for i in range(6))
 p_optional = Path(p_tests, 'cases', 'optional.cddl')
+p_corner_cases = Path(p_tests, 'cases', 'corner_cases.cddl')
 p_cose = Path(p_tests, 'cases', 'cose.cddl')
 p_manifest14_priv = Path(p_tests, 'cases', 'manifest14.priv')
 p_manifest14_pub = Path(p_tests, 'cases', 'manifest14.pub')
@@ -42,6 +44,7 @@ p_map_bstr_cddl = Path(p_tests, 'cases', 'map_bstr.cddl')
 p_map_bstr_yaml = Path(p_tests, 'cases', 'map_bstr.yaml')
 p_README = Path(p_root, 'README.md')
 p_add_helptext = Path(p_root, 'add_helptext.py')
+p_prelude = Path(p_root, 'zcbor', 'cddl', 'prelude.cddl')
 
 
 class Testn(TestCase):
@@ -560,11 +563,41 @@ class TestOptional(TestCase):
 class TestREADME(TestCase):
     @skipIf(platform.startswith("win"), "Skip on Windows because of path/newline issues.")
     def test_cli_doc(self):
-        with open(p_README, 'r') as f:
-            readme_contents = f.read()
         add_help = Popen(["python3", p_add_helptext, "--check"])
         add_help.communicate()
         self.assertEqual(0, add_help.returncode)
+
+
+class TestUndefined(TestCase):
+    def test_0(self):
+        cddl_res = zcbor.DataTranslator.from_cddl(
+            p_prelude.read_text() + '\n' + p_corner_cases.read_text(), 16)
+        cddl = cddl_res.my_types['Primitives']
+        test_yaml = "[true, false, true, null, [zcbor_undefined]]"
+
+        decoded = cddl.decode_str_yaml(test_yaml)
+        self.assertEqual(True, decoded.boolval)
+
+        encoded = cddl.str_to_yaml(cddl.from_yaml(test_yaml))
+        self.assertEqual(safe_load(encoded), safe_load(test_yaml))
+
+
+class TestFloat(TestCase):
+    def test_0(self):
+        cddl_res = zcbor.DataTranslator.from_cddl(
+            p_prelude.read_text() + '\n' + p_corner_cases.read_text(), 16)
+        cddl = cddl_res.my_types['Floats']
+        test_yaml = f"[1234567.89, 0.000123, 3.1415, 2.71828, 5.0, {1/3}]"
+
+        decoded = cddl.decode_str_yaml(test_yaml)
+        self.assertEqual(1234567.89, decoded.float_32)
+        self.assertEqual(0.000123, decoded.float_64)
+        self.assertEqual(2, len(decoded.floats))
+        self.assertEqual(5, decoded.floats[0])
+        self.assertEqual(1 / 3, decoded.floats[1])
+
+        encoded = cddl.str_to_yaml(cddl.from_yaml(test_yaml))
+        self.assertEqual(safe_load(encoded), safe_load(test_yaml))
 
 
 if __name__ == "__main__":
