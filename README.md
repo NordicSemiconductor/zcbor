@@ -385,7 +385,9 @@ usage: zcbor [-h] [--version] -c CDDL [--default-max-qty DEFAULT_MAX_QTY]
              {code,convert} ...
 
 Parse a CDDL file and validate/convert between YAML, JSON, and CBOR. Can also
-generate C code for validation/encoding/decoding of CBOR.
+generate C code for validation/encoding/decoding of CBOR. Note that the other
+top-level arguments (e.g. -c) must appear before {code/convert}. See zcbor
+code/convert --help to see their respective specialized arguments.
 
 positional arguments:
   {code,convert}

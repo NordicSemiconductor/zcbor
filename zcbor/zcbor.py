@@ -2633,7 +2633,9 @@ target_include_directories({target_name} PUBLIC
 def parse_args():
     parser = ArgumentParser(
         description='''Parse a CDDL file and validate/convert between YAML, JSON, and CBOR.
-Can also generate C code for validation/encoding/decoding of CBOR.''')
+Can also generate C code for validation/encoding/decoding of CBOR.
+Note that the other top-level arguments (e.g. -c) must appear before {code/convert}.
+See zcbor code/convert --help to see their respective specialized arguments.''')
 
     parser.add_argument(
         "--version", action="version", version=f"zcbor {__version__}")
