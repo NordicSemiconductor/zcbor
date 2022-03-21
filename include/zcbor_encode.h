@@ -47,6 +47,21 @@ bool zcbor_bstr_encode(zcbor_state_t *state, const struct zcbor_string *input);
 /** Encode a tstr. */
 bool zcbor_tstr_encode(zcbor_state_t *state, const struct zcbor_string *input);
 
+/** Encode a pointer to a string as a bstr/tstr.
+ *
+ * @param[inout] state   The current state of the encoding.
+ * @param[in]    string  The value to encode. A pointer to the string
+ * @param[in]    len     The length of the string pointed to by @p string.
+ */
+static inline bool zcbor_bstr_encode_ptr(zcbor_state_t *state, uint8_t *ptr, size_t len)
+{
+	return zcbor_bstr_encode(state, &(struct zcbor_string){.value = ptr, .len = len});
+}
+static inline bool zcbor_tstr_encode_ptr(zcbor_state_t *state, uint8_t *ptr, size_t len)
+{
+	return zcbor_tstr_encode(state, &(struct zcbor_string){.value = ptr, .len = len});
+}
+
 /** Encode a string literal as a bstr/tstr.
  *
  * @param[inout] state   The current state of the encoding.
@@ -54,11 +69,9 @@ bool zcbor_tstr_encode(zcbor_state_t *state, const struct zcbor_string *input);
  *                       that sizeof(string) - 1 is the length of the string.
  */
 #define zcbor_bstr_put_lit(state, string) \
-	zcbor_bstr_encode(state, \
-		&(struct zcbor_string){.value = string, .len = (sizeof(string) - 1)})
+	zcbor_bstr_encode_ptr(state, string, sizeof(string) - 1)
 #define zcbor_tstr_put_lit(state, string) \
-	zcbor_tstr_encode(state, \
-		&(struct zcbor_string){.value = string, .len = (sizeof(string) - 1)})
+	zcbor_tstr_encode_ptr(state, string, sizeof(string) - 1)
 
 /** Encode null-terminated string as a bstr/tstr.
  *
@@ -67,9 +80,9 @@ bool zcbor_tstr_encode(zcbor_state_t *state, const struct zcbor_string *input);
  *                       so that strlen can be used.
  */
 #define zcbor_bstr_put_term(state, string) \
-	zcbor_bstr_encode(state, &(struct zcbor_string){.value = string, .len = strlen(string)})
+	zcbor_bstr_encode_ptr(state, string, strlen(string))
 #define zcbor_tstr_put_term(state, string) \
-	zcbor_tstr_encode(state, &(struct zcbor_string){.value = string, .len = strlen(string)})
+	zcbor_tstr_encode_ptr(state, string, strlen(string))
 
 /** Encode a char array literal as a bstr/tstr.
  *
@@ -78,9 +91,9 @@ bool zcbor_tstr_encode(zcbor_state_t *state, const struct zcbor_string *input);
  *                       so that sizeof(string) is the length of the string.
  */
 #define zcbor_bstr_put_arr(state, string) \
-	zcbor_bstr_encode(state, &(struct zcbor_string){.value = string, .len = sizeof(string)})
+	zcbor_bstr_encode_ptr(state, string, sizeof(string))
 #define zcbor_tstr_put_arr(state, string) \
-	zcbor_tstr_encode(state, &(struct zcbor_string){.value = string, .len = sizeof(string)})
+	zcbor_tstr_encode_ptr(state, string, sizeof(string))
 
 /** Encode a tag. Must be called before encoding the value being tagged. */
 bool zcbor_tag_encode(zcbor_state_t *state, uint32_t input);
