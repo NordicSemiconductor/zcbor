@@ -247,7 +247,7 @@ void test_command_sequence(struct zcbor_string *sequence_str,
 	zcbor_print("\r\ntest %s\r\n", name);
 
 	memset(&sequence1, 0, sizeof(sequence1));
-	uint_fast8_t res = cbor_decode_SUIT_Command_Sequence(sequence_str->value,
+	int res = cbor_decode_SUIT_Command_Sequence(sequence_str->value,
 		sequence_str->len,
 		&sequence1, NULL);
 	zassert_equal(ZCBOR_SUCCESS, res, NULL);
@@ -335,7 +335,7 @@ void test_manifest(const uint8_t *input, uint32_t len)
 	bool load_present;
 	struct zcbor_string *run;
 	bool run_present;
-	uint_fast8_t res;
+	int res;
 	size_t out_len;
 
 	zcbor_print("test_vector at: 0x%zx\r\n", (size_t)input);
