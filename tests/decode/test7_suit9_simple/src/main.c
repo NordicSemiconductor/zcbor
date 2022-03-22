@@ -94,7 +94,7 @@ static struct SUIT_Manifest manifest;
 
 void test_suit9_simple2(void)
 {
-	uint_fast8_t res;
+	int res;
 
 	zcbor_print("test_vector at: 0x%zx\r\n", (size_t)test_vector2);
 	zcbor_print("test_vector end at: 0x%zx\r\n",
@@ -114,7 +114,7 @@ void test_suit9_simple2(void)
 
 void test_suit9_simple5(void)
 {
-	uint_fast8_t res;
+	int res;
 
 	zcbor_print("test_vector at: 0x%zx\r\n", (size_t)test_vector5);
 	zcbor_print("test_vector end at: 0x%zx\r\n",

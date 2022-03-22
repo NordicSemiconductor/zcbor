@@ -50,7 +50,7 @@ void test_numbers(void)
 			0xD9, 0xFF, 0xFF, 0x01, // 1 tagged (0xFFFF)
 		END
 	};
-	uint_fast8_t ret;
+	int ret;
 
 	struct Numbers numbers;
 	ret = cbor_decode_Numbers(payload_numbers1, sizeof(payload_numbers1) - 1, &numbers, &decode_len);
@@ -161,7 +161,7 @@ void test_numbers2(void)
 	zassert_equal(0x1102030405060709, numbers2._Numbers2_big_uint, NULL);
 	zassert_equal(0xFFFFFFFFFFFFFFFF, numbers2._Numbers2_big_uint2, NULL);
 
-	uint_fast8_t ret = cbor_decode_Numbers2(payload_numbers2_inv2,
+	int ret = cbor_decode_Numbers2(payload_numbers2_inv2,
 		sizeof(payload_numbers2_inv2), &numbers2, &decode_len);
 	zassert_equal(ZCBOR_ERR_WRONG_VALUE, ret, "%d\r\n", ret);
 
@@ -420,7 +420,7 @@ void test_optional(void)
 	zassert_equal(3, optional._Optional_manduint, NULL);
 	zassert_equal(0, optional._Optional_multi8_count, NULL);
 
-	uint_fast8_t ret = cbor_decode_Optional(payload_optional3_inv,
+	int ret = cbor_decode_Optional(payload_optional3_inv,
 			sizeof(payload_optional3_inv), &optional, NULL);
 	zassert_equal(ARR_ERR3, ret, "%d\r\n", ret);
 
@@ -665,7 +665,7 @@ void test_map(void)
 static bool my_decode_EmptyMap(zcbor_state_t *state, void *unused)
 {
 	size_t payload_len_out;
-	uint_fast8_t res = cbor_decode_EmptyMap(state->payload,
+	int res = cbor_decode_EmptyMap(state->payload,
 		state->payload_end - state->payload, NULL, &payload_len_out);
 
 	if (!res) {
@@ -747,7 +747,7 @@ void test_nested_map_list_map(void)
 	const uint8_t payload_nested_mlm6[] = {MAP(3), LIST(0), END LIST(0), END LIST(0), END LIST(0), END LIST(0), END LIST(2), MAP(0), END MAP(0), END END END};
 	struct NestedMapListMap maplistmap;
 
-	uint_fast8_t ret = cbor_decode_NestedMapListMap(payload_nested_mlm1,
+	int ret = cbor_decode_NestedMapListMap(payload_nested_mlm1,
 			sizeof(payload_nested_mlm1), &maplistmap, NULL);
 	zassert_equal(ZCBOR_SUCCESS, ret, "%d\r\n", ret);
 	zassert_equal(1, maplistmap._NestedMapListMap_key_count, NULL);
@@ -881,7 +881,7 @@ void test_range(void)
 	zassert_equal(0, output._Range_multi0to10[0], NULL);
 	zassert_equal(10, output._Range_multi0to10[1], NULL);
 
-	uint_fast8_t ret = cbor_decode_Range(payload_range3_inv, sizeof(payload_range3_inv),
+	int ret = cbor_decode_Range(payload_range3_inv, sizeof(payload_range3_inv),
 				&output, NULL);
 	zassert_equal(ZCBOR_ERR_ITERATIONS, ret, "%d\r\n", ret);
 
@@ -1153,7 +1153,7 @@ void test_unabstracted(void)
 			_Unabstracted_unabstractedunion2_choice4, NULL);
 	zassert_equal(sizeof(payload_unabstracted1), out_len, NULL);
 
-	uint_fast8_t ret = cbor_decode_Unabstracted(payload_unabstracted2_inv,
+	int ret = cbor_decode_Unabstracted(payload_unabstracted2_inv,
 					sizeof(payload_unabstracted2_inv),
 					&result_unabstracted, &out_len);
 	zassert_equal(ZCBOR_ERR_WRONG_VALUE, ret, "%d\r\n", ret);
@@ -1214,7 +1214,7 @@ void test_doublemap(void)
 	zassert_true(result_doublemap._DoubleMap_uintmap[1]._DoubleMap_uintmap__MyKeys._MyKeys_uint2int_present, NULL);
 	zassert_equal(result_doublemap._DoubleMap_uintmap[1]._DoubleMap_uintmap__MyKeys._MyKeys_uint2int._MyKeys_uint2int, 2, NULL);
 
-	uint_fast8_t ret = cbor_decode_DoubleMap(payload_doublemap1_inv,
+	int ret = cbor_decode_DoubleMap(payload_doublemap1_inv,
 					sizeof(payload_doublemap1_inv),
 					&result_doublemap, &out_len);
 	zassert_equal(ARR_ERR1, ret, "%d\r\n", ret);
@@ -1326,7 +1326,7 @@ void test_floats(void)
 	zassert_false((double)(123.0/456789.0) == result._Floats_floats[0], NULL);
 	zassert_equal((float)(123.0/456789.0), result._Floats_floats[0], NULL);
 
-	uint_fast8_t ret = cbor_decode_Floats(
+	int ret = cbor_decode_Floats(
 		floats_payload5_inv, sizeof(floats_payload5_inv), &result, &num_decode);
 	zassert_equal(ARR_ERR1, ret, "%d\r\n", ret);
 

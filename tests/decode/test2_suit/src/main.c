@@ -43,7 +43,7 @@ void test_5(void)
 	struct SUIT_Component_Identifier *component;
 	uint8_t expected_component0[] = {0x46, 0x6c, 0x61, 0x73, 0x68};
 	uint8_t expected_component1[] = {0x00, 0x34, 0x01};
-	uint_fast8_t res;
+	int res;
 
 	zcbor_print("test_vector at: 0x%zu\r\n", (size_t)test_vector1);
 	zcbor_print("test_vector end at: 0x%zu\r\n",

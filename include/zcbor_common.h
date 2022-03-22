@@ -107,7 +107,7 @@ struct zcbor_state_constant {
 	zcbor_state_t *backup_list;
 	uint_fast32_t current_backup;
 	uint_fast32_t num_backups;
-	uint_fast8_t error;
+	int error;
 #ifdef ZCBOR_STOP_ON_ERROR
 	bool stop_on_error;
 #endif
@@ -285,16 +285,16 @@ static inline bool zcbor_check_error(const zcbor_state_t *state)
 #endif
 
 /** Return the current error state, replacing it with SUCCESS. */
-static inline uint_fast8_t zcbor_pop_error(zcbor_state_t *state)
+static inline int zcbor_pop_error(zcbor_state_t *state)
 {
-	uint_fast8_t err = state->constant_state->error;
+	int err = state->constant_state->error;
 
 	state->constant_state->error = ZCBOR_SUCCESS;
 	return err;
 }
 
 /** Write the provided error to the error state. */
-static inline void zcbor_error(zcbor_state_t *state, uint_fast8_t err)
+static inline void zcbor_error(zcbor_state_t *state, int err)
 {
 #ifdef ZCBOR_STOP_ON_ERROR
 	if (zcbor_check_error(state))

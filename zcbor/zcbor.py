@@ -2349,7 +2349,7 @@ class CodeGenerator(CddlXcoder):
     def public_xcode_func_sig(self):
         type_name = self.type_name()
         return f"""
-uint_fast8_t cbor_{self.xcode_func_name()}(
+int cbor_{self.xcode_func_name()}(
 		{"const " if self.mode == "decode" else ""}uint8_t *payload, size_t payload_len,
 		{"" if self.mode == "decode" else "const "}{type_name if type_name else "void"} *{
             struct_ptr_name(self.mode)},
@@ -2481,7 +2481,7 @@ static bool {xcoder.func_name}(
 	}}
 
 	if (!ret) {{
-		uint_fast8_t ret = zcbor_pop_error(states);
+		int ret = zcbor_pop_error(states);
 		return (ret == ZCBOR_SUCCESS) ? ZCBOR_ERR_UNKNOWN : ret;
 	}}
 	return ZCBOR_SUCCESS;
