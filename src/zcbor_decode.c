@@ -514,7 +514,7 @@ static bool list_map_start_decode(zcbor_state_t *state,
 
 	INITIAL_CHECKS_WITH_TYPE(exp_major_type);
 
-	if (ADDITIONAL(*state->payload) == 0x1F) {
+	if (ADDITIONAL(*state->payload) == ZCBOR_VALUE_IS_INDEFINITE_LENGTH) {
 		/* Indefinite length array. */
 		new_elem_count = ZCBOR_LARGE_ELEM_COUNT;
 		ZCBOR_ERR_IF(state->elem_count == 0, ZCBOR_ERR_LOW_ELEM_COUNT);
