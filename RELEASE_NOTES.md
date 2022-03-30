@@ -10,6 +10,7 @@ Any new bugs, requests, or missing features should be reported as [Github issues
  * Add support for 32-bit and 64-bit floating point numbers.
  * Add support for `undefined` in CDDL.
  * Add the CDDL prelude (from RFC 8610 Appendix D) to all builds (unless excluded with `--no-prelude`)
+ * Add support for more complex `.cbor` and `.cborseq` expressions.
 
 
 ### Command line and Python module
@@ -18,6 +19,7 @@ Any new bugs, requests, or missing features should be reported as [Github issues
    * New argument: `--default-bit-size` which controls the assumed size of integers. See zcbor code `--help` for more information.
  * Add the `--include-prefix` option for path prefix to generated h files.
  * Allow using both `--encode` and `--decode` together to generate both at the same time.
+ * Make changes to generated code to build with `-Wpedantic` and `-Wconversion`.
 
 
 ### C Libraries
@@ -46,6 +48,7 @@ Any new bugs, requests, or missing features should be reported as [Github issues
    * Rename to `zcbor_any_skip()`
    * Add support for indeterminate-length arrays.
    * Have `zcbor_any_skip()` consume any tags that are present.
+ * Introduce `zcbor_bstr_expect_ptr()`, `zcbor_bstr_put_ptr()`, `zcbor_tstr_expect_ptr()`, and `zcbor_tstr_put_ptr()`
  * zcbor_common.h: Add an enum (`zcbor_rfc8949_tag`) with some tag values.
  * Move CBOR intro text from zcbor_decode.h to README.
  * Control asserts separately from verbose (add ZCBOR_ASSERT option)
@@ -75,9 +78,10 @@ Any new bugs, requests, or missing features should be reported as [Github issues
  * zcbor.py: Fix error in 'convert' where a bstr dict value was incorrectly translated
  * setup.py: Fix windows install
  * zcbor.py: Add suffix for literal values larger than 32-bits.
- * zcbor.py: Make changes to generated code to build with `-Wpedantic` and `-Wconversion`.
  * src: Fix code to build with `-Wpedantic` and `-Wconversion`.
  * zcbor.py: Fix some code generation bugs to do with range checking (min/max size) of ints and CBOR-encoded bstrs.
+ * zcbor.py: Fix bug where indirection for ints with range checks was wrong.
+ * zcbor.py: Fix bugs in range checks in `bstr`s with `.cbor` statements.
 
 ## Unsupported CDDL features
 
@@ -154,7 +158,6 @@ The following is a list of limitiations and missing features:
 
  * Map elements in data must appear in the same order as they appear in the CDDL.
  * Floating point numbers.
- * `undefined`.
  * Using `&()` to turn groups into choices (unions). `&()` is supported when used with `.bits`.
  * Representation Types (`#x.y`), except for tags (`#6.y(foo)`) which are supported.
  * Unwrapping (`~`)
