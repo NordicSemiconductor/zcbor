@@ -132,6 +132,12 @@ Floats = [
 	floats: *float,
 ]
 
+; Test using ranges (greater/less than) on floats.
+Floats2 = [
+	float_lt_1: float .lt 1,
+	float_ge_min_10000: float .ge -10000,
+]
+
 Prelude = [
 	bytes,
 	text,
