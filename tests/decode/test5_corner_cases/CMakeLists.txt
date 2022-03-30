@@ -38,6 +38,7 @@ set(py_command
     QuantityRange
     DoubleMap
     Floats
+    Floats2
     Prelude
     CBORBstr
   --decode

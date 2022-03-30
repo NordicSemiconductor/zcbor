@@ -1440,6 +1440,53 @@ void test_floats(void)
 		floats_payload9_inv, sizeof(floats_payload9_inv), &result, &num_decode), NULL);
 }
 
+
+/* Test using ranges (greater/less than) on floats. */
+void test_floats2(void)
+{
+	uint8_t floats2_payload1[] = {LIST(2),
+			0xFB, 0xc0, 0xf8, 0x1c, 0xd6, 0xe9, 0xe1, 0xb0, 0x8a /* -98765.4321 */,
+			0xFB, 0xbd, 0x50, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 /* -2^(-42) */,
+			END
+	};
+	uint8_t floats2_payload2[] = {LIST(2),
+			0xFB, 0xbd, 0x50, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 /* -2^(-42) */,
+			0xFB, 0xc0, 0xc3, 0x88, 0x0, 0x0, 0x0, 0x0, 0x0 /* -10000 */,
+			END
+	};
+	uint8_t floats2_payload3_inv[] = {LIST(2),
+			0xFA, 0x3f, 0x80, 0x0, 0x0 /* 1.0 */,
+			0xFB, 0xc0, 0xc3, 0x88, 0x0, 0x0, 0x0, 0x0, 0x0 /* -10000 */,
+			END
+	};
+	uint8_t floats2_payload4_inv[] = {LIST(2),
+			0xFB, 0xbd, 0x50, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 /* -2^(-42) */,
+			0xFB, 0xc0, 0xf8, 0x1c, 0xd6, 0xe9, 0xe1, 0xb0, 0x8a /* -98765.4321 */,
+			END
+	};
+
+	size_t num_decode;
+	struct Floats2 result;
+
+	zassert_equal(ZCBOR_SUCCESS, cbor_decode_Floats2(
+		floats2_payload1, sizeof(floats2_payload1), &result, &num_decode), NULL);
+	zassert_equal(sizeof(floats2_payload1), num_decode, NULL);
+	zassert_equal((double)-98765.4321, result._Floats2_float_lt_1, NULL);
+	zassert_equal((double)(-1.0/(1LL << 42)), result._Floats2_float_ge_min_10000, NULL);
+
+	zassert_equal(ZCBOR_SUCCESS, cbor_decode_Floats2(
+		floats2_payload2, sizeof(floats2_payload2), &result, &num_decode), NULL);
+	zassert_equal(sizeof(floats2_payload2), num_decode, NULL);
+	zassert_equal((double)(-1.0/(1LL << 42)), result._Floats2_float_lt_1, NULL);
+	zassert_equal((double)-10000, result._Floats2_float_ge_min_10000, NULL);
+
+	zassert_equal(ZCBOR_ERR_WRONG_RANGE, cbor_decode_Floats2(
+		floats2_payload3_inv, sizeof(floats2_payload3_inv), &result, &num_decode), NULL);
+
+	zassert_equal(ZCBOR_ERR_WRONG_RANGE, cbor_decode_Floats2(
+		floats2_payload4_inv, sizeof(floats2_payload4_inv), &result, &num_decode), NULL);
+}
+
 void test_prelude(void)
 {
 	uint8_t prelude_payload1[] = {
@@ -1570,6 +1617,7 @@ void test_main(void)
 			 ztest_unit_test(test_quantity_range),
 			 ztest_unit_test(test_doublemap),
 			 ztest_unit_test(test_floats),
+			 ztest_unit_test(test_floats2),
 			 ztest_unit_test(test_prelude),
 			 ztest_unit_test(test_cbor_bstr)
 	);

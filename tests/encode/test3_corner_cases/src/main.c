@@ -1207,6 +1207,39 @@ void test_floats(void)
 
 }
 
+
+/* Test using ranges (greater/less than) on floats. */
+void test_floats2(void)
+{
+	uint8_t exp_floats2_payload1[] = {LIST(2),
+			0xFB, 0xc0, 0xf8, 0x1c, 0xd6, 0xe9, 0xe1, 0xb0, 0x8a /* -98765.4321 */,
+			0xFB, 0xbd, 0x50, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 /* -2^(-42) */,
+			END
+	};
+	uint8_t exp_floats2_payload2[] = {LIST(2),
+			0xFB, 0xbd, 0x50, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 /* -2^(-42) */,
+			0xFB, 0xc0, 0xc3, 0x88, 0x0, 0x0, 0x0, 0x0, 0x0 /* -10000 */,
+			END
+	};
+	size_t num_encode;
+	struct Floats2 input;
+	uint8_t output[40];
+
+	input._Floats2_float_lt_1 = -98765.4321;
+	input._Floats2_float_ge_min_10000 = (-1.0/(1LL << 42));
+	zassert_equal(ZCBOR_SUCCESS, cbor_encode_Floats2(
+		output, sizeof(output), &input, &num_encode), NULL);
+	zassert_equal(sizeof(exp_floats2_payload1), num_encode, NULL);
+	zassert_mem_equal(exp_floats2_payload1, output, num_encode, NULL);
+
+	input._Floats2_float_lt_1 = (-1.0/(1LL << 42));
+	input._Floats2_float_ge_min_10000 = -10000;
+	zassert_equal(ZCBOR_SUCCESS, cbor_encode_Floats2(
+		output, sizeof(output), &input, &num_encode), NULL);
+	zassert_equal(sizeof(exp_floats2_payload2), num_encode, NULL);
+	zassert_mem_equal(exp_floats2_payload2, output, num_encode, NULL);
+}
+
 void test_cbor_bstr(void)
 {
 	uint8_t exp_cbor_bstr_payload1[] = {
@@ -1230,8 +1263,6 @@ void test_cbor_bstr(void)
 	input.__hello_big_uint_bstr_cbor.len = 10;
 
 	zassert_equal(ZCBOR_SUCCESS, cbor_encode_CBORBstr(output, sizeof(output), &input, &num_encode), NULL);
-
-	zcbor_print_compare_strings(exp_cbor_bstr_payload1, output, num_encode);
 
 	zassert_equal(sizeof(exp_cbor_bstr_payload1), num_encode, "%d != %d\r\n", sizeof(exp_cbor_bstr_payload1), num_encode);
 	zassert_mem_equal(exp_cbor_bstr_payload1, output, num_encode, NULL);
@@ -1259,6 +1290,7 @@ void test_main(void)
 			 ztest_unit_test(test_quantity_range),
 			 ztest_unit_test(test_doublemap),
 			 ztest_unit_test(test_floats),
+			 ztest_unit_test(test_floats2),
 			 ztest_unit_test(test_cbor_bstr)
 	);
 	ztest_run_test_suite(cbor_encode_test3);
