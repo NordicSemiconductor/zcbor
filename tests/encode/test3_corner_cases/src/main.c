@@ -1268,6 +1268,83 @@ void test_cbor_bstr(void)
 	zassert_mem_equal(exp_cbor_bstr_payload1, output, num_encode, NULL);
 }
 
+
+void test_map_length(void)
+{
+	uint8_t exp_map_length_payload1[] = {MAP(2),
+		0x61, 'r', 0x01,
+		0x61, 'm', 0x46, 1, 2, 3, 4, 5, 6, END
+	};
+	uint8_t exp_map_length_payload2[] = {MAP(3),
+		0x61, 'r', 0x01,
+		0x61, 'm', 0x46, 1, 2, 3, 4, 5, 6,
+		0x61, 'e', LIST(0), END END
+	};
+	uint8_t exp_map_length_payload3[] = {MAP(3),
+		0x61, 'r', 0x01,
+		0x61, 'm', 0x46, 1, 2, 3, 4, 5, 6,
+		0x61, 'e', LIST(1), 0x50, 8, 7, 6, 5, 4, 3, 2, 1, 8, 7, 6, 5, 4, 3, 2, 1, END END
+	};
+	uint8_t exp_map_length_payload4[] = {MAP(3),
+		0x61, 'r', 0x01,
+		0x61, 'm', 0x46, 1, 2, 3, 4, 5, 6,
+		0x61, 'e', LIST(2), 0x50, 8, 7, 6, 5, 4, 3, 2, 1, 8, 7, 6, 5, 4, 3, 2, 1,
+			0x50, 8, 7, 6, 5, 4, 3, 2, 1, 8, 7, 6, 5, 4, 3, 2, 1, END END
+	};
+
+	struct MapLength input;
+	size_t num_encode;
+	uint8_t output[60];
+
+	uint8_t mac[] = {1, 2, 3, 4, 5, 6};
+	uint8_t uuid[] = {8, 7, 6, 5, 4, 3, 2, 1, 8, 7, 6, 5, 4, 3, 2, 1, 0};
+
+	input._MapLength_result = 1;
+	input._MapLength_mac_addr.len = 6;
+	input._MapLength_mac_addr.value = mac;
+	input._MapLength_end_device_array_present = false;
+
+	zassert_equal(ZCBOR_SUCCESS, cbor_encode_MapLength(output,
+		sizeof(output), &input, &num_encode), NULL);
+	zassert_equal(sizeof(exp_map_length_payload1), num_encode, "%d != %d\r\n", sizeof(exp_map_length_payload1), num_encode);
+	zassert_mem_equal(exp_map_length_payload1, output, num_encode, NULL);
+
+	input._MapLength_end_device_array_present = true;
+	input._MapLength_end_device_array._MapLength_end_device_array__uuid_count = 0;
+	zassert_equal(ZCBOR_SUCCESS, cbor_encode_MapLength(output,
+		sizeof(output), &input, &num_encode), NULL);
+	zassert_equal(sizeof(exp_map_length_payload2), num_encode, "%d != %d\r\n", sizeof(exp_map_length_payload2), num_encode);
+	zassert_mem_equal(exp_map_length_payload2, output, num_encode, NULL);
+
+	input._MapLength_end_device_array._MapLength_end_device_array__uuid_count = 1;
+	input._MapLength_end_device_array._MapLength_end_device_array__uuid[0].len = 16;
+	input._MapLength_end_device_array._MapLength_end_device_array__uuid[0].value = uuid;
+	zassert_equal(ZCBOR_SUCCESS, cbor_encode_MapLength(output,
+		sizeof(output), &input, &num_encode), NULL);
+	zassert_equal(sizeof(exp_map_length_payload3), num_encode, "%d != %d\r\n", sizeof(exp_map_length_payload3), num_encode);
+	zassert_mem_equal(exp_map_length_payload3, output, num_encode, NULL);
+
+	input._MapLength_end_device_array._MapLength_end_device_array__uuid_count = 2;
+	input._MapLength_end_device_array._MapLength_end_device_array__uuid[1].len = 16;
+	input._MapLength_end_device_array._MapLength_end_device_array__uuid[1].value = uuid;
+	int err = cbor_encode_MapLength(output,
+		sizeof(output), &input, &num_encode);
+	zassert_equal(ZCBOR_SUCCESS, err, "%d\r\b", err);
+	zassert_equal(sizeof(exp_map_length_payload4), num_encode, "%d != %d\r\n", sizeof(exp_map_length_payload4), num_encode);
+	zassert_mem_equal(exp_map_length_payload4, output, num_encode, NULL);
+
+	input._MapLength_mac_addr.len--;
+	zassert_equal(ZCBOR_ERR_WRONG_RANGE, cbor_encode_MapLength(output,
+		sizeof(output), &input, &num_encode), NULL);
+
+	input._MapLength_mac_addr.len++;
+	input._MapLength_end_device_array._MapLength_end_device_array__uuid[1].len++;
+	err = cbor_encode_MapLength(output,
+		sizeof(output), &input, &num_encode);
+	zassert_equal(ZCBOR_ERR_WRONG_RANGE, err, "%d\r\b", err);
+}
+
+
 void test_main(void)
 {
 	ztest_test_suite(cbor_encode_test3,
@@ -1291,7 +1368,8 @@ void test_main(void)
 			 ztest_unit_test(test_doublemap),
 			 ztest_unit_test(test_floats),
 			 ztest_unit_test(test_floats2),
-			 ztest_unit_test(test_cbor_bstr)
+			 ztest_unit_test(test_cbor_bstr),
+			 ztest_unit_test(test_map_length)
 	);
 	ztest_run_test_suite(cbor_encode_test3);
 }

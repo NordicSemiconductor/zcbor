@@ -172,3 +172,15 @@ CBORBstr = bstr .cbor ([
 	pi: bstr .cbor 3.1415,
 	big_uint_bstr: (bstr .cbor biguint),
 ])
+
+
+result_code = int
+mac_address = bstr .size 6
+uuid = bstr .size 16
+
+; Test combination of map + optional + * + size check
+MapLength = {
+	"r" : (result:result_code),
+	"m" : (mac_addr:mac_address),
+	?"e" : (end_device_array:[* uuid]),
+}

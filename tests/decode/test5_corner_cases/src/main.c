@@ -1594,6 +1594,88 @@ void test_cbor_bstr(void)
 	zassert_equal(ARR_ERR4, res, "%d\r\n", res);
 }
 
+
+void test_map_length(void)
+{
+	uint8_t map_length_payload1[] = {MAP(2),
+		0x61, 'r', 0x01,
+		0x61, 'm', 0x46, 1, 2, 3, 4, 5, 6, END
+	};
+	uint8_t map_length_payload2[] = {MAP(3),
+		0x61, 'r', 0x01,
+		0x61, 'm', 0x46, 1, 2, 3, 4, 5, 6,
+		0x61, 'e', LIST(0), END END
+	};
+	uint8_t map_length_payload3[] = {MAP(3),
+		0x61, 'r', 0x01,
+		0x61, 'm', 0x46, 1, 2, 3, 4, 5, 6,
+		0x61, 'e', LIST(1), 0x50, 8, 7, 6, 5, 4, 3, 2, 1, 8, 7, 6, 5, 4, 3, 2, 1, END END
+	};
+	uint8_t map_length_payload4[] = {MAP(3),
+		0x61, 'r', 0x01,
+		0x61, 'm', 0x46, 1, 2, 3, 4, 5, 6,
+		0x61, 'e', LIST(2), 0x50, 8, 7, 6, 5, 4, 3, 2, 1, 8, 7, 6, 5, 4, 3, 2, 1,
+			0x50, 8, 7, 6, 5, 4, 3, 2, 1, 8, 7, 6, 5, 4, 3, 2, 1, END END
+	};
+	uint8_t map_length_payload5_inv[] = {MAP(2),
+		0x61, 'r', 0x01,
+		0x61, 'm', 0x45, 1, 2, 3, 4, 5, END
+	};
+	uint8_t map_length_payload6_inv[] = {MAP(3),
+		0x61, 'r', 0x01,
+		0x61, 'm', 0x46, 1, 2, 3, 4, 5, 6,
+		0x61, 'e', LIST(2), 0x50, 8, 7, 6, 5, 4, 3, 2, 1, 8, 7, 6, 5, 4, 3, 2, 1,
+			0x49, 8, 7, 6, 5, 4, 3, 2, 1, 8, 7, 6, 5, 4, 3, 2, END END
+	};
+	uint8_t map_length_payload7_inv[] = {MAP(3),
+		0x61, 'r', 0x01,
+		0x61, 'm', 0x46, 1, 2, 3, 4, 5, 6,
+		0x61, 'e', LIST(2), 0x51, 8, 7, 6, 5, 4, 3, 2, 1, 8, 7, 6, 5, 4, 3, 2, 1, 0,
+			0x50, 8, 7, 6, 5, 4, 3, 2, 1, 8, 7, 6, 5, 4, 3, 2, 1, END END
+	};
+
+	struct MapLength result;
+	size_t num_decode;
+
+	zassert_equal(ZCBOR_SUCCESS, cbor_decode_MapLength(map_length_payload1,
+		sizeof(map_length_payload1), &result, &num_decode), NULL);
+	zassert_equal(sizeof(map_length_payload1), num_decode, NULL);
+	zassert_false(result._MapLength_end_device_array_present, NULL);
+
+	zassert_equal(ZCBOR_SUCCESS, cbor_decode_MapLength(map_length_payload2,
+		sizeof(map_length_payload2), &result, &num_decode), NULL);
+	zassert_equal(sizeof(map_length_payload2), num_decode, NULL);
+	zassert_true(result._MapLength_end_device_array_present, NULL);
+	zassert_equal(0, result._MapLength_end_device_array._MapLength_end_device_array__uuid_count, NULL);
+
+	zassert_equal(ZCBOR_SUCCESS, cbor_decode_MapLength(map_length_payload3,
+		sizeof(map_length_payload3), &result, &num_decode), NULL);
+	zassert_equal(sizeof(map_length_payload3), num_decode, NULL);
+	zassert_true(result._MapLength_end_device_array_present, NULL);
+	zassert_equal(1, result._MapLength_end_device_array._MapLength_end_device_array__uuid_count, NULL);
+
+	zassert_equal(ZCBOR_SUCCESS, cbor_decode_MapLength(map_length_payload4,
+		sizeof(map_length_payload4), &result, &num_decode), NULL);
+	zassert_equal(sizeof(map_length_payload4), num_decode, NULL);
+	zassert_true(result._MapLength_end_device_array_present, NULL);
+	zassert_equal(2, result._MapLength_end_device_array._MapLength_end_device_array__uuid_count, NULL);
+	zassert_equal(16, result._MapLength_end_device_array._MapLength_end_device_array__uuid[0].len, NULL);
+	zassert_equal(16, result._MapLength_end_device_array._MapLength_end_device_array__uuid[1].len, NULL);
+	zassert_equal(8, result._MapLength_end_device_array._MapLength_end_device_array__uuid[1].value[8], NULL);
+
+	zassert_equal(ZCBOR_ERR_WRONG_RANGE, cbor_decode_MapLength(map_length_payload5_inv,
+		sizeof(map_length_payload5_inv), &result, &num_decode), NULL);
+
+	int err = cbor_decode_MapLength(map_length_payload6_inv,
+		sizeof(map_length_payload6_inv), &result, &num_decode);
+	zassert_equal(ARR_ERR1, err, "%d\r\n", err);
+
+	err = cbor_decode_MapLength(map_length_payload7_inv,
+		sizeof(map_length_payload7_inv), &result, &num_decode);
+	zassert_equal(ARR_ERR1, err, "%d\r\n", err);
+}
+
+
 void test_main(void)
 {
 	ztest_test_suite(cbor_decode_test5,
@@ -1619,7 +1701,8 @@ void test_main(void)
 			 ztest_unit_test(test_floats),
 			 ztest_unit_test(test_floats2),
 			 ztest_unit_test(test_prelude),
-			 ztest_unit_test(test_cbor_bstr)
+			 ztest_unit_test(test_cbor_bstr),
+			 ztest_unit_test(test_map_length)
 	);
 	ztest_run_test_suite(cbor_decode_test5);
 }

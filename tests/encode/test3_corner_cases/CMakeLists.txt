@@ -38,6 +38,7 @@ set(py_command
   Floats
   Floats2
   CBORBstr
+  MapLength
   -e
   ${bit_arg}
   )
