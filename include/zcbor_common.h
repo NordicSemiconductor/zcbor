@@ -36,9 +36,9 @@ struct zcbor_string_fragment {
 
 #ifdef ZCBOR_VERBOSE
 #include <sys/printk.h>
-#define zcbor_trace() (printk("bytes left: %zu, byte: 0x%x, elem_count: 0x%" PRIxFAST32 ", %s:%d\n",\
-	(size_t)state->payload_end - (size_t)state->payload, *state->payload, \
-	state->elem_count, __FILE__, __LINE__))
+#define zcbor_trace() (printk("bytes left: %zu, byte: 0x%x, elem_count: 0x%" PRIxFAST32 ", err: %d, %s:%d\n",\
+	(size_t)state->payload_end - (size_t)state->payload, *state->payload, state->elem_count, \
+	state->constant_state->error, __FILE__, __LINE__))
 
 #define zcbor_print_assert(expr, ...) \
 do { \
