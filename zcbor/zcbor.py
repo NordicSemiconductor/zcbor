@@ -2494,8 +2494,10 @@ static bool {xcoder.func_name}(
 	}}
 
 	if (!ret) {{
-		int ret = zcbor_pop_error(states);
-		return (ret == ZCBOR_SUCCESS) ? ZCBOR_ERR_UNKNOWN : ret;
+		int err = zcbor_pop_error(states);
+
+		zcbor_print("Return error: %d\\r\\n", err);
+		return (err == ZCBOR_SUCCESS) ? ZCBOR_ERR_UNKNOWN : err;
 	}}
 	return ZCBOR_SUCCESS;
 }}"""
