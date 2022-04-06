@@ -41,6 +41,7 @@ set(py_command
     Floats2
     Prelude
     CBORBstr
+    MapLength
   --decode
   --git-sha-header
   ${bit_arg}

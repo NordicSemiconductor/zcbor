@@ -1065,6 +1065,8 @@ class CddlXcoder(CddlParser):
 
     # Whether this element needs a check (memcmp) for a string value.
     def range_check_condition(self):
+        if self.type == "OTHER":
+            return self.my_types[self.value].range_check_condition()
         if self.type not in ["INT", "NINT", "UINT", "BSTR", "TSTR"]:
             return False
         if self.value is not None:
