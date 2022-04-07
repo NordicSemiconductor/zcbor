@@ -406,6 +406,15 @@ static bool list_map_end_encode(zcbor_state_t *state, uint_fast32_t max_num,
 
 	zcbor_print("list_count: %" PRIuFAST32 "\r\n", list_count);
 
+
+	/** If max_num is smaller than the actual number of encoded elements,
+	  * the value_encode() below will corrupt the data if the encoded
+	  * header is larger than the previously encoded header. */
+	if (header_len > max_header_len) {
+		zcbor_print("max_num too small.\r\n");
+		ZCBOR_ERR(ZCBOR_ERR_HIGH_ELEM_COUNT);
+	}
+
 	/* Reencode header of list now that we know the number of elements. */
 	if (!(value_encode(state, major_type, &list_count, sizeof(list_count)))) {
 		ZCBOR_FAIL();
@@ -414,9 +423,8 @@ static bool list_map_end_encode(zcbor_state_t *state, uint_fast32_t max_num,
 	if (max_header_len != header_len) {
 		const uint8_t *start = state->payload + max_header_len - header_len;
 		size_t body_size = (size_t)payload - (size_t)start;
-		memmove(state->payload_mut,
-			state->payload + max_header_len - header_len,
-			body_size);
+
+		memmove(state->payload_mut, start, body_size);
 		/* Reset payload pointer to end of list */
 		state->payload += body_size;
 	} else {
