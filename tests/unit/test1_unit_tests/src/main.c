@@ -605,6 +605,35 @@ void test_bstr_cbor_fragments(void)
 }
 
 
+void test_canonical_list(void)
+{
+#ifndef ZCBOR_CANONICAL
+	printk("Skip on non-canonical builds.\n");
+#else
+	uint8_t payload1[100];
+	uint8_t payload2[100];
+	uint8_t exp_payload[] = {0x8A, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+	ZCBOR_STATE_E(state_e1, 1, payload1, sizeof(payload1), 0);
+	ZCBOR_STATE_E(state_e2, 1, payload2, sizeof(payload2), 0);
+
+	zassert_true(zcbor_list_start_encode(state_e1, 10), "%d\r\n", state_e1->constant_state->error);
+	for (int i = 0; i < 30; i++) {
+		zassert_true(zcbor_uint32_put(state_e1, i), NULL);
+	}
+	zassert_false(zcbor_list_end_encode(state_e1, 10), NULL);
+	zassert_equal(ZCBOR_ERR_HIGH_ELEM_COUNT, zcbor_pop_error(state_e1), NULL);
+
+	zassert_true(zcbor_list_start_encode(state_e2, 1000), NULL);
+	for (int i = 0; i < 10; i++) {
+		zassert_true(zcbor_uint32_put(state_e2, i), NULL);
+	}
+	zassert_true(zcbor_list_end_encode(state_e2, 1000), NULL);
+	zassert_equal(sizeof(exp_payload), state_e2->payload - payload2, NULL);
+	zassert_mem_equal(exp_payload, payload2, sizeof(exp_payload), NULL);
+#endif
+}
+
+
 void test_main(void)
 {
 	ztest_test_suite(zcbor_unit_tests,
@@ -616,7 +645,8 @@ void test_main(void)
 			 ztest_unit_test(test_string_macros),
 			 ztest_unit_test(test_fragments),
 			 ztest_unit_test(test_validate_fragments),
-			 ztest_unit_test(test_bstr_cbor_fragments)
+			 ztest_unit_test(test_bstr_cbor_fragments),
+			 ztest_unit_test(test_canonical_list)
 	);
 	ztest_run_test_suite(zcbor_unit_tests);
 }
