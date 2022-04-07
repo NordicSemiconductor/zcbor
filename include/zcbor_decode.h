@@ -304,17 +304,13 @@ bool zcbor_present_decode(uint_fast32_t *present,
 		void *result);
 
 /** See @ref zcbor_new_state() */
-bool zcbor_new_decode_state(zcbor_state_t *state_array, uint_fast32_t n_states,
+void zcbor_new_decode_state(zcbor_state_t *state_array, uint_fast32_t n_states,
 		const uint8_t *payload, size_t payload_len, uint_fast32_t elem_count);
 
 /** Convenience macro for declaring and initializing a state with backups.
  *
  *  This gives you a state variable named @p name. The variable functions like
  *  a pointer.
- *
- *  The return value from @ref zcbor_new_encode_state can be safely ignored
- *  because the only error condition is n_states < 2, and this macro adds 2 to
- *  num_backups to get n_states, so it can never be < 2.
  *
  *  @param[in]  name          The name of the new state variable.
  *  @param[in]  num_backups   The number of backup slots to keep in the state.
@@ -325,7 +321,7 @@ bool zcbor_new_decode_state(zcbor_state_t *state_array, uint_fast32_t n_states,
 #define ZCBOR_STATE_D(name, num_backups, payload, payload_size, elem_count) \
 zcbor_state_t name[((num_backups) + 2)]; \
 do { \
-	(void)zcbor_new_decode_state(name, ARRAY_SIZE(name), payload, payload_size, elem_count); \
+	zcbor_new_decode_state(name, ARRAY_SIZE(name), payload, payload_size, elem_count); \
 } while(0)
 
 #endif /* ZCBOR_DECODE_H__ */

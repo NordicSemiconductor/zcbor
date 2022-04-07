@@ -907,8 +907,8 @@ bool zcbor_present_decode(uint_fast32_t *present,
 }
 
 
-bool zcbor_new_decode_state(zcbor_state_t *state_array, uint_fast32_t n_states,
+void zcbor_new_decode_state(zcbor_state_t *state_array, uint_fast32_t n_states,
 		const uint8_t *payload, size_t payload_len, uint_fast32_t elem_count)
 {
-	return zcbor_new_state(state_array, n_states, payload, payload_len, elem_count);
+	zcbor_new_state(state_array, n_states, payload, payload_len, elem_count);
 }
