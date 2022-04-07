@@ -38,7 +38,7 @@ struct zcbor_string_fragment {
 #include <sys/printk.h>
 #define zcbor_trace() (printk("bytes left: %zu, byte: 0x%x, elem_count: 0x%" PRIxFAST32 ", err: %d, %s:%d\n",\
 	(size_t)state->payload_end - (size_t)state->payload, *state->payload, state->elem_count, \
-	state->constant_state->error, __FILE__, __LINE__))
+	state->constant_state ? state->constant_state->error : 0, __FILE__, __LINE__))
 
 #define zcbor_print_assert(expr, ...) \
 do { \
@@ -264,29 +264,32 @@ bool zcbor_union_elem_code(zcbor_state_t *state);
 bool zcbor_union_end_code(zcbor_state_t *state);
 
 /** Initialize a state with backups.
- *  One of the states in the array is used as a struct zcbor_state_constant object.
+ *  As long as n_states is more than 1, one of the states in the array is used
+ *  as a struct zcbor_state_constant object.
+ *  If there is no struct zcbor_state_constant (n_states == 1), error codes are
+ *  not available.
  *  This means that you get a state with (n_states - 2) backups.
- *  The constant state is mandatory so n_states must be at least 2.
  *  payload, payload_len, and elem_count are used to initialize the first state.
  *  in the array, which is the state that can be passed to cbor functions.
- *
- *  @retval false  if n_states < 2
- *  @retval true   otherwise
  */
-bool zcbor_new_state(zcbor_state_t *state_array, uint_fast32_t n_states,
+void zcbor_new_state(zcbor_state_t *state_array, uint_fast32_t n_states,
 		const uint8_t *payload, size_t payload_len, uint_fast32_t elem_count);
 
 #ifdef ZCBOR_STOP_ON_ERROR
 /** Check stored error and fail if present, but only if stop_on_error is true. */
 static inline bool zcbor_check_error(const zcbor_state_t *state)
 {
-	return !(state->constant_state->stop_on_error && state->constant_state->error);
+	struct zcbor_state_constant  *cs = state->constant_state;
+	return !(cs && cs->stop_on_error && cs->error);
 }
 #endif
 
 /** Return the current error state, replacing it with SUCCESS. */
 static inline int zcbor_pop_error(zcbor_state_t *state)
 {
+	if (!state->constant_state) {
+		return ZCBOR_SUCCESS;
+	}
 	int err = state->constant_state->error;
 
 	state->constant_state->error = ZCBOR_SUCCESS;
@@ -300,7 +303,9 @@ static inline void zcbor_error(zcbor_state_t *state, int err)
 	if (zcbor_check_error(state))
 #endif
 	{
-		state->constant_state->error = err;
+		if (state->constant_state) {
+			state->constant_state->error = err;
+		}
 	}
 }
 

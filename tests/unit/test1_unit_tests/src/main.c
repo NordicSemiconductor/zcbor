@@ -67,30 +67,32 @@ void test_uint64(void)
 	uint64_t uint64;
 	uint32_t uint32;
 
-	ZCBOR_STATE_E(state_e, 0, payload, sizeof(payload), 0);
-	ZCBOR_STATE_D(state_d, 0, payload, sizeof(payload), 10);
+	zcbor_state_t state_e;
+	zcbor_new_state(&state_e, 1, payload, sizeof(payload), 0);
+	zcbor_state_t state_d;
+	zcbor_new_state(&state_d, 1, payload, sizeof(payload), 10);
 
-	zassert_true(zcbor_uint64_put(state_e, 5), NULL);
-	zassert_false(zcbor_uint64_expect(state_d, 4), NULL);
-	zassert_false(zcbor_uint64_expect(state_d, 6), NULL);
-	zassert_false(zcbor_uint64_expect(state_d, -5), NULL);
-	zassert_false(zcbor_uint64_expect(state_d, -6), NULL);
-	zassert_true(zcbor_uint64_expect(state_d, 5), NULL);
+	zassert_true(zcbor_uint64_put(&state_e, 5), NULL);
+	zassert_false(zcbor_uint64_expect(&state_d, 4), NULL);
+	zassert_false(zcbor_uint64_expect(&state_d, 6), NULL);
+	zassert_false(zcbor_uint64_expect(&state_d, -5), NULL);
+	zassert_false(zcbor_uint64_expect(&state_d, -6), NULL);
+	zassert_true(zcbor_uint64_expect(&state_d, 5), NULL);
 
-	zassert_true(zcbor_uint32_put(state_e, 5), NULL);
-	zassert_true(zcbor_uint64_expect(state_d, 5), NULL);
+	zassert_true(zcbor_uint32_put(&state_e, 5), NULL);
+	zassert_true(zcbor_uint64_expect(&state_d, 5), NULL);
 
-	zassert_true(zcbor_uint64_put(state_e, 5), NULL);
-	zassert_true(zcbor_uint32_expect(state_d, 5), NULL);
+	zassert_true(zcbor_uint64_put(&state_e, 5), NULL);
+	zassert_true(zcbor_uint32_expect(&state_d, 5), NULL);
 
-	zassert_true(zcbor_uint64_put(state_e, UINT64_MAX), NULL);
-	zassert_false(zcbor_uint32_decode(state_d, &uint32), NULL);
-	zassert_true(zcbor_uint64_decode(state_d, &uint64), NULL);
+	zassert_true(zcbor_uint64_put(&state_e, UINT64_MAX), NULL);
+	zassert_false(zcbor_uint32_decode(&state_d, &uint32), NULL);
+	zassert_true(zcbor_uint64_decode(&state_d, &uint64), NULL);
 	zassert_equal(uint64, UINT64_MAX, NULL);
 
-	zassert_true(zcbor_uint64_encode(state_e, &uint64), NULL);
-	zassert_false(zcbor_uint64_expect(state_d, (UINT64_MAX - 1)), NULL);
-	zassert_true(zcbor_uint64_expect(state_d, UINT64_MAX), NULL);
+	zassert_true(zcbor_uint64_encode(&state_e, &uint64), NULL);
+	zassert_false(zcbor_uint64_expect(&state_d, (UINT64_MAX - 1)), NULL);
+	zassert_true(zcbor_uint64_expect(&state_d, UINT64_MAX), NULL);
 }
 
 
