@@ -47,6 +47,9 @@ def is_relative_to(path1, path2):
 if Path(__file__).name in sys.argv[0]:
     # Running the script directly in the repo.
     c_code_root = P_REPO_ROOT
+elif any((match(r"zcbor-.*\.egg", p) for p in P_SCRIPT.parts)):
+    # Installed via setup.py install
+    c_code_root = Path(P_SCRIPT.parent, "lib", "zcbor")
 elif is_relative_to(P_SCRIPT, (Path(sys.prefix, "local"))):
     # Installed via pip as root.
     c_code_root = Path(sys.prefix, "local", "lib", "zcbor")

@@ -13,6 +13,7 @@ from pprint import pprint
 # from ecdsa import VerifyingKey
 from hashlib import sha256
 import cbor2
+from platform import python_version_tuple
 from sys import platform, exit
 from yaml import safe_load
 
@@ -561,6 +562,7 @@ class TestOptional(TestCase):
 
 
 class TestREADME(TestCase):
+    @skipIf(list(map(int, python_version_tuple())) >= [3, 10, 0], "Skip on Python >= 3.10 because of different wording in argparse output.")
     @skipIf(platform.startswith("win"), "Skip on Windows because of path/newline issues.")
     def test_cli_doc(self):
         add_help = Popen(["python3", p_add_helptext, "--check"])
