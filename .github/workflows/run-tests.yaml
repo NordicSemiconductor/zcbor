@@ -51,11 +51,6 @@ jobs:
         pycodestyle zcbor/__init__.py --max-line-length=100
         pycodestyle setup.py --max-line-length=100
 
-    - name: Run python tests
-      working-directory: tests/scripts
-      run: |
-        python3 -m unittest run_tests
-
   merge-test-2:
     runs-on: ubuntu-latest
     name: Merge tests 2
@@ -104,6 +99,38 @@ jobs:
         tags: encode
         asserts: with
 
+  merge-test-6:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.7', '3.8', '3.9', '3.10']
+    name: Merge tests 6 (Python ${{ matrix.python-version }})
+    steps:
+    - name: Checkout the code
+      uses: actions/checkout@v2
+
+    - name: Setup Python
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install dependencies
+      shell: sh
+      run: |
+        pip3 install -U pip
+        pip3 install -U setuptools
+        pip3 install -U -r scripts/requirements.txt
+
+    - name: Install zcbor package
+      shell: sh
+      run: |
+        python3 setup.py install
+
+    - name: Run python tests
+      working-directory: tests/scripts
+      run: |
+        python3 -m unittest run_tests
+
   release-test:
     runs-on: ubuntu-latest
     name: Release tests
@@ -114,6 +141,7 @@ jobs:
     - merge-test-3
     - merge-test-4
     - merge-test-5
+    - merge-test-6
     if: "startswith(github.head_ref, 'release/')"
     steps:
     - name: Checkout the code
