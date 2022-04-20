@@ -40,7 +40,7 @@ jobs:
     - name: Prepare and run tests
       uses: ./.github/actions/prepare_and_run_tests
       with:
-        tags: unit
+        tags: -t unit
         asserts: both
 
     - name: Run pycodestyle
@@ -60,7 +60,7 @@ jobs:
     - name: Prepare and run tests
       uses: ./.github/actions/prepare_and_run_tests
       with:
-        tags: decode
+        tags: -t decode
         asserts: without
 
   merge-test-3:
@@ -72,7 +72,7 @@ jobs:
     - name: Prepare and run tests
       uses: ./.github/actions/prepare_and_run_tests
       with:
-        tags: decode
+        tags: -t decode
         asserts: with
 
   merge-test-4:
@@ -84,7 +84,7 @@ jobs:
     - name: Prepare and run tests
       uses: ./.github/actions/prepare_and_run_tests
       with:
-        tags: encode
+        tags: -t encode
         asserts: without
 
   merge-test-5:
@@ -96,7 +96,7 @@ jobs:
     - name: Prepare and run tests
       uses: ./.github/actions/prepare_and_run_tests
       with:
-        tags: encode
+        tags: -t encode
         asserts: with
 
   merge-test-6:
@@ -131,9 +131,9 @@ jobs:
       run: |
         python3 -m unittest run_tests
 
-  release-test:
+  release-test-1:
     runs-on: ubuntu-latest
-    name: Release tests
+    name: Release tests 1 (Fuzz)
     needs:
     - merge-test-win
     - merge-test-1
@@ -177,3 +177,34 @@ jobs:
       with:
         name: zcbor-release
         path: dist/*
+
+  release-test-2:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.7', '3.8', '3.9', '3.10']
+    name: Release tests 2 (Python ${{ matrix.python-version }})
+    needs:
+    - merge-test-win
+    - merge-test-1
+    - merge-test-2
+    - merge-test-3
+    - merge-test-4
+    - merge-test-5
+    - merge-test-6
+    if: "startswith(github.head_ref, 'release/')"
+    steps:
+    - name: Checkout the code
+      uses: actions/checkout@v2
+
+    - name: Setup Python
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Prepare and run tests
+      uses: ./.github/actions/prepare_and_run_tests
+      with:
+        tags: ''
+        asserts: 'both'
+        zcbor_package: 'setup_install'
