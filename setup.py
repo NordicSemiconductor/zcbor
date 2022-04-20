@@ -75,7 +75,7 @@ setuptools.setup(
         "Programming Language :: Python :: 3",
         "Topic :: Software Development :: Build Tools",
     ],
-    python_requires='>=3.6',
+    python_requires='>=3.7',
     packages=setuptools.find_packages(),
     install_requires=get_dependencies(),
     entry_points={
