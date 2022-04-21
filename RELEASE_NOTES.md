@@ -4,10 +4,36 @@ Any new bugs, requests, or missing features should be reported as [Github issues
 
 ## Improvements:
 
+### Code generation
+ * Add the --short-names option when generating code, which shortens names in struct definitions.
+ * Allow --default-max-qty to accept a string label when generating code so that the value can be configured after generation.
+ * Update versions of dependencies in pip requirements.
+
+### C Libraries
+ * Add const to *ptr argument of cbor_tstr_encode_ptr.
+ * Make it easier to initialize zcbor_state_t objects: Allow single states as input to zcbor_new_state() and remove return value.
+ * Make zcbor_list/map_end_encode() more robust to wrong max_num arguments (when ZCBOR_CANONICAL is enabled).
+ * Add zcbor_peek_error() for reading the error value without clearing it.
+
+### Tests
+ * Test on multiple Python versions
+ * Add tests for using ranges (< or >) with floats in code generation.
+ * Add/enable test for signature check of SUIT manifests.
+
+
 ## Bugfixes:
+ * zcbor.py: Fix missing size check for repeated bstrs with their own type
+ * zcbor_encode.c: Fix encoding of floats equal to 0.0 (or any with leading 0s)
+ * zcbor_encode.h: Fix "taking address of rvalue" errors with some compiler configurations, stemming from zcbor_b|tstr_encode_ptr()
+ * zcbor.py: Add forward declarations to functions in generated code.
+ * zcbor.py: Fix bug when adding tagged (#6.x) items to larger types, e.g. lists.
+ * zcbor.py: Fix naming bug for container types with no members.
+ * zcbor.py: "union_int" optimization: If all union members start with an integer, the optimization does a single int_decode() and identifies the correct union member by the result.
+   * zcbor.py: Fix a bug preventing the "union_int" optimization from being applied.
+   * zcbor.py: Expand the "union_uint" optimization to work on all integers, instead of only positive integers.
+
 
 ## Unsupported CDDL features
-
 Not all features outlined in the [CDDL spec](https://datatracker.ietf.org/doc/html/rfc8610) are supported by zcbor.
 The following is a list of limitiations and missing features:
 
@@ -22,6 +48,7 @@ The following is a list of limitiations and missing features:
  * The control operator `.default`.
  * Generics (`foo<a, b>`).
  * Most of the "Extended Diagnostic Notation" is unsupported.
+
 
 # zcbor v. 0.4.0
 
