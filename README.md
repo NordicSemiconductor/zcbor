@@ -33,7 +33,7 @@ For decoding, the code generation will provide a number of checks that are tedio
 /** The number of states must be at least equal to one more than the maximum
  *  nested depth of the data.
  */
-cbor_state_t states[n];
+zcbor_state_t states[n];
 
 /** Initialize the states. After calling this, states[0] is ready to be used
  *  with the encoding/decoding APIs.
