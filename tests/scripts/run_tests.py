@@ -10,7 +10,7 @@ from subprocess import Popen, PIPE
 from re import sub
 from pathlib import Path
 from pprint import pprint
-# from ecdsa import VerifyingKey
+from ecdsa import VerifyingKey
 from hashlib import sha256
 import cbor2
 from platform import python_version_tuple
@@ -196,49 +196,43 @@ def loads(string):
 class Test6(Testn):
     def __init__(self, *args, **kwargs):
         super(Test6, self).__init__(*args, **kwargs)
-        self.decode_file(p_test_vectors14[0], p_manifest14, p_cose)
+        self.key = VerifyingKey.from_pem(p_manifest14_pub.read_text())
 
-    def test_authentication(self):
-        digest = bytes.fromhex("a6c4590ac53043a98e8c4106e1e31b305516d7cf0a655eddfac6d45c810e036a")
-        signature = bytes.fromhex("d11a2dd9610fb62a707335f584079225709f96e8117e7eeed98a2f207d05c8ecfba1755208f6abea977b8a6efe3bc2ca3215e1193be201467d052b42db6b7287")
-        sig_struct = bytes.fromhex("846a5369676e61747572653143a10126405820a6c4590ac53043a98e8c4106e1e31b305516d7cf0a655eddfac6d45c810e036a")
-        # key = VerifyingKey.from_pem(p_manifest14_pub.read_text())
-        # key.verify_digest(signature, digest)
-        # key.verify(signature, digest, hashfunc=sha256)
-        # key.verify(signature, sig_struct, hashfunc=sha256)
-
+    def do_test_authentication(self):
         self.assertEqual("COSE_Sign1_Tagged", self.decoded.suit_authentication_wrapper.SUIT_Authentication_Block_bstr[0].union_choice)
         self.assertEqual(-7, self.decoded.suit_authentication_wrapper.SUIT_Authentication_Block_bstr[0].COSE_Sign1_Tagged.Headers.protected.header_map_bstr.Generic_Headers.uint1union[0].int)
+
         manifest_signature = self.decoded.suit_authentication_wrapper.SUIT_Authentication_Block_bstr[0].COSE_Sign1_Tagged.signature
-        sig_struct = ["Signature", self.decoded.suit_authentication_wrapper.SUIT_Authentication_Block_bstr[0].COSE_Sign1_Tagged.Headers.protected.header_map_bstr_bstr, b'', b'']
-        sig_struct_encoded = dumps(sig_struct)
-        # self.assertEqual(dumps(self.decoded.suit_manifest.orig_obj), self.decoded.orig_obj[3])
-        # manifest_str = dumps(self.decoded.suit_manifest_bstr)
-        # manifest_hash = sha256(manifest_str).digest()
-        # manifest_hash = dumps(sha256(manifest_str).digest())
-        # manifest_suit_digest = self.decoded.suit_authentication_wrapper.SUIT_Digest_bstr_bstr
+        signature_header = self.decoded.suit_authentication_wrapper.SUIT_Authentication_Block_bstr[0].COSE_Sign1_Tagged.Headers.protected.header_map_bstr_bstr
         manifest_suit_digest = self.decoded.suit_authentication_wrapper.SUIT_Digest_bstr_bstr
-        sig_struct_encoded = sig_struct_encoded[:-1] + (manifest_suit_digest)
-        # sig_struct_encoded = sig_struct_encoded[:-1] + dumps(manifest_suit_digest)
-        # sig_struct_encoded = sig_struct_encoded[:-1] + dumps(manifest_hash)
-        # sig_struct_encoded = sig_struct_encoded[:-1] + dumps(manifest_suit_digest)
-        # sig_struct_encoded = sig_struct_encoded[:-1] + dumps(dumps(manifest_suit_digest))
-        # res = self.my_types["Sig_structure"].validate_str(sig_struct_encoded)
-        # print (sig_struct_encoded.hex())
-        loaded = loads(sig_struct_encoded)
-        # key = VerifyingKey.from_pem(p_manifest14_pub.read_text())
-        # print(sig_struct_encoded.hex())
-        # print(key.to_string().hex())
-        # print(manifest_signature.hex())
-        # res = key.verify(manifest_signature, dumps(self.decoded.orig_obj[3]), hashfunc=sha256)
-        # res = key.verify_digest(manifest_signature, manifest_hash)
-        # res = key.verify(manifest_signature, manifest_hash, hashfunc=sha256)
-        # res = key.verify(manifest_signature, dumps(manifest_hash), hashfunc=sha256)
-        # res = key.verify(manifest_signature, manifest_suit_digest, hashfunc=sha256)
-        # res = key.verify(manifest_signature, dumps(manifest_suit_digest), hashfunc=sha256)
-        # res = key.verify(manifest_signature, dumps(sig_struct_encoded), hashfunc=sha256)
-        # res = key.verify(manifest_signature, sig_struct_encoded, hashfunc=sha256)
-        # print(res)
+
+        sig_struct = dumps(["Signature1", signature_header, b'', manifest_suit_digest])
+
+        self.key.verify(manifest_signature, sig_struct, hashfunc=sha256)
+
+    def test_auth_0(self):
+        self.decode_file(p_test_vectors14[0], p_manifest14, p_cose)
+        self.do_test_authentication()
+
+    def test_auth_1(self):
+        self.decode_file(p_test_vectors14[1], p_manifest14, p_cose)
+        self.do_test_authentication()
+
+    def test_auth_2(self):
+        self.decode_file(p_test_vectors14[2], p_manifest14, p_cose)
+        self.do_test_authentication()
+
+    def test_auth_3(self):
+        self.decode_file(p_test_vectors14[3], p_manifest14, p_cose)
+        self.do_test_authentication()
+
+    def test_auth_4(self):
+        self.decode_file(p_test_vectors14[4], p_manifest14, p_cose)
+        self.do_test_authentication()
+
+    def test_auth_5(self):
+        self.decode_file(p_test_vectors14[5], p_manifest14, p_cose)
+        self.do_test_authentication()
 
 
 class Test7(Testn):
@@ -428,7 +422,7 @@ class Test11Inv(Testn):
 
 class Test12(Test6):
     def __init__(self, *args, **kwargs):
-        super(Test6, self).__init__(*args, **kwargs)
+        super(Test12, self).__init__(*args, **kwargs)
         self.decode_file(p_test_vectors14[0], p_manifest16, p_cose)
 
 
