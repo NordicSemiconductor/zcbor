@@ -556,7 +556,7 @@ class TestOptional(TestCase):
 
 
 class TestREADME(TestCase):
-    @skipIf(list(map(int, python_version_tuple())) >= [3, 10, 0], "Skip on Python >= 3.10 because of different wording in argparse output.")
+    @skipIf(list(map(int, python_version_tuple())) < [3, 10, 0], "Skip on Python < 3.10 because of different wording in argparse output.")
     @skipIf(platform.startswith("win"), "Skip on Windows because of path/newline issues.")
     def test_cli_doc(self):
         add_help = Popen(["python3", p_add_helptext, "--check"])

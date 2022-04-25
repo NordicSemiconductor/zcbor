@@ -31,7 +31,7 @@ if __name__ == "__main__":
 
     for cmd in commands:
         stdout, _ = Popen(cmd, stdout=PIPE).communicate()
-        assert b"arguments:" in stdout, f"Seems like something went wrong: {stdout.decode('utf-8')}"
+        assert b"options:" in stdout, f"Seems like something went wrong: {stdout.decode('utf-8')}"
         output += f"""
 {" ".join(cmd)}
 {"-" * len(" ".join(cmd))}
