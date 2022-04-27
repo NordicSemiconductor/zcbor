@@ -10,7 +10,7 @@ from pprint import pformat, pprint
 from os import path, linesep, makedirs
 from collections import defaultdict, namedtuple
 from typing import NamedTuple
-from argparse import ArgumentParser, RawDescriptionHelpFormatter, FileType
+from argparse import ArgumentParser, ArgumentTypeError, RawDescriptionHelpFormatter, FileType
 from datetime import datetime
 from copy import copy
 from itertools import tee
@@ -1004,11 +1004,11 @@ class CddlXcoder(CddlParser):
 
     # Whether to include a "present" variable for this element.
     def present_var_condition(self):
-        return self.min_qty == 0 and self.max_qty <= 1
+        return self.min_qty == 0 and isinstance(self.max_qty, int) and self.max_qty <= 1
 
     # Whether to include a "count" variable for this element.
     def count_var_condition(self):
-        return self.max_qty > 1
+        return isinstance(self.max_qty, str) or self.max_qty > 1
 
     # Whether to include a "cbor" variable for this element.
     def is_cbor(self):
@@ -1803,7 +1803,7 @@ class CodeGenerator(CddlXcoder):
                 f"Expected single var: {var_type!r}"
             if not anonymous or var_type[-1][-1] != "}":
                 var_type[-1] += " %s%s" % (
-                    self.var_name(), "[%d]" % self.max_qty if full and self.max_qty != 1 else "")
+                    self.var_name(), "[%s]" % self.max_qty if full and self.max_qty != 1 else "")
             var_type = add_semicolon(var_type)
         return var_type
 
@@ -2650,6 +2650,17 @@ target_include_directories({target_name} PUBLIC
                 output_c_dir, output_h_dir))
 
 
+def int_or_str(arg):
+    try:
+        return int(arg)
+    except ValueError:
+        # print(arg)
+        if match(r"\A\w+\Z", arg) is not None:
+            return arg
+    raise ArgumentTypeError(
+        "Argument must be an integer or a string with only letters, numbers, or '_'.")
+
+
 def parse_args():
     parser = ArgumentParser(
         description='''Parse a CDDL file and validate/convert between YAML, JSON, and CBOR.
@@ -2664,12 +2675,17 @@ See zcbor code/convert --help to see their respective specialized arguments.''')
         help="""Path to one or more input CDDL file(s). Passing multiple files is equivalent to
 concatenating them.""")
     parser.add_argument(
-        "--default-max-qty", "--dq", required=False, type=int, default=3,
+        "--default-max-qty", "--dq", required=False, type=int_or_str, default=3,
         help="""Default maximum number of repetitions when no maximum
 is specified. This is needed to construct complete C types.
 This is relevant for the generated code. It is not relevant for converting,
 except when handling data that will be decoded by generated code.
-The default value of this option is 3. Set it to a large number when not relevant.""")
+The default value of this option is 3. Set it to a large number when not relevant.
+
+When generating code, the default_max_qty can usually be set to a text symbol,
+to allow it to be configurable when building the code. This is not always
+possible, as sometimes the value is needed for internal computations.
+If so, the script will raise an exception.""")
     parser.add_argument(
         "--no-prelude", required=False, action="store_true", default=False,
         help=f"""Exclude the standard CDDL prelude from the build. The prelude can be viewed at
