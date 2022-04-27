@@ -404,7 +404,12 @@ options:
                         not relevant for converting, except when handling data
                         that will be decoded by generated code. The default
                         value of this option is 3. Set it to a large number
-                        when not relevant.
+                        when not relevant. When generating code, the
+                        default_max_qty can usually be set to a text symbol,
+                        to allow it to be configurable when building the code.
+                        This is not always possible, as sometimes the value is
+                        needed for internal computations. If so, the script
+                        will raise an exception.
   --no-prelude          Exclude the standard CDDL prelude from the build. The
                         prelude can be viewed at zcbor/cddl/prelude.cddl in
                         the repo, or together with the script.
