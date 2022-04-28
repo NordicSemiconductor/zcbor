@@ -1336,8 +1336,8 @@ void test_floats(void)
 			END
 	};
 
-	uint8_t floats_payload3[] = {LIST(4), 0xFA, 0x49, 0x96, 0xb4, 0x3f /* 1234567.89 */,
-			0xFB, 0xc0, 0xf8, 0x1c, 0xd6, 0xe9, 0xe1, 0xb0, 0x8a /* -98765.4321 */,
+	uint8_t floats_payload3[] = {LIST(4), 0xFA, 0, 0, 0, 0 /* 0.0 */,
+			0xFB, 0, 0, 0, 0, 0, 0, 0, 0 /* 0.0 */,
 			0xFB, 0x40, 0x9, 0x21, 0xca, 0xc0, 0x83, 0x12, 0x6f /* 3.1415 */,
 			0xFB, 0x40, 0x5, 0xbf, 0x9, 0x95, 0xaa, 0xf7, 0x90 /* 2.71828 */,
 			END
@@ -1409,8 +1409,8 @@ void test_floats(void)
 	zassert_equal(ZCBOR_SUCCESS, cbor_decode_Floats(
 		floats_payload3, sizeof(floats_payload3), &result, &num_decode), NULL);
 	zassert_equal(sizeof(floats_payload3), num_decode, NULL);
-	zassert_equal((float)1234567.89, result._Floats_float_32, NULL);
-	zassert_equal((double)-98765.4321, result._Floats_float_64, NULL);
+	zassert_equal((float)0.0, result._Floats_float_32, NULL);
+	zassert_equal((double)0.0, result._Floats_float_64, NULL);
 	zassert_equal(0, result._Floats_floats_count, NULL);
 
 	zassert_equal(ZCBOR_SUCCESS, cbor_decode_Floats(
