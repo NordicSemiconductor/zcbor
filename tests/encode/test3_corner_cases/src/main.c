@@ -1150,6 +1150,12 @@ void test_doublemap(void)
 
 void test_floats(void)
 {
+	uint8_t exp_floats_payload1[] = {LIST(4), 0xFA, 0, 0, 0, 0 /* 0.0 */,
+			0xFB, 0, 0, 0, 0, 0, 0, 0, 0 /* 0.0 */,
+			0xFB, 0x40, 0x9, 0x21, 0xca, 0xc0, 0x83, 0x12, 0x6f /* 3.1415 */,
+			0xFB, 0x40, 0x5, 0xbf, 0x9, 0x95, 0xaa, 0xf7, 0x90 /* 2.71828 */,
+			END
+	};
 	uint8_t exp_floats_payload2[] = {LIST(4), 0xFA, 0xc7, 0xc0, 0xe6, 0xb7 /* -98765.4321 */,
 			0xFB, 0x41, 0x32, 0xd6, 0x87, 0xe3, 0xd7, 0xa, 0x3d /* 1234567.89 */,
 			0xFB, 0x40, 0x9, 0x21, 0xca, 0xc0, 0x83, 0x12, 0x6f /* 3.1415 */,
@@ -1177,6 +1183,17 @@ void test_floats(void)
 	struct Floats input;
 	size_t num_encode;
 	uint8_t output[70];
+
+	input._Floats_float_32 = (float)0.0;
+	input._Floats_float_64 = (double)0.0;
+	input._Floats_floats_count = 0;
+	zassert_equal(ZCBOR_SUCCESS, cbor_encode_Floats(
+		output, sizeof(output), &input, &num_encode), NULL);
+
+	zcbor_print_compare_strings(exp_floats_payload1, output, num_encode);
+
+	zassert_equal(sizeof(exp_floats_payload1), num_encode, NULL);
+	zassert_mem_equal(exp_floats_payload1, output, num_encode, NULL);
 
 	input._Floats_float_32 = (float)-98765.4321;
 	input._Floats_float_64 = (double)1234567.89;
