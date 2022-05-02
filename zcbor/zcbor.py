@@ -1158,9 +1158,9 @@ class CddlXcoder(CddlParser):
 
     def all_children_uint_disambiguated(self):
         values = set(child.uint_val() for child in self.value)
-        bit_sizes = set(child.bit_size() for child in self.value)
-        return (len(values) == len(self.value)) and None not in values \
-            and (len(bit_sizes) == 1) and None not in bit_sizes
+        retval = (len(values) == len(self.value)) and None not in values \
+            and max(values) < 0x80000000 and min(values) >= -0x80000000
+        return retval
 
     # Name of the "present" variable for this element.
     def present_var_name(self):
