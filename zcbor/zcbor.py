@@ -318,7 +318,7 @@ class CddlParser:
             or (next((key for key, value in self.my_control_groups.items() if value == self), None))
             or ("_" + self.value if self.type == "OTHER" else None)
             or ("_" + self.value[0].get_base_name()
-                if self.type in ["LIST", "GROUP"] and self.value is not None else None)
+                if self.type in ["LIST", "GROUP"] and self.value else None)
             or ((self.cbor.value + "_bstr")
                 if self.cbor and self.cbor.type in ["TSTR", "OTHER"] else None)
             or ((self.key.generate_base_name() + self.type.lower()) if self.key else None)
