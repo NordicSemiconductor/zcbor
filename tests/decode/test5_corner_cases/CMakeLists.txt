@@ -45,6 +45,7 @@ set(py_command
     MapLength
   --decode
   --git-sha-header
+  --short-names
   ${bit_arg}
   )
 

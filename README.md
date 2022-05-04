@@ -427,7 +427,7 @@ usage: zcbor code [-h] [--output-c OUTPUT_C] [--output-h OUTPUT_H]
                   [--output-cmake OUTPUT_CMAKE] -t ENTRY_TYPES
                   [ENTRY_TYPES ...] [-d] [-e] [--time-header]
                   [--git-sha-header] [-b {32,64}]
-                  [--include-prefix INCLUDE_PREFIX]
+                  [--include-prefix INCLUDE_PREFIX] [-s]
 
 Parse a CDDL file and produce C code that validates and xcodes CBOR.
 The output from this script is a C file and a header file. The header file
@@ -501,6 +501,12 @@ options:
   --include-prefix INCLUDE_PREFIX
                         When #include'ing generated files, add this path
                         prefix to the filename.
+  -s, --short-names     Attempt to make most generated struct member names
+                        shorter. This might make some names identical which
+                        will cause a compile error. If so, tweak the CDDL
+                        labels or layout, or disable this option. This might
+                        also make enum names different from the corresponding
+                        union members.
 
 ```
 

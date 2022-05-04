@@ -442,12 +442,12 @@ void test_pet(void)
 
 	uint8_t exp_birthday[] = {1,2,3,4,5,6,7,8};
 
-	zassert_equal(2, pet._Pet_name_tstr_count, "Expect 2 names");
-	zassert_mem_equal("foo", pet._Pet_name_tstr[0].value, 3, "Expect first name 'foo'");
-	zassert_mem_equal("bar", pet._Pet_name_tstr[1].value, 3, "Expect first name 'bar'");
-	zassert_equal(8, pet._Pet_birthday.len, "Expect len 8 birthday");
-	zassert_mem_equal(exp_birthday, pet._Pet_birthday.value, 8, "Expect birthday");
-	zassert_equal(_Pet_species_dog, pet._Pet_species_choice, "Expect dog");
+	zassert_equal(2, pet.names_count, "Expect 2 names");
+	zassert_mem_equal("foo", pet.names[0].value, 3, "Expect first name 'foo'");
+	zassert_mem_equal("bar", pet.names[1].value, 3, "Expect first name 'bar'");
+	zassert_equal(8, pet.birthday.len, "Expect len 8 birthday");
+	zassert_mem_equal(exp_birthday, pet.birthday.value, 8, "Expect birthday");
+	zassert_equal(_Pet_species_dog, pet.species_choice, "Expect dog");
 }
 
 
@@ -488,19 +488,19 @@ void test_serial1(void)
 	zassert_equal(ZCBOR_SUCCESS, ret, "decoding failed.");
 	zassert_equal(sizeof(serial_rec_input1), decode_len, NULL);
 
-	zassert_equal(5, upload._Upload_members_count,
+	zassert_equal(5, upload.members_count,
 		"expect 5 members");
-	zassert_equal(_Member_data, upload._Upload_members[0]._Upload_members
-		._Member_choice, "expect data 1st");
-	zassert_equal(_Member_image, upload._Upload_members[1]._Upload_members
-		._Member_choice, "expect image 2nd");
-	zassert_equal(_Member_len, upload._Upload_members[2]._Upload_members
-		._Member_choice, "was %d\r\n", upload._Upload_members[2]._Upload_members
-		._Member_choice);
-	zassert_equal(_Member_off, upload._Upload_members[3]._Upload_members
-		._Member_choice, "expect off 4th");
-	zassert_equal(_Member_sha, upload._Upload_members[4]._Upload_members
-		._Member_choice, "expect sha 5th");
+	zassert_equal(_Member_data, upload.members[0].members
+		.Member_choice, "expect data 1st");
+	zassert_equal(_Member_image, upload.members[1].members
+		.Member_choice, "expect image 2nd");
+	zassert_equal(_Member_len, upload.members[2].members
+		.Member_choice, "was %d\r\n", upload.members[2].members
+		.Member_choice);
+	zassert_equal(_Member_off, upload.members[3].members
+		.Member_choice, "expect off 4th");
+	zassert_equal(_Member_sha, upload.members[4].members
+		.Member_choice, "expect sha 5th");
 }
 
 void test_serial2(void)
@@ -512,18 +512,18 @@ void test_serial2(void)
 	zassert_equal(ZCBOR_SUCCESS, ret, "decoding failed.");
 	zassert_equal(sizeof(serial_rec_input2), decode_len, NULL);
 
-	zassert_equal(5, upload._Upload_members_count,
+	zassert_equal(5, upload.members_count,
 		"expect 5 members");
-	zassert_equal(_Member_data, upload._Upload_members[0]._Upload_members
-		._Member_choice, "expect data 1st");
-	zassert_equal(_Member_image, upload._Upload_members[1]._Upload_members
-		._Member_choice, "expect image 2nd");
-	zassert_equal(_Member_len, upload._Upload_members[2]._Upload_members
-		._Member_choice, "expect len 3rd");
-	zassert_equal(_Member_off, upload._Upload_members[3]._Upload_members
-		._Member_choice, "expect off 4th");
-	zassert_equal(_Member_sha, upload._Upload_members[4]._Upload_members
-		._Member_choice, "expect sha 5th");
+	zassert_equal(_Member_data, upload.members[0].members
+		.Member_choice, "expect data 1st");
+	zassert_equal(_Member_image, upload.members[1].members
+		.Member_choice, "expect image 2nd");
+	zassert_equal(_Member_len, upload.members[2].members
+		.Member_choice, "expect len 3rd");
+	zassert_equal(_Member_off, upload.members[3].members
+		.Member_choice, "expect off 4th");
+	zassert_equal(_Member_sha, upload.members[4].members
+		.Member_choice, "expect sha 5th");
 }
 
 void test_main(void)

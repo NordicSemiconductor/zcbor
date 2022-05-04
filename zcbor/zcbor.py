@@ -185,7 +185,7 @@ def ternary_if_chain(access, names, xcode_strings):
 #  - For "GROUP" and "UNION" types, there is no separate data item for the instance.
 class CddlParser:
     def __init__(self, default_max_qty, my_types, my_control_groups, base_name=None,
-                 base_stem=''):
+                 short_names=False, base_stem=''):
         self.id_prefix = "temp_" + str(counter())
         self.id_num = None  # Unique ID number. Only populated if needed.
         # The value of the data item. Has different meaning for different
@@ -232,6 +232,7 @@ class CddlParser:
         self.base_name = base_name  # Used as default for self.get_base_name()
         # Stem which can be used when generating an id.
         self.base_stem = base_stem.replace("-", "_")
+        self.short_names = short_names
 
     @classmethod
     def from_cddl(cddl_class, cddl_string, default_max_qty, *args, **kwargs):
@@ -249,7 +250,7 @@ class CddlParser:
         # CodeGenerator instance.
         for my_type, cddl_string in type_strings.items():
             parsed = cddl_class(*args, default_max_qty, my_types, my_control_groups, **kwargs,
-                                base_name=my_type, base_stem=my_type)
+                                base_stem=my_type)
             parsed.get_value(cddl_string.replace("\n", " ").lstrip("&"))
             parsed = parsed.flatten()[0]
             if my_type in my_types:
@@ -263,6 +264,7 @@ class CddlParser:
         for my_type in my_types:
             my_types[my_type].set_id_prefix()
             my_types[my_type].post_validate()
+            my_types[my_type].set_base_names()
         for my_control_group in my_control_groups:
             my_control_groups[my_control_group].set_id_prefix()
             my_control_groups[my_control_group].post_validate_control_group()
@@ -334,9 +336,25 @@ class CddlParser:
     def set_base_name(self, base_name):
         self.base_name = base_name
 
+    def set_base_names(self):
+        if self.cbor:
+            self.cbor.set_base_name(self.var_name().strip("_") + "_cbor")
+        if self.key:
+            self.key.set_base_name(self.var_name().strip("_") + "_key")
+
+        if self.type in ["LIST", "MAP", "GROUP", "UNION"]:
+            for child in self.value:
+                child.set_base_names()
+        if self.cbor:
+            self.cbor.set_base_names()
+        if self.key:
+            self.key.set_base_names()
+
     # Add uniqueness to the base name.
-    def id(self):
+    def id(self, with_prefix=True):
         raw_name = self.get_base_name()
+        if not with_prefix and self.short_names:
+            return raw_name
         if (self.id_prefix
                 and (f"{self.id_prefix}_" not in raw_name)
                 and (self.id_prefix != raw_name.strip("_"))):
@@ -351,7 +369,9 @@ class CddlParser:
         return (self.default_max_qty,)
 
     def init_kwargs(self):
-        return {"my_types": self.my_types, "my_control_groups": self.my_control_groups}
+        return {
+            "my_types": self.my_types, "my_control_groups": self.my_control_groups,
+            "short_names": self.short_names}
 
     def set_id_prefix(self, id_prefix=''):
         self.id_prefix = id_prefix
@@ -591,7 +611,6 @@ class CddlParser:
         self.cbor = cbor
         if cborseq:
             self.cbor.max_qty = self.default_max_qty
-        self.cbor.set_base_name("cbor")
 
     def set_bits(self, bits):
         if self.type != "UINT":
@@ -605,7 +624,6 @@ class CddlParser:
         if key.type == "GROUP":
             raise TypeError("A key cannot be a group because it might represent more than 1 type.")
         self.key = key
-        self.key.set_base_name("key")
 
     # Set the self.label OR self.key of this element. In the CDDL "foo: bar", foo can be either a
     # label or a key depending on whether it is in a map. This code uses a slightly different method
@@ -913,8 +931,13 @@ class CddlXcoder(CddlParser):
         self.skipped = False
 
     # Name of variables and enum members for this element.
-    def var_name(self):
-        name = ("_%s" % self.id())
+    def var_name(self, with_prefix=False):
+        if with_prefix or not self.short_names:
+            name = ("_%s" % self.id(with_prefix=with_prefix))
+        else:
+            name = self.id(with_prefix=with_prefix)
+            if name in ["int", "bool", "float"]:
+                name = "_" + name
         return name
 
     def skip_condition(self):
@@ -1162,9 +1185,10 @@ class CddlXcoder(CddlParser):
     # Name of the enum entry for this element.
     def enum_var_name(self, uint_val=False):
         if not uint_val:
-            return self.var_name()
+            retval = self.var_name(with_prefix=True)
         else:
-            return f"{self.var_name()} = {self.uint_val()}"
+            retval = f"{self.var_name(with_prefix=True)} = {self.uint_val()}"
+        return retval
 
     # Full "path" of the "choice" variable for this element.
     def choice_var_access(self):
@@ -1979,11 +2003,11 @@ class CodeGenerator(CddlXcoder):
 
     # Name of the encoder/decoder function for this element.
     def xcode_func_name(self):
-        return f"{self.mode}{self.var_name()}"
+        return f"{self.mode}{self.var_name(with_prefix=True)}"
 
     # Name of the encoder/decoder function for the repeated part of this element.
     def repeated_xcode_func_name(self):
-        return f"{self.mode}_repeated{self.var_name()}"
+        return f"{self.mode}_repeated{self.var_name(with_prefix=True)}"
 
     def single_func_prim_name(self, union_uint=False):
         """Function name for xcoding this type, when it is a primitive type"""
@@ -2170,7 +2194,7 @@ class CodeGenerator(CddlXcoder):
                 lines = []
                 lines.extend(
                     ["((%s == %s) && (%s))" %
-                        (self.choice_var_access(), child.var_name(),
+                        (self.choice_var_access(), child.enum_var_name(),
                             child.full_xcode(union_uint="DROP"))
                         for child in self.value])
                 bit_size = self.value[0].bit_size()
@@ -2182,7 +2206,7 @@ class CodeGenerator(CddlXcoder):
             child_values = ["(%s && ((%s = %s) || 1))" %
                             (child.full_xcode(
                                 union_uint="EXPECT" if child.is_uint_disambiguated() else None),
-                                self.choice_var_access(), child.var_name())
+                                self.choice_var_access(), child.enum_var_name())
                             for child in self.value]
 
             # Reset state for all but the first child.
@@ -2199,7 +2223,7 @@ class CodeGenerator(CddlXcoder):
         else:
             return ternary_if_chain(
                 self.choice_var_access(),
-                [child.var_name() for child in self.value],
+                [child.enum_var_name() for child in self.value],
                 [child.full_xcode() for child in self.value])
 
     def xcode_bstr(self):
@@ -2778,6 +2802,12 @@ the code will be running on.""")
     code_parser.add_argument(
         "--include-prefix", default="",
         help="""When #include'ing generated files, add this path prefix to the filename.""")
+    code_parser.add_argument(
+        "-s", "--short-names", required=False, action="store_true", default=False,
+        help="""Attempt to make most generated struct member names shorter. This might make some
+names identical which will cause a compile error. If so, tweak the CDDL labels
+or layout, or disable this option. This might also make enum names different
+from the corresponding union members.""")
     code_parser.set_defaults(process=process_code)
 
     convert_parser = subparsers.add_parser(
@@ -2863,7 +2893,7 @@ def process_code(args):
     for mode in modes:
         cddl_res[mode] = CodeGenerator.from_cddl(
             mode, cddl_contents, args.default_max_qty, mode, args.entry_types,
-            args.default_bit_size)
+            args.default_bit_size, short_names=args.short_names)
 
     # Parsing is done, pretty print the result.
     verbose_print(args.verbose, "Parsed CDDL types:")

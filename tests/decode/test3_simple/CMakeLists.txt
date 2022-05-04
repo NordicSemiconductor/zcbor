@@ -20,6 +20,7 @@ set(py_command_pet
   -t Pet
   -d
   ${bit_arg}
+  --short-names
   )
 set(py_command_serial_recovery
   zcbor
@@ -31,6 +32,7 @@ set(py_command_serial_recovery
   -t Upload
   -d
   ${bit_arg}
+  --short-names
 
   # Testing the --include-prefix option
   --include-prefix serial
