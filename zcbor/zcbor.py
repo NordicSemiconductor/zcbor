@@ -1140,24 +1140,24 @@ class CddlXcoder(CddlParser):
                 self.multi_var_condition()
                 and (self.self_repeated_multi_var_condition() or self.range_check_condition()))
 
-    def uint_val(self):
+    def int_val(self):
         if self.key:
-            return self.key.uint_val()
-        elif self.type == "UINT" and self.is_unambiguous():
+            return self.key.int_val()
+        elif self.type in ("UINT", "NINT") and self.is_unambiguous():
             return self.value
         elif self.type == "GROUP" and not self.count_var_condition():
-            return self.value[0].uint_val()
+            return self.value[0].int_val()
         elif self.type == "OTHER" \
                 and not self.count_var_condition() \
                 and not self.single_func_impl_condition():
-            return self.my_types[self.value].uint_val()
+            return self.my_types[self.value].int_val()
         return None
 
-    def is_uint_disambiguated(self):
-        return self.uint_val() is not None
+    def is_int_disambiguated(self):
+        return self.int_val() is not None
 
-    def all_children_uint_disambiguated(self):
-        values = set(child.uint_val() for child in self.value)
+    def all_children_int_disambiguated(self):
+        values = set(child.int_val() for child in self.value)
         retval = (len(values) == len(self.value)) and None not in values \
             and max(values) < 0x80000000 and min(values) >= -0x80000000
         return retval
@@ -1183,11 +1183,11 @@ class CddlXcoder(CddlParser):
         return self.var_name() + "_choice"
 
     # Name of the enum entry for this element.
-    def enum_var_name(self, uint_val=False):
-        if not uint_val:
+    def enum_var_name(self, int_val=False):
+        if not int_val:
             retval = self.var_name(with_prefix=True)
         else:
-            retval = f"{self.var_name(with_prefix=True)} = {self.uint_val()}"
+            retval = f"{self.var_name(with_prefix=True)} = {self.int_val()}"
         return retval
 
     # Full "path" of the "choice" variable for this element.
@@ -1702,7 +1702,7 @@ class CodeGenerator(CddlXcoder):
     # Declaration of the "choice" variable for this element.
     def anonymous_choice_var(self):
         var = self.enclose(
-            "enum", [val.enum_var_name(self.all_children_uint_disambiguated())
+            "enum", [val.enum_var_name(self.all_children_int_disambiguated())
                      + "," for val in self.value])
         return var
 
@@ -2009,7 +2009,7 @@ class CodeGenerator(CddlXcoder):
     def repeated_xcode_func_name(self):
         return f"{self.mode}_repeated{self.var_name(with_prefix=True)}"
 
-    def single_func_prim_name(self, union_uint=False):
+    def single_func_prim_name(self, union_int=None):
         """Function name for xcoding this type, when it is a primitive type"""
         func_prefix = self.single_func_prim_prefix()
         if self.mode == "decode":
@@ -2017,11 +2017,11 @@ class CodeGenerator(CddlXcoder):
                 func = "zcbor_any_skip"
             elif not self.is_unambiguous_value():
                 func = f"{func_prefix}_decode"
-            elif not union_uint:
+            elif not union_int:
                 func = f"{func_prefix}_expect"
-            elif union_uint == "EXPECT":
+            elif union_int == "EXPECT":
                 func = f"{func_prefix}_expect_union"
-            elif union_uint == "DROP":
+            elif union_int == "DROP":
                 return None
         else:
             if self.type == "ANY":
@@ -2032,7 +2032,7 @@ class CodeGenerator(CddlXcoder):
                 func = f"{func_prefix}_put"
         return func
 
-    def single_func_prim(self, access, union_uint=None, ptr_result=False):
+    def single_func_prim(self, access, union_int=None, ptr_result=False):
         """Return the function name and arguments to call to encode/decode this element. Only used
         when this element DOESN'T define its own encoder/decoder function (when it's a primitive
         type, for which functions already exist, or when the function is defined elsewhere
@@ -2041,9 +2041,9 @@ class CodeGenerator(CddlXcoder):
         assert self.type not in ["LIST", "MAP"], "Must have wrapper function for list or map."
 
         if self.type == "OTHER":
-            return self.my_types[self.value].single_func(access, union_uint)
+            return self.my_types[self.value].single_func(access, union_int)
 
-        func_name = self.single_func_prim_name(union_uint)
+        func_name = self.single_func_prim_name(union_int)
         if func_name is None:
             return (None, None)
 
@@ -2072,11 +2072,11 @@ class CodeGenerator(CddlXcoder):
         return (func_name, arg)
 
     # Return the function name and arguments to call to encode/decode this element.
-    def single_func(self, access=None, union_uint=None):
+    def single_func(self, access=None, union_int=None):
         if self.single_func_impl_condition():
             return (self.xcode_func_name(), deref_if_not_null(access or self.var_access()))
         else:
-            return self.single_func_prim(access or self.val_access(), union_uint)
+            return self.single_func_prim(access or self.val_access(), union_int)
 
     # Return the function name and arguments to call to encode/decode the repeated
     # part of this element.
@@ -2123,8 +2123,8 @@ class CodeGenerator(CddlXcoder):
         return max(ret_vals)
 
     # Make a string from the list returned by single_func_prim()
-    def xcode_single_func_prim(self, union_uint=None):
-        return xcode_statement(*self.single_func_prim(self.val_access(), union_uint))
+    def xcode_single_func_prim(self, union_int=None):
+        return xcode_statement(*self.single_func_prim(self.val_access(), union_int))
 
     # Recursively sum the total minimum and maximum element count for this
     # element.
@@ -2180,38 +2180,38 @@ class CodeGenerator(CddlXcoder):
         return with_children if len(self.value) > 0 else without_children
 
     # Return the full code needed to encode/decode a "GROUP" element's children.
-    def xcode_group(self, union_uint=None):
+    def xcode_group(self, union_int=None):
         assert self.type in ["GROUP"], "Expected GROUP type."
         return "(%s)" % (newl_ind + "&& ").join(
-            [self.value[0].full_xcode(union_uint)]
+            [self.value[0].full_xcode(union_int)]
             + [child.full_xcode() for child in self.value[1:]])
 
     # Return the full code needed to encode/decode a "UNION" element's children.
     def xcode_union(self):
         assert self.type in ["UNION"], "Expected UNION type."
         if self.mode == "decode":
-            if self.all_children_uint_disambiguated():
+            if self.all_children_int_disambiguated():
                 lines = []
                 lines.extend(
                     ["((%s == %s) && (%s))" %
                         (self.choice_var_access(), child.enum_var_name(),
-                            child.full_xcode(union_uint="DROP"))
+                            child.full_xcode(union_int="DROP"))
                         for child in self.value])
                 bit_size = self.value[0].bit_size()
-                func = f"zcbor_uint32_{self.mode}"
+                func = f"zcbor_int32_{self.mode}"
                 return "((%s) && (%s))" % (
-                    f"({func}(state, (uint32_t *)&{self.choice_var_access()}))",
+                    f"({func}(state, (int32_t *)&{self.choice_var_access()}))",
                     "((" + f"{newl_ind}|| ".join(lines)
                          + ") || (zcbor_error(state, ZCBOR_ERR_WRONG_VALUE), false))",)
             child_values = ["(%s && ((%s = %s) || 1))" %
                             (child.full_xcode(
-                                union_uint="EXPECT" if child.is_uint_disambiguated() else None),
+                                union_int="EXPECT" if child.is_int_disambiguated() else None),
                                 self.choice_var_access(), child.enum_var_name())
                             for child in self.value]
 
             # Reset state for all but the first child.
             for i in range(1, len(child_values)):
-                if ((not self.value[i].is_uint_disambiguated())
+                if ((not self.value[i].is_int_disambiguated())
                         and (self.value[i].simple_func_condition()
                              or self.value[i - 1].simple_func_condition())):
                     child_values[i] = f"(zcbor_union_elem_code(state) && {child_values[i]})"
@@ -2295,12 +2295,12 @@ class CodeGenerator(CddlXcoder):
 
     # Return the full code needed to encode/decode this element, including children,
     # key and cbor, excluding repetitions.
-    def repeated_xcode(self, union_uint=None):
+    def repeated_xcode(self, union_int=None):
         range_checks = self.range_checks(self.val_access())
         xcoder = {
             "INT": self.xcode_single_func_prim,
-            "UINT": lambda: self.xcode_single_func_prim(union_uint),
-            "NINT": self.xcode_single_func_prim,
+            "UINT": lambda: self.xcode_single_func_prim(union_int),
+            "NINT": lambda: self.xcode_single_func_prim(union_int),
             "FLOAT": self.xcode_single_func_prim,
             "BSTR": self.xcode_bstr,
             "TSTR": self.xcode_single_func_prim,
@@ -2310,13 +2310,13 @@ class CodeGenerator(CddlXcoder):
             "ANY": self.xcode_single_func_prim,
             "LIST": self.xcode_list,
             "MAP": self.xcode_list,
-            "GROUP": lambda: self.xcode_group(union_uint),
+            "GROUP": lambda: self.xcode_group(union_int),
             "UNION": self.xcode_union,
-            "OTHER": lambda: self.xcode_single_func_prim(union_uint),
+            "OTHER": lambda: self.xcode_single_func_prim(union_int),
         }[self.type]
         xcoders = []
         if self.key:
-            xcoders.append(self.key.full_xcode(union_uint))
+            xcoders.append(self.key.full_xcode(union_int))
         if self.tags:
             xcoders.extend(self.xcode_tags())
         if self.mode == "decode":
@@ -2340,7 +2340,7 @@ class CodeGenerator(CddlXcoder):
 
     # Return the full code needed to encode/decode this element, including children,
     # key, cbor, and repetitions.
-    def full_xcode(self, union_uint=None):
+    def full_xcode(self, union_int=None):
         if self.present_var_condition():
             func, *arguments = self.repeated_single_func(ptr_result=True)
             return (
@@ -2361,7 +2361,7 @@ class CodeGenerator(CddlXcoder):
                  xcode_args(*arguments),
                  self.result_len()))
         else:
-            return self.repeated_xcode(union_uint)
+            return self.repeated_xcode(union_int)
 
     # Return the body of the encoder/decoder function for this element.
     def xcode(self):
@@ -2560,7 +2560,11 @@ static bool {xcoder.func_name}(
 #error "The type file was generated with a different default_max_qty than this file"
 #endif
 
+_Static_assert((sizeof(enum {{zcbor_dummy_enum_value__,}}) == sizeof(int32_t)),
+	"The generated code requires enums to be 32 bits wide.");
+
 {linesep.join([self.render_forward_declaration(xcoder, mode) for xcoder in self.functions[mode]])}
+
 {linesep.join([self.render_function(xcoder, mode) for xcoder in self.functions[mode]])}
 
 {linesep.join([self.render_entry_function(xcoder, mode) for xcoder in self.entry_types[mode]])}
