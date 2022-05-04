@@ -37,10 +37,10 @@
 void test_pet(void)
 {
 	struct Pet pet = {
-		._Pet_name_tstr = {{.value = "foo", .len = 3}, {.value = "bar", .len = 3}},
-		._Pet_name_tstr_count = 2,
-		._Pet_birthday = {.value = (uint8_t[]){1,2,3,4,5,6,7,8}, .len = 8},
-		._Pet_species_choice = _Pet_species_dog
+		.names = {{.value = "foo", .len = 3}, {.value = "bar", .len = 3}},
+		.names_count = 2,
+		.birthday = {.value = (uint8_t[]){1,2,3,4,5,6,7,8}, .len = 8},
+		.species_choice = _Pet_species_dog
 	};
 	uint8_t exp_output[] = {
 		LIST(3),

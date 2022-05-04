@@ -17,6 +17,7 @@ set(py_command
   -t Pet
   -e
   ${bit_arg}
+  --short-names
   )
 
 execute_process(

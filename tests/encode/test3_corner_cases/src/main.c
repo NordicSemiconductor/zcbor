@@ -42,44 +42,44 @@ void test_numbers(void)
 	uint8_t output[100];
 	size_t out_len;
 
-	numbers._Numbers_fourtoten = 3; // Invalid
-	numbers._Numbers_twobytes = 256;
-	numbers._Numbers_onetofourbytes = 0x01020304;
-	numbers._Numbers_minusfivektoplustwohundred = -5000;
-	numbers._Numbers_negint = -2147483648;
-	numbers._Numbers_posint = 0;
-	numbers._Numbers_tagged_int = 1;
+	numbers.fourtoten = 3; // Invalid
+	numbers.twobytes = 256;
+	numbers.onetofourbytes = 0x01020304;
+	numbers.minusfivektoplustwohundred = -5000;
+	numbers.negint = -2147483648;
+	numbers.posint = 0;
+	numbers.tagged_int = 1;
 
 	zassert_equal(ZCBOR_ERR_WRONG_RANGE, cbor_encode_Numbers(output,
 		sizeof(output), &numbers, &out_len), NULL);
 
-	numbers._Numbers_fourtoten = 11; // Invalid
+	numbers.fourtoten = 11; // Invalid
 	zassert_equal(ZCBOR_ERR_WRONG_RANGE, cbor_encode_Numbers(output,
 		sizeof(output), &numbers, &out_len), NULL);
 
-	numbers._Numbers_fourtoten = 5; // Valid
+	numbers.fourtoten = 5; // Valid
 	zassert_equal(ZCBOR_SUCCESS, cbor_encode_Numbers(output,
 		sizeof(output), &numbers, &out_len), NULL);
 	zassert_equal(sizeof(exp_payload_numbers1), out_len, "%d != %d\r\n", sizeof(exp_payload_numbers1), out_len);
 	zassert_mem_equal(exp_payload_numbers1, output, sizeof(exp_payload_numbers1), NULL);
 
-	numbers._Numbers_negint = 1; // Invalid
+	numbers.negint = 1; // Invalid
 	zassert_equal(ZCBOR_ERR_WRONG_RANGE, cbor_encode_Numbers(output,
 		sizeof(output), &numbers, &out_len), NULL);
 
-	numbers._Numbers_negint = -1; // Valid
+	numbers.negint = -1; // Valid
 	zassert_equal(ZCBOR_SUCCESS, cbor_encode_Numbers(output,
 		sizeof(output), &numbers, &out_len), NULL);
 
-	numbers._Numbers_minusfivektoplustwohundred = -5001; // Invalid
+	numbers.minusfivektoplustwohundred = -5001; // Invalid
 	zassert_equal(ZCBOR_ERR_WRONG_RANGE, cbor_encode_Numbers(output,
 		sizeof(output), &numbers, &out_len), NULL);
 
-	numbers._Numbers_minusfivektoplustwohundred = 201; // Invalid
+	numbers.minusfivektoplustwohundred = 201; // Invalid
 	zassert_equal(ZCBOR_ERR_WRONG_RANGE, cbor_encode_Numbers(output,
 		sizeof(output), &numbers, &out_len), NULL);
 
-	numbers._Numbers_minusfivektoplustwohundred = 200; // Valid
+	numbers.minusfivektoplustwohundred = 200; // Valid
 	zassert_equal(ZCBOR_SUCCESS, cbor_encode_Numbers(output,
 		sizeof(output), &numbers, &out_len), NULL);
 }
@@ -98,11 +98,11 @@ void test_numbers2(void)
 		END
 	};
 	struct Numbers2 numbers2 = {
-		._Numbers2_threebytes = 0x123456,
-		._Numbers2_big_int = 0x0102030405060708,
-		._Numbers2_big_uint = 0x1102030405060709,
-		._Numbers2_big_uint2 = 0,
-		._Numbers2_tagged_int = 3,
+		.threebytes = 0x123456,
+		.big_int = 0x0102030405060708,
+		.big_uint = 0x1102030405060709,
+		.big_uint2 = 0,
+		.tagged_int = 3,
 	};
 	uint8_t output[100];
 	size_t out_len;
@@ -123,8 +123,8 @@ void test_tagged_union(void)
 	uint8_t output[5];
 
 	struct TaggedUnion_ input;
-	input._TaggedUnion_choice = _TaggedUnion_bool;
-	input._TaggedUnion_bool = true;
+	input.TaggedUnion_choice = _TaggedUnion_bool;
+	input._bool = true;
 
 	zassert_equal(ZCBOR_SUCCESS, cbor_encode_TaggedUnion(output,
 		sizeof(output), &input, &encode_len), "%d\r\n");
@@ -132,8 +132,8 @@ void test_tagged_union(void)
 	zassert_equal(sizeof(exp_payload_tagged_union1), encode_len, NULL);
 	zassert_mem_equal(exp_payload_tagged_union1, output, sizeof(exp_payload_tagged_union1), NULL);
 
-	input._TaggedUnion_choice = _TaggedUnion_uint;
-	input._TaggedUnion_uint = 0x10;
+	input.TaggedUnion_choice = _TaggedUnion_uint;
+	input.uint = 0x10;
 
 	zassert_equal(ZCBOR_SUCCESS, cbor_encode_TaggedUnion(output,
 		sizeof(output), &input, &encode_len), NULL);
@@ -168,11 +168,11 @@ void test_number_map(void)
 	uint8_t payload[80];
 
 	struct NumberMap number_map1 = {
-		._NumberMap_byte = 42,
-		._NumberMap_opt_short_present = true,
-		._NumberMap_opt_short._NumberMap_opt_short = 0x1234,
-		._NumberMap_opt_cbor_present = true,
-		._NumberMap_opt_cbor._NumberMap_opt_cbor_cbor = 0x12345678,
+		.byte = 42,
+		.opt_short_present = true,
+		.opt_short.opt_short = 0x1234,
+		.opt_cbor_present = true,
+		.opt_cbor.opt_cbor_cbor = 0x12345678,
 	};
 
 	int res = cbor_encode_NumberMap(payload,
@@ -182,10 +182,10 @@ void test_number_map(void)
 	zassert_mem_equal(payload, exp_payload_number_map1, encode_len, NULL);
 
 	struct NumberMap number_map2 = {
-		._NumberMap_byte = 42,
-		._NumberMap_opt_short_present = false,
-		._NumberMap_opt_cbor_present = true,
-		._NumberMap_opt_cbor._NumberMap_opt_cbor_cbor = 0x12345678,
+		.byte = 42,
+		.opt_short_present = false,
+		.opt_cbor_present = true,
+		.opt_cbor.opt_cbor_cbor = 0x12345678,
 	};
 
 	res = cbor_encode_NumberMap(payload,
@@ -195,11 +195,11 @@ void test_number_map(void)
 	zassert_mem_equal(payload, exp_payload_number_map2, encode_len, NULL);
 
 	struct NumberMap number_map3 = {
-		._NumberMap_byte = 42,
-		._NumberMap_opt_short_present = false,
-		._NumberMap_opt_cbor_present = true,
-		._NumberMap_opt_cbor._NumberMap_opt_cbor.value = (uint8_t[]){0x1A, 0x12, 0x34, 0x56, 0x78},
-		._NumberMap_opt_cbor._NumberMap_opt_cbor.len = 5,
+		.byte = 42,
+		.opt_short_present = false,
+		.opt_cbor_present = true,
+		.opt_cbor.opt_cbor.value = (uint8_t[]){0x1A, 0x12, 0x34, 0x56, 0x78},
+		.opt_cbor.opt_cbor.len = 5,
 	};
 
 	res = cbor_encode_NumberMap(payload,
@@ -209,11 +209,11 @@ void test_number_map(void)
 	zassert_mem_equal(payload, exp_payload_number_map2, encode_len, NULL);
 
 	struct NumberMap number_map4_inv = {
-		._NumberMap_byte = 42,
-		._NumberMap_opt_short_present = false,
-		._NumberMap_opt_cbor_present = true,
-		._NumberMap_opt_cbor._NumberMap_opt_cbor.value = (uint8_t[]){0x19, 0x12, 0x34},
-		._NumberMap_opt_cbor._NumberMap_opt_cbor.len = 3,
+		.byte = 42,
+		.opt_short_present = false,
+		.opt_cbor_present = true,
+		.opt_cbor.opt_cbor.value = (uint8_t[]){0x19, 0x12, 0x34},
+		.opt_cbor.opt_cbor.len = 3,
 	};
 
 	res = cbor_encode_NumberMap(payload,
@@ -358,45 +358,45 @@ void test_strings(void)
 	uint8_t output4[800];
 	size_t out_len;
 
-	numbers1._Numbers_fourtoten = 5;
-	numbers1._Numbers_twobytes = 0xFFFF;
-	numbers1._Numbers_onetofourbytes = 24;
-	numbers1._Numbers_minusfivektoplustwohundred = 0;
-	numbers1._Numbers_negint = -2147483648;
-	numbers1._Numbers_posint = 0xFFFFFFFF;
-	numbers1._Numbers_tagged_int = 9;
+	numbers1.fourtoten = 5;
+	numbers1.twobytes = 0xFFFF;
+	numbers1.onetofourbytes = 24;
+	numbers1.minusfivektoplustwohundred = 0;
+	numbers1.negint = -2147483648;
+	numbers1.posint = 0xFFFFFFFF;
+	numbers1.tagged_int = 9;
 
-	strings1._Strings_optCborStrings_present = true;
-	strings1._Strings_threehundrebytebstr.len = 300;
-	strings1._Strings_threehundrebytebstr.value = bytes300;
-	strings1._Strings_tentothirtybytetstr.len = 30;
-	strings1._Strings_tentothirtybytetstr.value = bytes300;
-	strings1._Strings_cborseqPrimitives_cbor_count = 3;
-	strings1._Strings_cborseqPrimitives_cbor[0]._Primitives_boolval = false;
-	strings1._Strings_cborseqPrimitives_cbor[1]._Primitives_boolval = true;
-	strings1._Strings_cborseqPrimitives_cbor[2]._Primitives_boolval = false;
+	strings1.optCborStrings_present = true;
+	strings1.threehundrebytebstr.len = 300;
+	strings1.threehundrebytebstr.value = bytes300;
+	strings1.tentothirtybytetstr.len = 30;
+	strings1.tentothirtybytetstr.value = bytes300;
+	strings1.cborseqPrimitives_cbor_count = 3;
+	strings1.cborseqPrimitives_cbor[0].boolval = false;
+	strings1.cborseqPrimitives_cbor[1].boolval = true;
+	strings1.cborseqPrimitives_cbor[2].boolval = false;
 
-	strings2._Strings_threehundrebytebstr.len = 300;
-	strings2._Strings_threehundrebytebstr.value = bytes300;
-	strings2._Strings_tentothirtybytetstr.len = 9; // Invalid
-	strings2._Strings_tentothirtybytetstr.value = bytes300;
-	strings2._Strings_cborseqPrimitives_cbor_count = 1;
-	strings2._Strings_cborseqPrimitives_cbor[0]._Primitives_boolval = false;
+	strings2.threehundrebytebstr.len = 300;
+	strings2.threehundrebytebstr.value = bytes300;
+	strings2.tentothirtybytetstr.len = 9; // Invalid
+	strings2.tentothirtybytetstr.value = bytes300;
+	strings2.cborseqPrimitives_cbor_count = 1;
+	strings2.cborseqPrimitives_cbor[0].boolval = false;
 
 	zassert_equal(ZCBOR_SUCCESS, cbor_encode_Numbers(output2, sizeof(output2), &numbers1, &out_len), NULL);
-	strings1._Strings_cborNumbers.value = output2;
-	strings1._Strings_cborNumbers.len = out_len;
-	numbers1._Numbers_tagged_int = -10;
+	strings1.cborNumbers.value = output2;
+	strings1.cborNumbers.len = out_len;
+	numbers1.tagged_int = -10;
 	zassert_equal(ZCBOR_SUCCESS, cbor_encode_Numbers(output1, sizeof(output1), &numbers1, &out_len), NULL);
-	strings2._Strings_cborNumbers.value = output1;
-	strings2._Strings_cborNumbers.len = out_len;
+	strings2.cborNumbers.value = output1;
+	strings2.cborNumbers.len = out_len;
 	zassert_equal(ZCBOR_ERR_WRONG_RANGE, cbor_encode_Strings(output3, sizeof(output3), &strings2, &out_len), NULL);
-	strings2._Strings_tentothirtybytetstr.len = 31; // Invalid
+	strings2.tentothirtybytetstr.len = 31; // Invalid
 	zassert_equal(ZCBOR_ERR_WRONG_RANGE, cbor_encode_Strings(output3, sizeof(output3), &strings2, &out_len), NULL);
-	strings2._Strings_tentothirtybytetstr.len = 10; // Valid
+	strings2.tentothirtybytetstr.len = 10; // Valid
 	zassert_equal(ZCBOR_SUCCESS, cbor_encode_Strings(output3, sizeof(output3), &strings2, &out_len), NULL);
-	strings1._Strings_optCborStrings.value = output3;
-	strings1._Strings_optCborStrings.len = out_len;
+	strings1.optCborStrings.value = output3;
+	strings1.optCborStrings.len = out_len;
 	zassert_equal(ZCBOR_SUCCESS, cbor_encode_Strings(output4, sizeof(output4), &strings1, &out_len), NULL);
 	zassert_equal(sizeof(exp_payload_strings1), out_len, "expected: %d, actual: %d\r\n", sizeof(exp_payload_strings1), out_len);
 
@@ -412,12 +412,12 @@ void test_primitives(void)
 	size_t len_encode;
 	uint8_t output[10];
 
-	input._Primitives_boolval = false;
+	input.boolval = false;
 	zassert_equal(ZCBOR_SUCCESS, cbor_encode_Prim2(output, sizeof(output), &input, &len_encode), NULL);
 	zassert_equal(len_encode, sizeof(exp_payload_prim1), NULL);
 	zassert_mem_equal(exp_payload_prim1, output, sizeof(exp_payload_prim1), NULL);
 
-	input._Primitives_boolval = true;
+	input.boolval = true;
 	zassert_equal(ZCBOR_SUCCESS, cbor_encode_Prim2(output, sizeof(output), &input, &len_encode), NULL);
 	zassert_equal(len_encode, sizeof(exp_payload_prim2), NULL);
 	zassert_mem_equal(exp_payload_prim2, output, sizeof(exp_payload_prim2), NULL);
@@ -447,19 +447,19 @@ void test_optional(void)
 		LIST(7) /* List start */, 0xCA /* tag */, 0xF5 /* True */, 0xF4 /* False */, 0x02, 0x02, 0x08, 0x08, 0x08, END
 	};
 
-	struct Optional optional1 = {._Optional_opttwo_present = true, ._Optional_manduint = 3};
-	struct Optional optional2 = {._Optional_manduint = 3};
-	struct Optional optional3 = {._Optional_opttwo_present = true, ._Optional_manduint = 1};
-	struct Optional optional4 = {._Optional_boolval = true, ._Optional_opttwo_present = true,
-				._Optional_manduint = 2};
-	struct Optional optional5 = {._Optional_boolval = true, ._Optional_optbool_present = true,
-				._Optional_opttwo_present = true, ._Optional_manduint = 2};
-	struct Optional optional6 = {._Optional_boolval = true, ._Optional_optbool_present = true,
-				._Optional_opttwo_present = true, ._Optional_manduint = 2,
-				._Optional_multi8_count = 1};
-	struct Optional optional7 = {._Optional_boolval = true, ._Optional_optbool_present = true,
-				._Optional_opttwo_present = true, ._Optional_manduint = 2,
-				._Optional_multi8_count = 3};
+	struct Optional optional1 = {.opttwo_present = true, .manduint = 3};
+	struct Optional optional2 = {.manduint = 3};
+	struct Optional optional3 = {.opttwo_present = true, .manduint = 1};
+	struct Optional optional4 = {.boolval = true, .opttwo_present = true,
+				.manduint = 2};
+	struct Optional optional5 = {.boolval = true, .optbool_present = true,
+				.opttwo_present = true, .manduint = 2};
+	struct Optional optional6 = {.boolval = true, .optbool_present = true,
+				.opttwo_present = true, .manduint = 2,
+				.multi8_count = 1};
+	struct Optional optional7 = {.boolval = true, .optbool_present = true,
+				.opttwo_present = true, .manduint = 2,
+				.multi8_count = 3};
 	uint8_t output[10];
 	size_t out_len;
 
@@ -512,12 +512,12 @@ void test_union(void)
 		0x03, 0x23, 0x03, 0x23, 0x03, 0x23
 	};
 
-	struct Union_ _union1 = {._Union_choice = _Union__Group};
-	struct Union_ _union2 = {._Union_choice = _Union__MultiGroup, ._Union__MultiGroup._MultiGroup_count = 1};
-	struct Union_ _union3 = {._Union_choice = _Union__uint3};
-	struct Union_ _union4 = {._Union_choice = _Union_hello_tstr};
-	struct Union_ _union5 = {._Union_choice = _Union__MultiGroup, ._Union__MultiGroup._MultiGroup_count = 6};
-	struct Union_ _union6_inv = {._Union_choice = _Union__MultiGroup, ._Union__MultiGroup._MultiGroup_count = 7};
+	struct Union_ _union1 = {.Union_choice = _Union__Group};
+	struct Union_ _union2 = {.Union_choice = _Union__MultiGroup, ._MultiGroup.MultiGroup_count = 1};
+	struct Union_ _union3 = {.Union_choice = _Union__uint3};
+	struct Union_ _union4 = {.Union_choice = _Union_hello_tstr};
+	struct Union_ _union5 = {.Union_choice = _Union__MultiGroup, ._MultiGroup.MultiGroup_count = 6};
+	struct Union_ _union6_inv = {.Union_choice = _Union__MultiGroup, ._MultiGroup.MultiGroup_count = 7};
 
 	uint8_t output[15];
 	size_t out_len;
@@ -572,8 +572,8 @@ void test_levels(void)
 	uint8_t output[32];
 	size_t out_len;
 
-	struct Level2 level1 = {._Level2__Level3_count = 2, ._Level2__Level3 = {
-		{._Level3__Level4_count = 4}, {._Level3__Level4_count = 4}
+	struct Level2 level1 = {._Level3_count = 2, ._Level3 = {
+		{._Level4_count = 4}, {._Level4_count = 4}
 	}};
 	_Static_assert(sizeof(exp_payload_levels1) <= sizeof(output),
 		"Payload is larger than output");
@@ -613,32 +613,32 @@ void test_map(void)
 	};
 
 	struct Map map1 = {
-		._Map_union_choice = _union_uint7uint,
-		._union_uint7uint = 1,
-		._Map_twotothree_count = 2,
-		._Map_twotothree = {
-			{._Map_twotothree = {.value = "hello", .len = 5}},
-			{._Map_twotothree = {.len = 0}},
+		.union_choice = _union_uint7uint,
+		.uint7uint = 1,
+		.twotothree_count = 2,
+		.twotothree = {
+			{.twotothree = {.value = "hello", .len = 5}},
+			{.twotothree = {.len = 0}},
 		}
 	};
 	struct Map map2 = {
-		._Map_key = true,
-		._Map_union_choice = _union_uint7uint,
-		._union_uint7uint = 1,
-		._Map_twotothree_count = 3,
-		._Map_twotothree = {
-			{._Map_twotothree = {.value = "hello", .len = 5}},
-			{._Map_twotothree = {.len = 0}},
-			{._Map_twotothree = {.len = 0}},
+		.listkey = true,
+		.union_choice = _union_uint7uint,
+		.uint7uint = 1,
+		.twotothree_count = 3,
+		.twotothree = {
+			{.twotothree = {.value = "hello", .len = 5}},
+			{.twotothree = {.len = 0}},
+			{.twotothree = {.len = 0}},
 		}
 	};
 	struct Map map3 = {
-		._Map_union_choice = _union_nintuint,
-		._union_nintuint = 1,
-		._Map_twotothree_count = 2,
-		._Map_twotothree = {
-			{._Map_twotothree = {.value = "hello", .len = 5}},
-			{._Map_twotothree = {.len = 0}},
+		.union_choice = _union_nintuint,
+		.nintuint = 1,
+		.twotothree_count = 2,
+		.twotothree = {
+			{.twotothree = {.value = "hello", .len = 5}},
+			{.twotothree = {.len = 0}},
 		}
 	};
 
@@ -669,33 +669,33 @@ void test_nested_list_map(void)
 	const uint8_t exp_payload_nested_lm4[] = {LIST(2), MAP(0), END MAP(1), 0x01, 0x04, END END};
 	const uint8_t exp_payload_nested_lm5[] = {LIST(3), MAP(0), END MAP(0), END MAP(0), END END};
 	struct NestedListMap listmap1 = {
-		._NestedListMap_map_count = 0,
+		.map_count = 0,
 	};
 	struct NestedListMap listmap2 = {
-		._NestedListMap_map_count = 1,
-		._NestedListMap_map = {
-			{._map_uint4_present = false},
+		.map_count = 1,
+		.map = {
+			{.uint4_present = false},
 		}
 	};
 	struct NestedListMap listmap3 = {
-		._NestedListMap_map_count = 1,
-		._NestedListMap_map = {
-			{._map_uint4_present = true},
+		.map_count = 1,
+		.map = {
+			{.uint4_present = true},
 		}
 	};
 	struct NestedListMap listmap4 = {
-		._NestedListMap_map_count = 2,
-		._NestedListMap_map = {
-			{._map_uint4_present = false},
-			{._map_uint4_present = true},
+		.map_count = 2,
+		.map = {
+			{.uint4_present = false},
+			{.uint4_present = true},
 		}
 	};
 	struct NestedListMap listmap5 = {
-		._NestedListMap_map_count = 3,
-		._NestedListMap_map = {
-			{._map_uint4_present = false},
-			{._map_uint4_present = false},
-			{._map_uint4_present = false},
+		.map_count = 3,
+		.map = {
+			{.uint4_present = false},
+			{.uint4_present = false},
+			{.uint4_present = false},
 		}
 	};
 	uint8_t output[40];
@@ -740,34 +740,34 @@ void test_nested_map_list_map(void)
 	const uint8_t exp_payload_nested_mlm4[] = {MAP(2), LIST(0), END LIST(0), END LIST(0), END LIST(0), END END};
 	const uint8_t exp_payload_nested_mlm5[] = {MAP(3), LIST(0), END LIST(0), END LIST(0), END LIST(0), END LIST(0), END LIST(2), MAP(0), END MAP(0), END END END};
 	struct NestedMapListMap maplistmap1 = {
-		._NestedMapListMap_key_count = 1,
-		._NestedMapListMap_key = {{0}}
+		._map_count = 1,
+		._map = {{0}}
 	};
 	struct NestedMapListMap maplistmap2 = {
-		._NestedMapListMap_key_count = 1,
-		._NestedMapListMap_key = {
-			{._NestedMapListMap_key_map_count = 1}
+		._map_count = 1,
+		._map = {
+			{.map_count = 1}
 		}
 	};
 	struct NestedMapListMap maplistmap3 = {
-		._NestedMapListMap_key_count = 1,
-		._NestedMapListMap_key = {
-			{._NestedMapListMap_key_map_count = 2}
+		._map_count = 1,
+		._map = {
+			{.map_count = 2}
 		}
 	};
 	struct NestedMapListMap maplistmap4 = {
-		._NestedMapListMap_key_count = 2,
-		._NestedMapListMap_key = {
-			{._NestedMapListMap_key_map_count = 0},
-			{._NestedMapListMap_key_map_count = 0},
+		._map_count = 2,
+		._map = {
+			{.map_count = 0},
+			{.map_count = 0},
 		}
 	};
 	struct NestedMapListMap maplistmap5 = {
-		._NestedMapListMap_key_count = 3,
-		._NestedMapListMap_key = {
-			{._NestedMapListMap_key_map_count = 0},
-			{._NestedMapListMap_key_map_count = 0},
-			{._NestedMapListMap_key_map_count = 2},
+		._map_count = 3,
+		._map = {
+			{.map_count = 0},
+			{.map_count = 0},
+			{.map_count = 2},
 		}
 	};
 	uint8_t output[30];
@@ -839,56 +839,56 @@ void test_range(void)
 	};
 
 	struct Range input1 = {
-		._Range_optMinus5to5_present = false,
-		._Range_optStr3to6_present = false,
-		._Range_optMinus9toMinus6excl_present = false,
-		._Range_multi8_count = 1,
-		._Range_multiHello_count = 1,
-		._Range_multi0to10_count = 1,
-		._Range_multi0to10 = {0},
+		.optMinus5to5_present = false,
+		.optStr3to6_present = false,
+		.optMinus9toMinus6excl_present = false,
+		.multi8_count = 1,
+		.multiHello_count = 1,
+		.multi0to10_count = 1,
+		.multi0to10 = {0},
 	};
 	struct Range input2 = {
-		._Range_optMinus5to5_present = true,
-		._Range_optMinus5to5 = 5,
-		._Range_optStr3to6_present = false,
-		._Range_optMinus9toMinus6excl_present = false,
-		._Range_multi8_count = 2,
-		._Range_multiHello_count = 1,
-		._Range_multi0to10_count = 2,
-		._Range_multi0to10 = {0, 10},
+		.optMinus5to5_present = true,
+		.optMinus5to5 = 5,
+		.optStr3to6_present = false,
+		.optMinus9toMinus6excl_present = false,
+		.multi8_count = 2,
+		.multiHello_count = 1,
+		.multi0to10_count = 2,
+		.multi0to10 = {0, 10},
 	};
 	struct Range input3 = {
-		._Range_optMinus5to5_present = false,
-		._Range_optStr3to6_present = true,
-		._Range_optStr3to6 = {
+		.optMinus5to5_present = false,
+		.optStr3to6_present = true,
+		.optStr3to6 = {
 			.value = "hello",
 			.len = 5,
 		},
-		._Range_optMinus9toMinus6excl_present = false,
-		._Range_multi8_count = 1,
-		._Range_multiHello_count = 2,
-		._Range_multi0to10_count = 1,
-		._Range_multi0to10 = {7},
+		.optMinus9toMinus6excl_present = false,
+		.multi8_count = 1,
+		.multiHello_count = 2,
+		.multi0to10_count = 1,
+		.multi0to10 = {7},
 	};
 	struct Range input4 = {
-		._Range_optMinus5to5_present = false,
-		._Range_optStr3to6_present = false,
-		._Range_optMinus9toMinus6excl_present = true,
-		._Range_optMinus9toMinus6excl = -9,
-		._Range_multi8_count = 1,
-		._Range_multiHello_count = 1,
-		._Range_multi0to10_count = 1,
-		._Range_multi0to10 = {0},
+		.optMinus5to5_present = false,
+		.optStr3to6_present = false,
+		.optMinus9toMinus6excl_present = true,
+		.optMinus9toMinus6excl = -9,
+		.multi8_count = 1,
+		.multiHello_count = 1,
+		.multi0to10_count = 1,
+		.multi0to10 = {0},
 	};
 	struct Range input5_inv = {
-		._Range_optMinus5to5_present = false,
-		._Range_optStr3to6_present = false,
-		._Range_optMinus9toMinus6excl_present = true,
-		._Range_optMinus9toMinus6excl = -6,
-		._Range_multi8_count = 1,
-		._Range_multiHello_count = 1,
-		._Range_multi0to10_count = 1,
-		._Range_multi0to10 = {0},
+		.optMinus5to5_present = false,
+		.optStr3to6_present = false,
+		.optMinus9toMinus6excl_present = true,
+		.optMinus9toMinus6excl = -6,
+		.multi8_count = 1,
+		.multiHello_count = 1,
+		.multi0to10_count = 1,
+		.multi0to10 = {0},
 	};
 
 	uint8_t output[25];
@@ -941,64 +941,64 @@ void test_value_range(void)
 	};
 
 	struct ValueRange input1 = {
-		._ValueRange_greater10 = 11,
-		._ValueRange_less1000 = 999,
-		._ValueRange_greatereqmin10 = -10,
-		._ValueRange_lesseq1 = 1,
+		.greater10 = 11,
+		.less1000 = 999,
+		.greatereqmin10 = -10,
+		.lesseq1 = 1,
 	};
 	struct ValueRange input2 = {
-		._ValueRange_greater10 = 100,
-		._ValueRange_less1000 = -1001,
-		._ValueRange_greatereqmin10 = 100,
-		._ValueRange_lesseq1 = 0,
+		.greater10 = 100,
+		.less1000 = -1001,
+		.greatereqmin10 = 100,
+		.lesseq1 = 0,
 	};
 	struct ValueRange input3_inval = {
-		._ValueRange_greater10 = 10,
-		._ValueRange_less1000 = 999,
-		._ValueRange_greatereqmin10 = -10,
-		._ValueRange_lesseq1 = 1,
+		.greater10 = 10,
+		.less1000 = 999,
+		.greatereqmin10 = -10,
+		.lesseq1 = 1,
 	};
 	struct ValueRange input4_inval = {
-		._ValueRange_greater10 = 11,
-		._ValueRange_less1000 = 1000,
-		._ValueRange_greatereqmin10 = -10,
-		._ValueRange_lesseq1 = 1,
+		.greater10 = 11,
+		.less1000 = 1000,
+		.greatereqmin10 = -10,
+		.lesseq1 = 1,
 	};
 	struct ValueRange input5_inval = {
-		._ValueRange_greater10 = 11,
-		._ValueRange_less1000 = 999,
-		._ValueRange_greatereqmin10 = -11,
-		._ValueRange_lesseq1 = 1,
+		.greater10 = 11,
+		.less1000 = 999,
+		.greatereqmin10 = -11,
+		.lesseq1 = 1,
 	};
 	struct ValueRange input6_inval = {
-		._ValueRange_greater10 = 11,
-		._ValueRange_less1000 = 999,
-		._ValueRange_greatereqmin10 = -10,
-		._ValueRange_lesseq1 = 2,
+		.greater10 = 11,
+		.less1000 = 999,
+		.greatereqmin10 = -10,
+		.lesseq1 = 2,
 	};
 	struct ValueRange input7_inval = {
-		._ValueRange_greater10 = 1,
-		._ValueRange_less1000 = 999,
-		._ValueRange_greatereqmin10 = -10,
-		._ValueRange_lesseq1 = 1,
+		.greater10 = 1,
+		.less1000 = 999,
+		.greatereqmin10 = -10,
+		.lesseq1 = 1,
 	};
 	struct ValueRange input8_inval = {
-		._ValueRange_greater10 = 11,
-		._ValueRange_less1000 = 10000,
-		._ValueRange_greatereqmin10 = -10,
-		._ValueRange_lesseq1 = 1,
+		.greater10 = 11,
+		.less1000 = 10000,
+		.greatereqmin10 = -10,
+		.lesseq1 = 1,
 	};
 	struct ValueRange input9_inval = {
-		._ValueRange_greater10 = 11,
-		._ValueRange_less1000 = 999,
-		._ValueRange_greatereqmin10 = -100,
-		._ValueRange_lesseq1 = 1,
+		.greater10 = 11,
+		.less1000 = 999,
+		.greatereqmin10 = -100,
+		.lesseq1 = 1,
 	};
 	struct ValueRange input10_inval = {
-		._ValueRange_greater10 = 11,
-		._ValueRange_less1000 = 999,
-		._ValueRange_greatereqmin10 = -10,
-		._ValueRange_lesseq1 = 21,
+		.greater10 = 11,
+		.less1000 = 999,
+		.greatereqmin10 = -10,
+		.lesseq1 = 21,
 	};
 
 	uint8_t output[25];
@@ -1053,11 +1053,11 @@ void test_single(void)
 	zassert_mem_equal(exp_payload_single0, output, sizeof(exp_payload_single0), NULL);
 	zassert_equal(ZCBOR_ERR_NO_PAYLOAD, cbor_encode_SingleBstr(output, 5, &input_single0, &out_len), NULL);
 
-	zassert_equal(ZCBOR_SUCCESS, cbor_encode_SingleInt(output, sizeof(output), &input_single1, &out_len), NULL);
+	zassert_equal(ZCBOR_SUCCESS, cbor_encode_SingleInt_uint52(output, sizeof(output), &input_single1, &out_len), NULL);
 	zassert_equal(sizeof(exp_payload_single1), out_len, NULL);
 	zassert_mem_equal(exp_payload_single1, output, sizeof(exp_payload_single1), NULL);
-	zassert_equal(ZCBOR_ERR_NO_PAYLOAD, cbor_encode_SingleInt(output, 1, &input_single1, &out_len), NULL);
-	zassert_equal(ZCBOR_SUCCESS, cbor_encode_SingleInt(output, sizeof(output), &input_single2_ign, &out_len), NULL);
+	zassert_equal(ZCBOR_ERR_NO_PAYLOAD, cbor_encode_SingleInt_uint52(output, 1, &input_single1, &out_len), NULL);
+	zassert_equal(ZCBOR_SUCCESS, cbor_encode_SingleInt_uint52(output, sizeof(output), &input_single2_ign, &out_len), NULL);
 	zassert_equal(sizeof(exp_payload_single1), out_len, NULL);
 	zassert_mem_equal(exp_payload_single1, output, sizeof(exp_payload_single1), NULL);
 
@@ -1072,12 +1072,12 @@ void test_unabstracted(void)
 	uint8_t exp_payload_unabstracted0[] = {LIST(2), 0x01, 0x03, END};
 	uint8_t exp_payload_unabstracted1[] = {LIST(2), 0x02, 0x04, END};
 	struct Unabstracted result_unabstracted0 = {
-		._Unabstracted_unabstractedunion1_choice = _Unabstracted_unabstractedunion1_choice1,
-		._Unabstracted_unabstractedunion2_choice = _Unabstracted_unabstractedunion2_uint3,
+		.unabstractedunion1_choice = _Unabstracted_unabstractedunion1_choice1,
+		.unabstractedunion2_choice = _Unabstracted_unabstractedunion2_uint3,
 	};
 	struct Unabstracted result_unabstracted1 = {
-		._Unabstracted_unabstractedunion1_choice = _Unabstracted_unabstractedunion1_choice2,
-		._Unabstracted_unabstractedunion2_choice = _Unabstracted_unabstractedunion2_choice4,
+		.unabstractedunion1_choice = _Unabstracted_unabstractedunion1_choice2,
+		.unabstractedunion2_choice = _Unabstracted_unabstractedunion2_choice4,
 	};
 	uint8_t output[4];
 	size_t out_len;
@@ -1110,20 +1110,20 @@ void test_quantity_range(void)
 	uint8_t exp_payload_qty_range1[] = {0xF5, 0xF5, 0xF5};
 	uint8_t exp_payload_qty_range2[] = {0xF6, 0xF6, 0xF6, 0xF6, 0xF5, 0xF5, 0xF5, 0xF5, 0xF5, 0xF5};
 	struct QuantityRange result_qty_range1 = {
-		._QuantityRange_upto4nils_count = 0,
-		._QuantityRange_from3true_count = 3,
+		.upto4nils_count = 0,
+		.from3true_count = 3,
 	};
 	struct QuantityRange result_qty_range2 = {
-		._QuantityRange_upto4nils_count = 4,
-		._QuantityRange_from3true_count = 6,
+		.upto4nils_count = 4,
+		.from3true_count = 6,
 	};
 	struct QuantityRange result_qty_range3_inv = {
-		._QuantityRange_upto4nils_count = 5,
-		._QuantityRange_from3true_count = 3
+		.upto4nils_count = 5,
+		.from3true_count = 3
 	};
 	struct QuantityRange result_qty_range4_inv = {
-		._QuantityRange_upto4nils_count = 0,
-		._QuantityRange_from3true_count = 2
+		.upto4nils_count = 0,
+		.from3true_count = 2
 	};
 	uint8_t output[12];
 	size_t out_len;
@@ -1149,20 +1149,20 @@ void test_doublemap(void)
 {
 	uint8_t exp_payload_doublemap0[] = {MAP(2), 0x01, MAP(1), 0x01, 0x01, END 0x02, MAP(1), 0x02, 0x02, END END};
 	struct DoubleMap result_doublemap = {
-		._DoubleMap_uintmap_count = 2,
-		._DoubleMap_uintmap = {
+		.uintmap_count = 2,
+		.uintmap = {
 			{
-				._DoubleMap_uintmap_key = 1,
-				._DoubleMap_uintmap__MyKeys = {
-					._MyKeys_uint1int_present = true,
-					._MyKeys_uint1int = {._MyKeys_uint1int = 1},
+				.uintmap_key = 1,
+				._MyKeys = {
+					.uint1int_present = true,
+					.uint1int = {.uint1int = 1},
 				}
 			},
 			{
-				._DoubleMap_uintmap_key = 2,
-				._DoubleMap_uintmap__MyKeys = {
-					._MyKeys_uint2int_present = true,
-					._MyKeys_uint2int = {._MyKeys_uint2int = 2},
+				.uintmap_key = 2,
+				._MyKeys = {
+					.uint2int_present = true,
+					.uint2int = {.uint2int = 2},
 				}
 			},
 		}
@@ -1214,39 +1214,37 @@ void test_floats(void)
 	size_t num_encode;
 	uint8_t output[70];
 
-	input._Floats_float_32 = (float)0.0;
-	input._Floats_float_64 = (double)0.0;
-	input._Floats_floats_count = 0;
+	input.float_32 = (float)0.0;
+	input.float_64 = (double)0.0;
+	input.floats_count = 0;
 	zassert_equal(ZCBOR_SUCCESS, cbor_encode_Floats(
 		output, sizeof(output), &input, &num_encode), NULL);
-
-	zcbor_print_compare_strings(exp_floats_payload1, output, num_encode);
 
 	zassert_equal(sizeof(exp_floats_payload1), num_encode, NULL);
 	zassert_mem_equal(exp_floats_payload1, output, num_encode, NULL);
 
-	input._Floats_float_32 = (float)-98765.4321;
-	input._Floats_float_64 = (double)1234567.89;
-	input._Floats_floats_count = 0;
+	input.float_32 = (float)-98765.4321;
+	input.float_64 = (double)1234567.89;
+	input.floats_count = 0;
 	zassert_equal(ZCBOR_SUCCESS, cbor_encode_Floats(
 		output, sizeof(output), &input, &num_encode), NULL);
 	zassert_equal(sizeof(exp_floats_payload2), num_encode, NULL);
 	zassert_mem_equal(exp_floats_payload2, output, num_encode, NULL);
 
-	input._Floats_float_32 = (float)1234567.89;
-	input._Floats_float_64 = (double)-98765.4321;
-	input._Floats_floats_count = 0;
+	input.float_32 = (float)1234567.89;
+	input.float_64 = (double)-98765.4321;
+	input.floats_count = 0;
 	zassert_equal(ZCBOR_SUCCESS, cbor_encode_Floats(
 		output, sizeof(output), &input, &num_encode), NULL);
 	zassert_equal(sizeof(exp_floats_payload3), num_encode, NULL);
 	zassert_mem_equal(exp_floats_payload3, output, num_encode, NULL);
 
-	input._Floats_float_32 = (float)1234567.89;
-	input._Floats_float_64 = (double)-98765.4321;
-	input._Floats_floats_count = 3;
-	input._Floats_floats[0] = (float)(123.0/456789.0);
-	input._Floats_floats[1] = (double)(123.0/456789.0);
-	input._Floats_floats[2] = (double)(-1.0/(1LL << 42));
+	input.float_32 = (float)1234567.89;
+	input.float_64 = (double)-98765.4321;
+	input.floats_count = 3;
+	input.floats[0] = (float)(123.0/456789.0);
+	input.floats[1] = (double)(123.0/456789.0);
+	input.floats[2] = (double)(-1.0/(1LL << 42));
 	zassert_equal(ZCBOR_SUCCESS, cbor_encode_Floats(
 		output, sizeof(output), &input, &num_encode), NULL);
 	zassert_equal(sizeof(exp_floats_payload4), num_encode, NULL);
@@ -1272,15 +1270,15 @@ void test_floats2(void)
 	struct Floats2 input;
 	uint8_t output[40];
 
-	input._Floats2_float_lt_1 = -98765.4321;
-	input._Floats2_float_ge_min_10000 = (-1.0/(1LL << 42));
+	input.float_lt_1 = -98765.4321;
+	input.float_ge_min_10000 = (-1.0/(1LL << 42));
 	zassert_equal(ZCBOR_SUCCESS, cbor_encode_Floats2(
 		output, sizeof(output), &input, &num_encode), NULL);
 	zassert_equal(sizeof(exp_floats2_payload1), num_encode, NULL);
 	zassert_mem_equal(exp_floats2_payload1, output, num_encode, NULL);
 
-	input._Floats2_float_lt_1 = (-1.0/(1LL << 42));
-	input._Floats2_float_ge_min_10000 = -10000;
+	input.float_lt_1 = (-1.0/(1LL << 42));
+	input.float_ge_min_10000 = -10000;
 	zassert_equal(ZCBOR_SUCCESS, cbor_encode_Floats2(
 		output, sizeof(output), &input, &num_encode), NULL);
 	zassert_equal(sizeof(exp_floats2_payload2), num_encode, NULL);
@@ -1306,8 +1304,8 @@ void test_cbor_bstr(void)
 	size_t num_encode;
 	uint8_t output[70];
 
-	input.__hello_big_uint_bstr_cbor.value = (uint8_t []){0x42, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-	input.__hello_big_uint_bstr_cbor.len = 10;
+	input.big_uint_bstr_cbor.value = (uint8_t []){0x42, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+	input.big_uint_bstr_cbor.len = 10;
 
 	zassert_equal(ZCBOR_SUCCESS, cbor_encode_CBORBstr(output, sizeof(output), &input, &num_encode), NULL);
 
@@ -1346,46 +1344,46 @@ void test_map_length(void)
 	uint8_t mac[] = {1, 2, 3, 4, 5, 6};
 	uint8_t uuid[] = {8, 7, 6, 5, 4, 3, 2, 1, 8, 7, 6, 5, 4, 3, 2, 1, 0};
 
-	input._MapLength_result = 1;
-	input._MapLength_mac_addr.len = 6;
-	input._MapLength_mac_addr.value = mac;
-	input._MapLength_end_device_array_present = false;
+	input.result = 1;
+	input.mac_addr.len = 6;
+	input.mac_addr.value = mac;
+	input.end_device_array_present = false;
 
 	zassert_equal(ZCBOR_SUCCESS, cbor_encode_MapLength(output,
 		sizeof(output), &input, &num_encode), NULL);
 	zassert_equal(sizeof(exp_map_length_payload1), num_encode, "%d != %d\r\n", sizeof(exp_map_length_payload1), num_encode);
 	zassert_mem_equal(exp_map_length_payload1, output, num_encode, NULL);
 
-	input._MapLength_end_device_array_present = true;
-	input._MapLength_end_device_array._MapLength_end_device_array__uuid_count = 0;
+	input.end_device_array_present = true;
+	input.end_device_array._uuid_count = 0;
 	zassert_equal(ZCBOR_SUCCESS, cbor_encode_MapLength(output,
 		sizeof(output), &input, &num_encode), NULL);
 	zassert_equal(sizeof(exp_map_length_payload2), num_encode, "%d != %d\r\n", sizeof(exp_map_length_payload2), num_encode);
 	zassert_mem_equal(exp_map_length_payload2, output, num_encode, NULL);
 
-	input._MapLength_end_device_array._MapLength_end_device_array__uuid_count = 1;
-	input._MapLength_end_device_array._MapLength_end_device_array__uuid[0].len = 16;
-	input._MapLength_end_device_array._MapLength_end_device_array__uuid[0].value = uuid;
+	input.end_device_array._uuid_count = 1;
+	input.end_device_array._uuid[0].len = 16;
+	input.end_device_array._uuid[0].value = uuid;
 	zassert_equal(ZCBOR_SUCCESS, cbor_encode_MapLength(output,
 		sizeof(output), &input, &num_encode), NULL);
 	zassert_equal(sizeof(exp_map_length_payload3), num_encode, "%d != %d\r\n", sizeof(exp_map_length_payload3), num_encode);
 	zassert_mem_equal(exp_map_length_payload3, output, num_encode, NULL);
 
-	input._MapLength_end_device_array._MapLength_end_device_array__uuid_count = 2;
-	input._MapLength_end_device_array._MapLength_end_device_array__uuid[1].len = 16;
-	input._MapLength_end_device_array._MapLength_end_device_array__uuid[1].value = uuid;
+	input.end_device_array._uuid_count = 2;
+	input.end_device_array._uuid[1].len = 16;
+	input.end_device_array._uuid[1].value = uuid;
 	int err = cbor_encode_MapLength(output,
 		sizeof(output), &input, &num_encode);
 	zassert_equal(ZCBOR_SUCCESS, err, "%d\r\b", err);
 	zassert_equal(sizeof(exp_map_length_payload4), num_encode, "%d != %d\r\n", sizeof(exp_map_length_payload4), num_encode);
 	zassert_mem_equal(exp_map_length_payload4, output, num_encode, NULL);
 
-	input._MapLength_mac_addr.len--;
+	input.mac_addr.len--;
 	zassert_equal(ZCBOR_ERR_WRONG_RANGE, cbor_encode_MapLength(output,
 		sizeof(output), &input, &num_encode), NULL);
 
-	input._MapLength_mac_addr.len++;
-	input._MapLength_end_device_array._MapLength_end_device_array__uuid[1].len++;
+	input.mac_addr.len++;
+	input.end_device_array._uuid[1].len++;
 	err = cbor_encode_MapLength(output,
 		sizeof(output), &input, &num_encode);
 	zassert_equal(ZCBOR_ERR_WRONG_RANGE, err, "%d\r\b", err);
