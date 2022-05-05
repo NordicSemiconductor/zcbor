@@ -55,11 +55,15 @@ bool zcbor_tstr_encode(zcbor_state_t *state, const struct zcbor_string *input);
  */
 static inline bool zcbor_bstr_encode_ptr(zcbor_state_t *state, const uint8_t *ptr, size_t len)
 {
-	return zcbor_bstr_encode(state, &(const struct zcbor_string){.value = ptr, .len = len});
+	const struct zcbor_string zs = { .value = ptr, .len = len };
+
+	return zcbor_bstr_encode(state, &zs);
 }
 static inline bool zcbor_tstr_encode_ptr(zcbor_state_t *state, const uint8_t *ptr, size_t len)
 {
-	return zcbor_tstr_encode(state, &(const struct zcbor_string){.value = ptr, .len = len});
+	const struct zcbor_string zs = { .value = ptr, .len = len };
+
+	return zcbor_tstr_encode(state, &zs);
 }
 
 /** Encode a string literal as a bstr/tstr.
