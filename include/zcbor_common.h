@@ -167,6 +167,13 @@ do {\
 	return false; \
 } while(0)
 
+#define ZCBOR_FAIL_IF(expr) \
+do {\
+	if (expr) { \
+		ZCBOR_FAIL(); \
+	} \
+} while(0)
+
 #define ZCBOR_ERR(err) \
 do { \
 	zcbor_error(state, err); \

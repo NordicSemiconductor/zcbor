@@ -139,9 +139,17 @@ bool zcbor_simple_expect(zcbor_state_t *state, uint8_t result);
 bool zcbor_bool_decode(zcbor_state_t *state, bool *result);
 bool zcbor_bool_expect(zcbor_state_t *state, bool result);
 
-/** Decode and consume a float */
+/** Decode and consume an IEEE754 float */
+bool zcbor_float16_decode(zcbor_state_t *state, float *result);
+bool zcbor_float16_expect(zcbor_state_t *state, float result);
+bool zcbor_float16_bytes_decode(zcbor_state_t *state, uint16_t *result);
+bool zcbor_float16_bytes_expect(zcbor_state_t *state, uint16_t result);
+bool zcbor_float16_32_decode(zcbor_state_t *state, float *result);
+bool zcbor_float16_32_expect(zcbor_state_t *state, float result);
 bool zcbor_float32_decode(zcbor_state_t *state, float *result);
 bool zcbor_float32_expect(zcbor_state_t *state, float result);
+bool zcbor_float32_64_decode(zcbor_state_t *state, double *result);
+bool zcbor_float32_64_expect(zcbor_state_t *state, double result);
 bool zcbor_float64_decode(zcbor_state_t *state, double *result);
 bool zcbor_float64_expect(zcbor_state_t *state, double result);
 bool zcbor_float_decode(zcbor_state_t *state, double *result);

@@ -79,11 +79,17 @@ do {\
 	} \
 } while(0)
 
+static void err_restore(zcbor_state_t *state, int err)
+{
+	state->payload = state->payload_bak;
+	state->elem_count++;
+	zcbor_error(state, err);
+}
+
 #define ERR_RESTORE(err) \
 do { \
-	state->payload = state->payload_bak; \
-	state->elem_count++; \
-	ZCBOR_ERR(err); \
+	err_restore(state, err); \
+	ZCBOR_FAIL(); \
 } while(0)
 
 #define FAIL_RESTORE() \
@@ -720,10 +726,103 @@ bool zcbor_bool_expect(zcbor_state_t *state, bool result)
 }
 
 
-bool zcbor_float32_decode(zcbor_state_t *state, float *result)
+static bool float_check(zcbor_state_t *state, uint8_t additional_val)
 {
 	INITIAL_CHECKS_WITH_TYPE(ZCBOR_MAJOR_TYPE_SIMPLE);
-	ZCBOR_ERR_IF(ADDITIONAL(*state->payload) != ZCBOR_VALUE_IS_4_BYTES, ZCBOR_ERR_FLOAT_SIZE);
+	ZCBOR_ERR_IF(ADDITIONAL(*state->payload) != additional_val, ZCBOR_ERR_FLOAT_SIZE);
+	return true;
+}
+
+
+bool zcbor_float16_bytes_decode(zcbor_state_t *state, uint16_t *result)
+{
+
+	ZCBOR_FAIL_IF(!float_check(state, ZCBOR_VALUE_IS_2_BYTES));
+
+	if (!value_extract(state, result, sizeof(*result))) {
+		ZCBOR_FAIL();
+	}
+
+	return true;
+}
+
+
+bool zcbor_float16_bytes_expect(zcbor_state_t *state, uint16_t result)
+{
+	uint16_t value;
+
+	if (!zcbor_float16_bytes_decode(state, &value)) {
+		ZCBOR_FAIL();
+	}
+	if (value != result) {
+		ERR_RESTORE(ZCBOR_ERR_WRONG_VALUE);
+	}
+	return true;
+}
+
+
+/* Float16: */
+#define F16_SIGN_OFFS 15 /* Bit offset of the sign bit. */
+#define F16_EXPO_OFFS 10 /* Bit offset of the exponent. */
+#define F16_EXPO_MSK 0x1F /* Bitmask for the exponent (right shifted by F16_EXPO_OFFS). */
+#define F16_MANTISSA_MSK 0x3FF /* Bitmask for the mantissa. */
+#define F16_MIN_EXPO 24 /* Negative exponent of the non-zero float16 value closest to 0 (2^-24) */
+#define F16_MIN (1.0 / (1 << F16_MIN_EXPO)) /* The non-zero float16 value closest to 0 (2^-24) */
+#define F16_BIAS 15 /* The exponent bias of normalized float16 values. */
+
+/* Float32: */
+#define F32_SIGN_OFFS 31 /* Bit offset of the sign bit. */
+#define F32_EXPO_OFFS 23 /* Bit offset of the exponent. */
+#define F32_EXPO_MSK 0xFF /* Bitmask for the exponent (right shifted by F32_EXPO_OFFS). */
+#define F32_BIAS 127 /* The exponent bias of normalized float32 values. */
+
+
+bool zcbor_float16_decode(zcbor_state_t *state, float *result)
+{
+	uint16_t value16;
+
+	if (!zcbor_float16_bytes_decode(state, &value16)) {
+		ZCBOR_FAIL();
+	}
+
+	uint32_t sign = value16 >> F16_SIGN_OFFS;
+	uint32_t expo = (value16 >> F16_EXPO_OFFS) & F16_EXPO_MSK;
+	uint32_t mantissa = value16 & F16_MANTISSA_MSK;
+
+	if ((expo == 0) && (mantissa != 0)) {
+		/* Subnormal float16 - convert to normalized float32 */
+		*result = ((float)mantissa * (float)F16_MIN) * (sign ? -1 : 1);
+	} else {
+		/* Normalized / zero / Infinity / NaN */
+		uint32_t new_expo = (expo == 0 /* zero */) ? 0 
+			: (expo == F16_EXPO_MSK /* inf/NaN */) ? F32_EXPO_MSK
+				: (expo + (F32_BIAS - F16_BIAS));
+		uint32_t value32 = (sign << F32_SIGN_OFFS) | (new_expo << F32_EXPO_OFFS)
+			| (mantissa << (F32_EXPO_OFFS - F16_EXPO_OFFS));
+		memcpy(result, &value32, sizeof(*result));
+	}
+
+	return true;
+}
+
+
+bool zcbor_float16_expect(zcbor_state_t *state, float result)
+{
+	float value;
+
+	if (!zcbor_float16_decode(state, &value)) {
+		ZCBOR_FAIL();
+	}
+	if (value != result) {
+		ERR_RESTORE(ZCBOR_ERR_WRONG_VALUE);
+	}
+	return true;
+}
+
+
+bool zcbor_float32_decode(zcbor_state_t *state, float *result)
+{
+	ZCBOR_FAIL_IF(!float_check(state, ZCBOR_VALUE_IS_4_BYTES));
 
 	if (!value_extract(state, result, sizeof(*result))) {
 		ZCBOR_FAIL();
@@ -747,10 +846,33 @@ bool zcbor_float32_expect(zcbor_state_t *state, float result)
 }
 
 
+bool zcbor_float16_32_decode(zcbor_state_t *state, float *result)
+{
+	if (zcbor_float16_decode(state, result)) {
+		/* Do nothing */
+	} else if (!zcbor_float32_decode(state, result)) {
+		ZCBOR_FAIL();
+	}
+
+	return true;
+}
+
+
+bool zcbor_float16_32_expect(zcbor_state_t *state, float result)
+{
+	if (zcbor_float16_expect(state, (float)result)) {
+		/* Do nothing */
+	} else if (!zcbor_float32_expect(state, result)) {
+		ZCBOR_FAIL();
+	}
+
+	return true;
+}
+
+
 bool zcbor_float64_decode(zcbor_state_t *state, double *result)
 {
-	INITIAL_CHECKS_WITH_TYPE(ZCBOR_MAJOR_TYPE_SIMPLE);
-	ZCBOR_ERR_IF(ADDITIONAL(*state->payload) != ZCBOR_VALUE_IS_8_BYTES, ZCBOR_ERR_FLOAT_SIZE);
+	ZCBOR_FAIL_IF(!float_check(state, ZCBOR_VALUE_IS_8_BYTES));
 
 	if (!value_extract(state, result, sizeof(*result))) {
 		ZCBOR_FAIL();
@@ -774,7 +896,7 @@ bool zcbor_float64_expect(zcbor_state_t *state, double result)
 }
 
 
-bool zcbor_float_decode(zcbor_state_t *state, double *result)
+bool zcbor_float32_64_decode(zcbor_state_t *state, double *result)
 {
 	float float_result;
 
@@ -788,9 +910,39 @@ bool zcbor_float_decode(zcbor_state_t *state, double *result)
 }
 
 
+bool zcbor_float32_64_expect(zcbor_state_t *state, double result)
+{
+	if (zcbor_float64_expect(state, result)) {
+		/* Do nothing */
+	} else if (!zcbor_float32_expect(state, (float)result)) {
+		ZCBOR_FAIL();
+	}
+
+	return true;
+}
+
+
+bool zcbor_float_decode(zcbor_state_t *state, double *result)
+{
+	float float_result;
+
+	if (zcbor_float16_decode(state, &float_result)) {
+		*result = (double)float_result;
+	} else if (zcbor_float32_decode(state, &float_result)) {
+		*result = (double)float_result;
+	} else if (!zcbor_float64_decode(state, result)) {
+		ZCBOR_FAIL();
+	}
+
+	return true;
+}
+
+
 bool zcbor_float_expect(zcbor_state_t *state, double result)
 {
-	if (zcbor_float32_expect(state, (float)result)) {
+	if (zcbor_float16_expect(state, (float)result)) {
+		/* Do nothing */
+	} else if (zcbor_float32_expect(state, (float)result)) {
 		/* Do nothing */
 	} else if (!zcbor_float64_expect(state, result)) {
 		ZCBOR_FAIL();

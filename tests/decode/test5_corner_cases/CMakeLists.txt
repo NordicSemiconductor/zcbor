@@ -43,6 +43,7 @@ set(py_command
     DoubleMap
     Floats
     Floats2
+    Floats3
     Prelude
     CBORBstr
     MapLength

@@ -12,7 +12,6 @@ The following is a list of limitiations and missing features:
 
  * Map elements in data must appear in the same order as they appear in the CDDL.
  * C API doesn't support searching through a map.
- * 16-bit floating point numbers (float16).
  * Using `&()` to turn groups into choices (unions). `&()` is supported when used with `.bits`.
  * Representation Types (`#x.y`), except for tags (`#6.y(foo)`) which are supported.
  * Unwrapping (`~`)

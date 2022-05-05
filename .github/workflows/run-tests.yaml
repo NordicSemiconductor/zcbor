@@ -3,7 +3,7 @@ name: Run tests
 on: [pull_request]
 
 env:
-  ZEPHYR_SDK_VERSION: 0.15.0
+  ZEPHYR_SDK_VERSION: 0.15.2
 
 jobs:
   merge-test-1:
@@ -23,7 +23,7 @@ jobs:
     - name: Prepare and run tests
       uses: ./.github/actions/prepare_and_run_tests
       with:
-        twister_arguments: "--platform ${{ matrix.platform }} ${{ matrix.asserts }}"
+        twister_arguments: "--platform ${{ matrix.platform }} ${{ matrix.asserts }} --exclude-tag release"
         zephyr_toolchain: ${{ matrix.platform == 'mps2_an521' && 'zephyr' || 'host'}}
         zephyr_toolchain_arch: ${{ matrix.platform == 'mps2_an521' && 'arm' || ''}}
 
@@ -79,7 +79,7 @@ jobs:
         python3 -m unittest test_zcbor
 
   merge-test-4:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     name: Merge tests 4 (Test repo files)
     steps:
     - name: Checkout the code

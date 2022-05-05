@@ -1,6 +1,5 @@
 ; Copied from https://datatracker.ietf.org/doc/html/rfc8610#appendix-D
 ; The entries that are commented out are handled natively in the zcbor script.
-; The exception is float16 which is unsupported.
 
 ; any = #
 ; uint = #0
@@ -33,8 +32,8 @@ cbor-any = #6.55799(any)
 ; float16 = #7.25
 ; float32 = #7.26
 ; float64 = #7.27
-float16-32 = float32
-float32-64 = float32 / float64
+; float16-32 = float16 / float32
+; float32-64 = float32 / float64
 ; float = float16-32 / float64
 ; false = #7.20
 ; true = #7.21
