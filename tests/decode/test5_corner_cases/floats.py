@@ -9,6 +9,8 @@
 
 import struct
 import numpy
+import math
+import cbor2
 
 def print_var(val1, val2, bytestr):
 	var_str = ""
@@ -19,6 +21,8 @@ def print_var(val1, val2, bytestr):
 def print_32_64(str_val, val = None):
 	val = val or float(str_val)
 	print_var(str_val, val, struct.pack("!e", numpy.float16(val)))
+	print_var(str_val, val, struct.pack("!f", struct.unpack("!e", struct.pack("!e", numpy.float16(val)))[0]))
+	print (numpy.float32(struct.unpack("!e", struct.pack("!e", numpy.float16(val)))[0]))
 	print_var(str_val, val, struct.pack("!f", val))
 	print_var(str_val, val, struct.pack("!d", val))
 	print_var(str_val, val, struct.pack("!d", struct.unpack("!f", struct.pack("!f", val))[0]))
@@ -33,4 +37,8 @@ print_32_64("-2^(-42)", -1/(2**(42)))
 print_32_64("1.0")
 print_32_64("-10000.0")
 print_32_64("0.0")
-
+print_32_64("0.000000059604645")
+print_32_64("0.000000059604644775390625")
+print_32_64("0.00006103515625")
+print_32_64("0.000061035153")
+print_32_64("65504")

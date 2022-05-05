@@ -341,6 +341,8 @@ class CddlParser:
             or ((self.key.generate_base_name() + self.type.lower()) if self.key else None)
             or (f"{self.type.lower()}{self.min_size * 8}"
                 if self.min_size and self.min_size == self.max_size else None)
+            or (f"{self.type.lower()}{self.min_size * 8}-{self.max_size * 8}"
+                if self.min_size and self.max_size else None)
             or self.type.lower()).replace("-", "_"))
         return raw_name
 
@@ -512,9 +514,9 @@ class CddlParser:
 
     # Set the self.type and self.minValue and self.max_value (or self.min_size and self.max_size
     # depending on the type) of this element. For use during CDDL parsing.
-    def type_and_range(self, new_type, min_val, max_val, triple_dot=False):
-        if triple_dot:
-            max_val -= 1  # Triple dot means excluding the max value.
+    def type_and_range(self, new_type, min_val, max_val, inc_end=True):
+        if not inc_end:
+            max_val -= 1
         if new_type not in ["INT", "UINT", "NINT"]:
             raise TypeError(
                 "Only integers (not %s) can have range" %
@@ -540,6 +542,12 @@ class CddlParser:
     def type_value_size(self, new_type, value, size):
         self.type_and_value(new_type, value)
         self.set_size(size)
+
+    # Set the self.value and self.min_size and self.max_size of this element.
+    # For use during CDDL parsing.
+    def type_value_size_range(self, new_type, value, min_size, max_size):
+        self.type_and_value(new_type, value)
+        self.set_size_range(min_size, max_size)
 
     # Set the self.label of this element. For use during CDDL parsing.
     def set_label(self, label):
@@ -594,8 +602,11 @@ class CddlParser:
     # Set the self.minValue and self.max_value or self.min_size and self.max_size of this element
     # based on what values can be contained within an integer of a certain size. For use during
     # CDDL parsing.
-    def set_size_range(self, min_size, max_size):
-        if None not in [min_size, max_size] and min_size > max_size:
+    def set_size_range(self, min_size, max_size_in, inc_end=True):
+        max_size = max_size_in if inc_end else max_size_in - 1
+
+        if (min_size and min_size < 0 or max_size and max_size < 0) \
+           or (None not in [min_size, max_size] and min_size > max_size):
             raise TypeError(
                 "Invalid size range (min %d, max %d)" %
                 (min_size, max_size))
@@ -746,8 +757,12 @@ class CddlParser:
              lambda _: self.type_and_value("FLOAT", lambda: None)),
             (r'float16(?![\w-])',
              lambda _: self.type_value_size("FLOAT", lambda: None, 2)),
+            (r'float16-32(?![\w-])',
+             lambda _: self.type_value_size_range("FLOAT", lambda: None, 2, 4)),
             (r'float32(?![\w-])',
              lambda _: self.type_value_size("FLOAT", lambda: None, 4)),
+            (r'float32-64(?![\w-])',
+             lambda _: self.type_value_size_range("FLOAT", lambda: None, 4, 8)),
             (r'float64(?![\w-])',
              lambda _: self.type_value_size("FLOAT", lambda: None, 8)),
             (r'\-?\d*\.\d+',
@@ -763,13 +778,13 @@ class CddlParser:
                  "NINT", *map(lambda num: int(num, 0), _range.split("..")))),
             (match_uint + r'\.\.\.' + match_uint,
              lambda _range: self.type_and_range(
-                 "UINT", *map(lambda num: int(num, 0), _range.split("...")), triple_dot=True)),
+                 "UINT", *map(lambda num: int(num, 0), _range.split("...")), inc_end=False)),
             (match_nint + r'\.\.\.' + match_uint,
              lambda _range: self.type_and_range(
-                 "INT", *map(lambda num: int(num, 0), _range.split("...")), triple_dot=True)),
+                 "INT", *map(lambda num: int(num, 0), _range.split("...")), inc_end=False)),
             (match_nint + r'\.\.\.' + match_nint,
              lambda _range: self.type_and_range(
-                 "NINT", *map(lambda num: int(num, 0), _range.split("...")), triple_dot=True)),
+                 "NINT", *map(lambda num: int(num, 0), _range.split("...")), inc_end=False)),
             (match_nint,
              lambda num: self.type_and_value("NINT", lambda: int(num, 0))),
             (match_uint,
@@ -800,6 +815,9 @@ class CddlParser:
              lambda other_str: self.type_and_value("OTHER", lambda: other_str)),
             (r'\.size \(?(?P<item>' + match_int + r'\.\.' + match_int + r')\)?',
              lambda _range: self.set_size_range(*map(lambda num: int(num, 0), _range.split("..")))),
+            (r'\.size \(?(?P<item>' + match_int + r'\.\.\.' + match_int + r')\)?',
+             lambda _range: self.set_size_range(
+                 *map(lambda num: int(num, 0), _range.split("...")), inc_end=False)),
             (r'\.size \(?(?P<item>' + match_uint + r')\)?',
              lambda size: self.set_size(int(size, 0))),
             (r'\.gt \(?(?P<item>' + match_int + r')\)?',
@@ -1794,7 +1812,7 @@ class CodeGenerator(CddlXcoder):
 
         max_size = self.max_size or 8
 
-        if max_size == 4:
+        if max_size <= 4:
             return "float"
         elif max_size == 8:
             return "double"
@@ -2002,17 +2020,23 @@ class CodeGenerator(CddlXcoder):
         if self.type != "FLOAT":
             return ""
 
-        min_size = self.min_size or 4
+        min_size = self.min_size or 2
         max_size = self.max_size or 8
 
-        if max_size == 4:
+        if max_size == 2:
+            return "float16"
+        elif min_size == 2 and max_size == 4:
+            return "float16_32" if self.mode == "decode" else "float32"
+        if min_size == 4 and max_size == 4:
             return "float32"
+        elif min_size == 4 and max_size == 8:
+            return "float32_64" if self.mode == "decode" else "float64"
         elif min_size == 8 and max_size == 8:
             return "float64"
         elif min_size <= 4 and max_size == 8:
             return "float" if self.mode == "decode" else "float64"
         else:
-            raise TypeError("Floats must have 4 or 8 bytes of precision.")
+            raise TypeError("Floats must have 2, 4 or 8 bytes of precision.")
 
     def single_func_prim_prefix(self):
         if self.type == "OTHER":

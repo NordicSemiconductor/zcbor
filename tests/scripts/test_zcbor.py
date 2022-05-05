@@ -659,9 +659,10 @@ class TestFloat(TestCase):
         cddl_res = zcbor.DataTranslator.from_cddl(
             p_prelude.read_text() + '\n' + p_corner_cases.read_text(), 16)
         cddl = cddl_res.my_types['Floats']
-        test_yaml = f"[1234567.89, 0.000123, 3.1415, 2.71828, 5.0, {1/3}]"
+        test_yaml = f"[3.1415, 1234567.89, 0.000123, 3.1415, 2.71828, 5.0, {1/3}]"
 
         decoded = cddl.decode_str_yaml(test_yaml)
+        self.assertEqual(3.1415, decoded.float_16)
         self.assertEqual(1234567.89, decoded.float_32)
         self.assertEqual(0.000123, decoded.float_64)
         self.assertEqual(2, len(decoded.floats))

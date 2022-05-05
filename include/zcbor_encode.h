@@ -119,7 +119,11 @@ bool zcbor_simple_put(zcbor_state_t *state, uint8_t input);
 bool zcbor_bool_put(zcbor_state_t *state, bool input);
 bool zcbor_bool_encode(zcbor_state_t *state, const bool *input);
 
-/** Encode a float */
+/** Encode an IEEE754 float */
+bool zcbor_float16_put(zcbor_state_t *state, float input);
+bool zcbor_float16_encode(zcbor_state_t *state, const float *input);
+bool zcbor_float16_bytes_put(zcbor_state_t *state, uint16_t input);
+bool zcbor_float16_bytes_encode(zcbor_state_t *state, const uint16_t *input);
 bool zcbor_float32_put(zcbor_state_t *state, float input);
 bool zcbor_float32_encode(zcbor_state_t *state, const float *input);
 bool zcbor_float64_put(zcbor_state_t *state, double input);

@@ -1180,27 +1180,31 @@ void test_doublemap(void)
 
 void test_floats(void)
 {
-	uint8_t exp_floats_payload1[] = {LIST(4), 0xFA, 0, 0, 0, 0 /* 0.0 */,
+	uint8_t exp_floats_payload1[] = {LIST(5), 0xF9, 0, 0, /* 0.0 */
+			0xFA, 0, 0, 0, 0 /* 0.0 */,
 			0xFB, 0, 0, 0, 0, 0, 0, 0, 0 /* 0.0 */,
 			0xFB, 0x40, 0x9, 0x21, 0xca, 0xc0, 0x83, 0x12, 0x6f /* 3.1415 */,
 			0xFB, 0x40, 0x5, 0xbf, 0x9, 0x95, 0xaa, 0xf7, 0x90 /* 2.71828 */,
 			END
 	};
-	uint8_t exp_floats_payload2[] = {LIST(4), 0xFA, 0xc7, 0xc0, 0xe6, 0xb7 /* -98765.4321 */,
+	uint8_t exp_floats_payload2[] = {LIST(5), 0xF9, 0x42, 0x48, /* 3.1415 */
+			0xFA, 0xc7, 0xc0, 0xe6, 0xb7 /* -98765.4321 */,
 			0xFB, 0x41, 0x32, 0xd6, 0x87, 0xe3, 0xd7, 0xa, 0x3d /* 1234567.89 */,
 			0xFB, 0x40, 0x9, 0x21, 0xca, 0xc0, 0x83, 0x12, 0x6f /* 3.1415 */,
 			0xFB, 0x40, 0x5, 0xbf, 0x9, 0x95, 0xaa, 0xf7, 0x90 /* 2.71828 */,
 			END
 	};
 
-	uint8_t exp_floats_payload3[] = {LIST(4), 0xFA, 0x49, 0x96, 0xb4, 0x3f /* 1234567.89 */,
+	uint8_t exp_floats_payload3[] = {LIST(5), 0xF9, 0xfc, 0x0, /* -98765.4321 (-infinity) */
+			0xFA, 0x49, 0x96, 0xb4, 0x3f /* 1234567.89 */,
 			0xFB, 0xc0, 0xf8, 0x1c, 0xd6, 0xe9, 0xe1, 0xb0, 0x8a /* -98765.4321 */,
 			0xFB, 0x40, 0x9, 0x21, 0xca, 0xc0, 0x83, 0x12, 0x6f /* 3.1415 */,
 			0xFB, 0x40, 0x5, 0xbf, 0x9, 0x95, 0xaa, 0xf7, 0x90 /* 2.71828 */,
 			END
 	};
 
-	uint8_t exp_floats_payload4[] = {LIST(7), 0xFA, 0x49, 0x96, 0xb4, 0x3f /* 1234567.89 */,
+	uint8_t exp_floats_payload4[] = {LIST(8), 0xF9, 0x42, 0x48, /* 3.1415 */
+			0xFA, 0x49, 0x96, 0xb4, 0x3f /* 1234567.89 */,
 			0xFB, 0xc0, 0xf8, 0x1c, 0xd6, 0xe9, 0xe1, 0xb0, 0x8a /* -98765.4321 */,
 			0xFB, 0x40, 0x9, 0x21, 0xca, 0xc0, 0x83, 0x12, 0x6f /* 3.1415 */,
 			0xFB, 0x40, 0x5, 0xbf, 0x9, 0x95, 0xaa, 0xf7, 0x90 /* 2.71828 */,
@@ -1214,6 +1218,7 @@ void test_floats(void)
 	size_t num_encode;
 	uint8_t output[70];
 
+	input.float_16 = (float)0.0;
 	input.float_32 = (float)0.0;
 	input.float_64 = (double)0.0;
 	input.floats_count = 0;
@@ -1223,6 +1228,7 @@ void test_floats(void)
 	zassert_equal(sizeof(exp_floats_payload1), num_encode, NULL);
 	zassert_mem_equal(exp_floats_payload1, output, num_encode, NULL);
 
+	input.float_16 = (float)3.1415;
 	input.float_32 = (float)-98765.4321;
 	input.float_64 = (double)1234567.89;
 	input.floats_count = 0;
@@ -1231,6 +1237,7 @@ void test_floats(void)
 	zassert_equal(sizeof(exp_floats_payload2), num_encode, NULL);
 	zassert_mem_equal(exp_floats_payload2, output, num_encode, NULL);
 
+	input.float_16 = (float)-98765.4321;
 	input.float_32 = (float)1234567.89;
 	input.float_64 = (double)-98765.4321;
 	input.floats_count = 0;
@@ -1239,6 +1246,7 @@ void test_floats(void)
 	zassert_equal(sizeof(exp_floats_payload3), num_encode, NULL);
 	zassert_mem_equal(exp_floats_payload3, output, num_encode, NULL);
 
+	input.float_16 = (float)3.1415;
 	input.float_32 = (float)1234567.89;
 	input.float_64 = (double)-98765.4321;
 	input.floats_count = 3;

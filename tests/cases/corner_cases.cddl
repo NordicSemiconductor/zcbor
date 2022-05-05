@@ -130,6 +130,7 @@ DoubleMap = {
 }
 
 Floats = [
+	float_16: float16,
 	float_32: float32,
 	float_64: float64,
 	pi: 3.1415,
@@ -141,6 +142,11 @@ Floats = [
 Floats2 = [
 	float_lt_1: float .lt 1,
 	float_ge_min_10000: float .ge -10000,
+]
+
+Floats3 = [
+	float_16_32: float16-32,
+	float_32_64: float32-64,
 ]
 
 Prelude = [
