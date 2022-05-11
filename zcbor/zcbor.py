@@ -2460,6 +2460,13 @@ class CodeRenderer():
         return list(reversed(out_types))
 
     # Render a single decoding function with signature and body.
+    def render_forward_declaration(self, xcoder, mode):
+        return f"""
+static bool {xcoder.func_name}(zcbor_state_t *state, {"" if mode == "decode" else "const "}{
+            xcoder.type_name
+            if struct_ptr_name(mode) in xcoder.body else "void"} *{struct_ptr_name(mode)});
+            """.strip()
+
     def render_function(self, xcoder, mode):
         body = xcoder.body
         return f"""
@@ -2527,6 +2534,7 @@ static bool {xcoder.func_name}(
 #error "The type file was generated with a different default_max_qty than this file"
 #endif
 
+{linesep.join([self.render_forward_declaration(xcoder, mode) for xcoder in self.functions[mode]])}
 {linesep.join([self.render_function(xcoder, mode) for xcoder in self.functions[mode]])}
 
 {linesep.join([self.render_entry_function(xcoder, mode) for xcoder in self.entry_types[mode]])}
