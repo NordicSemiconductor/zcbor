@@ -296,6 +296,16 @@ static inline int zcbor_pop_error(zcbor_state_t *state)
 	return err;
 }
 
+/** Look at current error state without altering it */
+static inline int zcbor_peek_error(const zcbor_state_t *state)
+{
+	if (!state->constant_state) {
+		return ZCBOR_SUCCESS;
+	} else {
+		return state->constant_state->error;
+	}
+}
+
 /** Write the provided error to the error state. */
 static inline void zcbor_error(zcbor_state_t *state, int err)
 {
