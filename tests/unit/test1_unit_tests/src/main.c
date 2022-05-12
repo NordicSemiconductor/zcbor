@@ -225,7 +225,9 @@ void test_stop_on_error(void)
 	zassert_mem_equal(&state_backup, state_e, sizeof(state_backup), NULL);
 	zassert_mem_equal(&constant_state_backup, state_e->constant_state, sizeof(constant_state_backup), NULL);
 
+	zassert_equal(ZCBOR_ERR_NO_PAYLOAD, zcbor_peek_error(state_e), NULL);
 	zassert_equal(ZCBOR_ERR_NO_PAYLOAD, zcbor_pop_error(state_e), NULL);
+	zassert_equal(ZCBOR_SUCCESS, zcbor_peek_error(state_e), NULL);
 
 	/* All succeed since the error has been popped. */
 	zassert_true(zcbor_int32_put(state_e, 1), NULL);
