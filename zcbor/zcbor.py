@@ -844,14 +844,16 @@ class CddlParser:
     # recursive, so it will post_validate all its children + key + cbor.
     def post_validate(self):
         # Validation of this element.
-        if self.type == "MAP":
+        if self.type in ["LIST", "MAP"]:
             none_keys = [child for child in self.value if not child.elem_has_key()]
-            if none_keys:
+            if self.type == "MAP" and none_keys:
                 raise TypeError(
                     "Map entry must have key: " + str(none_keys) + " pointing to "
                     + str(
                         [self.my_types[elem.value] for elem in none_keys
                             if elem.type == "OTHER"]))
+            if self.type == "LIST" and len(none_keys) != len(self.value):
+                raise TypeError("List entry cannot have keys")
         if self.type == "OTHER":
             if self.value not in self.my_types.keys() or not isinstance(
                     self.my_types[self.value], type(self)):
