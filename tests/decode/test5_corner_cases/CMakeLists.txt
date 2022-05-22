@@ -21,6 +21,7 @@ set(py_command
   -t NestedListMap NestedMapListMap
     Numbers
     Numbers2
+    TaggedUnion
     NumberMap
     Strings
     Prim2

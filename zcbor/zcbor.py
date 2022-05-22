@@ -1103,7 +1103,7 @@ class CddlXcoder(CddlParser):
             False
             or self.reduced_key_var_condition()
             or self.cbor_var_condition()
-            or self.tags
+            or (self.tags and self in self.my_types.values())
             or self.type_def_condition()
             or (self.type in ["LIST", "MAP", "GROUP"] and len(self.value) != 0))
 

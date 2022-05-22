@@ -21,6 +21,7 @@ set(py_command
   Numbers
   Numbers2
   NumberMap
+  TaggedUnion
   Strings
   Prim2
   Optional

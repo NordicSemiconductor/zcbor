@@ -87,13 +87,14 @@ void test_numbers(void)
 void test_numbers2(void)
 {
 	const uint8_t exp_payload_numbers2[] = {
-		LIST(6),
+		LIST(7),
 			0x1A, 0x00, 0x12, 0x34, 0x56, // 0x123456
 			0x1B, 0x01, 2, 3, 4, 5, 6, 7, 8, // 0x0102030405060708
 			0x1B, 0x11, 2, 3, 4, 5, 6, 7, 9, // 0x1102030405060709
 			0x00, // 0
 			0x3A, 0x80, 0x00, 0x00, 0x00, // -0x8000_0001
 			0x3A, 0x7F, 0xFF, 0xFF, 0xFF, // -0x8000_0000
+			0xD9, 0x04, 0xD2, 0x03, // #6.1234(3)
 		END
 	};
 	struct Numbers2 numbers2 = {
@@ -101,6 +102,7 @@ void test_numbers2(void)
 		._Numbers2_big_int = 0x0102030405060708,
 		._Numbers2_big_uint = 0x1102030405060709,
 		._Numbers2_big_uint2 = 0,
+		._Numbers2_tagged_int = 3,
 	};
 	uint8_t output[100];
 	size_t out_len;
@@ -110,6 +112,34 @@ void test_numbers2(void)
 	zassert_equal(sizeof(exp_payload_numbers2), out_len, "%d != %d\r\n",
 		sizeof(exp_payload_numbers2), out_len);
 	zassert_mem_equal(exp_payload_numbers2, output, sizeof(exp_payload_numbers2), NULL);
+}
+
+void test_tagged_union(void)
+{
+	size_t encode_len;
+	const uint8_t exp_payload_tagged_union1[] = {0xD9, 0x10, 0xE1, 0xF5};
+	const uint8_t exp_payload_tagged_union2[] = {0xD9, 0x09, 0x29, 0x10};
+
+	uint8_t output[5];
+
+	struct TaggedUnion_ input;
+	input._TaggedUnion_choice = _TaggedUnion_bool;
+	input._TaggedUnion_bool = true;
+
+	zassert_equal(ZCBOR_SUCCESS, cbor_encode_TaggedUnion(output,
+		sizeof(output), &input, &encode_len), "%d\r\n");
+
+	zassert_equal(sizeof(exp_payload_tagged_union1), encode_len, NULL);
+	zassert_mem_equal(exp_payload_tagged_union1, output, sizeof(exp_payload_tagged_union1), NULL);
+
+	input._TaggedUnion_choice = _TaggedUnion_uint;
+	input._TaggedUnion_uint = 0x10;
+
+	zassert_equal(ZCBOR_SUCCESS, cbor_encode_TaggedUnion(output,
+		sizeof(output), &input, &encode_len), NULL);
+
+	zassert_equal(sizeof(exp_payload_tagged_union2), encode_len, NULL);
+	zassert_mem_equal(exp_payload_tagged_union2, output, sizeof(exp_payload_tagged_union2), NULL);
 }
 
 void test_number_map(void)
@@ -1367,6 +1397,7 @@ void test_main(void)
 	ztest_test_suite(cbor_encode_test3,
 			 ztest_unit_test(test_numbers),
 			 ztest_unit_test(test_numbers2),
+			 ztest_unit_test(test_tagged_union),
 			 ztest_unit_test(test_number_map),
 			 ztest_unit_test(test_strings),
 			 ztest_unit_test(test_primitives),

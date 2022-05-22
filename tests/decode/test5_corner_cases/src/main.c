@@ -76,73 +76,91 @@ void test_numbers2(void)
 {
 	size_t decode_len = 0xFFFFFFFF;
 	const uint8_t payload_numbers2[] = {
-		LIST(6),
+		LIST(7),
 			0x1A, 0x00, 0x12, 0x34, 0x56, // 0x123456
 			0x1B, 0x01, 2, 3, 4, 5, 6, 7, 8, // 0x0102030405060708
 			0x1B, 0x11, 2, 3, 4, 5, 6, 7, 9, // 0x1102030405060709
 			0x00, // 0
 			0x3A, 0x80, 0x00, 0x00, 0x00, // -0x8000_0001
 			0x3A, 0x7F, 0xFF, 0xFF, 0xFF, // -0x8000_0000
+			0xD9, 0x04, 0xD2, 0x03, // #6.1234(3)
 		END
 	};
 	const uint8_t payload_numbers2_1[] = {
-		LIST(6),
+		LIST(7),
 			0x1A, 0x00, 0x12, 0x34, 0x56, // 0x123456
 			0x3B, 0x01, 2, 3, 4, 5, 6, 7, 8, // -0x0102030405060709
 			0x1B, 0x11, 2, 3, 4, 5, 6, 7, 9, // 0x1102030405060709
 			0x1B, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, // 0xFFFFFFFFFFFFFFFF
 			0x3A, 0x80, 0x00, 0x00, 0x00, // -0x8000_0001
 			0x3A, 0x7F, 0xFF, 0xFF, 0xFF, // -0x8000_0000
+			0xD9, 0x04, 0xD2, 0x03, // #6.1234(3)
 		END
 	};
 	const uint8_t payload_numbers2_inv2[] = {
-		LIST(6),
+		LIST(7),
 			0x1A, 0x00, 0x12, 0x34, 0x56, // 0x123456
 			0x1B, 0x01, 2, 3, 4, 5, 6, 7, 8, // 0x0102030405060708
 			0x1B, 0x11, 2, 3, 4, 5, 6, 7, 9, // 0x1102030405060709
 			0x1B, 0x11, 2, 3, 4, 5, 6, 7, 9, // 0x1102030405060709
 			0x3A, 0x80, 0x00, 0x00, 0x01, // -0x8000_0002 INV
 			0x3A, 0x7F, 0xFF, 0xFF, 0xFF, // -0x8000_0000
+			0xD9, 0x04, 0xD2, 0x03, // #6.1234(3)
 		END
 	};
 	const uint8_t payload_numbers2_inv3[] = {
-		LIST(6),
+		LIST(7),
 			0x1A, 0x00, 0x12, 0x34, 0x56, // 0x123456
 			0x1B, 0x01, 2, 3, 4, 5, 6, 7, 8, // 0x0102030405060708
 			0x1B, 0x11, 2, 3, 4, 5, 6, 7, 9, // 0x1102030405060709
 			0x1B, 0x11, 2, 3, 4, 5, 6, 7, 9, // 0x1102030405060709
 			0x3A, 0x7F, 0xFF, 0xFF, 0xFF, // -0x8000_0000 INV
 			0x3A, 0x7F, 0xFF, 0xFF, 0xFF, // -0x8000_0000
+			0xD9, 0x04, 0xD2, 0x03, // #6.1234(3)
 		END
 	};
 	const uint8_t payload_numbers2_inv4[] = {
-		LIST(6),
+		LIST(7),
 			0x1A, 0x00, 0x12, 0x34, 0x56, // 0x123456
 			0x1B, 0x01, 2, 3, 4, 5, 6, 7, 8, // 0x0102030405060708
 			0x1A, 0x00, 0x12, 0x34, 0x56, // 0x123456 INV
 			0x1B, 0x11, 2, 3, 4, 5, 6, 7, 9, // 0x1102030405060709
 			0x3A, 0x80, 0x00, 0x00, 0x00, // -0x8000_0001
 			0x3A, 0x7F, 0xFF, 0xFF, 0xFF, // -0x8000_0000
+			0xD9, 0x04, 0xD2, 0x03, // #6.1234(3)
 		END
 	};
 	const uint8_t payload_numbers2_inv5[] = {
-		LIST(6),
+		LIST(7),
 			0x1A, 0x00, 0x12, 0x34, 0x56, // 0x123456
 			0x1B, 0x01, 2, 3, 4, 5, 6, 7, 8, // 0x0102030405060708
 			0x1B, 0x11, 2, 3, 4, 5, 6, 7, 9, // 0x1102030405060709
 			0x1B, 0x11, 2, 3, 4, 5, 6, 7, 9, // 0x1102030405060709
 			0x3A, 0x80, 0x00, 0x00, 0x00, // -0x8000_0001
 			0x3A, 0x80, 0x00, 0x00, 0x00, // -0x8000_0001 INV
+			0xD9, 0x04, 0xD2, 0x03, // #6.1234(3)
 		END
 	};
 	const uint8_t payload_numbers2_inv6[] = {
-		LIST(6),
+		LIST(7),
 			0x1A, 0x00, 0x12, 0x34, 0x56, // 0x123456
 			0x3B, 0x01, 2, 3, 4, 5, 6, 7, 8, // -0x0102030405060709
 			0x1B, 0x11, 2, 3, 4, 5, 6, 7, 9, // 0x1102030405060709
 			0x20, // -1 INV
 			0x3A, 0x80, 0x00, 0x00, 0x00, // -0x8000_0001
 			0x3A, 0x7F, 0xFF, 0xFF, 0xFF, // -0x8000_0000
+			0xD9, 0x04, 0xD2, 0x03, // #6.1234(3)
+		END
+	};
+	const uint8_t payload_numbers2_inv7[] = {
+		LIST(7),
+			0x1A, 0x00, 0x12, 0x34, 0x56, // 0x123456
+			0x1B, 0x01, 2, 3, 4, 5, 6, 7, 8, // 0x0102030405060708
+			0x1B, 0x11, 2, 3, 4, 5, 6, 7, 9, // 0x1102030405060709
+			0x00, // 0
+			0x3A, 0x80, 0x00, 0x00, 0x00, // -0x8000_0001
+			0x3A, 0x7F, 0xFF, 0xFF, 0xFF, // -0x8000_0000
+			0xD9, 0x04, 0xD3, 0x03, // #6.1235(3) INV
 		END
 	};
 	struct Numbers2 numbers2;
@@ -154,6 +172,7 @@ void test_numbers2(void)
 	zassert_equal(0x0102030405060708, numbers2._Numbers2_big_int, NULL);
 	zassert_equal(0x1102030405060709, numbers2._Numbers2_big_uint, NULL);
 	zassert_equal(0, numbers2._Numbers2_big_uint2, NULL);
+	zassert_equal(3, numbers2._Numbers2_tagged_int, NULL);
 
 	zassert_equal(ZCBOR_SUCCESS, cbor_decode_Numbers2(payload_numbers2_1,
 		sizeof(payload_numbers2_1), &numbers2, &decode_len), NULL);
@@ -162,6 +181,7 @@ void test_numbers2(void)
 	zassert_equal(-0x0102030405060709, numbers2._Numbers2_big_int, NULL);
 	zassert_equal(0x1102030405060709, numbers2._Numbers2_big_uint, NULL);
 	zassert_equal(0xFFFFFFFFFFFFFFFF, numbers2._Numbers2_big_uint2, NULL);
+	zassert_equal(3, numbers2._Numbers2_tagged_int, NULL);
 
 	int ret = cbor_decode_Numbers2(payload_numbers2_inv2,
 		sizeof(payload_numbers2_inv2), &numbers2, &decode_len);
@@ -179,6 +199,39 @@ void test_numbers2(void)
 
 	zassert_equal(ZCBOR_ERR_WRONG_TYPE, cbor_decode_Numbers2(payload_numbers2_inv6,
 		sizeof(payload_numbers2_inv6), &numbers2, &decode_len), NULL);
+
+	zassert_equal(ZCBOR_ERR_WRONG_VALUE, cbor_decode_Numbers2(payload_numbers2_inv7,
+		sizeof(payload_numbers2_inv7), &numbers2, &decode_len), NULL);
+}
+
+
+/** Test that when unions contain tagged elements (with #6.x), without
+ *  indirection, the tags are enforced correctly.
+*/
+void test_tagged_union(void)
+{
+	size_t decode_len;
+	const uint8_t payload_tagged_union1[] = {0xD9, 0x10, 0xE1, 0xF5};
+	const uint8_t payload_tagged_union2[] = {0xD9, 0x09, 0x29, 0x10};
+	const uint8_t payload_tagged_union3_inv[] = {0xD9, 0x10, 0xE1, 0x10};
+
+	struct TaggedUnion_ result;
+
+	zassert_equal(ZCBOR_SUCCESS, cbor_decode_TaggedUnion(payload_tagged_union1,
+		sizeof(payload_tagged_union1), &result, &decode_len), "%d\r\n");
+
+	zassert_equal(sizeof(payload_tagged_union1), decode_len, NULL);
+	zassert_equal(_TaggedUnion_bool, result._TaggedUnion_choice, NULL);
+	zassert_true(result._TaggedUnion_bool, NULL);
+
+	zassert_equal(ZCBOR_SUCCESS, cbor_decode_TaggedUnion(payload_tagged_union2,
+		sizeof(payload_tagged_union2), &result, &decode_len), NULL);
+
+	zassert_equal(_TaggedUnion_uint, result._TaggedUnion_choice, NULL);
+	zassert_equal(0x10, result._TaggedUnion_uint, NULL);
+
+	zassert_equal(ZCBOR_ERR_WRONG_TYPE, cbor_decode_TaggedUnion(payload_tagged_union3_inv,
+		sizeof(payload_tagged_union3_inv), &result, &decode_len), NULL);
 }
 
 void test_number_map(void)
@@ -1681,6 +1734,7 @@ void test_main(void)
 	ztest_test_suite(cbor_decode_test5,
 			 ztest_unit_test(test_numbers),
 			 ztest_unit_test(test_numbers2),
+			 ztest_unit_test(test_tagged_union),
 			 ztest_unit_test(test_number_map),
 			 ztest_unit_test(test_strings),
 			 ztest_unit_test(test_primitives),

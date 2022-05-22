@@ -17,6 +17,8 @@ Numbers = [
 	tagged_int: #6.65535(int),
 ]
 
+MyInt = int
+
 Numbers2 = [
 	threebytes: uint .size 4,
 	big_int: int .size 8,
@@ -24,7 +26,10 @@ Numbers2 = [
 	big_uint2: uint .size 8,
 	big_nint: -0x80000001,
 	big_nint2: -0x80000000,
+	tagged_int: #6.1234(MyInt),
 ]
+
+TaggedUnion = #6.4321(bool) // #6.2345(uint)
 
 ; Using .size and .cbor together with maps.
 NumberMap = {
