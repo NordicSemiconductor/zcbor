@@ -34,6 +34,21 @@ PRELUDE_path = Path(P_SCRIPT, "cddl", "prelude.cddl")
 
 __version__ = VERSION_path.read_text().strip()
 
+UINT8_MAX = 0xFF
+UINT16_MAX = 0xFFFF
+UINT32_MAX = 0xFFFFFFFF
+UINT64_MAX = 0xFFFFFFFFFFFFFFFF
+
+INT8_MAX = 0x7F
+INT16_MAX = 0x7FFF
+INT32_MAX = 0x7FFFFFFF
+INT64_MAX = 0x7FFFFFFFFFFFFFFF
+
+INT8_MIN = -0x80
+INT16_MIN = -0x8000
+INT32_MIN = -0x80000000
+INT64_MIN = -0x8000000000000000
+
 
 def is_relative_to(path1, path2):
     try:
@@ -68,13 +83,13 @@ else:
 def sizeof(num):
     if num <= 23:
         return 0
-    elif num < 0x100:
+    elif num <= UINT8_MAX:
         return 1
-    elif num < 0x10000:
+    elif num <= UINT16_MAX:
         return 2
-    elif num < 0x100000000:
+    elif num <= UINT32_MAX:
         return 4
-    elif num < 0x10000000000000000:
+    elif num <= UINT64_MAX:
         return 8
     else:
         raise ValueError("Number too large (more than 64 bits).")
@@ -1159,7 +1174,7 @@ class CddlXcoder(CddlParser):
     def all_children_int_disambiguated(self):
         values = set(child.int_val() for child in self.value)
         retval = (len(values) == len(self.value)) and None not in values \
-            and max(values) < 0x80000000 and min(values) >= -0x80000000
+            and max(values) <= INT32_MAX and min(values) >= INT32_MIN
         return retval
 
     # Name of the "present" variable for this element.
@@ -1752,10 +1767,10 @@ class CodeGenerator(CddlXcoder):
 
                 for v in [self.value or 0, self.max_value or 0, self.min_value or 0]:
                     if self.type == "UINT":
-                        if (v > 0xFFFFFFFF):
+                        if (v > UINT32_MAX):
                             bit_size = 64
                     else:
-                        if (v > 0x7FFFFFFF) or (v < -0x80000000):
+                        if (v > INT32_MAX) or (v < INT32_MIN):
                             bit_size = 64
         return bit_size
 
@@ -2251,10 +2266,10 @@ class CodeGenerator(CddlXcoder):
     # Appends ULL or LL if a value exceeding 32-bits is used
     def value_suffix(self, value):
         if self.type == "INT" or self.type == "NINT":
-            if value > 2147483648 or value < -2147483647:
+            if value > INT32_MAX or value <= INT32_MIN:
                 return "LL"
         elif self.type == "UINT":
-            if value > 4294967295:
+            if value > UINT32_MAX:
                 return "ULL"
 
         return ""
