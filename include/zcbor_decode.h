@@ -34,6 +34,7 @@ bool zcbor_int32_decode(zcbor_state_t *state, int32_t *result);
 bool zcbor_int64_decode(zcbor_state_t *state, int64_t *result);
 bool zcbor_uint32_decode(zcbor_state_t *state, uint32_t *result);
 bool zcbor_uint64_decode(zcbor_state_t *state, uint64_t *result);
+bool zcbor_size_decode(zcbor_state_t *state, size_t *result);
 
 /** The following applies to all _expect() functions that don't have docs.
  *
@@ -49,6 +50,7 @@ bool zcbor_int32_expect(zcbor_state_t *state, int32_t result);
 bool zcbor_int64_expect(zcbor_state_t *state, int64_t result);
 bool zcbor_uint32_expect(zcbor_state_t *state, uint32_t result);
 bool zcbor_uint64_expect(zcbor_state_t *state, uint64_t result);
+bool zcbor_size_expect(zcbor_state_t *state, size_t result);
 
 /** Consume and expect a pint with a certain value, within a union.
  *
