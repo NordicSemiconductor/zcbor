@@ -267,6 +267,14 @@ bool zcbor_uint64_decode(zcbor_state_t *state, uint64_t *result)
 }
 
 
+#ifdef ZCBOR_SUPPORTS_SIZE_T
+bool zcbor_size_decode(zcbor_state_t *state, size_t *result)
+{
+	return value_extract(state, result, sizeof(size_t));
+}
+#endif
+
+
 bool zcbor_uint32_expect(zcbor_state_t *state, uint32_t result)
 {
 	return zcbor_uint64_expect(state, result);
@@ -286,6 +294,14 @@ bool zcbor_uint64_expect(zcbor_state_t *state, uint64_t result)
 	}
 	return true;
 }
+
+
+#ifdef ZCBOR_SUPPORTS_SIZE_T
+bool zcbor_size_expect(zcbor_state_t *state, size_t result)
+{
+	return zcbor_uint64_expect(state, result);
+}
+#endif
 
 
 static bool str_start_decode(zcbor_state_t *state,

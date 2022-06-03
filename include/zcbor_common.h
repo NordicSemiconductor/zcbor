@@ -74,6 +74,14 @@ do { \
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 #endif
 
+#if SIZE_MAX <= UINT64_MAX
+/** The ZCBOR_SUPPORTS_SIZE_T will be defined if processing of size_t type variables directly
+ * with zcbor_size_ functions is supported.
+**/
+#define ZCBOR_SUPPORTS_SIZE_T
+#else
+#warning "zcbor: Unsupported size_t encoding size"
+#endif
 
 struct zcbor_state_constant;
 

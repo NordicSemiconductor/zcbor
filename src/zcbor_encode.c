@@ -233,6 +233,19 @@ bool zcbor_uint64_put(zcbor_state_t *state, uint64_t input)
 }
 
 
+#ifdef ZCBOR_SUPPORTS_SIZE_T
+bool zcbor_size_put(zcbor_state_t *state, size_t input)
+{
+	return zcbor_uint64_put(state, input);
+}
+
+
+bool zcbor_size_encode(zcbor_state_t *state, const size_t *input)
+{
+	return zcbor_size_put(state, *input);
+}
+#endif
+
 static bool str_start_encode(zcbor_state_t *state,
 		const struct zcbor_string *input, zcbor_major_type_t major_type)
 {

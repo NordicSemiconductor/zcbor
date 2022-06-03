@@ -14,6 +14,7 @@ Any new bugs, requests, or missing features should be reported as [Github issues
  * Make it easier to initialize zcbor_state_t objects: Allow single states as input to zcbor_new_state() and remove return value.
  * Make zcbor_list/map_end_encode() more robust to wrong max_num arguments (when ZCBOR_CANONICAL is enabled).
  * Add zcbor_peek_error() for reading the error value without clearing it.
+ * Add zcbor_size_put/encode/decode/expect functions, to allow directly encoding and decoding size_t type variables.
 
 ### Tests
  * Test on multiple Python versions

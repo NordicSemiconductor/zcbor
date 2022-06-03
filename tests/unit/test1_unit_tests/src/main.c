@@ -95,6 +95,44 @@ void test_uint64(void)
 	zassert_true(zcbor_uint64_expect(&state_d, UINT64_MAX), NULL);
 }
 
+void test_size(void)
+{
+	uint8_t payload[100] = {0};
+	size_t read;
+
+	zcbor_state_t state_e;
+	zcbor_new_state(&state_e, 1, payload, sizeof(payload), 0);
+	zcbor_state_t state_d;
+	zcbor_new_state(&state_d, 1, payload, sizeof(payload), 10);
+
+	zassert_true(zcbor_size_put(&state_e, 5), NULL);
+	zassert_false(zcbor_size_expect(&state_d, 4), NULL);
+	zassert_false(zcbor_size_expect(&state_d, 6), NULL);
+	zassert_false(zcbor_size_expect(&state_d, -5), NULL);
+	zassert_false(zcbor_size_expect(&state_d, -6), NULL);
+	zassert_true(zcbor_size_expect(&state_d, 5), NULL);
+
+	zassert_true(zcbor_uint32_put(&state_e, 5), NULL);
+	zassert_true(zcbor_size_expect(&state_d, 5), NULL);
+
+	zassert_true(zcbor_uint64_put(&state_e, 5), NULL);
+	zassert_true(zcbor_size_expect(&state_d, 5), NULL);
+
+	zassert_true(zcbor_uint32_put(&state_e, UINT32_MAX), NULL);
+	zassert_true(zcbor_size_decode(&state_d, &read), NULL);
+	zassert_equal(read, UINT32_MAX, NULL);
+
+#if SIZE_MAX == UINT64_MAX
+	zassert_true(zcbor_uint64_put(&state_e, UINT64_MAX), NULL);
+	zassert_true(zcbor_size_decode(&state_d, &read), NULL);
+	zassert_equal(read, UINT64_MAX, NULL);
+#endif
+
+#if SIZE_MAX == UINT32_MAX
+	zassert_true(zcbor_uint64_put(&state_e, UINT64_MAX), NULL);
+	zassert_false(zcbor_size_decode(&state_d, &read), NULL);
+#endif
+}
 
 #if SIZE_MAX == UINT64_MAX
 /* Only runs on 64-bit builds. */
@@ -643,6 +681,7 @@ void test_main(void)
 	ztest_test_suite(zcbor_unit_tests,
 			 ztest_unit_test(test_int64),
 			 ztest_unit_test(test_uint64),
+			 ztest_unit_test(test_size),
 			 ztest_unit_test(test_size64),
 			 ztest_unit_test(test_string_macros),
 			 ztest_unit_test(test_stop_on_error),
