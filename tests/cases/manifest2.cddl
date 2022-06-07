@@ -202,7 +202,7 @@ SUIT_Parameters //= (suit-parameter-image-size => uint)
 SUIT_Parameters //= (suit-parameter-uri-list => bstr .cbor SUIT_Component_URI_List)
 SUIT_Parameters //= (suit-parameter-custom => int/bool/tstr/bstr)
 
-SUIT_Component_URI = [priority: int, uri: tstr]
+SUIT_Component_URI = [priority: int, URI: tstr]
 SUIT_Component_URI_List = [ + SUIT_Component_URI ]
 SUIT_Priority_Parameter = [priority: int, parameters: { + SUIT_Parameters }]
 SUIT_Priority_Parameter_List = [ + SUIT_Priority_Parameter ]

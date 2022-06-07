@@ -879,14 +879,20 @@ class CddlParser:
         # Validation of this element.
         if self.type in ["LIST", "MAP"]:
             none_keys = [child for child in self.value if not child.elem_has_key()]
+            child_keys = [child for child in self.value if child not in none_keys]
             if self.type == "MAP" and none_keys:
                 raise TypeError(
-                    "Map entry must have key: " + str(none_keys) + " pointing to "
+                    "Map member(s) must have key: " + str(none_keys) + " pointing to "
                     + str(
                         [self.my_types[elem.value] for elem in none_keys
                             if elem.type == "OTHER"]))
-            if self.type == "LIST" and len(none_keys) != len(self.value):
-                raise TypeError("List entry cannot have keys")
+            if self.type == "LIST" and child_keys:
+                raise TypeError(
+                    str(self) + linesep
+                    + "List member(s) cannot have key: " + str(child_keys) + " pointing to "
+                    + str(
+                        [self.my_types[elem.value] for elem in child_keys
+                            if elem.type == "OTHER"]))
         if self.type == "OTHER":
             if self.value not in self.my_types.keys() or not isinstance(
                     self.my_types[self.value], type(self)):
