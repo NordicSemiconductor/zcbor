@@ -189,3 +189,9 @@ MapLength = {
 	"m" : (mac_addr:mac_address),
 	?"e" : (end_device_array:[* uuid]),
 }
+
+UnionInt = [
+	(5, "This is a five") //
+	(1000, bstr) //
+	(-100000, null, number)
+]

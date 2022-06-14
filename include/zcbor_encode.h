@@ -38,6 +38,7 @@ bool zcbor_size_put(zcbor_state_t *state, size_t input);
  *
  *  Can be used for bulk encoding with @ref zcbor_multi_encode.
  */
+bool zcbor_int_encode(zcbor_state_t *state, const void *input_int, size_t int_size);
 bool zcbor_int32_encode(zcbor_state_t *state, const int32_t *input);
 bool zcbor_int64_encode(zcbor_state_t *state, const int64_t *input);
 bool zcbor_uint32_encode(zcbor_state_t *state, const uint32_t *input);

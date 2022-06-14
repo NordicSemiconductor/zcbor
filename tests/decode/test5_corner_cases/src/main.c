@@ -1734,6 +1734,60 @@ void test_map_length(void)
 }
 
 
+void test_union_int(void)
+{
+	uint8_t union_int_payload1[] = {LIST(2),
+		0x05, 0x6E, 'T', 'h', 'i', 's', ' ', 'i', 's', ' ', 'a', ' ', 'f', 'i', 'v', 'e',
+		END
+	};
+	uint8_t union_int_payload2[] = {LIST(2),
+		0x19, 0x03, 0xE8, 0x50, 'T', 'h', 'i', 's', ' ', 'i', 's', ' ', 't', 'h', 'o', 'u', 's', 'a', 'n', 'd',
+		END
+	};
+	uint8_t union_int_payload3[] = {LIST(3),
+		0x3A, 0x00, 0x01, 0x86, 0x9F, 0xF6, 0x01,
+		END
+	};
+	uint8_t union_int_payload4_inv[] = {LIST(3),
+		0x3A, 0x00, 0x01, 0x86, 0x9F, 0xF7, 0x01,
+		END
+	};
+	uint8_t union_int_payload5_inv[] = {LIST(2),
+		0x24, 0x6E, 'T', 'h', 'i', 's', ' ', 'i', 's', ' ', 'a', ' ', 'f', 'i', 'v', 'e',
+		END
+	};
+	struct UnionInt result;
+	size_t num_decode;
+
+	zassert_equal(ZCBOR_SUCCESS, cbor_decode_UnionInt(union_int_payload1,
+		sizeof(union_int_payload1), &result, &num_decode), NULL);
+	zassert_equal(sizeof(union_int_payload1), num_decode, NULL);
+	zassert_equal(result.union_choice, _union__uint5, NULL);
+
+	zassert_equal(ZCBOR_SUCCESS, cbor_decode_UnionInt(union_int_payload2,
+		sizeof(union_int_payload2), &result, &num_decode), NULL);
+	zassert_equal(sizeof(union_int_payload2), num_decode, NULL);
+	zassert_equal(result.union_choice, _union__uint1000, NULL);
+	zassert_equal(result.bstr.len, 16, NULL);
+	zassert_mem_equal(result.bstr.value, "This is thousand", 16, NULL);
+
+	zassert_equal(ZCBOR_SUCCESS, cbor_decode_UnionInt(union_int_payload3,
+		sizeof(union_int_payload3), &result, &num_decode), NULL);
+	zassert_equal(sizeof(union_int_payload3), num_decode, NULL);
+	zassert_equal(result.union_choice, _union__nint, NULL);
+	zassert_equal(result._number.number_choice, _number_int, NULL);
+	zassert_equal(result._number._int, 1, NULL);
+
+	int err = cbor_decode_UnionInt(union_int_payload4_inv,
+		sizeof(union_int_payload4_inv), &result, &num_decode);
+	zassert_equal(ZCBOR_ERR_WRONG_VALUE, err, "%d\r\n", err);
+
+	err = cbor_decode_UnionInt(union_int_payload5_inv,
+		sizeof(union_int_payload5_inv), &result, &num_decode);
+	zassert_equal(ZCBOR_ERR_WRONG_VALUE, err, "%d\r\n", err);
+}
+
+
 void test_main(void)
 {
 	ztest_test_suite(cbor_decode_test5,
@@ -1761,7 +1815,8 @@ void test_main(void)
 			 ztest_unit_test(test_floats2),
 			 ztest_unit_test(test_prelude),
 			 ztest_unit_test(test_cbor_bstr),
-			 ztest_unit_test(test_map_length)
+			 ztest_unit_test(test_map_length),
+			 ztest_unit_test(test_union_int)
 	);
 	ztest_run_test_suite(cbor_decode_test5);
 }

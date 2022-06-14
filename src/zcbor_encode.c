@@ -141,26 +141,35 @@ static bool value_encode(zcbor_state_t *state, zcbor_major_type_t major_type,
 }
 
 
-bool zcbor_int32_put(zcbor_state_t *state, int32_t input)
-{
-	return zcbor_int64_put(state, input);
-}
-
-
-bool zcbor_int64_put(zcbor_state_t *state, int64_t input)
+bool zcbor_int_encode(zcbor_state_t *state, const void *input_int, size_t int_size)
 {
 	zcbor_major_type_t major_type;
+	uint8_t input_buf[8];
+	const uint8_t *input_uint8 = input_int;
+	const int8_t *input_int8 = input_int;
+	const uint8_t *input = input_int;
 
-	if (input < 0) {
-		major_type = ZCBOR_MAJOR_TYPE_NINT;
-		/* Convert from CBOR's representation. */
-		input = -1 - input;
-	} else {
-		major_type = ZCBOR_MAJOR_TYPE_PINT;
-		input = input;
+	if (int_size > sizeof(int64_t)) {
+		ZCBOR_ERR(ZCBOR_ERR_INT_SIZE);
 	}
 
-	if (!value_encode(state, major_type, &input, 8)) {
+#ifdef CONFIG_BIG_ENDIAN
+	if (input_int8[0] < 0) {
+#else
+	if (input_int8[int_size - 1] < 0) {
+#endif
+		major_type = ZCBOR_MAJOR_TYPE_NINT;
+
+		/* Convert to CBOR's representation by flipping all bits. */
+		for (int i = 0; i < int_size; i++) {
+			input_buf[i] = (uint8_t)~input_uint8[i];
+		}
+		input = input_buf;
+	} else {
+		major_type = ZCBOR_MAJOR_TYPE_PINT;
+	}
+
+	if (!value_encode(state, major_type, input, int_size)) {
 		ZCBOR_FAIL();
 	}
 
@@ -170,7 +179,13 @@ bool zcbor_int64_put(zcbor_state_t *state, int64_t input)
 
 bool zcbor_int32_encode(zcbor_state_t *state, const int32_t *input)
 {
-	return zcbor_int32_put(state, *input);
+	return zcbor_int_encode(state, input, sizeof(*input));
+}
+
+
+bool zcbor_int64_encode(zcbor_state_t *state, const int64_t *input)
+{
+	return zcbor_int_encode(state, input, sizeof(*input));
 }
 
 
@@ -193,12 +208,6 @@ bool zcbor_uint32_encode(zcbor_state_t *state, const uint32_t *input)
 }
 
 
-bool zcbor_int64_encode(zcbor_state_t *state, const int64_t *input)
-{
-	return zcbor_int64_put(state, *input);
-}
-
-
 static bool uint64_encode(zcbor_state_t *state, const uint64_t *input,
 		zcbor_major_type_t major_type)
 {
@@ -215,6 +224,18 @@ bool zcbor_uint64_encode(zcbor_state_t *state, const uint64_t *input)
 		ZCBOR_FAIL();
 	}
 	return true;
+}
+
+
+bool zcbor_int32_put(zcbor_state_t *state, int32_t input)
+{
+	return zcbor_int_encode(state, &input, sizeof(input));
+}
+
+
+bool zcbor_int64_put(zcbor_state_t *state, int64_t input)
+{
+	return zcbor_int_encode(state, &input, sizeof(input));
 }
 
 

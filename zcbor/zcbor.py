@@ -2219,9 +2219,10 @@ class CodeGenerator(CddlXcoder):
                             child.full_xcode(union_int="DROP"))
                         for child in self.value])
                 bit_size = self.value[0].bit_size()
-                func = f"zcbor_int32_{self.mode}"
+                func = f"zcbor_int_{self.mode}"
                 return "((%s) && (%s))" % (
-                    f"({func}(state, (int32_t *)&{self.choice_var_access()}))",
+                    f"({func}(state, &{self.choice_var_access()}, "
+                    + f"sizeof({self.choice_var_access()})))",
                     "((" + f"{newl_ind}|| ".join(lines)
                          + ") || (zcbor_error(state, ZCBOR_ERR_WRONG_VALUE), false))",)
             child_values = ["(%s && ((%s = %s) || 1))" %
@@ -2580,9 +2581,6 @@ static bool {xcoder.func_name}(
 #if DEFAULT_MAX_QTY != {self.default_max_qty}
 #error "The type file was generated with a different default_max_qty than this file"
 #endif
-
-_Static_assert((sizeof(enum {{zcbor_dummy_enum_value__,}}) == sizeof(int32_t)),
-	"The generated code requires enums to be 32 bits wide.");
 
 {linesep.join([self.render_forward_declaration(xcoder, mode) for xcoder in self.functions[mode]])}
 
