@@ -1,3 +1,28 @@
+# zcbor v. 0.5.99
+
+Any new bugs, requests, or missing features should be reported as [Github issues](https://github.com/NordicSemiconductor/zcbor/issues).
+
+## Improvements:
+
+## Bugfixes:
+
+## Unsupported CDDL features
+Not all features outlined in the [CDDL spec](https://datatracker.ietf.org/doc/html/rfc8610) are supported by zcbor.
+The following is a list of limitiations and missing features:
+
+ * Map elements in data must appear in the same order as they appear in the CDDL.
+ * C API doesn't support searching through a map.
+ * 16-bit floating point numbers (float16).
+ * Using `&()` to turn groups into choices (unions). `&()` is supported when used with `.bits`.
+ * Representation Types (`#x.y`), except for tags (`#6.y(foo)`) which are supported.
+ * Unwrapping (`~`)
+ * The control operator `.regexp`.
+ * The control operator `.ne`.
+ * The control operator `.default`.
+ * Generics (`foo<a, b>`).
+ * Most of the "Extended Diagnostic Notation" is unsupported.
+
+
 # zcbor v. 0.5.1
 
 Any new bugs, requests, or missing features should be reported as [Github issues](https://github.com/NordicSemiconductor/zcbor/issues).
