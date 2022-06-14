@@ -75,6 +75,7 @@ runs:
         export ZEPHYR_BASE=$(pwd)/../zephyr-clone
         export ZEPHYR_TOOLCHAIN_VARIANT=host
         $ZEPHYR_BASE/scripts/twister -i -T . -W --platform native_posix --platform native_posix_64 ${{ inputs.tags }}
+        echo $?
 
     - name: Run tests with asserts
       if: ${{ inputs.asserts == 'with' || inputs.asserts == 'both' }}
@@ -84,3 +85,4 @@ runs:
         export ZEPHYR_BASE=$(pwd)/../zephyr-clone
         export ZEPHYR_TOOLCHAIN_VARIANT=host
         $ZEPHYR_BASE/scripts/twister -i -T . -W --platform native_posix --platform native_posix_64 ${{ inputs.tags }} -x VERBOSE=ON -x ASSERTS=ON
+        echo $?
