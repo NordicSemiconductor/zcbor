@@ -155,28 +155,12 @@ static bool value_extract(zcbor_state_t *state,
 }
 
 
-bool zcbor_int32_decode(zcbor_state_t *state, int32_t *result)
-{
-	int64_t result64;
-
-	if (zcbor_int64_decode(state, &result64)) {
-		if (result64 > INT32_MAX) {
-			ERR_RESTORE(ZCBOR_ERR_INT_SIZE);
-		}
-		*result = (int32_t)result64;
-		return true;
-	} else {
-		ZCBOR_FAIL();
-	}
-}
-
-
-bool zcbor_int64_decode(zcbor_state_t *state, int64_t *result)
+bool zcbor_int_decode(zcbor_state_t *state, void *result_int, size_t int_size)
 {
 	INITIAL_CHECKS();
 	uint8_t major_type = MAJOR_TYPE(*state->payload);
-	uint64_t uint_result;
-	int64_t int_result;
+	uint8_t *result_uint8 = (uint8_t *)result_int;
+	int8_t *result_int8 = (int8_t *)result_int;
 
 	if (major_type != ZCBOR_MAJOR_TYPE_PINT
 		&& major_type != ZCBOR_MAJOR_TYPE_NINT) {
@@ -184,28 +168,39 @@ bool zcbor_int64_decode(zcbor_state_t *state, int64_t *result)
 		ZCBOR_ERR(ZCBOR_ERR_WRONG_TYPE);
 	}
 
-	if (!value_extract(state, &uint_result, sizeof(uint_result))) {
+	if (!value_extract(state, result_int, int_size)) {
 		ZCBOR_FAIL();
 	}
 
-	zcbor_print("uintval: %" PRIu64 "\r\n", uint_result);
-
-	int_result = (int64_t)uint_result;
-
-	if (int_result < 0) {
+#ifdef CONFIG_BIG_ENDIAN
+	if (result_int8[0] < 0) {
+#else
+	if (result_int8[int_size - 1] < 0) {
+#endif
 		/* Value is too large to fit in a signed integer. */
 		ERR_RESTORE(ZCBOR_ERR_INT_SIZE);
 	}
 
 	if (major_type == ZCBOR_MAJOR_TYPE_NINT) {
-		/* Convert from CBOR's representation. */
-		*result = -1 - int_result;
-	} else {
-		*result = int_result;
+		/* Convert from CBOR's representation by flipping all bits. */
+		for (int i = 0; i < int_size; i++) {
+			result_uint8[i] = (uint8_t)~result_uint8[i];
+		}
 	}
 
-	zcbor_print("val: %" PRIi64 "\r\n", *result);
 	return true;
+}
+
+
+bool zcbor_int32_decode(zcbor_state_t *state, int32_t *result)
+{
+	return zcbor_int_decode(state, result, sizeof(*result));
+}
+
+
+bool zcbor_int64_decode(zcbor_state_t *state, int64_t *result)
+{
+	return zcbor_int_decode(state, result, sizeof(*result));
 }
 
 

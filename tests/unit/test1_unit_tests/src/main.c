@@ -676,6 +676,126 @@ void test_canonical_list(void)
 }
 
 
+void test_int(void)
+{
+	uint8_t payload1[100];
+	ZCBOR_STATE_D(state_d, 1, payload1, sizeof(payload1), 16);
+	ZCBOR_STATE_E(state_e, 1, payload1, sizeof(payload1), 0);
+
+	/* Encode all numbers */
+	/* Arbitrary positive numbers in each size */
+	int8_t int8 = 12;
+	int16_t int16 = 1234;
+	int32_t int32 = 12345678;
+	int64_t int64 = 1234567812345678;
+
+	zassert_true(zcbor_int_encode(state_e, &int8, sizeof(int8)), NULL);
+	zassert_true(zcbor_int_encode(state_e, &int16, sizeof(int16)), NULL);
+	zassert_true(zcbor_int_encode(state_e, &int32, sizeof(int32)), NULL);
+	zassert_true(zcbor_int_encode(state_e, &int64, sizeof(int64)), NULL);
+
+	/* Arbitrary negative numbers in each size */
+	int8 = -12;
+	int16 = -1234;
+	int32 = -12345678;
+	int64 = -1234567812345678;
+
+	zassert_true(zcbor_int_encode(state_e, &int8, sizeof(int8)), NULL);
+	zassert_true(zcbor_int_encode(state_e, &int16, sizeof(int16)), NULL);
+	zassert_true(zcbor_int_encode(state_e, &int32, sizeof(int32)), NULL);
+	zassert_true(zcbor_int_encode(state_e, &int64, sizeof(int64)), NULL);
+
+	/* Check against overflow (negative). */
+	zassert_true(zcbor_int32_put(state_e, INT8_MIN - 1), NULL);
+	zassert_true(zcbor_int32_put(state_e, INT16_MIN - 1), NULL);
+	zassert_true(zcbor_int64_put(state_e, (int64_t)INT32_MIN - 1), NULL);
+	/* Check absolute minimum number. */
+	zassert_true(zcbor_int64_put(state_e, INT64_MIN), NULL);
+
+	/* Check against overflow (positive). */
+	zassert_true(zcbor_int32_put(state_e, INT8_MAX + 1), NULL);
+	zassert_true(zcbor_int32_put(state_e, INT16_MAX + 1), NULL);
+	zassert_true(zcbor_int64_put(state_e, (int64_t)INT32_MAX + 1), NULL);
+	/* Check absolute maximum number. */
+	zassert_true(zcbor_int64_put(state_e, INT64_MAX), NULL);
+
+	/* Decode all numbers */
+	/* Arbitrary positive numbers in each size */
+	zassert_true(zcbor_int_decode(state_d, &int8, sizeof(int8)), NULL);
+	zassert_false(zcbor_int_decode(state_d, &int16, sizeof(int8)), NULL);
+	zassert_true(zcbor_int_decode(state_d, &int16, sizeof(int16)), NULL);
+	zassert_false(zcbor_int_decode(state_d, &int32, sizeof(int8)), NULL);
+	zassert_false(zcbor_int_decode(state_d, &int32, sizeof(int16)), NULL);
+	zassert_true(zcbor_int_decode(state_d, &int32, sizeof(int32)), NULL);
+	zassert_false(zcbor_int_decode(state_d, &int64, sizeof(int8)), NULL);
+	zassert_false(zcbor_int_decode(state_d, &int64, sizeof(int16)), NULL);
+	zassert_false(zcbor_int_decode(state_d, &int64, sizeof(int32)), NULL);
+	zassert_true(zcbor_int_decode(state_d, &int64, sizeof(int64)), NULL);
+
+	zassert_equal(int8, 12, "%d\r\n", int8);
+	zassert_equal(int16, 1234, "%d\r\n", int16);
+	zassert_equal(int32, 12345678, "%d\r\n", int32);
+	zassert_equal(int64, 1234567812345678, "%d\r\n", int64);
+
+	/* Arbitrary negative numbers in each size */
+	zassert_true(zcbor_int_decode(state_d, &int8, sizeof(int8)), NULL);
+	zassert_false(zcbor_int_decode(state_d, &int16, sizeof(int8)), NULL);
+	zassert_true(zcbor_int_decode(state_d, &int16, sizeof(int16)), NULL);
+	zassert_false(zcbor_int_decode(state_d, &int32, sizeof(int8)), NULL);
+	zassert_false(zcbor_int_decode(state_d, &int32, sizeof(int16)), NULL);
+	zassert_true(zcbor_int_decode(state_d, &int32, sizeof(int32)), NULL);
+	zassert_false(zcbor_int_decode(state_d, &int64, sizeof(int8)), NULL);
+	zassert_false(zcbor_int_decode(state_d, &int64, sizeof(int16)), NULL);
+	zassert_false(zcbor_int_decode(state_d, &int64, sizeof(int32)), NULL);
+	zassert_true(zcbor_int_decode(state_d, &int64, sizeof(int64)), NULL);
+
+	zassert_equal(int8, -12, NULL);
+	zassert_equal(int16, -1234, NULL);
+	zassert_equal(int32, -12345678, NULL);
+	zassert_equal(int64, -1234567812345678, NULL);
+
+	/* Check against overflow (negative). */
+	zassert_false(zcbor_int_decode(state_d, &int16, sizeof(int8)), NULL);
+	zassert_true(zcbor_int_decode(state_d, &int16, sizeof(int16)), NULL);
+	zassert_false(zcbor_int_decode(state_d, &int32, sizeof(int8)), NULL);
+	zassert_false(zcbor_int_decode(state_d, &int32, sizeof(int16)), NULL);
+	zassert_true(zcbor_int_decode(state_d, &int32, sizeof(int32)), NULL);
+	zassert_false(zcbor_int_decode(state_d, &int64, sizeof(int8)), NULL);
+	zassert_false(zcbor_int_decode(state_d, &int64, sizeof(int16)), NULL);
+	zassert_false(zcbor_int_decode(state_d, &int64, sizeof(int32)), NULL);
+	zassert_true(zcbor_int_decode(state_d, &int64, sizeof(int64)), NULL);
+
+	zassert_equal(int16, INT8_MIN - 1, NULL);
+	zassert_equal(int32, INT16_MIN - 1, NULL);
+	zassert_equal(int64, (int64_t)INT32_MIN - 1, NULL);
+
+	/* Check absolute minimum number. */
+	zassert_true(zcbor_int_decode(state_d, &int64, sizeof(int64)), NULL);
+
+	zassert_equal(int64, INT64_MIN, NULL);
+
+	/* Check against overflow (positive). */
+	zassert_false(zcbor_int_decode(state_d, &int16, sizeof(int8)), NULL);
+	zassert_true(zcbor_int_decode(state_d, &int16, sizeof(int16)), NULL);
+	zassert_false(zcbor_int_decode(state_d, &int32, sizeof(int8)), NULL);
+	zassert_false(zcbor_int_decode(state_d, &int32, sizeof(int16)), NULL);
+	zassert_true(zcbor_int_decode(state_d, &int32, sizeof(int32)), NULL);
+	zassert_false(zcbor_int_decode(state_d, &int64, sizeof(int8)), NULL);
+	zassert_false(zcbor_int_decode(state_d, &int64, sizeof(int16)), NULL);
+	zassert_false(zcbor_int_decode(state_d, &int64, sizeof(int32)), NULL);
+	zassert_true(zcbor_int_decode(state_d, &int64, sizeof(int64)), NULL);
+
+	zassert_equal(int16, INT8_MAX + 1, NULL);
+	zassert_equal(int32, INT16_MAX + 1, NULL);
+	zassert_equal(int64, (int64_t)INT32_MAX + 1, NULL);
+
+	/* Check absolute maximum number. */
+	zassert_true(zcbor_int_decode(state_d, &int64, sizeof(int64)), NULL);
+
+	zassert_equal(int64, INT64_MAX, NULL);
+}
+
+
 void test_main(void)
 {
 	ztest_test_suite(zcbor_unit_tests,
@@ -689,7 +809,8 @@ void test_main(void)
 			 ztest_unit_test(test_fragments),
 			 ztest_unit_test(test_validate_fragments),
 			 ztest_unit_test(test_bstr_cbor_fragments),
-			 ztest_unit_test(test_canonical_list)
+			 ztest_unit_test(test_canonical_list),
+			 ztest_unit_test(test_int)
 	);
 	ztest_run_test_suite(zcbor_unit_tests);
 }

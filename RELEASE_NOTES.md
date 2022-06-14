@@ -4,6 +4,8 @@ Any new bugs, requests, or missing features should be reported as [Github issues
 
 ## Improvements:
  * requirements.txt: Change PyYAML requirement from >6.0.0 to >5.4.1 to be more widely compatible.
+ * zcbor_encode/zcbor_decode: Add new functions zcbor_int_encode() and zcbor_int_decode() which accept the integer size as an argument.
+ * zcbor.py: Use zcbor_int_encode() and zcbor_int_decode() when operating directly on _choice enums, since enums can be any size, depending on compiler and project. This removes the restrictions that enums must be 32 bits.
 
 ## Bugfixes:
  * tests: Fix an error in manifest3.cddl (encode/test1) (naming collision with 'uri')
