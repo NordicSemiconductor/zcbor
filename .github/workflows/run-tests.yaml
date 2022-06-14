@@ -21,7 +21,7 @@ jobs:
     - name: Generate and install zcbor package
       run: |
         python setup.py bdist_wheel
-        pip install dist/zcbor-0.5.1-py3-none-any.whl
+        pip install dist/zcbor-0.5.99-py3-none-any.whl
         pip uninstall -y zcbor
         pip install -e .
 
