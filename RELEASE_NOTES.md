@@ -5,6 +5,7 @@ Any new bugs, requests, or missing features should be reported as [Github issues
 ## Improvements:
 
 ## Bugfixes:
+ * tests: Fix an error in manifest3.cddl (encode/test1) (naming collision with 'uri')
 
 ## Unsupported CDDL features
 Not all features outlined in the [CDDL spec](https://datatracker.ietf.org/doc/html/rfc8610) are supported by zcbor.
