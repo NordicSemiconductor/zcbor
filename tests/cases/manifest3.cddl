@@ -226,7 +226,7 @@ SUIT_Parameters //= (suit-parameter-uri-list
     => bstr .cbor SUIT_Component_URI_List)
 SUIT_Parameters //= (suit-parameter-custom => int/bool/tstr/bstr)
 
-SUIT_Component_URI_List = [ + [priority: int, uri: tstr] ]
+SUIT_Component_URI_List = [ + [priority: int, URI: tstr] ]
 
 SUIT_Encryption_Info = COSE_Encrypt_Tagged/COSE_Encrypt0_Tagged
 SUIT_Compression_Info = {
