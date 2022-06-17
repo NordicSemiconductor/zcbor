@@ -3,6 +3,7 @@
 Any new bugs, requests, or missing features should be reported as [Github issues](https://github.com/NordicSemiconductor/zcbor/issues).
 
 ## Improvements:
+ * requirements.txt: Change PyYAML requirement from >6.0.0 to >5.4.1 to be more widely compatible.
 
 ## Bugfixes:
  * tests: Fix an error in manifest3.cddl (encode/test1) (naming collision with 'uri')
