@@ -1,41 +1,15 @@
 inputs:
-  tags:
-    description: 'Tags to be passed to twister when running tests.'
+  twister_arguments:
+    description: 'Twister arguments.'
     required: false
     default: ''
-  asserts:
-    description: 'asserts'
+  zephyr_toolchain:
+    description: 'Which zephyr toolchain to use.'
     required: false
-    default: 'none'
-  zcbor_package:
-    description: 'How to install zcbor'
-    required: false
-    default: 'bdist_wheel'
+    default: 'host'
 runs:
   using: 'composite'
   steps:
-
-    - name: Install west and dependencies
-      shell: sh
-      run: |
-        pip3 install -U pip
-        pip3 install -U setuptools
-        pip3 install -U -r scripts/requirements.txt
-
-    - name: Install zcbor package
-      if: ${{ inputs.zcbor_package == 'bdist_wheel' }}
-      shell: sh
-      run: |
-        python3 setup.py sdist bdist_wheel
-        pip3 install dist/zcbor-*.tar.gz
-        pip3 uninstall -y zcbor
-        pip3 install dist/zcbor-*.whl
-
-    - name: Install zcbor package
-      if: ${{ inputs.zcbor_package == 'setup_install' }}
-      shell: sh
-      run: |
-        python3 setup.py install
 
     - name: Install packages
       shell: sh
@@ -44,13 +18,11 @@ runs:
         sudo apt install -y gcc-multilib ninja-build
 
     - name: Clone zephyr
-      if: ${{ inputs.asserts != 'none' }}
       shell: sh
       run: |
         git clone --depth 1 https://github.com/zephyrproject-rtos/zephyr zephyr-clone
 
     - name: West init
-      if: ${{ inputs.asserts != 'none' }}
       shell: sh
       run: |
         export ZEPHYR_BASE=$(pwd)/zephyr-clone
@@ -59,7 +31,6 @@ runs:
         west init -l $ZEPHYR_BASE
 
     - name: Install twister dependencies
-      if: ${{ inputs.asserts != 'none' }}
       working-directory: tests
       shell: sh
       run: |
@@ -67,20 +38,27 @@ runs:
         pip3 install -U -r $ZEPHYR_BASE/scripts/requirements-build-test.txt
         pip3 install -U -r $ZEPHYR_BASE/scripts/requirements-run-test.txt
 
-    - name: Run tests
-      if: ${{ inputs.asserts == 'without' || inputs.asserts == 'both' }}
-      working-directory: tests
+    - name: Install Zephyr SDK (ARM)
+      if: ${{ inputs.zephyr_toolchain == 'zephyr' }}
       shell: sh
       run: |
-        export ZEPHYR_BASE=$(pwd)/../zephyr-clone
-        export ZEPHYR_TOOLCHAIN_VARIANT=host
-        $ZEPHYR_BASE/scripts/twister -i -T . -W --platform native_posix --platform native_posix_64 ${{ inputs.tags }}
+        sudo apt install qemu qemu-system-arm
+        ZEPHYR_SDK_VERSION=0.14.2
+        wget -nv https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v$ZEPHYR_SDK_VERSION/zephyr-sdk-${ZEPHYR_SDK_VERSION}_linux-x86_64_minimal.tar.gz
+        wget -nv https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v$ZEPHYR_SDK_VERSION/toolchain_linux-x86_64_arm-zephyr-eabi.tar.gz
+        wget -nv -O - https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v$ZEPHYR_SDK_VERSION/sha256.sum | shasum --check --ignore-missing
+        tar -xf zephyr-sdk-${ZEPHYR_SDK_VERSION}_linux-x86_64_minimal.tar.gz
+        mv zephyr-sdk-$ZEPHYR_SDK_VERSION zephyr-sdk
+        tar -xf toolchain_linux-x86_64_arm-zephyr-eabi.tar.gz -C zephyr-sdk
+        west update cmsis
 
-    - name: Run tests with asserts
-      if: ${{ inputs.asserts == 'with' || inputs.asserts == 'both' }}
+    - name: Run tests
       working-directory: tests
       shell: sh
       run: |
         export ZEPHYR_BASE=$(pwd)/../zephyr-clone
-        export ZEPHYR_TOOLCHAIN_VARIANT=host
-        $ZEPHYR_BASE/scripts/twister -i -T . -W --platform native_posix --platform native_posix_64 ${{ inputs.tags }} -x VERBOSE=ON -x ASSERTS=ON
+        export ZEPHYR_TOOLCHAIN_VARIANT=${{ inputs.zephyr_toolchain }}
+        ${{ inputs.zephyr_toolchain == 'zephyr' && 'export ZEPHYR_SDK_INSTALL_DIR=$(pwd)/../zephyr-sdk' || '' }}
+        ZCBOR_TEST_COMMAND="$ZEPHYR_BASE/scripts/twister -i -v -T . -W ${{ inputs.twister_arguments }}"
+        echo $ZCBOR_TEST_COMMAND
+        $ZCBOR_TEST_COMMAND
