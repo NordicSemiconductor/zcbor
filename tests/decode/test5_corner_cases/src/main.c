@@ -768,8 +768,6 @@ void test_map(void)
 
 	struct Map map;
 
-	zassert_equal(sizeof(map.union_choice), sizeof(int32_t),
-		"The union_int optimization relies on enums being 4 bytes.");
 	zassert_equal(_union_nintuint, -8,
 		"The union_int optimization seems to not be working.\r\n");
 
