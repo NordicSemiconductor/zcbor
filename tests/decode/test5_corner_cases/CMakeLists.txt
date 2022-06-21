@@ -57,14 +57,14 @@ execute_process(
   COMMAND_ERROR_IS_FATAL ANY
 )
 
-add_library(strange
+add_library(corner_cases
   ${PROJECT_BINARY_DIR}/src/corner_cases.c
   ${PROJECT_BINARY_DIR}/src/zcbor_decode.c
   ${PROJECT_BINARY_DIR}/src/zcbor_common.c)
 
-target_include_directories(strange PUBLIC ${PROJECT_BINARY_DIR}/include)
-target_link_libraries(strange PRIVATE zephyr_interface)
-target_link_libraries(app PRIVATE strange)
+target_include_directories(corner_cases PUBLIC ${PROJECT_BINARY_DIR}/include)
+target_link_libraries(corner_cases PRIVATE zephyr_interface)
+target_link_libraries(app PRIVATE corner_cases)
 
 if (TEST_INDEFINITE_LENGTH_ARRAYS)
   target_compile_definitions(app PUBLIC TEST_INDEFINITE_LENGTH_ARRAYS)
@@ -72,5 +72,5 @@ endif()
 
 if (NOT VERBOSE)
   # VERBOSE means including printk which doesn't build with these options.
-  target_compile_options(strange PRIVATE -Wpedantic -Wconversion)
+  target_compile_options(corner_cases PRIVATE -Wpedantic -Wconversion)
 endif()
