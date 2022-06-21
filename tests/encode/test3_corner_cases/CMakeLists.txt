@@ -57,7 +57,9 @@ include(${PROJECT_BINARY_DIR}/corner_cases.cmake)
 target_link_libraries(corner_cases PRIVATE zephyr_interface)
 target_link_libraries(app PRIVATE corner_cases)
 
-if (NOT VERBOSE)
-  # VERBOSE means including printk which doesn't build with these options.
-  target_compile_options(corner_cases PRIVATE -Wpedantic -Wconversion)
+if(CMAKE_C_COMPILER_VERSION VERSION_GREATER_EQUAL 11)
+  if (NOT VERBOSE)
+    # VERBOSE means including printk which doesn't build with these options.
+    target_compile_options(corner_cases PRIVATE -Wpedantic -Wconversion)
+  endif()
 endif()
