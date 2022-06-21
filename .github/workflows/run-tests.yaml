@@ -40,8 +40,7 @@ jobs:
     - name: Prepare and run tests
       uses: ./.github/actions/prepare_and_run_tests
       with:
-        tags: -t unit
-        asserts: both
+        run_twister: no
 
     - name: Run pycodestyle
       run: |
@@ -53,58 +52,25 @@ jobs:
 
   merge-test-2:
     runs-on: ubuntu-latest
-    name: Merge tests 2
+    strategy:
+      matrix:
+        subset: ["1/4", "2/4", "3/4", "4/4"]
+        asserts: ["", "-x VERBOSE=ON -x ASSERTS=ON"]
+    name: Merge tests 2 ('${{ matrix.asserts }}', '${{ matrix.subset }}')
     steps:
     - name: Checkout the code
       uses: actions/checkout@v2
     - name: Prepare and run tests
       uses: ./.github/actions/prepare_and_run_tests
       with:
-        tags: -t decode
-        asserts: without
+        twister_arguments: "--platform native_posix --platform native_posix_64 -B ${{ matrix.subset }} ${{ matrix.asserts }}"
 
   merge-test-3:
-    runs-on: ubuntu-latest
-    name: Merge tests 3
-    steps:
-    - name: Checkout the code
-      uses: actions/checkout@v2
-    - name: Prepare and run tests
-      uses: ./.github/actions/prepare_and_run_tests
-      with:
-        tags: -t decode
-        asserts: with
-
-  merge-test-4:
-    runs-on: ubuntu-latest
-    name: Merge tests 4
-    steps:
-    - name: Checkout the code
-      uses: actions/checkout@v2
-    - name: Prepare and run tests
-      uses: ./.github/actions/prepare_and_run_tests
-      with:
-        tags: -t encode
-        asserts: without
-
-  merge-test-5:
-    runs-on: ubuntu-latest
-    name: Merge tests 5
-    steps:
-    - name: Checkout the code
-      uses: actions/checkout@v2
-    - name: Prepare and run tests
-      uses: ./.github/actions/prepare_and_run_tests
-      with:
-        tags: -t encode
-        asserts: with
-
-  merge-test-6:
     runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: ['3.7', '3.8', '3.9', '3.10']
-    name: Merge tests 6 (Python ${{ matrix.python-version }})
+    name: Merge tests 3 (Python ${{ matrix.python-version }})
     steps:
     - name: Checkout the code
       uses: actions/checkout@v2
@@ -139,9 +105,6 @@ jobs:
     - merge-test-1
     - merge-test-2
     - merge-test-3
-    - merge-test-4
-    - merge-test-5
-    - merge-test-6
     if: "startswith(github.head_ref, 'release/')"
     steps:
     - name: Checkout the code
@@ -149,6 +112,8 @@ jobs:
 
     - name: Prepare zcbor
       uses: ./.github/actions/prepare_and_run_tests
+      with:
+        run_twister: no
 
     - name: Run python release tests
       working-directory: tests/scripts
@@ -183,15 +148,13 @@ jobs:
     strategy:
       matrix:
         python-version: ['3.7', '3.8', '3.9', '3.10']
+        asserts: ["", "-x VERBOSE=ON -x ASSERTS=ON"]
     name: Release tests 2 (Python ${{ matrix.python-version }})
     needs:
     - merge-test-win
     - merge-test-1
     - merge-test-2
     - merge-test-3
-    - merge-test-4
-    - merge-test-5
-    - merge-test-6
     if: "startswith(github.head_ref, 'release/')"
     steps:
     - name: Checkout the code
@@ -205,6 +168,5 @@ jobs:
     - name: Prepare and run tests
       uses: ./.github/actions/prepare_and_run_tests
       with:
-        tags: ''
-        asserts: 'both'
+        twister_arguments: "--platform native_posix --platform native_posix_64 ${{ matrix.asserts }}"
         zcbor_package: 'setup_install'

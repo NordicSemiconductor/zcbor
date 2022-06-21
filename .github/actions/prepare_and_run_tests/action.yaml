@@ -1,12 +1,12 @@
 inputs:
-  tags:
-    description: 'Tags to be passed to twister when running tests.'
+  run_twister:
+    description: 'Whether to run twister'
+    required: false
+    default: 'yes'
+  twister_arguments:
+    description: 'Twister arguments.'
     required: false
     default: ''
-  asserts:
-    description: 'asserts'
-    required: false
-    default: 'none'
   zcbor_package:
     description: 'How to install zcbor'
     required: false
@@ -44,13 +44,13 @@ runs:
         sudo apt install -y gcc-multilib
 
     - name: Clone zephyr
-      if: ${{ inputs.asserts != 'none' }}
+      if: ${{ inputs.run_twister == 'yes' }}
       shell: sh
       run: |
         git clone --depth 1 https://github.com/zephyrproject-rtos/zephyr zephyr-clone
 
     - name: West init
-      if: ${{ inputs.asserts != 'none' }}
+      if: ${{ inputs.run_twister == 'yes' }}
       shell: sh
       run: |
         export ZEPHYR_BASE=$(pwd)/zephyr-clone
@@ -59,7 +59,7 @@ runs:
         west init -l $ZEPHYR_BASE
 
     - name: Install twister dependencies
-      if: ${{ inputs.asserts != 'none' }}
+      if: ${{ inputs.run_twister == 'yes' }}
       working-directory: tests
       shell: sh
       run: |
@@ -68,19 +68,10 @@ runs:
         pip3 install -U -r $ZEPHYR_BASE/scripts/requirements-run-test.txt
 
     - name: Run tests
-      if: ${{ inputs.asserts == 'without' || inputs.asserts == 'both' }}
+      if: ${{ inputs.run_twister == 'yes' }}
       working-directory: tests
       shell: sh
       run: |
         export ZEPHYR_BASE=$(pwd)/../zephyr-clone
         export ZEPHYR_TOOLCHAIN_VARIANT=host
-        $ZEPHYR_BASE/scripts/twister -i -T . -W --platform native_posix --platform native_posix_64 ${{ inputs.tags }}
-
-    - name: Run tests with asserts
-      if: ${{ inputs.asserts == 'with' || inputs.asserts == 'both' }}
-      working-directory: tests
-      shell: sh
-      run: |
-        export ZEPHYR_BASE=$(pwd)/../zephyr-clone
-        export ZEPHYR_TOOLCHAIN_VARIANT=host
-        $ZEPHYR_BASE/scripts/twister -i -T . -W --platform native_posix --platform native_posix_64 ${{ inputs.tags }} -x VERBOSE=ON -x ASSERTS=ON
+        $ZEPHYR_BASE/scripts/twister -i -T . -W ${{ inputs.twister_arguments }}
