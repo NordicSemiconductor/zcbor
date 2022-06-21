@@ -6,6 +6,7 @@
 
 cmake_minimum_required(VERSION 3.13.1)
 
+find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(test9_manifest14)
 include(../../cmake/test_template.cmake)
 

@@ -6,7 +6,8 @@
 
 cmake_minimum_required(VERSION 3.13.1)
 
-project(test3_strange)
+find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
+project(test3_corner_cases)
 include(../../cmake/test_template.cmake)
 
 set(py_command
