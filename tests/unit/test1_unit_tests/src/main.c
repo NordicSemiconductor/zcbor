@@ -679,8 +679,8 @@ void test_canonical_list(void)
 void test_int(void)
 {
 	uint8_t payload1[100];
-	ZCBOR_STATE_D(state_d, 1, payload1, sizeof(payload1), 16);
 	ZCBOR_STATE_E(state_e, 1, payload1, sizeof(payload1), 0);
+	ZCBOR_STATE_D(state_d, 1, payload1, sizeof(payload1), 16);
 
 	/* Encode all numbers */
 	/* Arbitrary positive numbers in each size */
