@@ -65,7 +65,7 @@ jobs:
     - name: Prepare and run tests
       uses: ./.github/actions/prepare_and_run_tests
       with:
-        twister_arguments: "--platform native_posix --platform native_posix_64 -B ${{ matrix.subset }} ${{ matrix.asserts }}"
+        twister_arguments: "--platform native_posix --platform native_posix_64 --platform mps2_an521 -B ${{ matrix.subset }} ${{ matrix.asserts }}"
 
   merge-test-3:
     runs-on: ubuntu-latest
@@ -166,4 +166,4 @@ jobs:
     - name: Prepare and run tests
       uses: ./.github/actions/prepare_and_run_tests
       with:
-        twister_arguments: "--platform native_posix --platform native_posix_64 ${{ matrix.asserts }}"
+        twister_arguments: "--platform native_posix --platform native_posix_64 --platform mps2_an521 ${{ matrix.asserts }}"
