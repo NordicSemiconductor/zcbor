@@ -34,7 +34,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        platform: ["native_posix", "native_posix_64"]
+        platform: ["native_posix", "native_posix_64", "mps2_an521"]
         asserts: ["", "-x VERBOSE=ON -x ASSERTS=ON"]
     name: Merge tests 1 (${{ matrix.platform }}${{ matrix.asserts != '' && ' with asserts' || '' }})
     steps:
@@ -147,4 +147,5 @@ jobs:
     - name: Prepare and run tests
       uses: ./.github/actions/prepare_and_run_tests
       with:
-        twister_arguments: "--platform native_posix --platform native_posix_64 ${{ matrix.asserts }}"
+        twister_arguments: "--platform native_posix --platform native_posix_64 --platform mps2_an521 ${{ matrix.asserts }}"
+        zephyr_toolchain: zephyr
