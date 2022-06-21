@@ -16,6 +16,7 @@ import cbor2
 from platform import python_version_tuple
 from sys import platform, exit
 from yaml import safe_load
+from pycodestyle import StyleGuide
 
 
 try:
@@ -46,6 +47,25 @@ p_map_bstr_yaml = Path(p_tests, 'cases', 'map_bstr.yaml')
 p_README = Path(p_root, 'README.md')
 p_add_helptext = Path(p_root, 'add_helptext.py')
 p_prelude = Path(p_root, 'zcbor', 'cddl', 'prelude.cddl')
+p_init_py = Path(p_root, 'zcbor', '__init__.py')
+p_zcbor_py = Path(p_root, 'zcbor', 'zcbor.py')
+p_setup_py = Path(p_root, 'setup.py')
+p_run_tests_py = Path(p_tests, 'scripts', 'run_tests.py')
+p_release_test_py = Path(p_tests, 'scripts', 'release_test.py')
+
+
+class Test00_Codestyle(TestCase):
+    def do_codestyle(self, files, **kwargs):
+        style = StyleGuide(max_line_length=100, **kwargs)
+        result = style.check_files([str(f) for f in files])
+        result.print_statistics()
+        self.assertEqual(result.total_errors, 0,
+            f"Found {result.total_errors} style errors")
+
+    def test_codestyle(self):
+        self.do_codestyle([p_init_py, p_setup_py, p_release_test_py])
+        self.do_codestyle([p_zcbor_py], ignore=['W191', 'E101', 'W503'])
+        self.do_codestyle([p_release_test_py], ignore=['E402', 'E501', 'W503'])
 
 
 class Testn(TestCase):
