@@ -75,14 +75,14 @@ bool zcbor_tstr_expect(zcbor_state_t *state, struct zcbor_string *result);
 static inline bool zcbor_bstr_expect_ptr(zcbor_state_t *state, uint8_t *ptr, size_t len)
 {
     struct zcbor_string zs = { .value = ptr, .len = len };
-
-	return zcbor_bstr_expect(state, &zs);
+    
+    return zcbor_bstr_expect(state, &zs);
 }
 static inline bool zcbor_tstr_expect_ptr(zcbor_state_t *state, uint8_t *ptr, size_t len)
 {
-	struct zcbor_string zs = { .value = ptr, .len = len };
-
-	return zcbor_tstr_expect(state, &zs);
+    struct zcbor_string zs = { .value = ptr, .len = len };
+	
+    return zcbor_tstr_expect(state, &zs);
 }
 
 
