@@ -1,41 +1,11 @@
 inputs:
-  run_twister:
-    description: 'Whether to run twister'
-    required: false
-    default: 'yes'
   twister_arguments:
     description: 'Twister arguments.'
     required: false
     default: ''
-  zcbor_package:
-    description: 'How to install zcbor'
-    required: false
-    default: 'bdist_wheel'
 runs:
   using: 'composite'
   steps:
-
-    - name: Install west and dependencies
-      shell: sh
-      run: |
-        pip3 install -U pip
-        pip3 install -U setuptools
-        pip3 install -U -r scripts/requirements.txt
-
-    - name: Install zcbor package
-      if: ${{ inputs.zcbor_package == 'bdist_wheel' }}
-      shell: sh
-      run: |
-        python3 setup.py sdist bdist_wheel
-        pip3 install dist/zcbor-*.tar.gz
-        pip3 uninstall -y zcbor
-        pip3 install dist/zcbor-*.whl
-
-    - name: Install zcbor package
-      if: ${{ inputs.zcbor_package == 'setup_install' }}
-      shell: sh
-      run: |
-        python3 setup.py install
 
     - name: Install packages
       shell: sh
@@ -44,13 +14,11 @@ runs:
         sudo apt install -y gcc-multilib
 
     - name: Clone zephyr
-      if: ${{ inputs.run_twister == 'yes' }}
       shell: sh
       run: |
         git clone --depth 1 https://github.com/zephyrproject-rtos/zephyr zephyr-clone
 
     - name: West init
-      if: ${{ inputs.run_twister == 'yes' }}
       shell: sh
       run: |
         export ZEPHYR_BASE=$(pwd)/zephyr-clone
@@ -59,7 +27,6 @@ runs:
         west init -l $ZEPHYR_BASE
 
     - name: Install twister dependencies
-      if: ${{ inputs.run_twister == 'yes' }}
       working-directory: tests
       shell: sh
       run: |
@@ -68,7 +35,6 @@ runs:
         pip3 install -U -r $ZEPHYR_BASE/scripts/requirements-run-test.txt
 
     - name: Run tests
-      if: ${{ inputs.run_twister == 'yes' }}
       working-directory: tests
       shell: sh
       run: |

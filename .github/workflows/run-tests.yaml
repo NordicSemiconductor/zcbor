@@ -37,10 +37,8 @@ jobs:
     - name: Checkout the code
       uses: actions/checkout@v2
 
-    - name: Prepare and run tests
-      uses: ./.github/actions/prepare_and_run_tests
-      with:
-        run_twister: no
+    - name: Install zcbor
+      uses: ./.github/actions/install_zcbor
 
     - name: Run pycodestyle
       run: |
@@ -60,6 +58,10 @@ jobs:
     steps:
     - name: Checkout the code
       uses: actions/checkout@v2
+
+    - name: Install zcbor
+      uses: ./.github/actions/install_zcbor
+
     - name: Prepare and run tests
       uses: ./.github/actions/prepare_and_run_tests
       with:
@@ -80,17 +82,10 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: Install dependencies
-      shell: sh
-      run: |
-        pip3 install -U pip
-        pip3 install -U setuptools
-        pip3 install -U -r scripts/requirements.txt
-
-    - name: Install zcbor package
-      shell: sh
-      run: |
-        python3 setup.py install
+    - name: Install zcbor
+      uses: ./.github/actions/install_zcbor
+      with:
+        zcbor_package: 'setup_install'
 
     - name: Run python tests
       working-directory: tests/scripts
@@ -110,10 +105,8 @@ jobs:
     - name: Checkout the code
       uses: actions/checkout@v2
 
-    - name: Prepare zcbor
-      uses: ./.github/actions/prepare_and_run_tests
-      with:
-        run_twister: no
+    - name: Install zcbor
+      uses: ./.github/actions/install_zcbor
 
     - name: Run python release tests
       working-directory: tests/scripts
@@ -165,8 +158,12 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
+    - name: Install zcbor
+      uses: ./.github/actions/install_zcbor
+      with:
+        zcbor_package: 'setup_install'
+
     - name: Prepare and run tests
       uses: ./.github/actions/prepare_and_run_tests
       with:
         twister_arguments: "--platform native_posix --platform native_posix_64 ${{ matrix.asserts }}"
-        zcbor_package: 'setup_install'
