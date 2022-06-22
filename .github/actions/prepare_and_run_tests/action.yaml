@@ -40,4 +40,6 @@ runs:
       run: |
         export ZEPHYR_BASE=$(pwd)/../zephyr-clone
         export ZEPHYR_TOOLCHAIN_VARIANT=host
-        $ZEPHYR_BASE/scripts/twister -i -T . -W ${{ inputs.twister_arguments }}
+        ZCBOR_TEST_COMMAND="$ZEPHYR_BASE/scripts/twister -i -v -T . -W ${{ inputs.twister_arguments }}"
+        echo $ZCBOR_TEST_COMMAND
+        $ZCBOR_TEST_COMMAND
