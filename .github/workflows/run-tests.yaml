@@ -52,9 +52,9 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        subset: ["1/4", "2/4", "3/4", "4/4"]
+        platform: ["native_posix", "native_posix_64", "mps2_an521"]
         asserts: ["", "-x VERBOSE=ON -x ASSERTS=ON"]
-    name: Merge tests 2 ('${{ matrix.asserts }}', '${{ matrix.subset }}')
+    name: Merge tests 2 ('${{ matrix.platform }}'${{ matrix.asserts != '' && ' with asserts' || '' }})
     steps:
     - name: Checkout the code
       uses: actions/checkout@v2
@@ -65,8 +65,8 @@ jobs:
     - name: Prepare and run tests
       uses: ./.github/actions/prepare_and_run_tests
       with:
-        twister_arguments: "--platform native_posix --platform native_posix_64 --platform mps2_an521 -B ${{ matrix.subset }} ${{ matrix.asserts }}"
-        zephyr_toolchain: zephyr
+        twister_arguments: "--platform ${{ matrix.platform }} ${{ matrix.asserts }}"
+        zephyr_toolchain: ${{ matrix.platform == 'mps2_an521' && 'zephyr' || 'host'}}
 
   merge-test-3:
     runs-on: ubuntu-latest
