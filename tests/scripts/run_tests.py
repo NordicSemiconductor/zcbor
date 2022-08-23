@@ -540,6 +540,27 @@ class TestCLI(TestCase):
         self.assertNotEqual(0, call1.returncode)
         self.assertIn(b"error: Please specify at least one of --decode or --encode", stderr1)
 
+    def test_output_present(self):
+        args = ["zcbor", "--cddl", str(p_map_bstr_cddl), "code", "-t", "map", "-d"]
+        call1 = Popen(args, stdout=PIPE, stderr=PIPE)
+
+        _, stderr1 = call1.communicate()
+        self.assertNotEqual(0, call1.returncode)
+        self.assertIn(
+            b"error: Please specify both --output-c and --output-h "
+            b"unless --output-cmake is specified.",
+            stderr1)
+
+        args += ["--output-c", "/tmp/map.c"]
+        call2 = Popen(args, stdout=PIPE, stderr=PIPE)
+
+        _, stderr2 = call2.communicate()
+        self.assertNotEqual(0, call2.returncode)
+        self.assertIn(
+            b"error: Please specify both --output-c and --output-h "
+            b"unless --output-cmake is specified.",
+            stderr2)
+
 
 class TestOptional(TestCase):
     def test_0(self):
