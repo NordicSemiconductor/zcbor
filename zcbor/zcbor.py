@@ -17,6 +17,7 @@ from itertools import tee
 from cbor2 import loads, dumps, CBORTag, load, CBORDecodeValueError, CBORDecodeEOF, undefined
 from yaml import safe_load as yaml_load, dump as yaml_dump
 from json import loads as json_load, dumps as json_dump
+
 from io import BytesIO
 from subprocess import Popen, PIPE
 from pathlib import Path, PurePath
@@ -2897,6 +2898,13 @@ If omitted, the format is inferred from the file name.
 
     if hasattr(args, "decode") and not args.decode and not args.encode:
         parser.error("Please specify at least one of --decode or --encode.")
+
+    if hasattr(args, "output_c"):
+        if not args.output_c or not args.output_h:
+            if not args.output_cmake:
+                parser.error(
+                    "Please specify both --output-c and --output-h "
+                    "unless --output-cmake is specified.")
 
     return args
 
