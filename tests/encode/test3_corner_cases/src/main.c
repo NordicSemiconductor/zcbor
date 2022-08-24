@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include "corner_cases_encode.h"
 #include "zcbor_debug.h" // Enables use of print functions when debugging tests.
 

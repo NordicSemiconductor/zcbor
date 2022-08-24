@@ -35,7 +35,7 @@ struct zcbor_string_fragment {
 #define ZCBOR_STRING_FRAGMENT_UNKNOWN_LENGTH SIZE_MAX
 
 #ifdef ZCBOR_VERBOSE
-#include <sys/printk.h>
+#include <zephyr/sys/printk.h>
 #define zcbor_trace() (printk("bytes left: %zu, byte: 0x%x, elem_count: 0x%" PRIxFAST32 ", err: %d, %s:%d\n",\
 	(size_t)state->payload_end - (size_t)state->payload, *state->payload, state->elem_count, \
 	state->constant_state ? state->constant_state->error : 0, __FILE__, __LINE__))

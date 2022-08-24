@@ -5,7 +5,7 @@
  */
 
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include "manifest12_decode.h"
 #include "zcbor_debug.h" // Enables use of print functions when debugging tests.
 
