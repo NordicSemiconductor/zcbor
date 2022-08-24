@@ -41,7 +41,7 @@ runs:
       shell: sh
       run: |
         sudo apt update
-        sudo apt install -y gcc-multilib
+        sudo apt install -y gcc-multilib ninja-build
 
     - name: Clone zephyr
       if: ${{ inputs.asserts != 'none' }}
