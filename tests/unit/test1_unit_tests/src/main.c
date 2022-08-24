@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
+#include <zephyr/ztest.h>
 #include "zcbor_decode.h"
 #include "zcbor_encode.h"
 #include "zcbor_debug.h"
