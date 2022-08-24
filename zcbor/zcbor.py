@@ -1847,7 +1847,7 @@ class CodeGenerator(CddlXcoder):
     # element is repeated.
     def add_var_name(self, var_type, full=False, anonymous=False):
         if var_type:
-            assert(var_type[-1][-1] == "}" or len(var_type) == 1), \
+            assert (var_type[-1][-1] == "}" or len(var_type) == 1), \
                 f"Expected single var: {var_type!r}"
             if not anonymous or var_type[-1][-1] != "}":
                 var_type[-1] += " %s%s" % (
