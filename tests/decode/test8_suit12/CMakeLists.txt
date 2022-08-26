@@ -12,8 +12,8 @@ include(../../cmake/test_template.cmake)
 
 set(py_command
   zcbor
-  -c ${CMAKE_CURRENT_LIST_DIR}/../../cases/manifest12.cddl
   code
+  -c ${CMAKE_CURRENT_LIST_DIR}/../../cases/manifest12.cddl
   --output-cmake ${PROJECT_BINARY_DIR}/manifest12.cmake
   -t
   SUIT_Envelope_Tagged

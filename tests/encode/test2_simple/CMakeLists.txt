@@ -12,8 +12,8 @@ include(../../cmake/test_template.cmake)
 
 set(py_command
   zcbor
-  -c ${CMAKE_CURRENT_LIST_DIR}/../../cases/pet.cddl
   code
+  -c ${CMAKE_CURRENT_LIST_DIR}/../../cases/pet.cddl
   --output-cmake ${PROJECT_BINARY_DIR}/pet.cmake
   -t Pet
   -e

@@ -17,7 +17,6 @@ from itertools import tee
 from cbor2 import loads, dumps, CBORTag, load, CBORDecodeValueError, CBORDecodeEOF, undefined
 from yaml import safe_load as yaml_load, dump as yaml_dump
 from json import loads as json_load, dumps as json_dump
-
 from io import BytesIO
 from subprocess import Popen, PIPE
 from pathlib import Path, PurePath
@@ -2720,37 +2719,26 @@ def int_or_str(arg):
 
 
 def parse_args():
-    parser = ArgumentParser(
-        description='''Parse a CDDL file and validate/convert between YAML, JSON, and CBOR.
-Can also generate C code for validation/encoding/decoding of CBOR.
-Note that the other top-level arguments (e.g. -c) must appear before {code/convert}.
-See zcbor code/convert --help to see their respective specialized arguments.''')
 
-    parser.add_argument(
+    parent_parser = ArgumentParser(add_help=False)
+
+    parent_parser.add_argument(
         "--version", action="version", version=f"zcbor {__version__}")
-    parser.add_argument(
+    parent_parser.add_argument(
         "-c", "--cddl", required=True, type=FileType('r'), action="append",
         help="""Path to one or more input CDDL file(s). Passing multiple files is equivalent to
 concatenating them.""")
-    parser.add_argument(
-        "--default-max-qty", "--dq", required=False, type=int_or_str, default=3,
-        help="""Default maximum number of repetitions when no maximum
-is specified. This is needed to construct complete C types.
-This is relevant for the generated code. It is not relevant for converting,
-except when handling data that will be decoded by generated code.
-The default value of this option is 3. Set it to a large number when not relevant.
-
-When generating code, the default_max_qty can usually be set to a text symbol,
-to allow it to be configurable when building the code. This is not always
-possible, as sometimes the value is needed for internal computations.
-If so, the script will raise an exception.""")
-    parser.add_argument(
+    parent_parser.add_argument(
         "--no-prelude", required=False, action="store_true", default=False,
         help=f"""Exclude the standard CDDL prelude from the build. The prelude can be viewed at
 {PRELUDE_path.relative_to(P_REPO_ROOT)} in the repo, or together with the script.""")
-    parser.add_argument(
+    parent_parser.add_argument(
         "-v", "--verbose", required=False, action="store_true", default=False,
         help="Print more information while parsing CDDL and generating code.")
+
+    parser = ArgumentParser(
+        description='''Parse a CDDL file and validate/convert between YAML, JSON, and CBOR.
+Can also generate C code for validation/encoding/decoding of CBOR.''')
 
     subparsers = parser.add_subparsers()
     code_parser = subparsers.add_parser(
@@ -2768,8 +2756,18 @@ decoding. Using this mechanism is necessary when the CDDL contains self-
 referencing types, since the C type cannot be self referencing.
 
 This script requires 'regex' for lookaround functionality not present in 're'.''',
-        formatter_class=RawDescriptionHelpFormatter)
+        formatter_class=RawDescriptionHelpFormatter,
+        parents=[parent_parser])
 
+    code_parser.add_argument(
+        "--default-max-qty", "--dq", required=False, type=int_or_str, default=3,
+        help="""Default maximum number of repetitions when no maximum
+is specified. This is needed to construct complete C types.
+
+The default_max_qty can usually be set to a text symbol if desired,
+to allow it to be configurable when building the code. This is not always
+possible, as sometimes the value is needed for internal computations.
+If so, the script will raise an exception.""")
     code_parser.add_argument(
         "--output-c", "--oc", required=False, type=str,
         help="""Path to output C file. If both --decode and --encode are specified, _decode and
@@ -2834,12 +2832,39 @@ or layout, or disable this option. This might also make enum names different
 from the corresponding union members.""")
     code_parser.set_defaults(process=process_code)
 
+    validate_parent_parser = ArgumentParser(add_help=False)
+    validate_parent_parser.add_argument(
+        "-i", "--input", required=True, type=str,
+        help='''Input data file. The option --input-as specifies how to interpret the contents.
+Use "-" to indicate stdin.''')
+    validate_parent_parser.add_argument(
+        "--input-as", required=False, choices=["yaml", "json", "cbor", "cborhex"],
+        help='''Which format to interpret the input file as.
+If omitted, the format is inferred from the file name.
+.yaml, .yml => YAML, .json => JSON, .cborhex => CBOR as hex string, everything else => CBOR''')
+    validate_parent_parser.add_argument(
+        "-t", "--entry-type", required=True, type=str,
+        help='''Name of the type (from the CDDL) to interpret the data as.''')
+    parent_parser.add_argument(
+        "--default-max-qty", "--dq", required=False, type=int, default=0xFFFFFFFF,
+        help="""Default maximum number of repetitions when no maximum is specified.
+It is only relevant when handling data that will be decoded by generated code.
+If omitted, a large number will be used.""")
+
+    validate_parser = subparsers.add_parser(
+        "validate", description='''Read CBOR, YAML, or JSON data from file or stdin and validate
+it against a CDDL schema file.
+        ''',
+        parents=[parent_parser, validate_parent_parser])
+
+    validate_parser.set_defaults(process=process_validate)
+
     convert_parser = subparsers.add_parser(
-        "convert", description='''Parse a CDDL file and verify/convert between CBOR and YAML/JSON.
+        "convert", description='''Parse a CDDL file and validate/convert between CBOR and YAML/JSON.
 The script decodes the CBOR/YAML/JSON data from a file or stdin
 and verifies that it conforms to the CDDL description.
-The script fails if the data does not conform. The script can
-also be used to just verify.
+The script fails if the data does not conform.
+'zcbor validate' can be used if only validate is needed.
 
 JSON and YAML do not support all data types that CBOR/CDDL supports.
 bytestrings (BSTR), tags, and maps with non-text keys need special handling:
@@ -2861,22 +2886,13 @@ which will conform to the CDDL {tstr => tstr, int => tstr}.
 Tags are specified by a dict with two elements, e.g.
 {"tag": 1234, "value": ["tagged string within list"]}
 
-'undefined' is specified as a list with a single text entry: "zcbor_undefined".''')
+'undefined' is specified as a list with a single text entry: "zcbor_undefined".''',
+        parents=[parent_parser, validate_parent_parser])
 
     convert_parser.add_argument(
-        "-i", "--input", required=True, type=str,
-        help='''Input data file. The option --input-as specifies how to interpret the contents.
-Use "-" to indicate stdin.''')
-    convert_parser.add_argument(
-        "--input-as", required=False, choices=["yaml", "json", "cbor", "cborhex"],
-        help='''Which format to interpret the input file as.
-If omitted, the format is inferred from the file name.
-.yaml, .yml => YAML, .json => JSON, .cborhex => CBOR as hex string, everything else => CBOR''')
-    convert_parser.add_argument(
-        "-o", "--output", required=False, type=str,
+        "-o", "--output", required=True, type=str,
         help='''Output data file. The option --output-as specifies how to interpret the contents.
-If --output is omitted, no conversion is done, only verification of
-the input. Use "-" to indicate stdout.''')
+ Use "-" to indicate stdout.''')
     convert_parser.add_argument(
         "--output-as", required=False, choices=["yaml", "json", "cbor", "cborhex", "c_code"],
         help='''Which format to interpret the output file as.
@@ -2886,9 +2902,6 @@ If omitted, the format is inferred from the file name.
     convert_parser.add_argument(
         "--c-code-var-name", required=False, type=str,
         help='''Only relevant together with '--output-as c_code' or .c files.''')
-    convert_parser.add_argument(
-        "-t", "--entry-type", required=True, type=str,
-        help='''Name of the type (from the CDDL) to interpret the data as.''')
     convert_parser.set_defaults(process=process_convert)
 
     args = parser.parse_args()
@@ -3001,15 +3014,13 @@ def process_code(args):
                     output_cmake, c_code_dir, h_code_dir)
 
 
-def process_convert(args):
+def parse_cddl(args):
     cddl_contents = linesep.join((c.read() for c in args.cddl))
     cddl_res = DataTranslator.from_cddl(cddl_contents, args.default_max_qty)
+    return cddl_res.my_types[args.entry_type]
 
-    # Parsing is done, pretty print the result.
-    verbose_print(args.verbose, "Parsed CDDL types:")
-    verbose_pprint(args.verbose, cddl_res.my_types)
 
-    cddl = cddl_res.my_types[args.entry_type]
+def read_data(args, cddl):
     _, in_file_ext = path.splitext(args.input)
     in_file_format = args.input_as or in_file_ext.strip(".")
     if in_file_format in ["yaml", "yml"]:
@@ -3027,26 +3038,40 @@ def process_convert(args):
         cbor_str = f.read()
         cddl.validate_str(cbor_str)
 
-    if args.output is not None:
-        _, out_file_ext = path.splitext(args.output)
-        out_file_format = args.output_as or out_file_ext.strip(".")
-        if out_file_format in ["yaml", "yml"]:
-            f = sys.stdout if args.output == "-" else open(args.output, "w")
-            f.write(cddl.str_to_yaml(cbor_str))
-        elif out_file_format == "json":
-            f = sys.stdout if args.output == "-" else open(args.output, "w")
-            f.write(cddl.str_to_json(cbor_str))
-        elif out_file_format in ["c", "h", "c_code"]:
-            f = sys.stdout if args.output == "-" else open(args.output, "w")
-            assert args.c_code_var_name is not None, \
-                "Must specify --c-code-var-name when outputting c code."
-            f.write(cddl.str_to_c_code(cbor_str, args.c_code_var_name))
-        elif out_file_format == "cborhex":
-            f = sys.stdout if args.output == "-" else open(args.output, "w")
-            f.write(sub(r"(.{1,64})", r"\1 ", cbor_str.hex()))  # Add newlines every 64 chars
-        else:
-            f = sys.stdout.buffer if args.output == "-" else open(args.output, "wb")
-            f.write(cbor_str)
+    return cbor_str
+
+
+def write_data(args, cddl, cbor_str):
+    _, out_file_ext = path.splitext(args.output)
+    out_file_format = args.output_as or out_file_ext.strip(".")
+    if out_file_format in ["yaml", "yml"]:
+        f = sys.stdout if args.output == "-" else open(args.output, "w")
+        f.write(cddl.str_to_yaml(cbor_str))
+    elif out_file_format == "json":
+        f = sys.stdout if args.output == "-" else open(args.output, "w")
+        f.write(cddl.str_to_json(cbor_str))
+    elif out_file_format in ["c", "h", "c_code"]:
+        f = sys.stdout if args.output == "-" else open(args.output, "w")
+        assert args.c_code_var_name is not None, \
+            "Must specify --c-code-var-name when outputting c code."
+        f.write(cddl.str_to_c_code(cbor_str, args.c_code_var_name))
+    elif out_file_format == "cborhex":
+        f = sys.stdout if args.output == "-" else open(args.output, "w")
+        f.write(sub(r"(.{1,64})", r"\1 ", cbor_str.hex()))  # Add newlines every 64 chars
+    else:
+        f = sys.stdout.buffer if args.output == "-" else open(args.output, "wb")
+        f.write(cbor_str)
+
+
+def process_validate(args):
+    cddl = parse_cddl(args)
+    read_data(args, cddl)
+
+
+def process_convert(args):
+    cddl = parse_cddl(args)
+    cbor_str = read_data(args, cddl)
+    write_data(args, cddl, cbor_str)
 
 
 def main():

@@ -15,8 +15,8 @@ target_sources(app PRIVATE
 
 set(py_command_pet
   zcbor
-  -c ${CMAKE_CURRENT_LIST_DIR}/../../cases/pet.cddl
   code
+  -c ${CMAKE_CURRENT_LIST_DIR}/../../cases/pet.cddl
   --output-cmake ${PROJECT_BINARY_DIR}/pet.cmake
   -t Pet
   -d
@@ -25,8 +25,8 @@ set(py_command_pet
   )
 set(py_command_serial_recovery
   zcbor
-  -c ${CMAKE_CURRENT_LIST_DIR}/../../cases/serial_recovery.cddl
   code
+  -c ${CMAKE_CURRENT_LIST_DIR}/../../cases/serial_recovery.cddl
   --oh ${PROJECT_BINARY_DIR}/include/serial/serial_recovery_decode.h
   --oht ${PROJECT_BINARY_DIR}/include/serial/serial_recovery_decode_types.h
   --oc ${PROJECT_BINARY_DIR}/src/serial/serial_recovery_decode.c

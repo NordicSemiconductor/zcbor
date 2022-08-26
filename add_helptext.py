@@ -24,6 +24,7 @@ if __name__ == "__main__":
     commands = [
         ["zcbor", "--help"],
         ["zcbor", "code", "--help"],
+        ["zcbor", "validate", "--help"],
         ["zcbor", "convert", "--help"],
     ]
 
