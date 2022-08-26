@@ -12,8 +12,8 @@ include(../../cmake/test_template.cmake)
 
 set(py_command
   zcbor
-  -c ${CMAKE_CURRENT_LIST_DIR}/../../cases/senml.cddl
   code
+  -c ${CMAKE_CURRENT_LIST_DIR}/../../cases/senml.cddl
   --output-cmake ${PROJECT_BINARY_DIR}/senml.cmake
   -t lwm2m_senml
   -e

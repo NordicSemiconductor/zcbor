@@ -17,10 +17,10 @@ endif()
 set(py_command
   ${PYTHON_EXECUTABLE}
   ${CMAKE_CURRENT_LIST_DIR}/../../../zcbor/zcbor.py
+  code
   -c ${CMAKE_CURRENT_LIST_DIR}/../../cases/${MANIFEST}.cddl
   -c ${CMAKE_CURRENT_LIST_DIR}/../../cases/cose.cddl
   --default-max-qty 4
-  code
   --output-cmake ${PROJECT_BINARY_DIR}/${MANIFEST}.cmake
   -t
   SUIT_Envelope_Tagged

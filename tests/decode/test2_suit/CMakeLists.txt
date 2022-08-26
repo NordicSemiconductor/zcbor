@@ -14,8 +14,8 @@ include(../../cmake/test_template.cmake)
 
 set(py_command
   zcbor
-  -c ${CMAKE_CURRENT_LIST_DIR}/../../cases/manifest2.cddl
   code
+  -c ${CMAKE_CURRENT_LIST_DIR}/../../cases/manifest2.cddl
   --output-cmake ${PROJECT_BINARY_DIR}/manifest2.cmake
   -t
   SUIT_Outer_Wrapper

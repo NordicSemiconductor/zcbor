@@ -13,8 +13,8 @@ include(../../cmake/test_template.cmake)
 set(py_command
   ${PYTHON_EXECUTABLE}
   ${CMAKE_CURRENT_LIST_DIR}/../../../zcbor/zcbor.py
-  -c ${CMAKE_CURRENT_LIST_DIR}/../../cases/manifest9_simple.cddl
   code
+  -c ${CMAKE_CURRENT_LIST_DIR}/../../cases/manifest9_simple.cddl
   --output-cmake ${PROJECT_BINARY_DIR}/manifest9_simple.cmake
   -t
   SUIT_Envelope

@@ -12,10 +12,10 @@ include(../../cmake/test_template.cmake)
 
 set(py_command3
   zcbor
+  code
   -c ${CMAKE_CURRENT_LIST_DIR}/../../cases/manifest-moran3.cddl
   --no-prelude # manifest-moran3.cddl contains types that collide with types in prelude.cddl.
   --default-max-qty MY_DEFAULT_MAX_QTY
-  code
   --output-cmake ${PROJECT_BINARY_DIR}/manifest-moran3.cmake
   -t OuterWrapper
   --decode
@@ -24,10 +24,10 @@ set(py_command3
 
 set(py_command4
   zcbor
+  code
   -c ${CMAKE_CURRENT_LIST_DIR}/../../cases/manifest-moran4.cddl
   --no-prelude
   --default-max-qty MY_DEFAULT_MAX_QTY
-  code
   --output-cmake ${PROJECT_BINARY_DIR}/manifest-moran4.cmake
   -t SUIT_Outer_Wrapper
   --decode

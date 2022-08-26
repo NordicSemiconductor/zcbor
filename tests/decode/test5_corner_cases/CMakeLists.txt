@@ -15,9 +15,9 @@ include(../../cmake/test_template.cmake)
 set(py_command
   ${PYTHON_EXECUTABLE}
   ${CMAKE_CURRENT_LIST_DIR}/../../../zcbor/zcbor.py
+  code
   -c ${CMAKE_CURRENT_LIST_DIR}/../../cases/corner_cases.cddl
   --default-max-qty 6
-  code
   --output-c ${PROJECT_BINARY_DIR}/src/corner_cases.c
   --output-h ${PROJECT_BINARY_DIR}/include/corner_cases.h
   --copy-sources

@@ -4,18 +4,34 @@ zcbor
 zcbor is a low footprint [CBOR](https://en.wikipedia.org/wiki/CBOR) library in the C language that comes with a schema-driven script tool that can validate your data, or even generate code for you.
 Aside from the script, the CBOR library is a standalone library which is tailored for use in microcontrollers.
 
-The validation part of the script can also work with YAML and JSON data.
+The validation/conversion part of the script works with YAML and JSON data, in addition to CBOR.
 It can for example validate a YAML file against a schema and convert it into CBOR.
 
 The schema language used by zcbor is CDDL (Consise Data Definition Language) which is a powerful human-readable data description language defined in [IETF RFC 8610](https://datatracker.ietf.org/doc/rfc8610/).
 
 zcbor was previously called "cddl-gen".
 
+
+Features
+========
+
+Here are some possible ways zcbor can be used:
+
+ - Python script and module:
+   - Validate a YAML/JSON file and translate it into CBOR e.g. for transmission.
+   - Validate a YAML/JSON/CBOR file before processing it with some other tool
+   - Decode and validate incoming CBOR data into human-readable YAML/JSON.
+   - As part of a python script that processes YAML/JSON/CBOR files. zcbor is compatible with PyYAML and can additionally provide validation and/or easier inspection via named tuples.
+ - C code:
+   - Generate C code for validating and decoding or encoding CBOR, for use in optimized or constrained environments, such as microcontrollers.
+   - Provide a low-footprint CBOR decoding/encoding library similar to TinyCBOR/QCBOR/NanoCBOR.
+
+
 CBOR decoding/encoding library
 ==============================
 
 The CBOR library found at [headers](include) and [source](src) is used by the generated code, but can also be used directly.
-If so, you must instantiate a `zcbor_state_t` object, which is most easily done using the `zcbor_new_*_state()` functions or the `ZCBOR_STATE_*()` macros.
+To use it, instantiate a `zcbor_state_t` object, which is most easily done using the `zcbor_new_*_state()` functions or the `ZCBOR_STATE_*()` macros.
 
 The `elem_count` member refers to the number of encoded objects in the current list or map.
 `elem_count` starts again when entering a nested list or map, and is restored when exiting.
@@ -64,30 +80,9 @@ Name                      | Description
 `ZCBOR_STOP_ON_ERROR`     | Enable the `stop_on_error` functionality. This makes all functions abort their execution if called when an error has already happened.
 `ZCBOR_BIG_ENDIAN`        | All decoded values are returned as big-endian.
 
-Schema-driven data manipulation and code generation
-===================================================
 
-By invoking `zcbor` (when installed via Pip or setup.py), or the Python script [zcbor.py](zcbor/zcbor.py) directly, you can generate C code that validates/encodes/decodes CBOR data conforming to a CDDL schema.
-zcbor can also validate and convert CBOR data to and from JSON/YAML, either from the command line, or imported as a module.
-Finally, the package contains a light-weight CBOR encoding/decoding library in C.
-This library is used by the generated code, and can also be used directly in your own code.
-
-Features
-========
-
-Here are some possible ways zcbor can be used:
-
- - Python scripting:
-   - Validate a YAML file and translate it into CBOR e.g. for transmission.
-   - Validate a YAML/JSON/CBOR file before processing it with some other tool
-   - Decode and validate incoming CBOR data into human-readable YAML/JSON.
-   - As part of a python script that processes YAML/JSON/CBOR files. zcbor is compatible with PyYAML and can additionally provide validation and/or easier inspection via named tuples.
- - C code:
-   - Generate C code for validating and decoding or encoding CBOR, for use in optimized or constrained environments, such as microcontrollers.
-   - Provide a low-footprint CBOR decoding/encoding library similar to TinyCBOR/QCBOR/NanoCBOR.
-
-Python scripting
-================
+Python script and module
+========================
 
 Invoking zcbor.py from the command line
 ---------------------------------------
@@ -96,18 +91,20 @@ The zcbor.py script can directly read CBOR, YAML, or JSON data and validate it a
 It can also freely convert the data between CBOR/YAML/JSON.
 It can also output the data to a C file formatted as a byte array.
 
-The following is a generalized example for converting (and validating) data from the command line.
+Following are some generalized examples for validating, and for converting (which also validates) data from the command line.
 The script infers the data format from the file extension, but the format can also be specified explicitly.
-See `zcbor convert --help` for more information.
+See `zcbor validate --help` and `zcbor convert --help` for more information.
 
 ```sh
-python3 <zcbor base>/zcbor/zcbor.py -c <CDDL description file> convert -t <which CDDL type to expect> -i <input data file> -o <output data file>
+python3 <zcbor base>/zcbor/zcbor.py validate -c <CDDL description file> -t <which CDDL type to expect> -i <input data file>
+python3 <zcbor base>/zcbor/zcbor.py convert -c <CDDL description file> -t <which CDDL type to expect> -i <input data file> -o <output data file>
 ```
 
 Or invoke its command line executable (if installed via `pip`):
 
 ```sh
-zcbor -c <CDDL description file> convert -t <which CDDL type to expect> -i <input data file> -o <output data file>
+zcbor validate -c <CDDL description file> -t <which CDDL type to expect> -i <input data file>
+zcbor convert -c <CDDL description file> -t <which CDDL type to expect> -i <input data file> -o <output data file>
 ```
 
 Note that since CBOR supports more data types than YAML and JSON, zcbor uses an idiomatic format when converting to/from YAML/JSON.
@@ -131,6 +128,7 @@ When accessing the data, you can choose between two internal formats:
     When returning this format, DataTranslator hides the idiomatic representations for bytestrings, tags, and non-text keys described above.
  2. A custom format which allows accessing the data via the names from the CDDL description file.
     This format is implemented using named tuples, and is immutable, meaning that it can be used for inspecting data, but not for changing or creating data.
+
 
 Code generation
 ===============
@@ -210,6 +208,7 @@ E.g. `Foo = [name: tstr, age: uint]` is equivalent to `Foo = [tstr, uint]`.
 
 See [test3_simple](tests/decode/test3_simple/) for CDDL example code.
 
+
 Introduction to CBOR
 ====================
 
@@ -275,9 +274,9 @@ Pet = [
 Call the Python script:
 
 ```sh
-python3 <zcbor base>/zcbor/zcbor.py -c pet.cddl code -d -t Pet --oc pet_decode.c --oh pet_decode.h
+python3 <zcbor base>/zcbor/zcbor.py code -c pet.cddl -d -t Pet --oc pet_decode.c --oh pet_decode.h
 # or
-zcbor -c pet.cddl code -d -t Pet --oc pet_decode.c --oh pet_decode.h
+zcbor code -c pet.cddl -d -t Pet --oc pet_decode.c --oh pet_decode.h
 ```
 
 And use the generated code with
@@ -348,9 +347,9 @@ Converting
 Here is an example call for converting from YAML to CBOR:
 
 ```sh
-python3 <zcbor base>/zcbor/zcbor.py -c pet.cddl convert -t Pet -i mypet.yaml -o mypet.cbor
+python3 <zcbor base>/zcbor/zcbor.py convert -c pet.cddl -t Pet -i mypet.yaml -o mypet.cbor
 # or
-zcbor -c pet.cddl convert -t Pet -i mypet.yaml -o mypet.cbor
+zcbor convert -c pet.cddl -t Pet -i mypet.yaml -o mypet.cbor
 ```
 
 Which takes a yaml structure from mypet.yaml, validates it against the Pet type in the CDDL description in pet.cddl, and writes binary CBOR data to mypet.cbor.
@@ -371,6 +370,7 @@ Run these scripts with no arguments.
 
 To set up the environment to run the ztest tests, follow [Zephyr's Getting Started Guide](https://docs.zephyrproject.org/latest/getting_started/index.html), or see the workflow in the [`.github`](.github) directory.
 
+
 Command line documentation
 ==========================
 
@@ -380,41 +380,16 @@ zcbor --help
 ------------
 
 ```
-usage: zcbor [-h] [--version] -c CDDL [--default-max-qty DEFAULT_MAX_QTY]
-             [--no-prelude] [-v]
-             {code,convert} ...
+usage: zcbor [-h] {code,validate,convert} ...
 
 Parse a CDDL file and validate/convert between YAML, JSON, and CBOR. Can also
-generate C code for validation/encoding/decoding of CBOR. Note that the other
-top-level arguments (e.g. -c) must appear before {code/convert}. See zcbor
-code/convert --help to see their respective specialized arguments.
+generate C code for validation/encoding/decoding of CBOR.
 
 positional arguments:
-  {code,convert}
+  {code,validate,convert}
 
 options:
   -h, --help            show this help message and exit
-  --version             show program's version number and exit
-  -c CDDL, --cddl CDDL  Path to one or more input CDDL file(s). Passing
-                        multiple files is equivalent to concatenating them.
-  --default-max-qty DEFAULT_MAX_QTY, --dq DEFAULT_MAX_QTY
-                        Default maximum number of repetitions when no maximum
-                        is specified. This is needed to construct complete C
-                        types. This is relevant for the generated code. It is
-                        not relevant for converting, except when handling data
-                        that will be decoded by generated code. The default
-                        value of this option is 3. Set it to a large number
-                        when not relevant. When generating code, the
-                        default_max_qty can usually be set to a text symbol,
-                        to allow it to be configurable when building the code.
-                        This is not always possible, as sometimes the value is
-                        needed for internal computations. If so, the script
-                        will raise an exception.
-  --no-prelude          Exclude the standard CDDL prelude from the build. The
-                        prelude can be viewed at zcbor/cddl/prelude.cddl in
-                        the repo, or together with the script.
-  -v, --verbose         Print more information while parsing CDDL and
-                        generating code.
 
 ```
 
@@ -422,10 +397,11 @@ zcbor code --help
 -----------------
 
 ```
-usage: zcbor code [-h] [--output-c OUTPUT_C] [--output-h OUTPUT_H]
-                  [--output-h-types OUTPUT_H_TYPES] [--copy-sources]
-                  [--output-cmake OUTPUT_CMAKE] -t ENTRY_TYPES
-                  [ENTRY_TYPES ...] [-d] [-e] [--time-header]
+usage: zcbor code [-h] [--version] -c CDDL [--no-prelude] [-v]
+                  [--default-max-qty DEFAULT_MAX_QTY] [--output-c OUTPUT_C]
+                  [--output-h OUTPUT_H] [--output-h-types OUTPUT_H_TYPES]
+                  [--copy-sources] [--output-cmake OUTPUT_CMAKE] -t
+                  ENTRY_TYPES [ENTRY_TYPES ...] [-d] [-e] [--time-header]
                   [--git-sha-header] [-b {32,64}]
                   [--include-prefix INCLUDE_PREFIX] [-s]
 
@@ -446,6 +422,23 @@ This script requires 'regex' for lookaround functionality not present in 're'.
 
 options:
   -h, --help            show this help message and exit
+  --version             show program's version number and exit
+  -c CDDL, --cddl CDDL  Path to one or more input CDDL file(s). Passing
+                        multiple files is equivalent to concatenating them.
+  --no-prelude          Exclude the standard CDDL prelude from the build. The
+                        prelude can be viewed at zcbor/cddl/prelude.cddl in
+                        the repo, or together with the script.
+  -v, --verbose         Print more information while parsing CDDL and
+                        generating code.
+  --default-max-qty DEFAULT_MAX_QTY, --dq DEFAULT_MAX_QTY
+                        Default maximum number of repetitions when no maximum
+                        is specified. This is needed to construct complete C
+                        types. The default_max_qty can usually be set to a
+                        text symbol if desired, to allow it to be configurable
+                        when building the code. This is not always possible,
+                        as sometimes the value is needed for internal
+                        computations. If so, the script will raise an
+                        exception.
   --output-c OUTPUT_C, --oc OUTPUT_C
                         Path to output C file. If both --decode and --encode
                         are specified, _decode and _encode will be appended to
@@ -510,35 +503,32 @@ options:
 
 ```
 
-zcbor convert --help
---------------------
+zcbor validate --help
+---------------------
 
 ```
-usage: zcbor convert [-h] -i INPUT [--input-as {yaml,json,cbor,cborhex}]
-                     [-o OUTPUT] [--output-as {yaml,json,cbor,cborhex,c_code}]
-                     [--c-code-var-name C_CODE_VAR_NAME] -t ENTRY_TYPE
+usage: zcbor validate [-h] [--version] -c CDDL [--no-prelude] [-v]
+                      [--default-max-qty DEFAULT_MAX_QTY] -i INPUT
+                      [--input-as {yaml,json,cbor,cborhex}] -t ENTRY_TYPE
 
-Parse a CDDL file and verify/convert between CBOR and YAML/JSON. The script
-decodes the CBOR/YAML/JSON data from a file or stdin and verifies that it
-conforms to the CDDL description. The script fails if the data does not
-conform. The script can also be used to just verify. JSON and YAML do not
-support all data types that CBOR/CDDL supports. bytestrings (BSTR), tags, and
-maps with non-text keys need special handling: All strings in JSON/YAML are
-text strings. If a BSTR is needed, use a dict with a single entry, with "bstr"
-as the key, and the byte string (as a hex string) as the value, e.g. {"bstr":
-"0123456789abcdef"}. The value can also be another type, e.g. which will be
-interpreted as a BSTR with the given value as contents (in cddl: 'bstr .cbor
-SomeType'). E.g. {"bstr": ["first element", 2, [3]]} Dicts in JSON/YAML only
-support text strings for keys, so if a dict needs other types of keys,
-encapsulate the key and value into a dict (n is an arbitrary integer): e.g.
-{"name": "foo", "keyvaln": {"key": 123, "val": "bar"}} which will conform to
-the CDDL {tstr => tstr, int => tstr}. Tags are specified by a dict with two
-elements, e.g. {"tag": 1234, "value": ["tagged string within list"]}
-'undefined' is specified as a list with a single text entry:
-"zcbor_undefined".
+Read CBOR, YAML, or JSON data from file or stdin and validate it against a
+CDDL schema file.
 
 options:
   -h, --help            show this help message and exit
+  --version             show program's version number and exit
+  -c CDDL, --cddl CDDL  Path to one or more input CDDL file(s). Passing
+                        multiple files is equivalent to concatenating them.
+  --no-prelude          Exclude the standard CDDL prelude from the build. The
+                        prelude can be viewed at zcbor/cddl/prelude.cddl in
+                        the repo, or together with the script.
+  -v, --verbose         Print more information while parsing CDDL and
+                        generating code.
+  --default-max-qty DEFAULT_MAX_QTY, --dq DEFAULT_MAX_QTY
+                        Default maximum number of repetitions when no maximum
+                        is specified. It is only relevant when handling data
+                        that will be decoded by generated code. If omitted, a
+                        large number will be used.
   -i INPUT, --input INPUT
                         Input data file. The option --input-as specifies how
                         to interpret the contents. Use "-" to indicate stdin.
@@ -547,11 +537,70 @@ options:
                         omitted, the format is inferred from the file name.
                         .yaml, .yml => YAML, .json => JSON, .cborhex => CBOR
                         as hex string, everything else => CBOR
+  -t ENTRY_TYPE, --entry-type ENTRY_TYPE
+                        Name of the type (from the CDDL) to interpret the data
+                        as.
+
+```
+
+zcbor convert --help
+--------------------
+
+```
+usage: zcbor convert [-h] [--version] -c CDDL [--no-prelude] [-v]
+                     [--default-max-qty DEFAULT_MAX_QTY] -i INPUT
+                     [--input-as {yaml,json,cbor,cborhex}] -t ENTRY_TYPE -o
+                     OUTPUT [--output-as {yaml,json,cbor,cborhex,c_code}]
+                     [--c-code-var-name C_CODE_VAR_NAME]
+
+Parse a CDDL file and validate/convert between CBOR and YAML/JSON. The script
+decodes the CBOR/YAML/JSON data from a file or stdin and verifies that it
+conforms to the CDDL description. The script fails if the data does not
+conform. 'zcbor validate' can be used if only validate is needed. JSON and
+YAML do not support all data types that CBOR/CDDL supports. bytestrings
+(BSTR), tags, and maps with non-text keys need special handling: All strings
+in JSON/YAML are text strings. If a BSTR is needed, use a dict with a single
+entry, with "bstr" as the key, and the byte string (as a hex string) as the
+value, e.g. {"bstr": "0123456789abcdef"}. The value can also be another type,
+e.g. which will be interpreted as a BSTR with the given value as contents (in
+cddl: 'bstr .cbor SomeType'). E.g. {"bstr": ["first element", 2, [3]]} Dicts
+in JSON/YAML only support text strings for keys, so if a dict needs other
+types of keys, encapsulate the key and value into a dict (n is an arbitrary
+integer): e.g. {"name": "foo", "keyvaln": {"key": 123, "val": "bar"}} which
+will conform to the CDDL {tstr => tstr, int => tstr}. Tags are specified by a
+dict with two elements, e.g. {"tag": 1234, "value": ["tagged string within
+list"]} 'undefined' is specified as a list with a single text entry:
+"zcbor_undefined".
+
+options:
+  -h, --help            show this help message and exit
+  --version             show program's version number and exit
+  -c CDDL, --cddl CDDL  Path to one or more input CDDL file(s). Passing
+                        multiple files is equivalent to concatenating them.
+  --no-prelude          Exclude the standard CDDL prelude from the build. The
+                        prelude can be viewed at zcbor/cddl/prelude.cddl in
+                        the repo, or together with the script.
+  -v, --verbose         Print more information while parsing CDDL and
+                        generating code.
+  --default-max-qty DEFAULT_MAX_QTY, --dq DEFAULT_MAX_QTY
+                        Default maximum number of repetitions when no maximum
+                        is specified. It is only relevant when handling data
+                        that will be decoded by generated code. If omitted, a
+                        large number will be used.
+  -i INPUT, --input INPUT
+                        Input data file. The option --input-as specifies how
+                        to interpret the contents. Use "-" to indicate stdin.
+  --input-as {yaml,json,cbor,cborhex}
+                        Which format to interpret the input file as. If
+                        omitted, the format is inferred from the file name.
+                        .yaml, .yml => YAML, .json => JSON, .cborhex => CBOR
+                        as hex string, everything else => CBOR
+  -t ENTRY_TYPE, --entry-type ENTRY_TYPE
+                        Name of the type (from the CDDL) to interpret the data
+                        as.
   -o OUTPUT, --output OUTPUT
                         Output data file. The option --output-as specifies how
-                        to interpret the contents. If --output is omitted, no
-                        conversion is done, only verification of the input.
-                        Use "-" to indicate stdout.
+                        to interpret the contents. Use "-" to indicate stdout.
   --output-as {yaml,json,cbor,cborhex,c_code}
                         Which format to interpret the output file as. If
                         omitted, the format is inferred from the file name.
@@ -561,8 +610,5 @@ options:
   --c-code-var-name C_CODE_VAR_NAME
                         Only relevant together with '--output-as c_code' or .c
                         files.
-  -t ENTRY_TYPE, --entry-type ENTRY_TYPE
-                        Name of the type (from the CDDL) to interpret the data
-                        as.
 
 ```
