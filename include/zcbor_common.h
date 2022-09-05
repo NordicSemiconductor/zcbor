@@ -70,8 +70,8 @@ do { \
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #endif
 
-#ifndef ARRAY_SIZE
-#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
+#ifndef ZCBOR_ARRAY_SIZE
+#define ZCBOR_ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 #endif
 
 #if SIZE_MAX <= UINT64_MAX
