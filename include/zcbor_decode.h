@@ -328,7 +328,7 @@ void zcbor_new_decode_state(zcbor_state_t *state_array, uint_fast32_t n_states,
 #define ZCBOR_STATE_D(name, num_backups, payload, payload_size, elem_count) \
 zcbor_state_t name[((num_backups) + 2)]; \
 do { \
-	zcbor_new_decode_state(name, ARRAY_SIZE(name), payload, payload_size, elem_count); \
+	zcbor_new_decode_state(name, ZCBOR_ARRAY_SIZE(name), payload, payload_size, elem_count); \
 } while(0)
 
 #endif /* ZCBOR_DECODE_H__ */
