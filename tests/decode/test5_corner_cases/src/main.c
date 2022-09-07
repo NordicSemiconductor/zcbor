@@ -1732,6 +1732,8 @@ void test_map_length(void)
 }
 
 
+/* UnionInt1 will be optimized, while UnionInt2 won't because it contains a separate type
+   (Structure_One) which prevents it from being optimized. */
 void test_union_int(void)
 {
 	uint8_t union_int_payload1[] = {LIST(2),
@@ -1754,35 +1756,75 @@ void test_union_int(void)
 		0x24, 0x6E, 'T', 'h', 'i', 's', ' ', 'i', 's', ' ', 'a', ' ', 'f', 'i', 'v', 'e',
 		END
 	};
-	struct UnionInt result;
+	uint8_t union_int_payload6[] = {LIST(2),
+		0x01, 0x42, 'h', 'i',
+		END
+	};
+	struct UnionInt1 result1;
+	struct UnionInt2 result2;
 	size_t num_decode;
 
-	zassert_equal(ZCBOR_SUCCESS, cbor_decode_UnionInt(union_int_payload1,
-		sizeof(union_int_payload1), &result, &num_decode), NULL);
+	zassert_equal(ZCBOR_SUCCESS, cbor_decode_UnionInt1(union_int_payload1,
+		sizeof(union_int_payload1), &result1, &num_decode), NULL);
 	zassert_equal(sizeof(union_int_payload1), num_decode, NULL);
-	zassert_equal(result.union_choice, _union__uint5, NULL);
+	zassert_equal(result1.union_choice, _UnionInt1__union_uint1, NULL);
 
-	zassert_equal(ZCBOR_SUCCESS, cbor_decode_UnionInt(union_int_payload2,
-		sizeof(union_int_payload2), &result, &num_decode), NULL);
+	zassert_equal(ZCBOR_SUCCESS, cbor_decode_UnionInt2(union_int_payload1,
+		sizeof(union_int_payload1), &result2, &num_decode), NULL);
+	zassert_equal(sizeof(union_int_payload1), num_decode, NULL);
+	zassert_equal(result2.union_choice, _union__uint5, NULL);
+
+	zassert_equal(ZCBOR_SUCCESS, cbor_decode_UnionInt1(union_int_payload2,
+		sizeof(union_int_payload2), &result1, &num_decode), NULL);
 	zassert_equal(sizeof(union_int_payload2), num_decode, NULL);
-	zassert_equal(result.union_choice, _union__uint1000, NULL);
-	zassert_equal(result.bstr.len, 16, NULL);
-	zassert_mem_equal(result.bstr.value, "This is thousand", 16, NULL);
+	zassert_equal(result1.union_choice, _UnionInt1__union_uint2, NULL);
+	zassert_equal(result1.bstr.len, 16, NULL);
+	zassert_mem_equal(result1.bstr.value, "This is thousand", 16, NULL);
 
-	zassert_equal(ZCBOR_SUCCESS, cbor_decode_UnionInt(union_int_payload3,
-		sizeof(union_int_payload3), &result, &num_decode), NULL);
+	zassert_equal(ZCBOR_SUCCESS, cbor_decode_UnionInt2(union_int_payload2,
+		sizeof(union_int_payload2), &result2, &num_decode), NULL);
+	zassert_equal(sizeof(union_int_payload2), num_decode, NULL);
+	zassert_equal(result2.union_choice, _union__uint1000, NULL);
+	zassert_equal(result2.bstr.len, 16, NULL);
+	zassert_mem_equal(result2.bstr.value, "This is thousand", 16, NULL);
+
+	zassert_equal(ZCBOR_SUCCESS, cbor_decode_UnionInt1(union_int_payload3,
+		sizeof(union_int_payload3), &result1, &num_decode), NULL);
 	zassert_equal(sizeof(union_int_payload3), num_decode, NULL);
-	zassert_equal(result.union_choice, _union__nint, NULL);
-	zassert_equal(result._number.number_choice, _number_int, NULL);
-	zassert_equal(result._number._int, 1, NULL);
+	zassert_equal(result1.union_choice, _UnionInt1__union_uint3, NULL);
+	zassert_equal(result1._number.number_choice, _number_int, NULL);
+	zassert_equal(result1._number._int, 1, NULL);
 
-	int err = cbor_decode_UnionInt(union_int_payload4_inv,
-		sizeof(union_int_payload4_inv), &result, &num_decode);
+	zassert_equal(ZCBOR_SUCCESS, cbor_decode_UnionInt2(union_int_payload3,
+		sizeof(union_int_payload3), &result2, &num_decode), NULL);
+	zassert_equal(sizeof(union_int_payload3), num_decode, NULL);
+	zassert_equal(result2.union_choice, _union__nint, NULL);
+	zassert_equal(result2._number.number_choice, _number_int, NULL);
+	zassert_equal(result2._number._int, 1, NULL);
+
+	int err = cbor_decode_UnionInt2(union_int_payload6,
+		sizeof(union_int_payload6), &result2, &num_decode);
+	zassert_equal(ZCBOR_SUCCESS, err, "%d\r\n", err);
+	zassert_equal(sizeof(union_int_payload6), num_decode, NULL);
+	zassert_equal(result2.union_choice, _UnionInt2_union__Structure_One, NULL);
+	zassert_equal(result2._Structure_One.some_array.len, 2, NULL);
+	zassert_mem_equal(result2._Structure_One.some_array.value, "hi", 2, NULL);
+
+	err = cbor_decode_UnionInt1(union_int_payload4_inv,
+		sizeof(union_int_payload4_inv), &result1, &num_decode);
 	zassert_equal(ZCBOR_ERR_WRONG_VALUE, err, "%d\r\n", err);
 
-	err = cbor_decode_UnionInt(union_int_payload5_inv,
-		sizeof(union_int_payload5_inv), &result, &num_decode);
+	err = cbor_decode_UnionInt2(union_int_payload4_inv,
+		sizeof(union_int_payload4_inv), &result2, &num_decode);
+	zassert_equal(ZCBOR_ERR_WRONG_TYPE, err, "%d\r\n", err);
+
+	err = cbor_decode_UnionInt1(union_int_payload5_inv,
+		sizeof(union_int_payload5_inv), &result1, &num_decode);
 	zassert_equal(ZCBOR_ERR_WRONG_VALUE, err, "%d\r\n", err);
+
+	err = cbor_decode_UnionInt2(union_int_payload5_inv,
+		sizeof(union_int_payload5_inv), &result2, &num_decode);
+	zassert_equal(ZCBOR_ERR_WRONG_TYPE, err, "%d\r\n", err);
 }
 
 

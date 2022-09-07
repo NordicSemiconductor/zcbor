@@ -190,8 +190,20 @@ MapLength = {
 	?"e" : (end_device_array:[* uuid]),
 }
 
-UnionInt = [
+Structure_One = (
+	id: 1,
+	some_array: bstr
+)
+
+UnionInt1 = [
+	(union_uint1: 5, "This is a five") //
+	(union_uint2: 1000, bstr) //
+	(union_uint3: -100000, null, number)
+]
+
+UnionInt2 = [
 	(5, "This is a five") //
 	(1000, bstr) //
-	(-100000, null, number)
+	(-100000, null, number) //
+	Structure_One
 ]
