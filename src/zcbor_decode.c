@@ -215,6 +215,20 @@ bool zcbor_uint32_decode(zcbor_state_t *state, uint32_t *result)
 }
 
 
+bool zcbor_int32_expect_union(zcbor_state_t *state, int32_t result)
+{
+	zcbor_union_elem_code(state);
+	return zcbor_int32_expect(state, result);
+}
+
+
+bool zcbor_int64_expect_union(zcbor_state_t *state, int64_t result)
+{
+	zcbor_union_elem_code(state);
+	return zcbor_int64_expect(state, result);
+}
+
+
 bool zcbor_uint32_expect_union(zcbor_state_t *state, uint32_t result)
 {
 	zcbor_union_elem_code(state);
