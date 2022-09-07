@@ -53,10 +53,12 @@ bool zcbor_uint32_expect(zcbor_state_t *state, uint32_t result);
 bool zcbor_uint64_expect(zcbor_state_t *state, uint64_t result);
 bool zcbor_size_expect(zcbor_state_t *state, size_t result);
 
-/** Consume and expect a pint with a certain value, within a union.
+/** Consume and expect a pint/nint with a certain value, within a union.
  *
- * Calls @ref zcbor_union_elem_code then @ref zcbor_uint32_expect.
+ * Calls @ref zcbor_union_elem_code then @ref zcbor_[u]int[32|64]_expect.
  */
+bool zcbor_int32_expect_union(zcbor_state_t *state, int32_t result);
+bool zcbor_int64_expect_union(zcbor_state_t *state, int64_t result);
 bool zcbor_uint32_expect_union(zcbor_state_t *state, uint32_t result);
 bool zcbor_uint64_expect_union(zcbor_state_t *state, uint64_t result);
 
