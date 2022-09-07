@@ -112,8 +112,8 @@ static bool value_extract(zcbor_state_t *state,
 		void *const result, uint_fast32_t result_len)
 {
 	zcbor_trace();
-	zcbor_assert(result_len != 0, "0-length result not supported.\r\n");
-	zcbor_assert(result != NULL, NULL);
+	zcbor_assert_state(result_len != 0, "0-length result not supported.\r\n");
+	zcbor_assert_state(result != NULL, NULL);
 
 	INITIAL_CHECKS();
 	ZCBOR_ERR_IF((state->elem_count == 0), ZCBOR_ERR_LOW_ELEM_COUNT);
@@ -765,7 +765,7 @@ bool zcbor_float_expect(zcbor_state_t *state, double result)
 
 bool zcbor_any_skip(zcbor_state_t *state, void *result)
 {
-	zcbor_assert(result == NULL,
+	zcbor_assert_state(result == NULL,
 			"'any' type cannot be returned, only skipped.\r\n");
 
 	INITIAL_CHECKS();
@@ -911,7 +911,7 @@ bool zcbor_present_decode(uint_fast32_t *present,
 	uint_fast32_t num_decode;
 	bool retval = zcbor_multi_decode(0, 1, &num_decode, decoder, state, result, 0);
 
-	zcbor_assert(retval, "zcbor_multi_decode should not fail with these parameters.\r\n");
+	zcbor_assert_state(retval, "zcbor_multi_decode should not fail with these parameters.\r\n");
 
 	*present = num_decode;
 	return retval;
