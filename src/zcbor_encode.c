@@ -43,7 +43,7 @@ static bool encode_header_byte(zcbor_state_t *state,
 	ZCBOR_CHECK_ERROR();
 	ZCBOR_CHECK_PAYLOAD();
 
-	zcbor_assert(additional < 32, NULL);
+	zcbor_assert_state(additional < 32, NULL);
 
 	*(state->payload_mut++) = (uint8_t)((major_type << 5) | (additional & 0x1F));
 	return true;
@@ -132,7 +132,7 @@ static uint_fast32_t get_encoded_len(const void *const result, uint_fast32_t res
 static bool value_encode(zcbor_state_t *state, zcbor_major_type_t major_type,
 		const void *const input, uint_fast32_t max_result_len)
 {
-	zcbor_assert(max_result_len != 0, "0-length result not supported.\r\n");
+	zcbor_assert_state(max_result_len != 0, "0-length result not supported.\r\n");
 
 	uint_fast32_t result_len = get_result_len(input, max_result_len);
 	const void *const result = get_result(input, max_result_len, result_len);

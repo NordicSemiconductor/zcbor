@@ -62,8 +62,16 @@ do { \
 		ZCBOR_FAIL(); \
 	} \
 } while(0)
+#define zcbor_assert_state(expr, ...) \
+do { \
+	if (!(expr)) { \
+		zcbor_print_assert(expr, __VA_ARGS__); \
+		ZCBOR_ERR(ZCBOR_ERR_ASSERTION); \
+	} \
+} while(0)
 #else
 #define zcbor_assert(expr, ...)
+#define zcbor_assert_state(expr, ...)
 #endif
 
 #ifndef MIN
