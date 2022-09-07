@@ -43,7 +43,7 @@ set(py_command
   Floats2
   CBORBstr
   MapLength
-  UnionInt
+  UnionInt2
   -e
   ${bit_arg}
   --short-names

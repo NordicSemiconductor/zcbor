@@ -46,7 +46,8 @@ set(py_command
     Prelude
     CBORBstr
     MapLength
-    UnionInt
+    UnionInt1
+    UnionInt2
   --decode
   --git-sha-header
   --short-names

@@ -1170,7 +1170,8 @@ class CddlXcoder(CddlParser):
             return self.value[0].int_val()
         elif self.type == "OTHER" \
                 and not self.count_var_condition() \
-                and not self.single_func_impl_condition():
+                and not self.single_func_impl_condition() \
+                and not self.my_types[self.value].single_func_impl_condition():
             return self.my_types[self.value].int_val()
         return None
 
@@ -2225,6 +2226,7 @@ class CodeGenerator(CddlXcoder):
                     + f"sizeof({self.choice_var_access()})))",
                     "((" + f"{newl_ind}|| ".join(lines)
                          + ") || (zcbor_error(state, ZCBOR_ERR_WRONG_VALUE), false))",)
+
             child_values = ["(%s && ((%s = %s) || 1))" %
                             (child.full_xcode(
                                 union_int="EXPECT" if child.is_int_disambiguated() else None),

@@ -1404,12 +1404,16 @@ void test_union_int(void)
 		0x3A, 0x00, 0x01, 0x86, 0x9F, 0xF6, 0x01,
 		END
 	};
-	struct UnionInt input;
+	uint8_t exp_union_int_payload4[] = {LIST(2),
+		0x01, 0x42, 'h', 'i',
+		END
+	};
+	struct UnionInt2 input;
 	size_t num_encode;
 	uint8_t output[60];
 
 	input.union_choice = _union__uint5;
-	zassert_equal(ZCBOR_SUCCESS, cbor_encode_UnionInt(output, sizeof(output),
+	zassert_equal(ZCBOR_SUCCESS, cbor_encode_UnionInt2(output, sizeof(output),
 			&input, &num_encode), NULL);
 	zassert_equal(sizeof(exp_union_int_payload1), num_encode, NULL);
 	zassert_mem_equal(exp_union_int_payload1, output, num_encode, NULL);
@@ -1417,7 +1421,7 @@ void test_union_int(void)
 	input.union_choice = _union__uint1000;
 	input.bstr.len = 16;
 	input.bstr.value = (uint8_t *)&"This is thousand";
-	zassert_equal(ZCBOR_SUCCESS, cbor_encode_UnionInt(output, sizeof(output),
+	zassert_equal(ZCBOR_SUCCESS, cbor_encode_UnionInt2(output, sizeof(output),
 			&input, &num_encode), NULL);
 	zassert_equal(sizeof(exp_union_int_payload2), num_encode, NULL);
 	zassert_mem_equal(exp_union_int_payload2, output, num_encode, NULL);
@@ -1425,10 +1429,18 @@ void test_union_int(void)
 	input.union_choice = _union__nint;
 	input._number.number_choice = _number_int;
 	input._number._int = 1;
-	zassert_equal(ZCBOR_SUCCESS, cbor_encode_UnionInt(output, sizeof(output),
+	zassert_equal(ZCBOR_SUCCESS, cbor_encode_UnionInt2(output, sizeof(output),
 			&input, &num_encode), NULL);
 	zassert_equal(sizeof(exp_union_int_payload3), num_encode, NULL);
 	zassert_mem_equal(exp_union_int_payload3, output, num_encode, NULL);
+
+	input.union_choice = _UnionInt2_union__Structure_One;
+	input._Structure_One.some_array.value = (uint8_t *)&"hi";
+	input._Structure_One.some_array.len = 2;
+	zassert_equal(ZCBOR_SUCCESS, cbor_encode_UnionInt2(output, sizeof(output),
+			&input, &num_encode), NULL);
+	zassert_equal(sizeof(exp_union_int_payload4), num_encode, NULL);
+	zassert_mem_equal(exp_union_int_payload4, output, num_encode, NULL);
 }
 
 
