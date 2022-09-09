@@ -43,7 +43,7 @@ runs:
       shell: sh
       run: |
         sudo apt install qemu qemu-system-arm
-        ZEPHYR_SDK_VERSION=0.14.2
+        ZEPHYR_SDK_VERSION=0.15.0
         wget -nv https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v$ZEPHYR_SDK_VERSION/zephyr-sdk-${ZEPHYR_SDK_VERSION}_linux-x86_64_minimal.tar.gz
         wget -nv https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v$ZEPHYR_SDK_VERSION/toolchain_linux-x86_64_arm-zephyr-eabi.tar.gz
         wget -nv -O - https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v$ZEPHYR_SDK_VERSION/sha256.sum | shasum --check --ignore-missing
