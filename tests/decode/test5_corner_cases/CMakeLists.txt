@@ -6,6 +6,8 @@
 
 cmake_minimum_required(VERSION 3.13.1)
 
+set_property(GLOBAL PROPERTY CSTD c11) # To avoid issues with c99 and -Wpedantic
+
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(test5_corner_cases)
 include(../../cmake/test_template.cmake)
@@ -70,9 +72,7 @@ if (TEST_INDEFINITE_LENGTH_ARRAYS)
   target_compile_definitions(app PUBLIC TEST_INDEFINITE_LENGTH_ARRAYS)
 endif()
 
-if(CMAKE_C_COMPILER_ID STREQUAL "GNU" AND CMAKE_C_COMPILER_VERSION VERSION_GREATER_EQUAL 11)
-  if (NOT VERBOSE)
-    # VERBOSE means including printk which doesn't build with these options.
-    target_compile_options(corner_cases PRIVATE -Wpedantic -Wconversion)
-  endif()
+if (NOT VERBOSE)
+  # VERBOSE means including printk which doesn't build with these options.
+  target_compile_options(corner_cases PRIVATE -Wpedantic -Wconversion)
 endif()
