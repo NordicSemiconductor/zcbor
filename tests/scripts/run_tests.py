@@ -493,50 +493,32 @@ class TestCLI(TestCase):
     def get_std_args(self, input, cmd="convert"):
         return ["zcbor", cmd, "--cddl", str(p_manifest12), "--input", str(input), "-t", "SUIT_Envelope_Tagged"]
 
+    def popen_test(self, args, input, exp_retcode=0):
+        call0 = Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE)
+        stdout0, stderr0 = call0.communicate(input)
+        self.assertEqual(exp_retcode, call0.returncode)
+        return stdout0, stderr0
+
     def do_testn(self, n):
-        call00 = Popen(self.get_std_args(p_test_vectors12[n], cmd="validate"))
-        call0 = Popen(self.get_std_args(p_test_vectors12[n]) + ["--output", "-", "--output-as", "cbor"], stdout=PIPE)
-        call00.communicate()
-        stdout0, _ = call0.communicate()
-        self.assertEqual(0, call00.returncode)
-        self.assertEqual(0, call0.returncode)
+        self.popen_test(self.get_std_args(p_test_vectors12[n], cmd="validate"), "")
+        stdout0, _ = self.popen_test(self.get_std_args(p_test_vectors12[n]) + ["--output", "-", "--output-as", "cbor"], "")
 
-        call01 = Popen(self.get_std_args("-", cmd="validate") + ["--input-as", "cbor"], stdin=PIPE)
-        call1 = Popen(self.get_std_args("-") + ["--input-as", "cbor", "--output", "-", "--output-as", "json"], stdin=PIPE, stdout=PIPE)
-        call01.communicate(input=stdout0)
-        stdout1, _ = call1.communicate(input=stdout0)
-        self.assertEqual(0, call01.returncode)
-        self.assertEqual(0, call1.returncode)
+        self.popen_test(self.get_std_args("-", cmd="validate") + ["--input-as", "cbor"], stdout0)
+        stdout1, _ = self.popen_test(self.get_std_args("-") + ["--input-as", "cbor", "--output", "-", "--output-as", "json"], stdout0)
 
-        call02 = Popen(self.get_std_args("-", cmd="validate") + ["--input-as", "json"], stdin=PIPE)
-        call2 = Popen(self.get_std_args("-") + ["--input-as", "json", "--output", "-", "--output-as", "yaml"], stdin=PIPE, stdout=PIPE)
-        call02.communicate(input=stdout1)
-        stdout2, _ = call2.communicate(input=stdout1)
-        self.assertEqual(0, call02.returncode)
-        self.assertEqual(0, call2.returncode)
+        self.popen_test(self.get_std_args("-", cmd="validate") + ["--input-as", "json"], stdout1)
+        stdout2, _ = self.popen_test(self.get_std_args("-") + ["--input-as", "json", "--output", "-", "--output-as", "yaml"], stdout1)
 
-        call03 = Popen(self.get_std_args("-", cmd="validate") + ["--input-as", "yaml"], stdin=PIPE)
-        call3 = Popen(self.get_std_args("-") + ["--input-as", "yaml", "--output", "-", "--output-as", "cbor"], stdin=PIPE, stdout=PIPE)
-        call03.communicate(input=stdout2)
-        stdout3, _ = call3.communicate(input=stdout2)
-        self.assertEqual(0, call3.returncode)
-        self.assertEqual(0, call03.returncode)
+        self.popen_test(self.get_std_args("-", cmd="validate") + ["--input-as", "yaml"], stdout2)
+        stdout3, _ = self.popen_test(self.get_std_args("-") + ["--input-as", "yaml", "--output", "-", "--output-as", "cbor"], stdout2)
 
         self.assertEqual(stdout0, stdout3)
 
-        call04 = Popen(self.get_std_args("-", cmd="validate") + ["--input-as", "cbor"], stdin=PIPE)
-        call4 = Popen(self.get_std_args("-") + ["--input-as", "cbor", "--output", "-", "--output-as", "cborhex"], stdin=PIPE, stdout=PIPE)
-        call04.communicate(input=stdout3)
-        stdout4, _ = call4.communicate(input=stdout3)
-        self.assertEqual(0, call04.returncode)
-        self.assertEqual(0, call4.returncode)
+        self.popen_test(self.get_std_args("-", cmd="validate") + ["--input-as", "cbor"], stdout3)
+        stdout4, _ = self.popen_test(self.get_std_args("-") + ["--input-as", "cbor", "--output", "-", "--output-as", "cborhex"], stdout3)
 
-        call05 = Popen(self.get_std_args("-", cmd="validate") + ["--input-as", "cborhex"], stdin=PIPE)
-        call5 = Popen(self.get_std_args("-") + ["--input-as", "cborhex", "--output", "-", "--output-as", "json"], stdin=PIPE, stdout=PIPE)
-        call05.communicate(input=stdout4)
-        stdout5, _ = call5.communicate(input=stdout4)
-        self.assertEqual(0, call05.returncode)
-        self.assertEqual(0, call5.returncode)
+        self.popen_test(self.get_std_args("-", cmd="validate") + ["--input-as", "cborhex"], stdout4)
+        stdout5, _ = self.popen_test(self.get_std_args("-") + ["--input-as", "cborhex", "--output", "-", "--output-as", "json"], stdout4)
 
         self.assertEqual(stdout1, stdout5)
 
@@ -564,36 +546,22 @@ class TestCLI(TestCase):
         self.do_testn(5)
 
     def test_map_bstr(self):
-        args = ["zcbor", "convert", "--cddl", str(p_map_bstr_cddl), "--input", str(p_map_bstr_yaml), "-t", "map", "--output", "-"]
-        call1 = Popen(args, stdout=PIPE)
-        stdout1, _ = call1.communicate()
-        self.assertEqual(0, call1.returncode)
+        stdout1, _ = self.popen_test(["zcbor", "convert", "--cddl", str(p_map_bstr_cddl), "--input", str(p_map_bstr_yaml), "-t", "map", "--output", "-"], "")
         self.assertEqual(dumps({"test": bytes.fromhex("1234abcd"), "test2": cbor2.CBORTag(1234, bytes.fromhex("1a2b3c4d")), ("test3",): dumps(1234)}), stdout1)
 
     def test_decode_encode(self):
-        args = ["zcbor", "code", "--cddl", str(p_map_bstr_cddl), "-t", "map"]
-        call1 = Popen(args, stdout=PIPE, stderr=PIPE)
-
-        _, stderr1 = call1.communicate()
-        self.assertNotEqual(0, call1.returncode)
+        _, stderr1 = self.popen_test(["zcbor", "code", "--cddl", str(p_map_bstr_cddl), "-t", "map"], "", exp_retcode=2)
         self.assertIn(b"error: Please specify at least one of --decode or --encode", stderr1)
 
     def test_output_present(self):
         args = ["zcbor", "code", "--cddl", str(p_map_bstr_cddl), "-t", "map", "-d"]
-        call1 = Popen(args, stdout=PIPE, stderr=PIPE)
-
-        _, stderr1 = call1.communicate()
-        self.assertNotEqual(0, call1.returncode)
+        _, stderr1 = self.popen_test(args, "", exp_retcode=2)
         self.assertIn(
             b"error: Please specify both --output-c and --output-h "
             b"unless --output-cmake is specified.",
             stderr1)
 
-        args += ["--output-c", "/tmp/map.c"]
-        call2 = Popen(args, stdout=PIPE, stderr=PIPE)
-
-        _, stderr2 = call2.communicate()
-        self.assertNotEqual(0, call2.returncode)
+        _, stderr2 = self.popen_test(args + ["--output-c", "/tmp/map.c"], "", exp_retcode=2)
         self.assertIn(
             b"error: Please specify both --output-c and --output-h "
             b"unless --output-cmake is specified.",
