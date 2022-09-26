@@ -7,6 +7,10 @@ inputs:
     description: 'Which zephyr toolchain to use.'
     required: false
     default: 'host'
+  zephyr_toolchain_arch:
+    description: 'Which architectures to use.'
+    required: false
+    default: ''
 runs:
   using: 'composite'
   steps:
@@ -38,19 +42,33 @@ runs:
         pip3 install -U -r $ZEPHYR_BASE/scripts/requirements-build-test.txt
         pip3 install -U -r $ZEPHYR_BASE/scripts/requirements-run-test.txt
 
-    - name: Install Zephyr SDK (ARM)
+    - name: Install Zephyr SDK
       if: ${{ inputs.zephyr_toolchain == 'zephyr' }}
       shell: sh
       run: |
-        sudo apt install qemu qemu-system-arm
-        ZEPHYR_SDK_VERSION=0.15.0
         wget -nv https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v$ZEPHYR_SDK_VERSION/zephyr-sdk-${ZEPHYR_SDK_VERSION}_linux-x86_64_minimal.tar.gz
-        wget -nv https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v$ZEPHYR_SDK_VERSION/toolchain_linux-x86_64_arm-zephyr-eabi.tar.gz
         wget -nv -O - https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v$ZEPHYR_SDK_VERSION/sha256.sum | shasum --check --ignore-missing
         tar -xf zephyr-sdk-${ZEPHYR_SDK_VERSION}_linux-x86_64_minimal.tar.gz
         mv zephyr-sdk-$ZEPHYR_SDK_VERSION zephyr-sdk
-        tar -xf toolchain_linux-x86_64_arm-zephyr-eabi.tar.gz -C zephyr-sdk
         west update cmsis
+
+    - name: Install Zephyr SDK (ARM)
+      if: ${{ inputs.zephyr_toolchain == 'zephyr' && contains(inputs.zephyr_toolchain_arch, 'arm') }}
+      shell: sh
+      run: |
+        sudo apt install qemu qemu-system-arm
+        wget -nv https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v$ZEPHYR_SDK_VERSION/toolchain_linux-x86_64_arm-zephyr-eabi.tar.gz
+        wget -nv -O - https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v$ZEPHYR_SDK_VERSION/sha256.sum | shasum --check --ignore-missing
+        tar -xf toolchain_linux-x86_64_arm-zephyr-eabi.tar.gz -C zephyr-sdk
+
+    - name: Install Zephyr SDK (MIPS)
+      if: ${{ inputs.zephyr_toolchain == 'zephyr' && contains(inputs.zephyr_toolchain_arch, 'mips') }}
+      shell: sh
+      run: |
+        sudo apt install qemu qemu-system-mips
+        wget -nv https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v$ZEPHYR_SDK_VERSION/toolchain_linux-x86_64_mips-zephyr-elf.tar.gz
+        wget -nv -O - https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v$ZEPHYR_SDK_VERSION/sha256.sum | shasum --check --ignore-missing
+        tar -xf toolchain_linux-x86_64_mips-zephyr-elf.tar.gz -C zephyr-sdk
 
     - name: Run tests
       working-directory: tests
