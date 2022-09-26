@@ -111,7 +111,7 @@ static const void *get_result(const void *const input, uint_fast32_t max_result_
 	uint_fast32_t result_len)
 {
 #ifdef CONFIG_BIG_ENDIAN
-	return &((uint8_t *)input)[max_result_len - result_len];
+	return &((uint8_t *)input)[max_result_len - (result_len ? result_len : 1)];
 #else
 	return input;
 #endif

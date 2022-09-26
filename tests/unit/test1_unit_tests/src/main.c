@@ -804,6 +804,24 @@ void test_int(void)
 }
 
 
+/** This tests a regression in big-endian encoding, where small numbers (like 0)
+  * where handled incorrectly (1-off), because of an error in get_result().
+  */
+void test_encode_int_0(void)
+{
+	uint8_t payload1[100];
+	uint32_t values_32[2] = {0, UINT32_MAX};
+	uint64_t values_64[2] = {0, UINT64_MAX};
+	ZCBOR_STATE_E(state_e, 1, payload1, sizeof(payload1), 0);
+	ZCBOR_STATE_D(state_d, 1, payload1, sizeof(payload1), 16);
+
+	zassert_true(zcbor_uint32_put(state_e, values_32[0]));
+	zassert_true(zcbor_uint64_put(state_e, values_64[0]));
+	zassert_true(zcbor_uint32_expect(state_d, 0));
+	zassert_true(zcbor_uint64_expect(state_d, 0));
+}
+
+
 void test_main(void)
 {
 	ztest_test_suite(zcbor_unit_tests,
@@ -818,7 +836,8 @@ void test_main(void)
 			 ztest_unit_test(test_validate_fragments),
 			 ztest_unit_test(test_bstr_cbor_fragments),
 			 ztest_unit_test(test_canonical_list),
-			 ztest_unit_test(test_int)
+			 ztest_unit_test(test_int),
+			 ztest_unit_test(test_encode_int_0)
 	);
 	ztest_run_test_suite(zcbor_unit_tests);
 }
