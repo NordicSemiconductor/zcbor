@@ -28,7 +28,7 @@ static uint_fast32_t additional_len(uint8_t additional)
 }
 
 /** Extract the major type, i.e. the first 3 bits of the header byte. */
-#define MAJOR_TYPE(header_byte) (((header_byte) >> 5) & 0x7)
+#define MAJOR_TYPE(header_byte) ((zcbor_major_type_t)(((header_byte) >> 5) & 0x7))
 
 /** Extract the additional info, i.e. the last 5 bits of the header byte. */
 #define ADDITIONAL(header_byte) ((header_byte) & 0x1F)
@@ -158,7 +158,7 @@ static bool value_extract(zcbor_state_t *state,
 bool zcbor_int_decode(zcbor_state_t *state, void *result_int, size_t int_size)
 {
 	INITIAL_CHECKS();
-	uint8_t major_type = MAJOR_TYPE(*state->payload);
+	zcbor_major_type_t major_type = MAJOR_TYPE(*state->payload);
 	uint8_t *result_uint8 = (uint8_t *)result_int;
 	int8_t *result_int8 = (int8_t *)result_int;
 
@@ -791,7 +791,7 @@ bool zcbor_any_skip(zcbor_state_t *state, void *result)
 			"'any' type cannot be returned, only skipped.\r\n");
 
 	INITIAL_CHECKS();
-	uint8_t major_type = MAJOR_TYPE(*state->payload);
+	zcbor_major_type_t major_type = MAJOR_TYPE(*state->payload);
 	uint8_t additional = ADDITIONAL(*state->payload);
 	uint_fast32_t value;
 	uint_fast32_t num_decode;
