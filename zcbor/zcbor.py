@@ -2227,7 +2227,7 @@ class CodeGenerator(CddlXcoder):
                     "((" + f"{newl_ind}|| ".join(lines)
                          + ") || (zcbor_error(state, ZCBOR_ERR_WRONG_VALUE), false))",)
 
-            child_values = ["(%s && ((%s = %s) || 1))" %
+            child_values = ["(%s && ((%s = %s), true))" %
                             (child.full_xcode(
                                 union_int="EXPECT" if child.is_int_disambiguated() else None),
                                 self.choice_var_access(), child.enum_var_name())
