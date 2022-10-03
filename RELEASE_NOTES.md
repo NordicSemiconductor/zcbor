@@ -23,7 +23,7 @@ The following is a list of limitiations and missing features:
  * Most of the "Extended Diagnostic Notation" is unsupported.
 
 
-# zcbor v. 0.5.1
+# zcbor v. 0.5.1 (2022-06-21)
 
 Any new bugs, requests, or missing features should be reported as [Github issues](https://github.com/NordicSemiconductor/zcbor/issues).
 
@@ -52,7 +52,7 @@ The following is a list of limitiations and missing features:
  * Most of the "Extended Diagnostic Notation" is unsupported.
 
 
-# zcbor v. 0.5.0
+# zcbor v. 0.5.0 (2022-06-13)
 
 Any new bugs, requests, or missing features should be reported as [Github issues](https://github.com/NordicSemiconductor/zcbor/issues).
 
@@ -105,7 +105,7 @@ The following is a list of limitiations and missing features:
  * Most of the "Extended Diagnostic Notation" is unsupported.
 
 
-# zcbor v. 0.4.0
+# zcbor v. 0.4.0 (2022-03-31)
 
 **cddl-gen has been renamed to zcbor!**
 
@@ -208,7 +208,7 @@ The following is a list of limitiations and missing features:
  * Most of the "Extended Diagnostic Notation" is unsupported.
 
 
-# cddl-gen v. 0.3.0
+# cddl-gen v. 0.3.0 (2021-11-17)
 
 Any new bugs, requests, or missing features should be reported as [Github issues](https://github.com/NordicSemiconductor/cddl-gen/issues).
 
