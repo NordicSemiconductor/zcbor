@@ -3,8 +3,19 @@
 Any new bugs, requests, or missing features should be reported as [Github issues](https://github.com/NordicSemiconductor/zcbor/issues).
 
 ## Improvements:
+ * Refactor zcbor CLI to add 'verify' and put all options after keyword
+ * Fix Coverity warnings in C library and generated code
+ * zcbor_decode: Add zcbor_int[32|64]_expect_union
+ * zcbor_common.h: Add new zcbor_assert_state() macro
+ * zcbor_common.h: Rename ARRAY_SIZE to ZCBOR_ARRAY_SIZE to avoid #include order problems in Zephyr
+ * .github: Refactor Github action and add QEMU testing on mps2_an521 (ARM) and qemu_malta_be (MIPS, big-endian)
+ * zcbor.py: Raise argparse error on insufficient --output-* args
+ * zcbor_decode.h: Define variables to avoid rvalue address errors
+ * Add release dates to all RELEASE_NOTES entries
 
 ## Bugfixes:
+ * zcbor.py: Fix bug where the union_int optimization decodes twice
+ * zcbor_encode.c: Fix error for big-endian architectures
 
 ## Unsupported CDDL features
 Not all features outlined in the [CDDL spec](https://datatracker.ietf.org/doc/html/rfc8610) are supported by zcbor.
