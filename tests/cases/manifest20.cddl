@@ -1,0 +1,273 @@
+SUIT_Envelope_Tagged = #6.107(SUIT_Envelope)
+SUIT_Envelope = {
+  suit-authentication-wrapper => bstr .cbor SUIT_Authentication,
+  suit-manifest  => bstr .cbor SUIT_Manifest,
+  SUIT_Severable_Manifest_Members,
+  * SUIT_Integrated_Payload,
+  * $$SUIT_Envelope_Extensions,
+}
+
+SUIT_Authentication = [
+    bstr .cbor SUIT_Digest,
+    * bstr .cbor SUIT_Authentication_Block
+]
+
+SUIT_Digest = [
+  suit-digest-algorithm-id : suit-cose-hash-algs,
+  suit-digest-bytes : bstr,
+  * $$SUIT_Digest-extensions
+]
+
+SUIT_Authentication_Block /= COSE_Mac_Tagged
+SUIT_Authentication_Block /= COSE_Sign_Tagged
+SUIT_Authentication_Block /= COSE_Mac0_Tagged
+SUIT_Authentication_Block /= COSE_Sign1_Tagged
+
+SUIT_Severable_Manifest_Members = (
+  ? suit-payload-fetch => bstr .cbor SUIT_Command_Sequence,
+  ? suit-install => bstr .cbor SUIT_Command_Sequence,
+  ? suit-text => bstr .cbor SUIT_Text_Map,
+  * $$SUIT_severable-members-extensions,
+)
+
+SUIT_Integrated_Payload = (suit-integrated-payload-key => bstr)
+suit-integrated-payload-key = tstr
+
+SUIT_Manifest_Tagged = #6.1070(SUIT_Manifest)
+
+SUIT_Manifest = {
+    suit-manifest-version         => 1,
+    suit-manifest-sequence-number => uint,
+    suit-common                   => bstr .cbor SUIT_Common,
+    ? suit-reference-uri          => tstr,
+    SUIT_Unseverable_Members,
+    SUIT_Severable_Members_Choice,
+    * $$SUIT_Manifest_Extensions,
+}
+
+SUIT_Unseverable_Members = (
+  ? suit-validate => bstr .cbor SUIT_Command_Sequence,
+  ? suit-load => bstr .cbor SUIT_Command_Sequence,
+  ? suit-invoke => bstr .cbor SUIT_Command_Sequence,
+  * $$unseverable-manifest-member-extensions,
+)
+
+SUIT_Severable_Members_Choice = (
+  ? suit-payload-fetch => SUIT_Digest /
+      bstr .cbor SUIT_Command_Sequence,
+  ? suit-install => SUIT_Digest / bstr .cbor SUIT_Command_Sequence,
+  ? suit-text => SUIT_Digest / bstr .cbor SUIT_Text_Map,
+  * $$severable-manifest-members-choice-extensions
+)
+
+SUIT_Common = {
+    ? suit-components             => SUIT_Components,
+    ? suit-shared-sequence        => bstr .cbor SUIT_Shared_Sequence,
+    * $$SUIT_Common-extensions,
+}
+
+SUIT_Components           = [ + SUIT_Component_Identifier ]
+
+;REQUIRED to implement:
+suit-cose-hash-algs /= cose-alg-sha-256
+
+;OPTIONAL to implement:
+suit-cose-hash-algs /= cose-alg-shake128
+suit-cose-hash-algs /= cose-alg-sha-384
+suit-cose-hash-algs /= cose-alg-sha-512
+suit-cose-hash-algs /= cose-alg-shake256
+
+SUIT_Component_Identifier =  [* bstr]
+
+SUIT_Shared_Sequence = [
+    + ( SUIT_Condition // SUIT_Shared_Commands )
+]
+
+SUIT_Shared_Commands //= (suit-directive-set-component-index,  IndexArg)
+SUIT_Shared_Commands //= (suit-directive-run-sequence,
+    bstr .cbor SUIT_Shared_Sequence)
+SUIT_Shared_Commands //= (suit-directive-try-each,
+    SUIT_Directive_Try_Each_Argument_Shared)
+SUIT_Shared_Commands //= (suit-directive-override-parameters,
+    {+ $$SUIT_Parameters})
+
+IndexArg /= uint
+IndexArg /= true
+IndexArg /= [+uint]
+
+
+SUIT_Directive_Try_Each_Argument_Shared = [
+    2* bstr .cbor SUIT_Shared_Sequence,
+    ?nil
+]
+
+SUIT_Command_Sequence = [ + (
+    SUIT_Condition // SUIT_Directive // SUIT_Command_Custom
+) ]
+
+SUIT_Command_Custom = (suit-command-custom, bstr/tstr/int/nil)
+SUIT_Condition //= (suit-condition-vendor-identifier, SUIT_Rep_Policy)
+SUIT_Condition //= (suit-condition-class-identifier,  SUIT_Rep_Policy)
+SUIT_Condition //= (suit-condition-device-identifier, SUIT_Rep_Policy)
+SUIT_Condition //= (suit-condition-image-match,       SUIT_Rep_Policy)
+SUIT_Condition //= (suit-condition-component-slot,    SUIT_Rep_Policy)
+SUIT_Condition //= (suit-condition-check-content,     SUIT_Rep_Policy)
+SUIT_Condition //= (suit-condition-abort,             SUIT_Rep_Policy)
+
+SUIT_Directive //= (suit-directive-write,             SUIT_Rep_Policy)
+SUIT_Directive //= (suit-directive-set-component-index,  IndexArg)
+SUIT_Directive //= (suit-directive-run-sequence,
+    bstr .cbor SUIT_Command_Sequence)
+SUIT_Directive //= (suit-directive-try-each,
+    SUIT_Directive_Try_Each_Argument)
+SUIT_Directive //= (suit-directive-override-parameters,
+    {+ $$SUIT_Parameters})
+SUIT_Directive //= (suit-directive-fetch,             SUIT_Rep_Policy)
+SUIT_Directive //= (suit-directive-copy,              SUIT_Rep_Policy)
+SUIT_Directive //= (suit-directive-swap,              SUIT_Rep_Policy)
+SUIT_Directive //= (suit-directive-invoke,            SUIT_Rep_Policy)
+
+SUIT_Directive_Try_Each_Argument = [
+    2* bstr .cbor SUIT_Command_Sequence,
+    ?nil
+]
+
+SUIT_Rep_Policy = uint .bits suit-reporting-bits
+
+suit-reporting-bits = &(
+    suit-send-record-success : 0,
+    suit-send-record-failure : 1,
+    suit-send-sysinfo-success : 2,
+    suit-send-sysinfo-failure : 3
+)
+
+$$SUIT_Parameters //= (suit-parameter-vendor-identifier =>
+    (RFC4122_UUID / cbor-pen))
+
+cbor-pen = #6.112(bstr)
+
+$$SUIT_Parameters //= (suit-parameter-class-identifier => RFC4122_UUID)
+$$SUIT_Parameters //= (suit-parameter-image-digest
+    => bstr .cbor SUIT_Digest)
+$$SUIT_Parameters //= (suit-parameter-image-size => uint)
+$$SUIT_Parameters //= (suit-parameter-component-slot => uint)
+
+$$SUIT_Parameters //= (suit-parameter-uri => tstr)
+$$SUIT_Parameters //= (suit-parameter-source-component => uint)
+$$SUIT_Parameters //= (suit-parameter-invoke-args => bstr)
+
+$$SUIT_Parameters //= (suit-parameter-device-identifier => RFC4122_UUID)
+
+$$SUIT_Parameters //= (suit-parameter-custom => int/bool/tstr/bstr)
+
+$$SUIT_Parameters //= (suit-parameter-content => bstr)
+$$SUIT_Parameters //= (suit-parameter-strict-order => bool)
+$$SUIT_Parameters //= (suit-parameter-soft-failure => bool)
+
+RFC4122_UUID = bstr .size 16
+
+SUIT_Text_Map = {
+    SUIT_Text_Keys,
+    * SUIT_Component_Identifier => {
+        SUIT_Text_Component_Keys
+    }
+}
+
+SUIT_Text_Component_Keys = (
+    ? suit-text-vendor-name           => tstr,
+    ? suit-text-model-name            => tstr,
+    ? suit-text-vendor-domain         => tstr,
+    ? suit-text-model-info            => tstr,
+    ? suit-text-component-description => tstr,
+    ? suit-text-component-version     => tstr,
+    * $$suit-text-component-key-extensions
+)
+
+SUIT_Text_Keys = (
+    ? suit-text-manifest-description => tstr,
+    ? suit-text-update-description   => tstr,
+    ? suit-text-manifest-json-source => tstr,
+    ? suit-text-manifest-yaml-source => tstr,
+    * $$suit-text-key-extensions
+)
+
+suit-authentication-wrapper = 2
+suit-manifest = 3
+
+;REQUIRED to implement:
+cose-alg-sha-256 = -16
+
+;OPTIONAL to implement:
+cose-alg-shake128 = -18
+cose-alg-sha-384 = -43
+cose-alg-sha-512 = -44
+cose-alg-shake256 = -45
+
+;Unseverable, recipient-necessary
+suit-manifest-version = 1
+suit-manifest-sequence-number = 2
+suit-common = 3
+suit-reference-uri = 4
+suit-validate = 7
+suit-load = 8
+suit-invoke = 9
+;Severable, recipient-necessary
+suit-payload-fetch = 16
+suit-install = 17
+;Severable, recipient-unnecessary
+suit-text = 23
+
+suit-components = 2
+suit-shared-sequence = 4
+
+suit-command-custom = nint
+
+suit-condition-vendor-identifier = 1
+suit-condition-class-identifier  = 2
+suit-condition-image-match       = 3
+suit-condition-component-slot    = 5
+suit-condition-check-content     = 6
+
+suit-condition-abort                    = 14
+suit-condition-device-identifier        = 24
+
+suit-directive-set-component-index      = 12
+suit-directive-try-each                 = 15
+suit-directive-write                    = 18
+suit-directive-override-parameters      = 20
+suit-directive-fetch                    = 21
+suit-directive-copy                     = 22
+suit-directive-invoke                   = 23
+
+suit-directive-swap                     = 31
+suit-directive-run-sequence             = 32
+
+suit-parameter-vendor-identifier = 1
+suit-parameter-class-identifier  = 2
+suit-parameter-image-digest      = 3
+suit-parameter-component-slot    = 5
+
+suit-parameter-strict-order      = 12
+suit-parameter-soft-failure      = 13
+suit-parameter-image-size        = 14
+suit-parameter-content           = 18
+
+suit-parameter-uri               = 21
+suit-parameter-source-component  = 22
+suit-parameter-invoke-args       = 23
+
+suit-parameter-device-identifier = 24
+
+suit-parameter-custom = nint
+
+suit-text-manifest-description  = 1
+suit-text-update-description    = 2
+suit-text-manifest-json-source  = 3
+suit-text-manifest-yaml-source  = 4
+
+suit-text-vendor-name           = 1
+suit-text-model-name            = 2
+suit-text-vendor-domain         = 3
+suit-text-model-info            = 4
+suit-text-component-description = 5
+suit-text-component-version     = 6

@@ -35,8 +35,10 @@ p_tests = Path(p_root, 'tests')
 p_manifest12 = Path(p_tests, 'cases', 'manifest12.cddl')
 p_manifest14 = Path(p_tests, 'cases', 'manifest14.cddl')
 p_manifest16 = Path(p_tests, 'cases', 'manifest16.cddl')
+p_manifest20 = Path(p_tests, 'cases', 'manifest20.cddl')
 p_test_vectors12 = tuple(Path(p_tests, 'cases', f'manifest12_example{i}.cborhex') for i in range(6))
 p_test_vectors14 = tuple(Path(p_tests, 'cases', f'manifest14_example{i}.cborhex') for i in range(6))
+p_test_vectors20 = tuple(Path(p_tests, 'cases', f'manifest20_example{i}.cborhex') for i in range(6))
 p_optional = Path(p_tests, 'cases', 'optional.cddl')
 p_corner_cases = Path(p_tests, 'cases', 'corner_cases.cddl')
 p_cose = Path(p_tests, 'cases', 'cose.cddl')
@@ -259,11 +261,12 @@ class Test7(Testn):
     def __init__(self, *args, **kwargs):
         super(Test7, self).__init__(*args, **kwargs)
         self.decode_file(p_test_vectors14[1], p_manifest14, p_cose)
+        self.manifest_digest = bytes.fromhex("60c61d6eb7a1aaeddc49ce8157a55cff0821537eeee77a4ded44155b03045132")
 
     def test_structure(self):
         self.assertEqual("COSE_Sign1_Tagged", self.decoded.suit_authentication_wrapper.SUIT_Authentication_Block_bstr[0].union_choice)
         self.assertEqual(-7, self.decoded.suit_authentication_wrapper.SUIT_Authentication_Block_bstr[0].COSE_Sign1_Tagged.Headers.protected.header_map_bstr.Generic_Headers.uint1union[0].int)
-        self.assertEqual(bytes.fromhex("60c61d6eb7a1aaeddc49ce8157a55cff0821537eeee77a4ded44155b03045132"), self.decoded.suit_authentication_wrapper.SUIT_Digest_bstr.suit_digest_bytes)
+        self.assertEqual(self.manifest_digest, self.decoded.suit_authentication_wrapper.SUIT_Digest_bstr.suit_digest_bytes)
         self.assertEqual(1, self.decoded.suit_manifest.suit_manifest_sequence_number)
         self.assertEqual(bytes.fromhex("fa6b4a53d5ad5fdfbe9de663e4d41ffe"), self.decoded.suit_manifest.suit_common.suit_common_sequence[0].suit_common_sequence.union[0].SUIT_Common_Commands.suit_directive_override_parameters.map[0].suit_parameter_vendor_identifier.RFC4122_UUID)
         self.assertEqual(bytes.fromhex("1492af1425695e48bf429b2d51f2ab45"), self.decoded.suit_manifest.suit_common.suit_common_sequence[0].suit_common_sequence.union[0].SUIT_Common_Commands.suit_directive_override_parameters.map[1].suit_parameter_class_identifier)
@@ -393,11 +396,12 @@ class Test9(Testn):
     def __init__(self, *args, **kwargs):
         super(Test9, self).__init__(*args, **kwargs)
         self.decode_file(p_test_vectors14[3], p_manifest14, p_cose)
+        self.slots = (33792, 541696)
 
     def test_try_each(self):
         self.assertEqual(2, len(self.decoded.suit_manifest.SUIT_Severable_Members_Choice.suit_install[0].SUIT_Command_Sequence_bstr.union[0].SUIT_Directive.suit_directive_try_each.SUIT_Directive_Try_Each_Argument.SUIT_Command_Sequence_bstr))
-        self.assertEqual(33792, self.decoded.suit_manifest.SUIT_Severable_Members_Choice.suit_install[0].SUIT_Command_Sequence_bstr.union[0].SUIT_Directive.suit_directive_try_each.SUIT_Directive_Try_Each_Argument.SUIT_Command_Sequence_bstr[0].union[0].SUIT_Directive.suit_directive_override_parameters.map[0].suit_parameter_component_slot)
-        self.assertEqual(541696, self.decoded.suit_manifest.SUIT_Severable_Members_Choice.suit_install[0].SUIT_Command_Sequence_bstr.union[0].SUIT_Directive.suit_directive_try_each.SUIT_Directive_Try_Each_Argument.SUIT_Command_Sequence_bstr[1].union[0].SUIT_Directive.suit_directive_override_parameters.map[0].suit_parameter_component_slot)
+        self.assertEqual(self.slots[0], self.decoded.suit_manifest.SUIT_Severable_Members_Choice.suit_install[0].SUIT_Command_Sequence_bstr.union[0].SUIT_Directive.suit_directive_try_each.SUIT_Directive_Try_Each_Argument.SUIT_Command_Sequence_bstr[0].union[0].SUIT_Directive.suit_directive_override_parameters.map[0].suit_parameter_component_slot)
+        self.assertEqual(self.slots[1], self.decoded.suit_manifest.SUIT_Severable_Members_Choice.suit_install[0].SUIT_Command_Sequence_bstr.union[0].SUIT_Directive.suit_directive_try_each.SUIT_Directive_Try_Each_Argument.SUIT_Command_Sequence_bstr[1].union[0].SUIT_Directive.suit_directive_override_parameters.map[0].suit_parameter_component_slot)
 
 
 class Test10(Testn):
@@ -448,45 +452,115 @@ class Test12(Test6):
 
 class Test13(Test7):
     def __init__(self, *args, **kwargs):
-        super(Test7, self).__init__(*args, **kwargs)
+        super(Test13, self).__init__(*args, **kwargs)
         self.decode_file(p_test_vectors14[1], p_manifest16, p_cose)
 
 
 class Test13Inv(Test7Inv):
     def __init__(self, *args, **kwargs):
-        super(Test7Inv, self).__init__(*args, **kwargs)
+        super(Test13Inv, self).__init__(*args, **kwargs)
         self.decode_file(p_test_vectors14[1], p_manifest16, p_cose)
 
 
 class Test14(Test8):
     def __init__(self, *args, **kwargs):
-        super(Test8, self).__init__(*args, **kwargs)
+        super(Test14, self).__init__(*args, **kwargs)
         self.decode_file(p_test_vectors14[2], p_manifest16, p_cose)
 
 
 class Test15(Test9):
     def __init__(self, *args, **kwargs):
-        super(Test9, self).__init__(*args, **kwargs)
+        super(Test15, self).__init__(*args, **kwargs)
         self.decode_file(p_test_vectors14[3], p_manifest16, p_cose)
 
 
 # Comment out because example 4 uses compression which is unsupported in manifest16
 # class Test16(Test10):
 #     def __init__(self, *args, **kwargs):
-#         super(Test10, self).__init__(*args, **kwargs)
+#         super(Test16, self).__init__(*args, **kwargs)
 #         self.decode_file(p_test_vectors14[4], p_manifest16, p_cose)
 
 
 class Test17(Test11):
     def __init__(self, *args, **kwargs):
-        super(Test11, self).__init__(*args, **kwargs)
+        super(Test17, self).__init__(*args, **kwargs)
         self.decode_file(p_test_vectors14[5], p_manifest16, p_cose)
 
 
 class Test17Inv(Test11Inv):
     def __init__(self, *args, **kwargs):
-        super(Test11Inv, self).__init__(*args, **kwargs)
+        super(Test17Inv, self).__init__(*args, **kwargs)
         self.decode_file(p_test_vectors14[5], p_manifest16, p_cose)
+
+
+class Test18(Test12):
+    def __init__(self, *args, **kwargs):
+        super(Test18, self).__init__(*args, **kwargs)
+        self.decode_file(p_test_vectors20[0], p_manifest20, p_cose)
+
+
+class Test19(Test13):
+    def __init__(self, *args, **kwargs):
+        super(Test19, self).__init__(*args, **kwargs)
+        self.decode_file(p_test_vectors20[1], p_manifest20, p_cose)
+        self.manifest_digest = bytes.fromhex("ef14b7091e8adae8aa3bb6fca1d64fb37e19dcf8b35714cfdddc5968c80ff50e")
+
+    def test_structure(self):
+        self.assertEqual("COSE_Sign1_Tagged", self.decoded.suit_authentication_wrapper.SUIT_Authentication_Block_bstr[0].union_choice)
+        self.assertEqual(-7, self.decoded.suit_authentication_wrapper.SUIT_Authentication_Block_bstr[0].COSE_Sign1_Tagged.Headers.protected.header_map_bstr.Generic_Headers.uint1union[0].int)
+        self.assertEqual(self.manifest_digest, self.decoded.suit_authentication_wrapper.SUIT_Digest_bstr.suit_digest_bytes)
+        self.assertEqual(1, self.decoded.suit_manifest.suit_manifest_sequence_number)
+        self.assertEqual(bytes.fromhex("fa6b4a53d5ad5fdfbe9de663e4d41ffe"), self.decoded.suit_manifest.suit_common.suit_shared_sequence[0].suit_shared_sequence.union[0].SUIT_Shared_Commands.suit_directive_override_parameters.map[0].suit_parameter_vendor_identifier.RFC4122_UUID)
+        self.assertEqual(bytes.fromhex("1492af1425695e48bf429b2d51f2ab45"), self.decoded.suit_manifest.suit_common.suit_shared_sequence[0].suit_shared_sequence.union[0].SUIT_Shared_Commands.suit_directive_override_parameters.map[1].suit_parameter_class_identifier)
+        self.assertEqual(bytes.fromhex("00112233445566778899aabbccddeeff0123456789abcdeffedcba9876543210"), self.decoded.suit_manifest.suit_common.suit_shared_sequence[0].suit_shared_sequence.union[0].SUIT_Shared_Commands.suit_directive_override_parameters.map[2].suit_parameter_image_digest.suit_digest_bytes)
+        self.assertEqual('cose_alg_sha_256', self.decoded.suit_manifest.suit_common.suit_shared_sequence[0].suit_shared_sequence.union[0].SUIT_Shared_Commands.suit_directive_override_parameters.map[2].suit_parameter_image_digest.suit_digest_algorithm_id.union_choice)
+        self.assertEqual(34768, self.decoded.suit_manifest.suit_common.suit_shared_sequence[0].suit_shared_sequence.union[0].SUIT_Shared_Commands.suit_directive_override_parameters.map[3].suit_parameter_image_size)
+        self.assertEqual(4, len(self.decoded.suit_manifest.suit_common.suit_shared_sequence[0].suit_shared_sequence.union[0].SUIT_Shared_Commands.suit_directive_override_parameters.map))
+        self.assertEqual(15, self.decoded.suit_manifest.suit_common.suit_shared_sequence[0].suit_shared_sequence.union[1].SUIT_Condition.suit_condition_vendor_identifier.SUIT_Rep_Policy)
+        self.assertEqual(15, self.decoded.suit_manifest.suit_common.suit_shared_sequence[0].suit_shared_sequence.union[2].SUIT_Condition.suit_condition_class_identifier.SUIT_Rep_Policy)
+        self.assertEqual(3, len(self.decoded.suit_manifest.suit_common.suit_shared_sequence[0].suit_shared_sequence.union))
+        self.assertEqual(2, len(self.decoded.suit_manifest.suit_common.suit_shared_sequence[0].suit_shared_sequence.union[0]))
+        self.assertEqual(2, len(self.decoded.suit_manifest.suit_common.suit_shared_sequence[0].suit_shared_sequence.union[0].SUIT_Shared_Commands))
+        self.assertEqual(1, len(self.decoded.suit_manifest.suit_common.suit_shared_sequence[0].suit_shared_sequence.union[0].SUIT_Shared_Commands.suit_directive_override_parameters))
+        self.assertEqual(4, len(self.decoded.suit_manifest.suit_common.suit_shared_sequence[0].suit_shared_sequence.union[0].SUIT_Shared_Commands.suit_directive_override_parameters.map))
+        self.assertEqual(2, len(self.decoded.suit_manifest.suit_common.suit_shared_sequence[0].suit_shared_sequence.union[0].SUIT_Shared_Commands.suit_directive_override_parameters.map[0]))
+
+
+class Test19Inv(Test13Inv):
+    def __init__(self, *args, **kwargs):
+        super(Test19Inv, self).__init__(*args, **kwargs)
+        self.decode_file(p_test_vectors20[1], p_manifest20, p_cose)
+
+
+class Test20(Test14):
+    def __init__(self, *args, **kwargs):
+        super(Test20, self).__init__(*args, **kwargs)
+        self.decode_file(p_test_vectors20[2], p_manifest20, p_cose)
+
+
+class Test21(Test15):
+    def __init__(self, *args, **kwargs):
+        super(Test21, self).__init__(*args, **kwargs)
+        self.decode_file(p_test_vectors20[3], p_manifest20, p_cose)
+        self.slots = (0, 1)
+
+
+class Test22(Test10):
+    def __init__(self, *args, **kwargs):
+        super(Test22, self).__init__(*args, **kwargs)
+        self.decode_file(p_test_vectors20[4], p_manifest20, p_cose)
+
+
+class Test23(Test17):
+    def __init__(self, *args, **kwargs):
+        super(Test23, self).__init__(*args, **kwargs)
+        self.decode_file(p_test_vectors20[5], p_manifest20, p_cose)
+
+
+class Test23Inv(Test17Inv):
+    def __init__(self, *args, **kwargs):
+        super(Test23Inv, self).__init__(*args, **kwargs)
+        self.decode_file(p_test_vectors20[5], p_manifest20, p_cose)
 
 
 class TestCLI(TestCase):
