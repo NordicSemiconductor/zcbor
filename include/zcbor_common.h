@@ -350,8 +350,8 @@ static inline bool zcbor_payload_at_end(const zcbor_state_t *state)
  *  For use when the payload is divided into multiple chunks.
  *
  *  This function also updates all backups to the new payload_end.
- *  This sets a flag so that if a backup is processed with the flag
- *  @ref ZCBOR_FLAG_RESTORE, but without the flag
+ *  This sets a flag so that @ref zcbor_process_backup fails if a backup is
+ *  processed with the flag @ref ZCBOR_FLAG_RESTORE, but without the flag
  *  @ref ZCBOR_FLAG_TRANSFER_PAYLOAD since this would cause an invalid state.
  *
  *  @param[inout]  state              The current state, will be updated with
