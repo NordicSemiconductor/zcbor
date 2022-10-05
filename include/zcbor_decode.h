@@ -6,10 +6,15 @@
 
 #ifndef ZCBOR_DECODE_H__
 #define ZCBOR_DECODE_H__
+
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include "zcbor_common.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /** The zcbor_decode library provides functions for decoding CBOR data elements.
  *
@@ -74,15 +79,15 @@ bool zcbor_tstr_expect(zcbor_state_t *state, struct zcbor_string *result);
  * @param[in]    string  The value to expect. A pointer to the string.
  * @param[in]    len     The length of the string pointed to by @p string.
  */
-static inline bool zcbor_bstr_expect_ptr(zcbor_state_t *state, uint8_t *ptr, size_t len)
+static inline bool zcbor_bstr_expect_ptr(zcbor_state_t *state, char const *ptr, size_t len)
 {
-	struct zcbor_string zs = { .value = ptr, .len = len };
+	struct zcbor_string zs = { .value = (const uint8_t *)ptr, .len = len };
 
 	return zcbor_bstr_expect(state, &zs);
 }
-static inline bool zcbor_tstr_expect_ptr(zcbor_state_t *state, uint8_t *ptr, size_t len)
+static inline bool zcbor_tstr_expect_ptr(zcbor_state_t *state, char const *ptr, size_t len)
 {
-	struct zcbor_string zs = { .value = ptr, .len = len };
+	struct zcbor_string zs = { .value = (const uint8_t *)ptr, .len = len };
 
 	return zcbor_tstr_expect(state, &zs);
 }
@@ -332,5 +337,9 @@ zcbor_state_t name[((num_backups) + 2)]; \
 do { \
 	zcbor_new_decode_state(name, ZCBOR_ARRAY_SIZE(name), payload, payload_size, elem_count); \
 } while(0)
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ZCBOR_DECODE_H__ */

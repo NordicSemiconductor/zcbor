@@ -6,10 +6,15 @@
 
 #ifndef ZCBOR_ENCODE_H__
 #define ZCBOR_ENCODE_H__
+
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include "zcbor_common.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /** The zcbor_encode library provides functions for encoding CBOR data elements.
  *
@@ -56,15 +61,15 @@ bool zcbor_tstr_encode(zcbor_state_t *state, const struct zcbor_string *input);
  * @param[in]    string  The value to encode. A pointer to the string
  * @param[in]    len     The length of the string pointed to by @p string.
  */
-static inline bool zcbor_bstr_encode_ptr(zcbor_state_t *state, const uint8_t *ptr, size_t len)
+static inline bool zcbor_bstr_encode_ptr(zcbor_state_t *state, const char *ptr, size_t len)
 {
-	const struct zcbor_string zs = { .value = ptr, .len = len };
+	const struct zcbor_string zs = { .value = (const uint8_t *)ptr, .len = len };
 
 	return zcbor_bstr_encode(state, &zs);
 }
-static inline bool zcbor_tstr_encode_ptr(zcbor_state_t *state, const uint8_t *ptr, size_t len)
+static inline bool zcbor_tstr_encode_ptr(zcbor_state_t *state, const char *ptr, size_t len)
 {
-	const struct zcbor_string zs = { .value = ptr, .len = len };
+	const struct zcbor_string zs = { .value = (const uint8_t *)ptr, .len = len };
 
 	return zcbor_tstr_encode(state, &zs);
 }
@@ -274,5 +279,9 @@ zcbor_state_t name[((num_backups) + 2)]; \
 do { \
 	zcbor_new_encode_state(name, ZCBOR_ARRAY_SIZE(name), payload, payload_size, elem_count); \
 } while(0)
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ZCBOR_ENCODE_H__ */

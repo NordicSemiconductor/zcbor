@@ -6,10 +6,14 @@
 
 #ifndef ZCBOR_COMMON_H__
 #define ZCBOR_COMMON_H__
+
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /** Convenience type that allows pointing to strings directly inside the payload
  *  without the need to copy out.
@@ -393,5 +397,9 @@ bool zcbor_validate_string_fragments(struct zcbor_string_fragment *fragments,
  */
 bool zcbor_splice_string_fragments(struct zcbor_string_fragment *fragments,
 		uint_fast32_t num_fragments, uint8_t *result, size_t *result_len);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ZCBOR_COMMON_H__ */
