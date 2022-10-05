@@ -4,6 +4,7 @@ Any new bugs, requests, or missing features should be reported as [Github issues
 
 ## Improvements:
  * Refactor zcbor CLI to add 'verify' and put all options after keyword
+ * Make several C++ related improvements in the C library
  * Fix Coverity warnings in C library and generated code
  * zcbor_decode: Add zcbor_int[32|64]_expect_union
  * zcbor_common.h: Add new zcbor_assert_state() macro
