@@ -1,15 +1,17 @@
 zcbor
 =====
 
-zcbor is a low footprint [CBOR](https://en.wikipedia.org/wiki/CBOR) library in the C language that comes with a schema-driven script tool that can validate your data, or even generate code for you.
-Aside from the script, the CBOR library is a standalone library which is tailored for use in microcontrollers.
+zcbor is a low footprint [CBOR](https://en.wikipedia.org/wiki/CBOR) library in the C language (C++ compatible), tailored for use in microcontrollers.
+It comes with a schema-driven script tool that can validate your data, or even generate code.
+The schema language (CDDL) allows creating very advanced and detailed schemas.
 
-The validation/conversion part of the script works with YAML and JSON data, in addition to CBOR.
+The validation and conversion part of the tool works with YAML and JSON data, in addition to CBOR.
 It can for example validate a YAML file against a schema and convert it into CBOR.
 
-The schema language used by zcbor is CDDL (Consise Data Definition Language) which is a powerful human-readable data description language defined in [IETF RFC 8610](https://datatracker.ietf.org/doc/rfc8610/).
+The code generation part of the tool generates C code based on the given schema.
+The generated code performs CBOR encoding and decoding using the C library, while also validating the data against all the rules in the schema.
 
-zcbor was previously called "cddl-gen".
+The schema language used by zcbor is CDDL (Consise Data Definition Language) which is a powerful human-readable data description language defined in [IETF RFC 8610](https://datatracker.ietf.org/doc/rfc8610/).
 
 
 Features
@@ -17,60 +19,76 @@ Features
 
 Here are some possible ways zcbor can be used:
 
- - Python script and module:
+ - C code:
+   - As a low-footprint CBOR decoding/encoding library similar to TinyCBOR/QCBOR/NanoCBOR. The library can be used independently of the Python script. ([More information](#cbor-decodingencoding-library))
+   - To generate C code (using the Python script) for validating and decoding or encoding CBOR, for use in optimized or constrained environments, such as microcontrollers. ([More information](#code-generation))
+ - Python script and module ([More information](#python-script-and-module)):
    - Validate a YAML/JSON file and translate it into CBOR e.g. for transmission.
    - Validate a YAML/JSON/CBOR file before processing it with some other tool
    - Decode and validate incoming CBOR data into human-readable YAML/JSON.
-   - As part of a python script that processes YAML/JSON/CBOR files. zcbor is compatible with PyYAML and can additionally provide validation and/or easier inspection via named tuples.
- - C code:
-   - Generate C code for validating and decoding or encoding CBOR, for use in optimized or constrained environments, such as microcontrollers.
-   - Provide a low-footprint CBOR decoding/encoding library similar to TinyCBOR/QCBOR/NanoCBOR.
+   - As part of a python script that processes YAML/JSON/CBOR files.
+     - Uses the same internal representation used by the PyYAML/json/cbor2 libraries.
+     - Do validation against a CDDL schema.
+     - Create a read-only representation via named tuples (with names taken from the CDDL schema).
 
+
+Getting started
+===============
+
+There are samples in the [samples](samples) directory that demonstrate different ways to use zcbor, both the script tool and the C code.
+
+1. The [hello_world sample](samples/hello_world/README.md) is a minimum examples of encoding and decoding using the C library.
+2. The [pet sample](samples/pet/README.md) shows a how to use the C library together with generated code, and how to use the script tool to do code generation and data conversion.
+
+The [tests](tests) also demonstrate how to use zcbor in different ways. The [encoding](tests/encode), [decoding](tests/decode), and [unit](tests/unit) tests run using [Zephyr](https://github.com/zephyrproject-rtos/zephyr) (the samples do not use Zephyr).
+
+Should I use code generation or the library directly?
+-----------------------------------------------------
+
+The benefit of using code generation is greater for decoding than encoding.
+This is because decoding is generally more complex than encoding, since when decoding you have to gracefully handle all possible payloads.
+The code generation will provide a number of checks that are tedious to write manually.
+These checks ensure that the payload is well-formed.
 
 CBOR decoding/encoding library
 ==============================
 
-The CBOR library found at [headers](include) and [source](src) is used by the generated code, but can also be used directly.
-To use it, instantiate a `zcbor_state_t` object, which is most easily done using the `zcbor_new_*_state()` functions or the `ZCBOR_STATE_*()` macros.
+The CBOR library can be found in [include/](include) and [src/](src) can be used directly, by including the files in your project.
+If using zcbor with Zephyr, the library will be available when the [CONFIG_ZCBOR](https://docs.zephyrproject.org/latest/kconfig.html#CONFIG_ZCBOR)
+
+The library is also used by generated code. See the the [Code generation](#code-generation) section for more info about code generation.
+
+The C library is C++ compatible.
+
+
+The zcbor state object
+----------------------
+
+To do encoding or decoding with the library, instantiate a `zcbor_state_t` object, which is most easily done using the `ZCBOR_STATE_*()` macros, look below or in the [hello_world](samples/hello_world/src/main.c) sample for example code.
 
 The `elem_count` member refers to the number of encoded objects in the current list or map.
 `elem_count` starts again when entering a nested list or map, and is restored when exiting.
 
 `elem_count` is one reason for needing "backup" states (the other is to allow rollback of the payload).
-You need a number of backups corresponding to the maximum number of nested levels in your data.
-
-Backups are needed for encoding if you are using canonical encoding (`ZCBOR_CANONICAL`), or using the `bstrx_cbor_*` functions.
-Backups are needed for decoding if there are any lists, maps, or CBOR-encoded strings in the data.
-
-Note that the benefits of using the library directly is greater for encoding than for decoding.
-For decoding, the code generation will provide a number of checks that are tedious to write manually, and easy to forget.
+Backups are needed for _decoding_ if there are any lists, maps, or CBOR-encoded strings (`zcbor_bstr_*_decode`) in the data.
+Backups are needed for _encoding_ if there are any lists or maps *and* you are using canonical encoding (`ZCBOR_CANONICAL`), or when using the `zcbor_bstr_*_encode` functions.
 
 ```c
-/** The number of states must be at least equal to one more than the maximum
- *  nested depth of the data.
- */
-zcbor_state_t states[n];
-
-/** Initialize the states. After calling this, states[0] is ready to be used
- *  with the encoding/decoding APIs.
- *  elem_count must be the maximum expected number of top-level elements when
- *  decoding (1 if the data is wrapped in a list).
- *  When encoding, elem_count must be 0.
- */
-zcbor_new_state(states, n, payload, payload_len, elem_count);
-
-/** Alternatively, use one of the following convenience macros. */
+/** Initialize a decoding state (could include an array of backup states).
+ *  After calling this, decode_state[0] is ready to be used with the decoding APIs. */
 ZCBOR_STATE_D(decode_state, n, payload, payload_len, elem_count);
+
+/** Initialize an encoding state (could include an array of backup states).
+ *  After calling this, encode_state[0] is ready to be used with the encoding APIs. */
 ZCBOR_STATE_E(encode_state, n, payload, payload_len, 0);
 ```
-
-The CBOR libraries assume little-endianness by default, but you can define ZCBOR_BIG_ENDIAN to change this.
 
 Configuration
 -------------
 
 The C library has a few compile-time configuration options.
 These configuration options can be enabled by adding them as compile definitions to the build.
+If using zcbor with Zephyr, use the [Kconfig options](https://github.com/zephyrproject-rtos/zephyr/blob/main/modules/zcbor/Kconfig) instead.
 
 Name                      | Description
 ------------------------- | -----------
@@ -78,43 +96,36 @@ Name                      | Description
 `ZCBOR_VERBOSE`           | Print messages on encoding/decoding errors (`zcbor_print()`), and also a trace message (`zcbor_trace()`) for each decoded value, and in each generated function (when using code generation). Requires `printk` as found in Zephyr.
 `ZCBOR_ASSERTS`           | Enable asserts (`zcbor_assert()`). When they fail, the assert statements instruct the current function to return a `ZCBOR_ERR_ASSERTION` error. If `ZCBOR_VERBOSE` is enabled, a message is printed.
 `ZCBOR_STOP_ON_ERROR`     | Enable the `stop_on_error` functionality. This makes all functions abort their execution if called when an error has already happened.
-`ZCBOR_BIG_ENDIAN`        | All decoded values are returned as big-endian.
+`ZCBOR_BIG_ENDIAN`        | All decoded values are returned as big-endian. The default is little-endian.
 
 
 Python script and module
 ========================
 
-Invoking zcbor.py from the command line
----------------------------------------
-
 The zcbor.py script can directly read CBOR, YAML, or JSON data and validate it against a CDDL description.
 It can also freely convert the data between CBOR/YAML/JSON.
 It can also output the data to a C file formatted as a byte array.
+
+Invoking zcbor.py from the command line
+---------------------------------------
+
+zcbor.py can be installed via [`pip`](https://pypi.org/project/zcbor/), or alternatively invoked directly from its location in this repo.
 
 Following are some generalized examples for validating, and for converting (which also validates) data from the command line.
 The script infers the data format from the file extension, but the format can also be specified explicitly.
 See `zcbor validate --help` and `zcbor convert --help` for more information.
 
 ```sh
-python3 <zcbor base>/zcbor/zcbor.py validate -c <CDDL description file> -t <which CDDL type to expect> -i <input data file>
-python3 <zcbor base>/zcbor/zcbor.py convert -c <CDDL description file> -t <which CDDL type to expect> -i <input data file> -o <output data file>
-```
-
-Or invoke its command line executable (if installed via `pip`):
-
-```sh
 zcbor validate -c <CDDL description file> -t <which CDDL type to expect> -i <input data file>
 zcbor convert -c <CDDL description file> -t <which CDDL type to expect> -i <input data file> -o <output data file>
 ```
 
-Note that since CBOR supports more data types than YAML and JSON, zcbor can use an idiomatic format when converting to/from YAML/JSON.
-This is controlled by the `--yaml-compatibility` option to 'validate' and 'convert'.
-This is relevant when handling YAML/JSON conversions of data that uses the unsupported features.
-The following data types are supported by CBOR, but not by YAML (and JSON which is a subset of YAML):
+Or directly from within the repo.
 
- 1. bytestrings: YAML supports only text strings. In YAML, bytestrings ('<bytestring>') are represented as {"bstr": "<hex-formatted bytestring>"}, or as {"bstr": <any type>} if the CBOR bytestring contains CBOR-formatted data, in which the data is decoded into <any type>.
- 2. map keys other than text string: In YAML, such key value pairs are represented as {"keyval<unique int>": {"key": <key, not text>, "val": <value>}}
- 3. tags: In cbor2, tags are represented by a special type, cbor2.CBORTag. In YAML, these are represented as {"tag": <tag number>, "val": <tagged data>}.
+```sh
+python3 <zcbor base>/zcbor/zcbor.py validate -c <CDDL description file> -t <which CDDL type to expect> -i <input data file>
+python3 <zcbor base>/zcbor/zcbor.py convert -c <CDDL description file> -t <which CDDL type to expect> -i <input data file> -o <output data file>
+```
 
 You can see an example of the conversions in [tests/cases/yaml_compatibility.yaml](tests/cases/yaml_compatibility.yaml) and its CDDL file [tests/cases/yaml_compatibility.cddl](tests/cases/yaml_compatibility.cddl).
 
@@ -125,39 +136,137 @@ Importing zcbor gives access to the DataTranslator class which is used to implem
 DataTranslator can be used to programmatically perform the translations, or to manipulate the data.
 When accessing the data, you can choose between two internal formats:
 
- 1. The format provided by the cbor2, yaml (pyyaml), and json packages.
+ 1. The format provided by the [cbor2](https://pypi.org/project/cbor2/), [yaml (PyYAML)](https://pypi.org/project/PyYAML/), and [json](https://docs.python.org/3/library/json.html) packages.
     This is a format where the serialization types (map, list, string, number etc.) are mapped directly to the corresponding Python types.
     This format is common between these packages, which makes translation very simple.
     When returning this format, DataTranslator hides the idiomatic representations for bytestrings, tags, and non-text keys described above.
  2. A custom format which allows accessing the data via the names from the CDDL description file.
     This format is implemented using named tuples, and is immutable, meaning that it can be used for inspecting data, but not for changing or creating data.
 
+Making CBOR YAML-/JSON-compatible
+---------------------------------
+
+Since CBOR supports more data types than YAML and JSON, zcbor can optionally use a bespoke format when converting to/from YAML/JSON.
+This is controlled with the `--yaml-compatibility` option to `convert` and `validate`.
+This is relevant when handling YAML/JSON conversions of data that uses the unsupported features.
+The following data types are supported by CBOR, but not by YAML (or JSON which is a subset of YAML):
+
+ 1. bytestrings: YAML supports only text strings. In YAML, bytestrings are represented as `{"zcbor_bstr": "<hex-formatted bytestring>"}`, or as `{"zcbor_bstr": <any type>}` if the CBOR bytestring contains CBOR-formatted data, in which the data is decoded into `<any type>`.
+ 2. map keys other than text string: In YAML, such key value pairs are represented as `{"zcbor_keyval<unique int>": {"key": <key, not text>, "val": <value>}}`.
+ 3. tags: In cbor2, tags are represented by a special type, `cbor2.CBORTag`. In YAML, these are represented as `{"zcbor_tag": <tag number>, "zcbor_tag_val": <tagged data>}`.
+ 4. undefined: In cbor2, undefined has its own value `cbor2.types.undefined`. In YAML, undefined is represented as: `["zcbor_undefined"]`.
+
+You can see an example of the conversions in [tests/cases/yaml_compatibility.yaml](tests/cases/yaml_compatibility.yaml) and its CDDL file [tests/cases/yaml_compatibility.cddl](tests/cases/yaml_compatibility.cddl).
+
 
 Code generation
 ===============
 
-The generated code consists of:
- - A header file containing typedefs for the types defined in the CDDL, as well as declarations for decoding functions for some types (those specified as entry types). The typedefs are the same for both encoding and decoding.
- - A C file containing all the encoding/decoding code.
-   The code is split across multiple functions, and each function contains a single `if` statement which "and"s and "or"s together calls into the cbor libraries or to other generated decoding functions.
+Code generation is invoked with the `zcbor code` command:
 
-CDDL allows placing restrictions on the members of your data structure.
-Restrictions can be on type, on content (e.g. values/sizes of ints or strings), and repetition (e.g. the number of members in a list).
-The generated code will validate the input (i.e. the structure if encoding, or the payload for decoding), which means that it will check all the restriction set in the CDDL description, and fail if a restriction is broken.
+```sh
+zcbor code <--decode or --encode or both> -c <CDDL description file(s)> -t <which CDDL type(s) to expose in the API> --output-cmake <path to place the generated CMake file at>
+zcbor code <--decode or --encode or both> -c <CDDL description file(s)> -t <which CDDL type(s) to expose in the API> --oc <path to the generated C file> --oh <path to the generated header file> --oht <path to the generated types header>
+```
 
-The cbor libraries do most of the actual translation and moving of bytes, and the validation of values.
+When you call this, zcbor reads the CDDL files and creates C struct types to match the types described in the CDDL.
+It then creates code that uses the C library to decode CBOR data into the structs, and/or encode CBOR from the data in the structs.
+Finally, it takes the "entry types" (`-t`) and creates a public API function for each of them.
+While doing these things, it will make a number of optimizations, e.g. inlining code for small types and removing ununsed functions.
+It outputs the generated code into header and source files and optionally creates a CMake file to build them.
 
-There are tests for the code generation in [tests/](tests/).
-The tests require [Zephyr](https://github.com/zephyrproject-rtos/zephyr) (if your shell is set up to build Zephyr samples, the tests should also build).
+The `zcbor code` command reads one or more CDDL file(s) and generates some or all of these files:
+ - A header file with types (always)
+ - A header file with declarations for decoding functions (if `--decode`/`-d` is specified)
+ - A C file with decoding functions (if `--decode`/`-d` is specified)
+ - A header file with declarations for encoding functions (if `--encode`/`-e` is specified)
+ - A C file with encoding functions (if `--encode`/`-e` is specified)
+ - A CMake file that creates a library with the generated code and the C library (if `--output-cmake` is specified).
+
+CDDL allows placing restrictions on the members of your data.
+Restrictions can be on type (int/string/list/bool etc.), on content (e.g. values/sizes of ints or strings), and repetition (e.g. the number of members in a list).
+The generated code will validate the input, which means that it will check all the restriction set in the CDDL description, and fail if a restriction is broken.
+
+There are tests for the code generation in [tests/decode](tests/decode) and [tests/encode](tests/encode).
+The tests require [Zephyr](https://github.com/zephyrproject-rtos/zephyr) (if your system is set up to build Zephyr samples, the tests should also build).
+
+The generated C code is C++ compatible.
 
 Build system
 ------------
 
-When calling zcbor with the argument `--output-cmake <file path>`, a cmake file will be created at that location.
-The cmake file creates a cmake target and adds the generated and non-generated source files, and the include directories to the header files.
-This cmake file can then be included in your project's `CMakeLists.txt` file, and the target can be linked into your project.
-This is demonstrated in the tests, e.g. at tests/decode/test3_simple/CMakeLists.txt.
+When calling zcbor with the argument `--output-cmake <file path>`, a CMake file will be created at that location.
+The generated CMake file creates a target library and adds the generated and non-generated source files as well as required include directories to it.
+This CMake file can then be included in your project's `CMakeLists.txt` file, and the target can be linked into your project.
+This is demonstrated in the tests, e.g. at [tests/decode/test3_simple/CMakeLists.txt](tests/decode/test3_simple/CMakeLists.txt).
 zcbor can be instructed to copy the non-generated sources to the same location as the generated sources with `--copy-sources`.
+
+
+Usage Example
+=============
+
+There are buildable examples in the [samples](samples) directory.
+
+To see how to use the C library directly, see the (hello_world)[samples/hello_world/src/main.c] sample, or the (pet)[samples/pet/src/main.c] sample (look for calls to functions prefixed with `zcbor_`).
+
+To see how to use code generation, see the (pet)[samples/pet/src/main.c] sample.
+
+Look at the (CMakeLists.txt)[samples/pet/CMakeLists.txt] file to see how zcbor is invoked for code generation (and for conversion).
+
+To see how to do conversion, see the (pet)[samples/pet/CMakeLists.txt] sample.
+
+Below are some additional examples of how to invoke zcbor for code generation and for converting/validating
+
+Code generation
+---------------
+
+```sh
+python3 <zcbor base>/zcbor/zcbor.py code -c pet.cddl -d -t Pet --oc pet_decode.c --oh pet_decode.h
+# or
+zcbor code -c pet.cddl -d -t Pet --oc pet_decode.c --oh pet_decode.h
+```
+
+Converting
+----------
+
+Here is an example call for converting from YAML to CBOR:
+
+```sh
+python3 <zcbor base>/zcbor/zcbor.py convert -c pet.cddl -t Pet -i mypet.yaml -o mypet.cbor
+# or
+zcbor convert -c pet.cddl -t Pet -i mypet.yaml -o mypet.cbor
+```
+
+Which takes a yaml structure from mypet.yaml, validates it against the Pet type in the CDDL description in pet.cddl, and writes binary CBOR data to mypet.cbor.
+
+Validating
+----------
+
+Here is an example call for validating a JSON file:
+
+```sh
+python3 <zcbor base>/zcbor/zcbor.py validate -c pet.cddl -t Pet --yaml-compatibility -i mypet.json
+# or
+zcbor validate -c pet.cddl -t Pet --yaml-compatibility -i mypet.json
+```
+
+Which takes the json structure in mypet.json, converts any [yaml-compatible](#making-cbor-yaml-json-compatible) values to their original form, and validates that against the Pet type in the CDDL description in pet.cddl.
+
+
+Running tests
+=============
+
+The tests for the generated code are based on the Zephyr ztest library.
+These tests can be found in [tests/decode](tests/decode) and [tests/encode](tests/encode).
+To set up the environment to run the ztest tests, follow [Zephyr's Getting Started Guide](https://docs.zephyrproject.org/latest/getting_started/index.html), or see the workflow in the [`.github`](.github) directory.
+
+Tests for `convert` and `verify` are implemented with the unittest module.
+These tests can be found in [tests/scripts/test_zcbor.py](tests/scripts/run_teststest_zcbor.py).
+In this file there are also tests for code style of all python scripts, using the `pycodestyle` library.
+
+Tests for the docs, samples, etc. can be found in [tests/scripts/test_repo_files.py](tests/scripts/test_repo_files.py).
+
+For running the tests locally, there is [`tests/test.sh`](tests/test.sh) which runs all above tests.
 
 
 Introduction to CDDL
@@ -209,7 +318,7 @@ Any element can be labeled with `:`.
 The label is only for readability and does not impact the data structure in any way.
 E.g. `Foo = [name: tstr, age: uint]` is equivalent to `Foo = [tstr, uint]`.
 
-See [test3_simple](tests/decode/test3_simple/) for CDDL example code.
+See [pet.cddl](tests/cases/pet.cddl) for CDDL example code.
 
 
 Introduction to CBOR
@@ -231,147 +340,50 @@ The available major types can be seen in `zcbor_major_type_t`.
 For all major types, Values 0-23 are encoded directly in the _Additional info_, meaning that the _Value_ field is 0 bytes long.
 If _Additional info_ is 24, 25, 26, or 27, the _Value_ field is 1, 2, 4, or 8 bytes long, respectively.
 
-Major types `pint`, `nint`, `tag`, and `prim` elements have no payload, only _Value_.
+Major types `pint` (0), `nint` (1), `tag` (6), and `simple` (7) elements have no payload, only _Value_.
 
  * `pint`: Interpret the _Value_ as a positive integer.
  * `nint`: Interpret the _Value_ as a positive integer, then multiply by -1 and subtract 1.
  * `tag`: The _Value_ says something about the next non-tag element.
    See the [CBOR tag documentation](https://www.iana.org/assignments/cbor-tags/cbor-tags.xhtml) for details.
- * `prim`: Different _Additional info_ mean different things:
-    * 20: `false`
-    * 21: `true`
-    * 22: `null`
-    * 23: `undefined`
+ * `simple`: Different _Additional info_ mean different things:
+    * 0-19: Unassigned simple values.
+    * 20: `false` simple value
+    * 21: `true` simple value
+    * 22: `null` simple value
+    * 23: `undefined` simple value
+    * 24: Interpret the _Value_ as a 1 byte simple value. These simple values are currently unassigned.
     * 25: Interpret the _Value_ as an IEEE 754 float16.
     * 26: Interpret the _Value_ as an IEEE 754 float32.
     * 27: Interpret the _Value_ as an IEEE 754 float64.
     * 31: End of an indefinite-length `list` or `map`.
 
-For `bstr`, `tstr`, `list`, and `map`, the _Value_ describes the length of the _Payload_.
+For `bstr` (2), `tstr` (3), `list` (4), and `map` (5), the _Value_ describes the length of the _Payload_.
 For `bstr` and `tstr`, the length is in bytes, for `list`, the length is in number of elements, and for `map`, the length is in number of key/value element pairs.
 
 For `list` and `map`, sub elements are regular CBOR elements with their own _Header_, _Value_ and _Payload_. `list`s and `map`s can be recursively encoded.
 If a `list` or `map` has _Additional info_ 31, it is "indefinite-length", which means it has an "unknown" number of elements.
-Instead, its end is marked by a `prim` with _Additional info_ 31 (byte value 0xFF).
+Instead, its end is marked by a `simple` with _Additional info_ 31 (byte value 0xFF).
 
-Usage Example
-=============
 
-Code generation
----------------
+History
+=======
 
-This example is is taken from [test3_simple](tests/decode/test3_simple/).
+zcbor (then "cddl-gen") was initially conceived as a code generation project.
+It was inspired by the need to securely decode the complex manifest data structures in the [IETF SUIT specification](https://datatracker.ietf.org/doc/draft-ietf-suit-manifest/).
+This is reflected in the fact that there are multiple zcbor tests that use the CDDL and examples from various revisions of that specification.
+Decoding/deserializing data securely requires doing some quite repetitive checks on each data element, to be sure that you are not decoding gibberish.
+This is where code generation could pull a lot of weight.
+Later it was discovered that the CBOR library that was designed to used by generated code could be useful by itself.
+The script was also expanded so it could directly manipulate CBOR data.
+Since CBOR, YAML, and JSON are all represented in roughly the same way internally in Python, it was easy to expand that data manipulation to support YAML and JSON.
 
-If your CDDL file contains the following code:
-
-```cddl
-Timestamp = bstr .size 8
-
-; Comments are denoted with a semicolon
-Pet = [
-    name: [ +tstr ],
-    birthday: Timestamp,
-    species: (cat: 1) / (dog: 2) / (other: 3),
-]
-```
-Call the Python script:
-
-```sh
-python3 <zcbor base>/zcbor/zcbor.py code -c pet.cddl -d -t Pet --oc pet_decode.c --oh pet_decode.h
-# or
-zcbor code -c pet.cddl -d -t Pet --oc pet_decode.c --oh pet_decode.h
-```
-
-And use the generated code with
-
-```c
-#include <pet_decode.h> /* The name of the header file is taken from the name of
-                           the cddl file, but can also be specifiec when calling
-                           the script. */
-
-/* ... */
-
-/* The following type and function refer to the Pet type in the CDDL, which
- * has been specified as an --entry-types (-t) when invoking zcbor. */
-Pet_t pet;
-size_t decode_len;
-bool success = cbor_decode_Pet(input, sizeof(input), &pet, &decode_len);
-```
-
-The process is the same for encoding, except:
- - Change `-d` to `-e` when invoking zcbor
- - Input parameters become output parameters and vice versa in the code:
-
-```c
-#include <pet_encode.h> /* The name of the header file is taken from the name of
-                           the cddl file, but can also be specifiec when calling
-                           the script. */
-
-/* ... */
-
-/* The following type and function refer to the Pet type in the CDDL, which
- * has been specified as an --entry-types (-t) when invoking zcbor. */
-Pet_t pet = { /* Initialize with desired data. */ };
-uint8_t output[100]; /* 100 is an example. Must be large enough for data to fit. */
-size_t out_len;
-bool success = cbor_encode_Pet(output, sizeof(output), &pet, &out_len);
-```
-
-CBOR decoding/encoding library
-------------------------------
-
-For encoding:
-
-```c
-#include <zcbor_encode.h>
-
-uint8_t payload[100];
-zcbor_state_t state;
-zcbor_new_state(&state, 1, payload, sizeof(payload), 0);
-
-res = res && zcbor_list_start_encode(&state, 0);
-res = res && zcbor_tstr_put(&state, "first");
-res = res && zcbor_tstr_put(&state, "second");
-res = res && zcbor_list_end_encode(&state, 0);
-uint8_t timestamp[8] = {1, 2, 3, 4, 5, 6, 7, 8};
-struct zcbor_string timestamp_str = {
-  .value = timestamp,
-  .len = sizeof(timestamp),
-};
-res = res && zcbor_bstr_encode(&state, &timestamp_str);
-res = res && zcbor_uint32_put(&state, 2 /* dog */);
-res = res && zcbor_list_end_encode(&state, 0);
-
-```
-
-Converting
-----------
-
-Here is an example call for converting from YAML to CBOR:
-
-```sh
-python3 <zcbor base>/zcbor/zcbor.py convert -c pet.cddl -t Pet -i mypet.yaml -o mypet.cbor
-# or
-zcbor convert -c pet.cddl -t Pet -i mypet.yaml -o mypet.cbor
-```
-
-Which takes a yaml structure from mypet.yaml, validates it against the Pet type in the CDDL description in pet.cddl, and writes binary CBOR data to mypet.cbor.
-
-See the tests in  <zcbor base>/tests/ for examples of using the python module
-
-Running tests
-=============
-
-The tests for the generated code are based on Zephyr ztests.
-Tests for the conversion functions in the script are implemented with the unittest module.
-
-There are also test.sh scripts to quickly run all tests.
-[`tests/test.sh`](tests/test.sh) runs all tests, including python tests in [`tests/scripts`](tests/scripts).
-
-These tests are dependent upon the `pycodestyle` package from `pip`.
-Run these scripts with no arguments.
-
-To set up the environment to run the ztest tests, follow [Zephyr's Getting Started Guide](https://docs.zephyrproject.org/latest/getting_started/index.html), or see the workflow in the [`.github`](.github) directory.
+Some places where zcbor is currently used:
+- [MCUboot's serial recovery mechanism](https://github.com/mcu-tools/mcuboot/blob/main/boot/boot_serial/src/boot_serial.c)
+- [Zephyr's mcumgr](https://github.com/zephyrproject-rtos/zephyr/blob/main/subsys/mgmt/mcumgr/lib/cmd/img_mgmt/src/img_mgmt.c)
+- [Zephyr's LwM2M SenML](https://github.com/zephyrproject-rtos/zephyr/blob/main/subsys/net/lib/lwm2m/lwm2m_rw_senml_cbor.c)
+- [nRF Connect SDK's full modem update mechanism](https://github.com/nrfconnect/sdk-nrf/blob/main/subsys/mgmt/fmfu/src/fmfu_mgmt.c)
+- [nRF Connect SDK's nrf_rpc](https://github.com/nrfconnect/sdk-nrfxlib/blob/main/nrf_rpc/nrf_rpc_cbor.c)
 
 
 Command line documentation
