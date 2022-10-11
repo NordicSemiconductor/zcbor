@@ -9,6 +9,7 @@ from sys import version
 from unittest import TestCase, main
 from pathlib import Path
 from subprocess import Popen, PIPE
+from datetime import date
 
 p_script_dir = Path(__file__).absolute().parents[0]
 p_root = p_script_dir.parents[1]
@@ -35,7 +36,8 @@ class ReleaseTest(TestCase):
             version_number, p_VERSION.read_text(),
             f"{p_VERSION} has not been updated to the correct version number.")
         self.assertEqual(
-            p_RELEASE_NOTES.read_text().splitlines()[0], r"# zcbor v. " + version_number,
+            p_RELEASE_NOTES.read_text().splitlines()[0],
+            r"# zcbor v. " + version_number + f" ({date.today():%Y-%m-%d})",
             f"{p_RELEASE_NOTES} has not been updated with the correct version number.")
 
         tags_stdout, _ = Popen(['git', 'tag'], stdout=PIPE).communicate()
