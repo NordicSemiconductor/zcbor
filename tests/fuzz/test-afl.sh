@@ -14,7 +14,7 @@ export AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1
 if [ -d "build-afl" ]; then rm -r build-afl; fi
 mkdir build-afl
 pushd build-afl
-cmake .. -DCMAKE_C_COMPILER=afl-gcc -DCMAKE_C_FLAGS="-m$2" -DTEST_CASE=$3
+cmake .. -DCMAKE_C_COMPILER=afl-clang-fast -DCMAKE_C_FLAGS="-m$2" -DTEST_CASE=$3
 [[ $? -ne 0 ]] && exit 1
 make fuzz_target
 [[ $? -ne 0 ]] && exit 1

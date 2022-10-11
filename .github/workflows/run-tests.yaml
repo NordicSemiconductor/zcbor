@@ -104,17 +104,17 @@ jobs:
     - name: Install packages
       run: |
         sudo apt update
-        sudo apt install -y gcc-multilib afl++
+        sudo apt install -y afl++
 
     - name: Run manifest12 fuzz tests
       working-directory: tests/fuzz
       run: |
-        ./test-afl.sh 3200 32 manifest12
+        ./test-afl.sh 3200 64 manifest12
 
     - name: Run pet fuzz tests
       working-directory: tests/fuzz
       run: |
-        ./test-afl.sh 400 32 pet
+        ./test-afl.sh 400 64 pet
 
     - name: Upload release files
       uses: actions/upload-artifact@v2
