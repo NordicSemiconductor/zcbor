@@ -6,8 +6,7 @@
 
 cmake_minimum_required(VERSION 3.13.1)
 
-find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
-project(NONE)
+project(zcbor_fuzz)
 
 add_executable(fuzz_target main_entry.c)
 
@@ -20,8 +19,8 @@ set(TEST_CASE "pet"  CACHE STRING  "Test case (pet or manifest12)")
 if (${TEST_CASE} STREQUAL pet)
     execute_process(
         COMMAND zcbor
-        -c ${CMAKE_CURRENT_LIST_DIR}/../cases/pet.cddl
         code
+        -c ${CMAKE_CURRENT_LIST_DIR}/../cases/pet.cddl
         --output-cmake ${PROJECT_BINARY_DIR}/pet.cmake
         -t Pet
         -d
@@ -29,8 +28,8 @@ if (${TEST_CASE} STREQUAL pet)
 
     execute_process(
         COMMAND python3 ../../../zcbor/zcbor.py
-        --cddl ../../cases/pet.cddl
         convert
+        --cddl ../../cases/pet.cddl
         --input ../../cases/pet0.yaml
         -t Pet
         --output ${PROJECT_BINARY_DIR}/fuzz_input/input0.cbor
@@ -44,8 +43,8 @@ if (${TEST_CASE} STREQUAL pet)
 elseif (${TEST_CASE} STREQUAL manifest12)
     execute_process(
         COMMAND zcbor
-        -c ${CMAKE_CURRENT_LIST_DIR}/../cases/manifest12.cddl
         code
+        -c ${CMAKE_CURRENT_LIST_DIR}/../cases/manifest12.cddl
         --output-cmake ${PROJECT_BINARY_DIR}/manifest12.cmake
         -t SUIT_Envelope_Tagged SUIT_Command_Sequence SUIT_Envelope
         -d
@@ -54,9 +53,9 @@ elseif (${TEST_CASE} STREQUAL manifest12)
     foreach(n RANGE 0 5)
         execute_process(
         COMMAND python3 ../../../zcbor/zcbor.py
+        convert
         --cddl ../../cases/manifest12.cddl
         --default-max-qty 16
-        convert
         --input ../../cases/manifest12_example${n}.cborhex
         -t SUIT_Envelope_Tagged
         --output ${PROJECT_BINARY_DIR}/fuzz_input/input${n}.cbor
