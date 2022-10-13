@@ -28,3 +28,9 @@ runs:
       shell: sh
       run: |
         python3 setup.py install
+
+    - name: Install zcbor package
+      if: ${{ inputs.zcbor_package == 'setup_develop' }}
+      shell: sh
+      run: |
+        python3 setup.py develop
