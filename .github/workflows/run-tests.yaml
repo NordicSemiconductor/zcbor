@@ -171,6 +171,11 @@ jobs:
       with:
         zcbor_package: 'setup_install'
 
+    - name: Run python tests on samples
+      working-directory: tests/scripts
+      run: |
+        python3 -m unittest test_files.TestSamples
+
     - name: Prepare and run tests
       uses: ./.github/actions/prepare_and_run_tests
       with:

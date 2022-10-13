@@ -31,6 +31,8 @@ p_add_helptext = p_root / 'add_helptext.py'
 p_test_zcbor_py = p_tests / 'scripts' / 'test_zcbor.py'
 p_test_versions_py = p_tests / 'scripts' / 'test_versions.py'
 p_test_repo_files_py = p_tests / 'scripts' / 'test_repo_files.py'
+p_hello_world_sample = p_root / 'samples' / 'hello_world'
+p_pet_sample = p_root / 'samples' / 'pet'
 
 
 class TestCodestyle(TestCase):
@@ -50,6 +52,48 @@ class TestCodestyle(TestCase):
 
 def version_int(in_str):
     return int(search(r'\A\d+', in_str)[0])  # e.g. '0rc' -> '0'
+
+
+class TestSamples(TestCase):
+    def popen_test(self, args, input='', exp_retcode=0):
+        call0 = Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE)
+        stdout0, stderr0 = call0.communicate(input)
+        self.assertEqual(exp_retcode, call0.returncode, stderr0.decode('utf-8'))
+        return stdout0, stderr0
+
+    def cmake_build_run(self, path):
+        build_dir = Path(path, 'build').absolute()
+        if build_dir.exists():
+            rmtree(build_dir)
+        with open(path / 'README.md', 'r') as f:
+            contents = f.read()
+
+        to_build_patt = r'### To build:.*?```(?P<to_build>.*?)```'
+        to_run_patt = r'### To run:.*?```(?P<to_run>.*?)```'
+        exp_out_patt = r'### Expected output:.*?(?P<exp_out>(\n>[^\n]*)+)'
+        to_build = search(to_build_patt, contents, flags=S)['to_build'].strip()
+        to_run = search(to_run_patt, contents, flags=S)['to_run'].strip()
+        exp_out = search(exp_out_patt, contents, flags=S)['exp_out'].replace("\n> ", "\n").strip()
+
+        os.chdir(path)
+        commands_build = [(line.split(' ')) for line in to_build.split('\n')]
+        assert '\n' not in to_run, "The 'to run' section should only have one command."
+        commands_run = to_run.split(' ')
+        for c in commands_build:
+            self.popen_test(c)
+        output_run = ""
+        for c in commands_run:
+            output, _ = self.popen_test(c)
+            output_run += output.decode('utf-8')
+        self.assertEqual(exp_out, output_run.strip())
+
+    @skipIf(platform.startswith("win"), "Skip on Windows because requires a Unix shell.")
+    def test_hello_world(self):
+        output = self.cmake_build_run(p_hello_world_sample)
+
+    @skipIf(platform.startswith("win"), "Skip on Windows because requires a Unix shell.")
+    def test_pet(self):
+        output = self.cmake_build_run(p_pet_sample)
 
 
 class TestDocs(TestCase):
@@ -106,6 +150,12 @@ class TestDocs(TestCase):
 
     def test_release_notes(self):
         self.do_test_links(p_release_notes)
+
+    def test_hello_world_readme(self):
+        self.do_test_links(p_hello_world_sample / "README.md")
+
+    def test_pet_readme(self):
+        self.do_test_links(p_pet_sample / "README.md")
 
     @skipIf(list(map(version_int, python_version_tuple())) < [3, 10, 0],
             "Skip on Python < 3.10 because of different wording in argparse output.")
