@@ -12,10 +12,11 @@ from urllib.error import HTTPError
 from argparse import ArgumentParser
 from subprocess import Popen, check_output, PIPE, run
 from pycodestyle import StyleGuide
-from shutil import rmtree
+from shutil import rmtree, copy2
 from platform import python_version_tuple
 from sys import platform
 from threading import Thread
+from tempfile import mkdtemp
 import os
 
 
@@ -31,6 +32,13 @@ p_add_helptext = p_root / 'add_helptext.py'
 p_test_zcbor_py = p_tests / 'scripts' / 'test_zcbor.py'
 p_test_versions_py = p_tests / 'scripts' / 'test_versions.py'
 p_test_repo_files_py = p_tests / 'scripts' / 'test_repo_files.py'
+p_hello_world_sample = p_root / 'samples' / 'hello_world'
+p_hello_world_build = p_hello_world_sample / 'build'
+p_pet_sample = p_root / 'samples' / 'pet'
+p_pet_cmake = p_pet_sample / 'pet.cmake'
+p_pet_include = p_pet_sample / 'include'
+p_pet_src = p_pet_sample / 'src'
+p_pet_build = p_pet_sample / 'build'
 
 
 class TestCodestyle(TestCase):
@@ -50,6 +58,60 @@ class TestCodestyle(TestCase):
 
 def version_int(in_str):
     return int(search(r'\A\d+', in_str)[0])  # e.g. '0rc' -> '0'
+
+
+class TestSamples(TestCase):
+    def popen_test(self, args, input='', exp_retcode=0, **kwargs):
+        call0 = Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE, **kwargs)
+        stdout0, stderr0 = call0.communicate(input)
+        self.assertEqual(exp_retcode, call0.returncode, stderr0.decode('utf-8'))
+        return stdout0, stderr0
+
+    def cmake_build_run(self, path, build_path):
+        if build_path.exists():
+            rmtree(build_path)
+        with open(path / 'README.md', 'r') as f:
+            contents = f.read()
+
+        to_build_patt = r'### To build:.*?```(?P<to_build>.*?)```'
+        to_run_patt = r'### To run:.*?```(?P<to_run>.*?)```'
+        exp_out_patt = r'### Expected output:.*?(?P<exp_out>(\n>[^\n]*)+)'
+        to_build = search(to_build_patt, contents, flags=S)['to_build'].strip()
+        to_run = search(to_run_patt, contents, flags=S)['to_run'].strip()
+        exp_out = search(exp_out_patt, contents, flags=S)['exp_out'].replace("\n> ", "\n").strip()
+
+        os.chdir(path)
+        commands_build = [(line.split(' ')) for line in to_build.split('\n')]
+        assert '\n' not in to_run, "The 'to run' section should only have one command."
+        commands_run = to_run.split(' ')
+        for c in commands_build:
+            self.popen_test(c)
+        output_run = ""
+        for c in commands_run:
+            output, _ = self.popen_test(c)
+            output_run += output.decode('utf-8')
+        self.assertEqual(exp_out, output_run.strip())
+
+    @skipIf(platform.startswith("win"), "Skip on Windows because requires a Unix shell.")
+    def test_hello_world(self):
+        output = self.cmake_build_run(p_hello_world_sample, p_hello_world_build)
+
+    @skipIf(platform.startswith("win"), "Skip on Windows because requires a Unix shell.")
+    def test_pet(self):
+        output = self.cmake_build_run(p_pet_sample, p_pet_build)
+
+    def test_pet_regenerate(self):
+        files = (list(p_pet_include.iterdir()) + list(p_pet_src.iterdir()) + [p_pet_cmake])
+        contents = "".join(p.read_text() for p in files)
+        tmpdir = Path(mkdtemp())
+        list(os.makedirs(tmpdir / f.relative_to(p_pet_sample).parent, exist_ok=True) for f in files)
+        list(copy2(f, tmpdir / f.relative_to(p_pet_sample)) for f in files)
+        self.popen_test(['cmake', p_pet_sample, "-DREGENERATE_ZCBOR=Y"], cwd=tmpdir)
+        new_contents = "".join(p.read_text() for p in files)
+        list(copy2(tmpdir / f.relative_to(p_pet_sample), f) for f in files)
+        rmtree(tmpdir)
+        self.maxDiff = None
+        self.assertEqual(contents, new_contents)
 
 
 class TestDocs(TestCase):
@@ -106,6 +168,12 @@ class TestDocs(TestCase):
 
     def test_release_notes(self):
         self.do_test_links(p_release_notes)
+
+    def test_hello_world_readme(self):
+        self.do_test_links(p_hello_world_sample / "README.md")
+
+    def test_pet_readme(self):
+        self.do_test_links(p_pet_sample / "README.md")
 
     @skipIf(list(map(version_int, python_version_tuple())) < [3, 10, 0],
             "Skip on Python < 3.10 because of different wording in argparse output.")
