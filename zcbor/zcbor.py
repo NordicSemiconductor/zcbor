@@ -23,6 +23,7 @@ from pathlib import Path, PurePath
 from shutil import copyfile
 import sys
 from site import USER_BASE
+from textwrap import wrap, indent
 
 indentation = "\t"
 newl_ind = "\n" + indentation
@@ -1670,8 +1671,11 @@ CBOR-formatted bstr, all elements must be bstrs. If not, it is a programmer erro
         return self.obj_to_json(loads(cbor_str))
 
     # CBOR bytestring => C code (uint8_t array initialization)
-    def str_to_c_code(self, cbor_str, var_name):
-        return f'uint8_t {var_name}[] = {{{", ".join(hex(c) for c in cbor_str)}}};\n'
+    def str_to_c_code(self, cbor_str, var_name, columns=0):
+        arr = ", ".join(f"0x{c:02x}" for c in cbor_str)
+        if columns:
+            arr = '\n' + indent("\n".join(wrap(arr, 6 * columns)), '\t') + '\n'
+        return f'uint8_t {var_name}[] = {{{arr}}};\n'
 
 
 class XcoderTuple(NamedTuple):
@@ -2904,6 +2908,11 @@ If omitted, the format is inferred from the file name.
     convert_parser.add_argument(
         "--c-code-var-name", required=False, type=str,
         help='''Only relevant together with '--output-as c_code' or .c files.''')
+    convert_parser.add_argument(
+        "--c-code-columns", required=False, type=int, default=0,
+        help='''Only relevant together with '--output-as c_code' or .c files.
+The number of bytes per line in the variable instantiation. If omitted, the
+entire declaration is a single line.''')
     convert_parser.set_defaults(process=process_convert)
 
     args = parser.parse_args()
@@ -3056,7 +3065,7 @@ def write_data(args, cddl, cbor_str):
         f = sys.stdout if args.output == "-" else open(args.output, "w")
         assert args.c_code_var_name is not None, \
             "Must specify --c-code-var-name when outputting c code."
-        f.write(cddl.str_to_c_code(cbor_str, args.c_code_var_name))
+        f.write(cddl.str_to_c_code(cbor_str, args.c_code_var_name, args.c_code_columns))
     elif out_file_format == "cborhex":
         f = sys.stdout if args.output == "-" else open(args.output, "w")
         f.write(sub(r"(.{1,64})", r"\1 ", cbor_str.hex()))  # Add newlines every 64 chars
