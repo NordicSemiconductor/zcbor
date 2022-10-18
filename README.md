@@ -552,6 +552,7 @@ usage: zcbor convert [-h] [--version] -c CDDL [--no-prelude] [-v]
                      [--input-as {yaml,json,cbor,cborhex}] -t ENTRY_TYPE -o
                      OUTPUT [--output-as {yaml,json,cbor,cborhex,c_code}]
                      [--c-code-var-name C_CODE_VAR_NAME]
+                     [--c-code-columns C_CODE_COLUMNS]
 
 Parse a CDDL file and validate/convert between CBOR and YAML/JSON. The script
 decodes the CBOR/YAML/JSON data from a file or stdin and verifies that it
@@ -610,5 +611,10 @@ options:
   --c-code-var-name C_CODE_VAR_NAME
                         Only relevant together with '--output-as c_code' or .c
                         files.
+  --c-code-columns C_CODE_COLUMNS
+                        Only relevant together with '--output-as c_code' or .c
+                        files. The number of bytes per line in the variable
+                        instantiation. If omitted, the entire declaration is a
+                        single line.
 
 ```
