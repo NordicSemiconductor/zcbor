@@ -3,7 +3,6 @@
 # Copyright (c) 2021 Nordic Semiconductor ASA
 #
 # SPDX-License-Identifier: Apache-2.0
-#
 
 from unittest import TestCase, main, skipIf
 from subprocess import Popen, PIPE
@@ -16,7 +15,6 @@ import cbor2
 from platform import python_version_tuple
 from sys import platform, exit
 from yaml import safe_load
-from pycodestyle import StyleGuide
 
 
 try:
@@ -38,6 +36,7 @@ p_manifest16 = Path(p_tests, 'cases', 'manifest16.cddl')
 p_manifest20 = Path(p_tests, 'cases', 'manifest20.cddl')
 p_test_vectors12 = tuple(Path(p_tests, 'cases', f'manifest12_example{i}.cborhex') for i in range(6))
 p_test_vectors14 = tuple(Path(p_tests, 'cases', f'manifest14_example{i}.cborhex') for i in range(6))
+p_test_vectors16 = tuple(Path(p_tests, 'cases', f'manifest14_example{i}.cborhex') for i in range(6))  # Identical to manifest14.
 p_test_vectors20 = tuple(Path(p_tests, 'cases', f'manifest20_example{i}.cborhex') for i in range(6))
 p_optional = Path(p_tests, 'cases', 'optional.cddl')
 p_corner_cases = Path(p_tests, 'cases', 'corner_cases.cddl')
@@ -47,30 +46,11 @@ p_manifest14_pub = Path(p_tests, 'cases', 'manifest14.pub')
 p_map_bstr_cddl = Path(p_tests, 'cases', 'map_bstr.cddl')
 p_map_bstr_yaml = Path(p_tests, 'cases', 'map_bstr.yaml')
 p_README = Path(p_root, 'README.md')
-p_add_helptext = Path(p_root, 'add_helptext.py')
 p_prelude = Path(p_root, 'zcbor', 'cddl', 'prelude.cddl')
-p_init_py = Path(p_root, 'zcbor', '__init__.py')
-p_zcbor_py = Path(p_root, 'zcbor', 'zcbor.py')
-p_setup_py = Path(p_root, 'setup.py')
-p_run_tests_py = Path(p_tests, 'scripts', 'run_tests.py')
-p_release_test_py = Path(p_tests, 'scripts', 'release_test.py')
 
 
-class Test00_Codestyle(TestCase):
-    def do_codestyle(self, files, **kwargs):
-        style = StyleGuide(max_line_length=100, **kwargs)
-        result = style.check_files([str(f) for f in files])
-        result.print_statistics()
-        self.assertEqual(result.total_errors, 0,
-            f"Found {result.total_errors} style errors")
-
-    def test_codestyle(self):
-        self.do_codestyle([p_init_py, p_setup_py, p_release_test_py])
-        self.do_codestyle([p_zcbor_py], ignore=['W191', 'E101', 'W503'])
-        self.do_codestyle([p_release_test_py], ignore=['E402', 'E501', 'W503'])
-
-
-class Testn(TestCase):
+class TestManifest(TestCase):
+    """Class for testing examples against CDDL for various versions of the SUIT manifest spec."""
     def decode_file(self, data_path, *cddl_paths):
         data = bytes.fromhex(data_path.read_text().replace("\n", ""))
         self.decode_string(data, *cddl_paths)
@@ -82,9 +62,9 @@ class Testn(TestCase):
         self.decoded = cddl.decode_str(data_string)
 
 
-class Test0(Testn):
+class TestEx0Manifest12(TestManifest):
     def __init__(self, *args, **kwargs):
-        super(Test0, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.decode_file(p_test_vectors12[0], p_manifest12)
 
     def test_manifest_digest(self):
@@ -115,18 +95,18 @@ class Test0(Testn):
         self.assertEqual(34768, self.decoded.suit_manifest.suit_common.suit_common_sequence[0].suit_common_sequence.union[0].SUIT_Common_Commands.suit_directive_override_parameters.map[3].suit_parameter_image_size)
 
 
-class Test0_Inv(Testn):
+class TestEx0InvManifest12(TestManifest):
     def __init__(self, *args, **kwargs):
-        super(Test0_Inv, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def test_duplicate_type(self):
         with self.assertRaises(ValueError, msg="Duplicate CDDL type found"):
             self.decode_file(p_test_vectors12[0], p_manifest12, p_manifest12)
 
 
-class Test1(Testn):
+class TestEx1Manifest12(TestManifest):
     def __init__(self, *args, **kwargs):
-        super(Test1, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.decode_file(p_test_vectors12[1], p_manifest12)
 
     def test_components(self):
@@ -140,9 +120,9 @@ class Test1(Testn):
             self.decoded.suit_manifest.SUIT_Severable_Manifest_Members.suit_install[0].suit_install.union[0].SUIT_Directive.suit_directive_set_parameters.map[0].suit_parameter_uri)
 
 
-class Test2(Testn):
+class TestEx2Manifest12(TestManifest):
     def __init__(self, *args, **kwargs):
-        super(Test2, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.decode_file(p_test_vectors12[2], p_manifest12)
 
     def test_severed_uri(self):
@@ -165,9 +145,9 @@ class Test2(Testn):
             self.decoded.SUIT_Severable_Manifest_Members.suit_text[0].suit_text.SUIT_Component_Identifier[0].SUIT_Component_Identifier.SUIT_Text_Component_Keys.suit_text_component_description[0])
 
 
-class Test3(Testn):
+class TestEx3Manifest12(TestManifest):
     def __init__(self, *args, **kwargs):
-        super(Test3, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.decode_file(p_test_vectors12[3], p_manifest12)
 
     def test_A_B_offset(self):
@@ -179,9 +159,9 @@ class Test3(Testn):
             self.decoded.suit_manifest.suit_common.suit_common_sequence[0].suit_common_sequence.union[1].SUIT_Common_Commands.suit_directive_try_each.SUIT_Directive_Try_Each_Argument.SUIT_Command_Sequence_bstr[1].union[0].SUIT_Directive.suit_directive_override_parameters.map[0].suit_parameter_component_offset)
 
 
-class Test4(Testn):
+class TestEx4Manifest12(TestManifest):
     def __init__(self, *args, **kwargs):
-        super(Test4, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.decode_file(p_test_vectors12[4], p_manifest12)
 
     def test_load_decompress(self):
@@ -193,9 +173,9 @@ class Test4(Testn):
             self.decoded.suit_manifest.SUIT_Unseverable_Members.suit_load[0].suit_load.union[1].SUIT_Directive.suit_directive_set_parameters.map[2].suit_parameter_compression_info.suit_compression_algorithm)
 
 
-class Test5(Testn):
+class TestEx5Manifest12(TestManifest):
     def __init__(self, *args, **kwargs):
-        super(Test5, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.decode_file(p_test_vectors12[5], p_manifest12)
 
     def test_two_image_match(self):
@@ -215,9 +195,9 @@ def loads(string):
     return cbor2.loads(string)
 
 
-class Test6(Testn):
+class TestEx0Manifest14(TestManifest):
     def __init__(self, *args, **kwargs):
-        super(Test6, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.key = VerifyingKey.from_pem(p_manifest14_pub.read_text())
 
     def do_test_authentication(self):
@@ -257,9 +237,9 @@ class Test6(Testn):
         self.do_test_authentication()
 
 
-class Test7(Testn):
+class TestEx1Manifest14(TestManifest):
     def __init__(self, *args, **kwargs):
-        super(Test7, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.decode_file(p_test_vectors14[1], p_manifest14, p_cose)
         self.manifest_digest = bytes.fromhex("60c61d6eb7a1aaeddc49ce8157a55cff0821537eeee77a4ded44155b03045132")
 
@@ -299,7 +279,7 @@ class Test7(Testn):
         self.decode_string(data, p_manifest14, p_cose)
 
 
-class Test7Inv(Testn):
+class TestEx1InvManifest14(TestManifest):
     def test_inv0(self):
         data = bytes.fromhex(p_test_vectors14[1].read_text().replace("\n", ""))
         struct = loads(data)
@@ -363,9 +343,9 @@ class Test7Inv(Testn):
             assert False, "Should have failed validation"
 
 
-class Test8(Testn):
+class TestEx2Manifest14(TestManifest):
     def __init__(self, *args, **kwargs):
-        super(Test8, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.decode_file(p_test_vectors14[2], p_manifest14, p_cose)
 
     def test_text(self):
@@ -392,9 +372,9 @@ class Test8(Testn):
     This example also demonstrates severable elements ({{ovr-severable}}), and text ({{manifest-digest-text}}).'''.replace("\n\n", "\n    \n"), self.decoded.SUIT_Severable_Manifest_Members.suit_text[0].suit_text.SUIT_Text_Keys.suit_text_manifest_description[0])
 
 
-class Test9(Testn):
+class TestEx3Manifest14(TestManifest):
     def __init__(self, *args, **kwargs):
-        super(Test9, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.decode_file(p_test_vectors14[3], p_manifest14, p_cose)
         self.slots = (33792, 541696)
 
@@ -404,9 +384,9 @@ class Test9(Testn):
         self.assertEqual(self.slots[1], self.decoded.suit_manifest.SUIT_Severable_Members_Choice.suit_install[0].SUIT_Command_Sequence_bstr.union[0].SUIT_Directive.suit_directive_try_each.SUIT_Directive_Try_Each_Argument.SUIT_Command_Sequence_bstr[1].union[0].SUIT_Directive.suit_directive_override_parameters.map[0].suit_parameter_component_slot)
 
 
-class Test10(Testn):
+class TestEx4Manifest14(TestManifest):
     def __init__(self, *args, **kwargs):
-        super(Test10, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.decode_file(p_test_vectors14[4], p_manifest14, p_cose)
 
     def test_components(self):
@@ -416,9 +396,9 @@ class Test10(Testn):
         self.assertEqual(b'\x01', self.decoded.suit_manifest.suit_common.suit_components[0][2].bstr[0])
 
 
-class Test11(Testn):
+class TestEx5Manifest14(TestManifest):
     def __init__(self, *args, **kwargs):
-        super(Test11, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.decode_file(p_test_vectors14[5], p_manifest14, p_cose)
 
     def test_validate(self):
@@ -426,7 +406,7 @@ class Test11(Testn):
         self.assertEqual(15, self.decoded.suit_manifest.SUIT_Unseverable_Members.suit_validate[0].suit_validate.union[1].SUIT_Condition.suit_condition_image_match.SUIT_Rep_Policy)
 
 
-class Test11Inv(Testn):
+class TestEx5InvManifest14(TestManifest):
     def test_invalid_rep_policy(self):
         data = bytes.fromhex(p_test_vectors14[5].read_text().replace("\n", ""))
         struct = loads(data)
@@ -444,64 +424,64 @@ class Test11Inv(Testn):
             assert False, "Should have failed validation"
 
 
-class Test12(Test6):
+class TestEx0Manifest16(TestEx0Manifest14):
     def __init__(self, *args, **kwargs):
-        super(Test12, self).__init__(*args, **kwargs)
-        self.decode_file(p_test_vectors14[0], p_manifest16, p_cose)
+        super().__init__(*args, **kwargs)
+        self.decode_file(p_test_vectors16[0], p_manifest16, p_cose)
 
 
-class Test13(Test7):
+class TestEx1Manifest16(TestEx1Manifest14):
     def __init__(self, *args, **kwargs):
-        super(Test13, self).__init__(*args, **kwargs)
-        self.decode_file(p_test_vectors14[1], p_manifest16, p_cose)
+        super().__init__(*args, **kwargs)
+        self.decode_file(p_test_vectors16[1], p_manifest16, p_cose)
 
 
-class Test13Inv(Test7Inv):
+class TestEx1InvManifest16(TestEx1InvManifest14):
     def __init__(self, *args, **kwargs):
-        super(Test13Inv, self).__init__(*args, **kwargs)
-        self.decode_file(p_test_vectors14[1], p_manifest16, p_cose)
+        super().__init__(*args, **kwargs)
+        self.decode_file(p_test_vectors16[1], p_manifest16, p_cose)
 
 
-class Test14(Test8):
+class TestEx2Manifest16(TestEx2Manifest14):
     def __init__(self, *args, **kwargs):
-        super(Test14, self).__init__(*args, **kwargs)
-        self.decode_file(p_test_vectors14[2], p_manifest16, p_cose)
+        super().__init__(*args, **kwargs)
+        self.decode_file(p_test_vectors16[2], p_manifest16, p_cose)
 
 
-class Test15(Test9):
+class TestEx3Manifest16(TestEx3Manifest14):
     def __init__(self, *args, **kwargs):
-        super(Test15, self).__init__(*args, **kwargs)
-        self.decode_file(p_test_vectors14[3], p_manifest16, p_cose)
+        super().__init__(*args, **kwargs)
+        self.decode_file(p_test_vectors16[3], p_manifest16, p_cose)
 
 
 # Comment out because example 4 uses compression which is unsupported in manifest16
-# class Test16(Test10):
+# class TestEx4Manifest16(TestEx4Manifest14):
 #     def __init__(self, *args, **kwargs):
-#         super(Test16, self).__init__(*args, **kwargs)
-#         self.decode_file(p_test_vectors14[4], p_manifest16, p_cose)
+#         super().__init__(*args, **kwargs)
+#         self.decode_file(p_test_vectors16[4], p_manifest16, p_cose)
 
 
-class Test17(Test11):
+class TestEx5Manifest16(TestEx5Manifest14):
     def __init__(self, *args, **kwargs):
-        super(Test17, self).__init__(*args, **kwargs)
-        self.decode_file(p_test_vectors14[5], p_manifest16, p_cose)
+        super().__init__(*args, **kwargs)
+        self.decode_file(p_test_vectors16[5], p_manifest16, p_cose)
 
 
-class Test17Inv(Test11Inv):
+class TestEx5InvManifest16(TestEx5InvManifest14):
     def __init__(self, *args, **kwargs):
-        super(Test17Inv, self).__init__(*args, **kwargs)
-        self.decode_file(p_test_vectors14[5], p_manifest16, p_cose)
+        super().__init__(*args, **kwargs)
+        self.decode_file(p_test_vectors16[5], p_manifest16, p_cose)
 
 
-class Test18(Test12):
+class TestEx0Manifest20(TestEx0Manifest16):
     def __init__(self, *args, **kwargs):
-        super(Test18, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.decode_file(p_test_vectors20[0], p_manifest20, p_cose)
 
 
-class Test19(Test13):
+class TestEx1Manifest20(TestEx1Manifest16):
     def __init__(self, *args, **kwargs):
-        super(Test19, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.decode_file(p_test_vectors20[1], p_manifest20, p_cose)
         self.manifest_digest = bytes.fromhex("ef14b7091e8adae8aa3bb6fca1d64fb37e19dcf8b35714cfdddc5968c80ff50e")
 
@@ -526,40 +506,40 @@ class Test19(Test13):
         self.assertEqual(2, len(self.decoded.suit_manifest.suit_common.suit_shared_sequence[0].suit_shared_sequence.union[0].SUIT_Shared_Commands.suit_directive_override_parameters.map[0]))
 
 
-class Test19Inv(Test13Inv):
+class TestEx1InvManifest20(TestEx1InvManifest16):
     def __init__(self, *args, **kwargs):
-        super(Test19Inv, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.decode_file(p_test_vectors20[1], p_manifest20, p_cose)
 
 
-class Test20(Test14):
+class TestEx2Manifest20(TestEx2Manifest16):
     def __init__(self, *args, **kwargs):
-        super(Test20, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.decode_file(p_test_vectors20[2], p_manifest20, p_cose)
 
 
-class Test21(Test15):
+class TestEx3Manifest20(TestEx3Manifest16):
     def __init__(self, *args, **kwargs):
-        super(Test21, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.decode_file(p_test_vectors20[3], p_manifest20, p_cose)
         self.slots = (0, 1)
 
 
-class Test22(Test10):
+class TestEx4Manifest20(TestEx4Manifest14):
     def __init__(self, *args, **kwargs):
-        super(Test22, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.decode_file(p_test_vectors20[4], p_manifest20, p_cose)
 
 
-class Test23(Test17):
+class TestEx5Manifest20(TestEx5Manifest16):
     def __init__(self, *args, **kwargs):
-        super(Test23, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.decode_file(p_test_vectors20[5], p_manifest20, p_cose)
 
 
-class Test23Inv(Test17Inv):
+class TestEx5InvManifest20(TestEx5InvManifest16):
     def __init__(self, *args, **kwargs):
-        super(Test23Inv, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.decode_file(p_test_vectors20[5], p_manifest20, p_cose)
 
 
@@ -573,7 +553,7 @@ class TestCLI(TestCase):
         self.assertEqual(exp_retcode, call0.returncode)
         return stdout0, stderr0
 
-    def do_testn(self, n):
+    def do_testManifest(self, n):
         self.popen_test(self.get_std_args(p_test_vectors12[n], cmd="validate"), "")
         stdout0, _ = self.popen_test(self.get_std_args(p_test_vectors12[n]) + ["--output", "-", "--output-as", "cbor"], "")
 
@@ -602,22 +582,22 @@ class TestCLI(TestCase):
             self.assertEqual(sub(r"\W+", "", f.read()), sub(r"\W+", "", stdout4.decode("utf-8")))
 
     def test_0(self):
-        self.do_testn(0)
+        self.do_testManifest(0)
 
     def test_1(self):
-        self.do_testn(1)
+        self.do_testManifest(1)
 
     def test_2(self):
-        self.do_testn(2)
+        self.do_testManifest(2)
 
     def test_3(self):
-        self.do_testn(3)
+        self.do_testManifest(3)
 
     def test_4(self):
-        self.do_testn(4)
+        self.do_testManifest(4)
 
     def test_5(self):
-        self.do_testn(5)
+        self.do_testManifest(5)
 
     def test_map_bstr(self):
         stdout1, _ = self.popen_test(["zcbor", "convert", "--cddl", str(p_map_bstr_cddl), "--input", str(p_map_bstr_yaml), "-t", "map", "--output", "-"], "")
@@ -643,7 +623,7 @@ class TestCLI(TestCase):
 
 
 class TestOptional(TestCase):
-    def test_0(self):
+    def test_optional_0(self):
         with open(p_optional, 'r') as f:
             cddl_res = zcbor.DataTranslator.from_cddl(f.read(), 16)
         cddl = cddl_res.my_types['cfg']
@@ -656,17 +636,8 @@ class TestOptional(TestCase):
         self.assertEqual(decoded.mem_config[0].N, [5])
 
 
-class TestREADME(TestCase):
-    @skipIf(list(map(int, python_version_tuple())) < [3, 10, 0], "Skip on Python < 3.10 because of different wording in argparse output.")
-    @skipIf(platform.startswith("win"), "Skip on Windows because of path/newline issues.")
-    def test_cli_doc(self):
-        add_help = Popen(["python3", p_add_helptext, "--check"])
-        add_help.communicate()
-        self.assertEqual(0, add_help.returncode)
-
-
 class TestUndefined(TestCase):
-    def test_0(self):
+    def test_undefined_0(self):
         cddl_res = zcbor.DataTranslator.from_cddl(
             p_prelude.read_text() + '\n' + p_corner_cases.read_text(), 16)
         cddl = cddl_res.my_types['Primitives']
@@ -680,7 +651,7 @@ class TestUndefined(TestCase):
 
 
 class TestFloat(TestCase):
-    def test_0(self):
+    def test_float_0(self):
         cddl_res = zcbor.DataTranslator.from_cddl(
             p_prelude.read_text() + '\n' + p_corner_cases.read_text(), 16)
         cddl = cddl_res.my_types['Floats']

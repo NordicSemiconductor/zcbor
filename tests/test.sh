@@ -6,7 +6,7 @@
 #
 
 pushd "scripts"
-python3 -m unittest run_tests
+python3 -m unittest test_zcbor test_repo_files
 [[ $? -ne 0 ]] && popd && exit 1
 popd
 

@@ -31,7 +31,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.7', '3.8', '3.9', '3.10']
+        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
     name: Merge tests 2 (Python ${{ matrix.python-version }})
     steps:
     - name: Checkout the code
@@ -50,7 +50,7 @@ jobs:
     - name: Run python tests
       working-directory: tests/scripts
       run: |
-        python3 -m unittest run_tests
+        python3 -m unittest test_zcbor
 
   merge-test-3:
     runs-on: windows-latest
@@ -76,7 +76,29 @@ jobs:
     - name: Run python tests
       working-directory: tests/scripts
       run: |
-        python3 -m unittest run_tests
+        python3 -m unittest test_zcbor
+
+  merge-test-4:
+    runs-on: ubuntu-latest
+    name: Merge tests 4 (Test repo files)
+    steps:
+    - name: Checkout the code
+      uses: actions/checkout@v2
+
+    - name: Setup Python
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.10'
+
+    - name: Install zcbor
+      uses: ./.github/actions/install_zcbor
+      with:
+        zcbor_package: 'setup_install'
+
+    - name: Run tests on repo files
+      working-directory: tests/scripts
+      run: |
+        python3 -m unittest test_repo_files
 
   release-test-1:
     runs-on: ubuntu-latest
@@ -85,6 +107,7 @@ jobs:
     - merge-test-1
     - merge-test-2
     - merge-test-3
+    - merge-test-4
     if: "startswith(github.head_ref, 'release/')"
     steps:
     - name: Checkout the code
@@ -97,7 +120,7 @@ jobs:
       working-directory: tests/scripts
       run: |
         echo -n ${{ github.head_ref }} > HEAD_REF
-        python3 -m unittest release_test
+        python3 -m unittest test_versions
         rm HEAD_REF
 
     - name: Install packages
@@ -125,13 +148,14 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.8', '3.9', '3.10']
+        python-version: ['3.8', '3.9', '3.10', '3.11']
         asserts: ["", "-x VERBOSE=ON -x ASSERTS=ON"]
     name: Release tests 2 (Python ${{ matrix.python-version }}${{ matrix.asserts != '' && ' with asserts' || '' }})
     needs:
     - merge-test-1
     - merge-test-2
     - merge-test-3
+    - merge-test-4
     if: "startswith(github.head_ref, 'release/')"
     steps:
     - name: Checkout the code
