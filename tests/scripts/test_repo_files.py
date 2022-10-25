@@ -49,6 +49,60 @@ class TestCodestyle(TestCase):
 
 
 class TestDocs(TestCase):
+    def __init__(self, *args, **kwargs):
+        """Overridden to get base URL for relative links from remote tracking branch."""
+        super(TestDocs, self).__init__(*args, **kwargs)
+        remote_tracking = run(['git', 'rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{u}'],
+                              capture_output=True).stdout.strip()
+        if remote_tracking:
+            remote, remote_branch = tuple(remote_tracking.split(b'/'))
+            repo_url = check_output(['git', 'remote', 'get-url', remote]).strip().strip(b'.git')
+            if b"github.com" in repo_url:
+                self.base_url = (repo_url + b'/tree/' + remote_branch + b'/').decode('utf-8')
+            else:
+                # The URL is not in github.com, so we are not sure it is constructed correctly.
+                self.base_url = None
+        else:
+            # There is no remote tracking branch.
+            self.base_url = None
+
+    def check_code(self, link):
+        """Check the status code of a URL link. Assert if not 200 (OK)."""
+        try:
+            call = request.urlopen(link)
+            code = call.getcode()
+        except HTTPError as e:
+            code = e.code
+        self.assertEqual(code, 200, f"'{link}' gives code {code}")
+
+    def do_test_links(self, path):
+        """Get all Markdown links in the file at <path> and check that they work."""
+        if self.base_url is None:
+            raise SkipTest('This test requires the current branch to be pushed to Github.')
+
+        text = path.read_text()
+        relative_path = str(path.relative_to(p_root).parent)
+        relative_path = "" if relative_path == "." else relative_path + "/"
+
+        matches = findall(r'\[.*?\]\((?P<link>.*?)\)', text)
+        codes = list()
+        threads = list()
+        for m in matches:
+            link = self.base_url + relative_path + m if "http" not in m else m
+            threads.append(t := Thread(target=self.check_code, args=(link,), daemon=True))
+            t.start()
+        for t in threads:
+            t.join()
+
+    def test_readme_links(self):
+        self.do_test_links(p_readme)
+
+    def test_architecture(self):
+        self.do_test_links(p_architecture)
+
+    def test_release_notes(self):
+        self.do_test_links(p_release_notes)
+
     @skipIf(list(map(int, python_version_tuple())) < [3, 10, 0],
             "Skip on Python < 3.10 because of different wording in argparse output.")
     @skipIf(platform.startswith("win"), "Skip on Windows because of path/newline issues.")

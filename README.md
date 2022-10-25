@@ -233,7 +233,7 @@ Major types `pint`, `nint`, `tag`, and `prim` elements have no payload, only _Va
  * `pint`: Interpret the _Value_ as a positive integer.
  * `nint`: Interpret the _Value_ as a positive integer, then multiply by -1 and subtract 1.
  * `tag`: The _Value_ says something about the next non-tag element.
-   See the [CBOR tag documentation](See https://www.iana.org/assignments/cbor-tags/cbor-tags.xhtml) for details.
+   See the [CBOR tag documentation](https://www.iana.org/assignments/cbor-tags/cbor-tags.xhtml) for details.
  * `prim`: Different _Additional info_ mean different things:
     * 20: `false`
     * 21: `true`
