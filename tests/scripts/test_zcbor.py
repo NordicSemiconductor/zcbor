@@ -550,7 +550,7 @@ class TestCLI(TestCase):
     def popen_test(self, args, input, exp_retcode=0):
         call0 = Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE)
         stdout0, stderr0 = call0.communicate(input)
-        self.assertEqual(exp_retcode, call0.returncode)
+        self.assertEqual(exp_retcode, call0.returncode, stderr0.decode('utf-8'))
         return stdout0, stderr0
 
     def do_testManifest(self, n):
