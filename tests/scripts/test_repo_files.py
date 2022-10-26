@@ -48,6 +48,10 @@ class TestCodestyle(TestCase):
         self.do_codestyle([p_test_zcbor_py], ignore=['E402', 'E501', 'W503'])
 
 
+def version_int(in_str):
+    return int(search(r'\A\d+', in_str)[0])  # e.g. '0rc' -> '0'
+
+
 class TestDocs(TestCase):
     def __init__(self, *args, **kwargs):
         """Overridden to get base URL for relative links from remote tracking branch."""
@@ -103,7 +107,7 @@ class TestDocs(TestCase):
     def test_release_notes(self):
         self.do_test_links(p_release_notes)
 
-    @skipIf(list(map(int, python_version_tuple())) < [3, 10, 0],
+    @skipIf(list(map(version_int, python_version_tuple())) < [3, 10, 0],
             "Skip on Python < 3.10 because of different wording in argparse output.")
     @skipIf(platform.startswith("win"), "Skip on Windows because of path/newline issues.")
     def test_cli_doc(self):
