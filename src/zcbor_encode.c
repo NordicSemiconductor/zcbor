@@ -32,10 +32,12 @@ static uint8_t log2ceil(uint_fast32_t val)
 	return 0;
 }
 
+
 static uint8_t get_additional(uint_fast32_t len, uint8_t value0)
 {
 	return len == 0 ? value0 : (uint8_t)(24 + log2ceil(len));
 }
+
 
 static bool encode_header_byte(zcbor_state_t *state,
 	zcbor_major_type_t major_type, uint8_t additional)
@@ -192,10 +194,7 @@ bool zcbor_int64_encode(zcbor_state_t *state, const int64_t *input)
 static bool uint32_encode(zcbor_state_t *state, const uint32_t *input,
 		zcbor_major_type_t major_type)
 {
-	if (!value_encode(state, major_type, input, 4)) {
-		ZCBOR_FAIL();
-	}
-	return true;
+	return value_encode(state, major_type, input, 4);
 }
 
 
@@ -211,10 +210,7 @@ bool zcbor_uint32_encode(zcbor_state_t *state, const uint32_t *input)
 static bool uint64_encode(zcbor_state_t *state, const uint64_t *input,
 		zcbor_major_type_t major_type)
 {
-	if (!value_encode(state, major_type, input, 8)) {
-		ZCBOR_FAIL();
-	}
-	return true;
+	return value_encode(state, major_type, input, 8);
 }
 
 
@@ -590,6 +586,7 @@ bool zcbor_multi_encode_minmax(uint_fast32_t min_encode,
 		ZCBOR_ERR(ZCBOR_ERR_ITERATIONS);
 	}
 }
+
 
 bool zcbor_multi_encode(uint_fast32_t num_encode,
 		zcbor_encoder_t encoder,
