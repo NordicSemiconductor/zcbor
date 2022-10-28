@@ -112,6 +112,11 @@ void test_size(void)
 	zassert_false(zcbor_size_expect(&state_d, -6), NULL);
 	zassert_true(zcbor_size_expect(&state_d, 5), NULL);
 
+	zassert_true(zcbor_int32_put(&state_e, -7), NULL);
+	zassert_false(zcbor_size_expect(&state_d, -7), NULL);
+	zassert_false(zcbor_size_decode(&state_d, &read), NULL); // Negative number not supported.
+	zassert_true(zcbor_int32_expect(&state_d, -7), NULL);
+
 	zassert_true(zcbor_uint32_put(&state_e, 5), NULL);
 	zassert_true(zcbor_size_expect(&state_d, 5), NULL);
 
