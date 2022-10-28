@@ -32,10 +32,12 @@ static uint8_t log2ceil(uint_fast32_t val)
 	return 0;
 }
 
+
 static uint8_t get_additional(uint_fast32_t len, uint8_t value0)
 {
 	return len == 0 ? value0 : (uint8_t)(24 + log2ceil(len));
 }
+
 
 static bool encode_header_byte(zcbor_state_t *state,
 	zcbor_major_type_t major_type, uint8_t additional)
@@ -180,6 +182,7 @@ bool zcbor_int_encode(zcbor_state_t *state, const void *input_int, size_t int_si
 bool zcbor_uint_encode(zcbor_state_t *state, const void *input_uint, size_t uint_size)
 {
 	if (!value_encode(state, ZCBOR_MAJOR_TYPE_PINT, input_uint, uint_size)) {
+		zcbor_print("uint with size %d failed.\r\n", uint_size);
 		ZCBOR_FAIL();
 	}
 	return true;
@@ -198,41 +201,15 @@ bool zcbor_int64_encode(zcbor_state_t *state, const int64_t *input)
 }
 
 
-static bool uint32_encode(zcbor_state_t *state, const uint32_t *input,
-		zcbor_major_type_t major_type)
-{
-	if (!value_encode(state, major_type, input, 4)) {
-		ZCBOR_FAIL();
-	}
-	return true;
-}
-
-
 bool zcbor_uint32_encode(zcbor_state_t *state, const uint32_t *input)
 {
-	if (!uint32_encode(state, input, ZCBOR_MAJOR_TYPE_PINT)) {
-		ZCBOR_FAIL();
-	}
-	return true;
-}
-
-
-static bool uint64_encode(zcbor_state_t *state, const uint64_t *input,
-		zcbor_major_type_t major_type)
-{
-	if (!value_encode(state, major_type, input, 8)) {
-		ZCBOR_FAIL();
-	}
-	return true;
+	return zcbor_uint_encode(state, input, sizeof(*input));
 }
 
 
 bool zcbor_uint64_encode(zcbor_state_t *state, const uint64_t *input)
 {
-	if (!uint64_encode(state, input, ZCBOR_MAJOR_TYPE_PINT)) {
-		ZCBOR_FAIL();
-	}
-	return true;
+	return zcbor_uint_encode(state, input, sizeof(*input));
 }
 
 
@@ -250,29 +227,26 @@ bool zcbor_int64_put(zcbor_state_t *state, int64_t input)
 
 bool zcbor_uint32_put(zcbor_state_t *state, uint32_t input)
 {
-	return zcbor_uint64_put(state, input);
+	return zcbor_uint_encode(state, &input, sizeof(input));
 }
 
 
 bool zcbor_uint64_put(zcbor_state_t *state, uint64_t input)
 {
-	if (!uint64_encode(state, &input, ZCBOR_MAJOR_TYPE_PINT)) {
-		ZCBOR_FAIL();
-	}
-	return true;
+	return zcbor_uint_encode(state, &input, sizeof(input));
 }
 
 
 #ifdef ZCBOR_SUPPORTS_SIZE_T
 bool zcbor_size_put(zcbor_state_t *state, size_t input)
 {
-	return zcbor_uint64_put(state, input);
+	return zcbor_uint_encode(state, &input, sizeof(input));
 }
 
 
 bool zcbor_size_encode(zcbor_state_t *state, const size_t *input)
 {
-	return zcbor_size_put(state, *input);
+	return zcbor_uint_encode(state, input, sizeof(*input));
 }
 #endif
 
@@ -294,7 +268,7 @@ static bool str_start_encode(zcbor_state_t *state,
 
 static bool primitive_put(zcbor_state_t *state, uint32_t input)
 {
-	if (!uint32_encode(state, &input, ZCBOR_MAJOR_TYPE_PRIM)) {
+	if (!value_encode(state, ZCBOR_MAJOR_TYPE_PRIM, &input, sizeof(input))) {
 		ZCBOR_FAIL();
 	}
 	return true;
@@ -319,8 +293,7 @@ bool zcbor_bstr_start_encode(zcbor_state_t *state)
 	uint64_t max_len = remaining_str_len(state);
 
 	/* Encode a dummy header */
-	if (!uint64_encode(state, &max_len,
-			ZCBOR_MAJOR_TYPE_BSTR)) {
+	if (!value_encode(state, ZCBOR_MAJOR_TYPE_BSTR, &max_len, sizeof(max_len))) {
 		ZCBOR_FAIL();
 	}
 	return true;
@@ -599,6 +572,7 @@ bool zcbor_multi_encode_minmax(uint_fast32_t min_encode,
 		ZCBOR_ERR(ZCBOR_ERR_ITERATIONS);
 	}
 }
+
 
 bool zcbor_multi_encode(uint_fast32_t num_encode,
 		zcbor_encoder_t encoder,

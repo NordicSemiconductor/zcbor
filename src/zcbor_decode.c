@@ -42,12 +42,14 @@ do {\
 	} \
 } while(0)
 
+
 static bool initial_checks(zcbor_state_t *state)
 {
 	ZCBOR_CHECK_ERROR();
 	ZCBOR_CHECK_PAYLOAD();
 	return true;
 }
+
 
 static bool type_check(zcbor_state_t *state, zcbor_major_type_t exp_major_type)
 {
@@ -61,6 +63,7 @@ static bool type_check(zcbor_state_t *state, zcbor_major_type_t exp_major_type)
 	}
 	return true;
 }
+
 
 #define INITIAL_CHECKS() \
 do {\
@@ -89,6 +92,7 @@ do { \
 	state->elem_count++; \
 	ZCBOR_FAIL(); \
 } while(0)
+
 
 /** Get a single value.
  *
@@ -218,12 +222,7 @@ bool zcbor_uint_decode(zcbor_state_t *state, void *result_uint, size_t uint_size
 
 bool zcbor_uint32_decode(zcbor_state_t *state, uint32_t *result)
 {
-	INITIAL_CHECKS_WITH_TYPE(ZCBOR_MAJOR_TYPE_PINT);
-
-	if (!value_extract(state, result, sizeof(*result))) {
-		ZCBOR_FAIL();
-	}
-	return true;
+	return zcbor_uint_decode(state, result, sizeof(*result));
 }
 
 
@@ -287,19 +286,14 @@ bool zcbor_int64_expect(zcbor_state_t *state, int64_t result)
 
 bool zcbor_uint64_decode(zcbor_state_t *state, uint64_t *result)
 {
-	INITIAL_CHECKS_WITH_TYPE(ZCBOR_MAJOR_TYPE_PINT);
-
-	if (!value_extract(state, result, sizeof(*result))) {
-		ZCBOR_FAIL();
-	}
-	return true;
+	return zcbor_uint_decode(state, result, sizeof(*result));
 }
 
 
 #ifdef ZCBOR_SUPPORTS_SIZE_T
 bool zcbor_size_decode(zcbor_state_t *state, size_t *result)
 {
-	return value_extract(state, result, sizeof(size_t));
+	return zcbor_uint_decode(state, result, sizeof(*result));
 }
 #endif
 
