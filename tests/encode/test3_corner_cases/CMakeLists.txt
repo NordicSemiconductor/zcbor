@@ -26,7 +26,7 @@ set(py_command
   NumberMap
   TaggedUnion
   Strings
-  Prim2
+  Simple2
   Optional
   Union
   Map

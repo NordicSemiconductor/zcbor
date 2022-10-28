@@ -43,11 +43,11 @@ Strings = [
 	threehundrebytebstr: bstr .size 300,
 	#6.0(tentothirtybytetstr: tstr .size 10..30),
 	cborNumbers: bstr .cbor Numbers,
-	cborseqPrimitives: bstr .cborseq Primitives,
+	cborseqSimples: bstr .cborseq Simples,
 	?optCborStrings: bstr .cbor Strings,
 ]
 
-Primitives = [
+Simples = [
 	booltrue: true,
 	boolfalse: false,
 	boolval: bool,
@@ -55,8 +55,8 @@ Primitives = [
 	undef: undefined,
 ]
 
-Prim = Primitives
-Prim2 = Prim
+Simple1 = Simples
+Simple2 = Simple1
 
 Optional = [
 	#6.10(boolval: bool),

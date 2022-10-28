@@ -640,7 +640,7 @@ class TestUndefined(TestCase):
     def test_undefined_0(self):
         cddl_res = zcbor.DataTranslator.from_cddl(
             p_prelude.read_text() + '\n' + p_corner_cases.read_text(), 16)
-        cddl = cddl_res.my_types['Primitives']
+        cddl = cddl_res.my_types['Simples']
         test_yaml = "[true, false, true, null, [zcbor_undefined]]"
 
         decoded = cddl.decode_str_yaml(test_yaml)

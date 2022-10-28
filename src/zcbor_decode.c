@@ -652,50 +652,62 @@ bool zcbor_list_map_end_force_decode(zcbor_state_t *state)
 }
 
 
-static bool primx_expect(zcbor_state_t *state, uint8_t result)
+bool zcbor_simple_decode(zcbor_state_t *state, uint8_t *result)
 {
-	uint32_t value;
+	INITIAL_CHECKS_WITH_TYPE(ZCBOR_MAJOR_TYPE_SIMPLE);
 
-	INITIAL_CHECKS_WITH_TYPE(ZCBOR_MAJOR_TYPE_PRIM);
+	/* Simple values must be 0-23 (additional is 0-23) or 24-255 (additional is 24).
+	 * Other additional values are not considered simple values. */
+	ZCBOR_ERR_IF(ADDITIONAL(*state->payload) > 24, ZCBOR_ERR_WRONG_TYPE);
 
-	if (!value_extract(state, &value, sizeof(value))) {
+	if (!value_extract(state, result, sizeof(*result))) {
+		ZCBOR_FAIL();
+	}
+	return true;
+}
+
+
+bool zcbor_simple_expect(zcbor_state_t *state, uint8_t result)
+{
+	uint8_t value;
+
+	if (!zcbor_simple_decode(state, &value)) {
 		ZCBOR_FAIL();
 	}
 
 	if (value != result) {
+		zcbor_print("simple value %u != %u\r\n", value, result);
 		ERR_RESTORE(ZCBOR_ERR_WRONG_VALUE);
 	}
+
 	return true;
 }
 
 
 bool zcbor_nil_expect(zcbor_state_t *state, void *unused)
 {
-	if (!primx_expect(state, 22)) {
-		ZCBOR_FAIL();
-	}
-	return true;
+	return zcbor_simple_expect(state, 22);
 }
 
 
 bool zcbor_undefined_expect(zcbor_state_t *state, void *unused)
 {
-	if (!primx_expect(state, 23)) {
-		ZCBOR_FAIL();
-	}
-	return true;
+	return zcbor_simple_expect(state, 23);
 }
 
 
 bool zcbor_bool_decode(zcbor_state_t *state, bool *result)
 {
-	if (zcbor_bool_expect(state, false)) {
-		*result = false;
-	} else if (zcbor_bool_expect(state, true)) {
-		*result = true;
-	} else {
+	uint8_t value;
+
+	if (!zcbor_simple_decode(state, &value)) {
 		ZCBOR_FAIL();
 	}
+	value -= ZCBOR_BOOL_TO_SIMPLE;
+	if (value > 1) {
+		ERR_RESTORE(ZCBOR_ERR_WRONG_TYPE);
+	}
+	*result = value;
 
 	zcbor_print("boolval: %u\r\n", *result);
 	return true;
@@ -704,16 +716,13 @@ bool zcbor_bool_decode(zcbor_state_t *state, bool *result)
 
 bool zcbor_bool_expect(zcbor_state_t *state, bool result)
 {
-	if (!primx_expect(state, (uint8_t)(!!result) + ZCBOR_BOOL_TO_PRIM)) {
-		ZCBOR_FAIL();
-	}
-	return true;
+	return zcbor_simple_expect(state, (uint8_t)(!!result) + ZCBOR_BOOL_TO_SIMPLE);
 }
 
 
 bool zcbor_float32_decode(zcbor_state_t *state, float *result)
 {
-	INITIAL_CHECKS_WITH_TYPE(ZCBOR_MAJOR_TYPE_PRIM);
+	INITIAL_CHECKS_WITH_TYPE(ZCBOR_MAJOR_TYPE_SIMPLE);
 	ZCBOR_ERR_IF(ADDITIONAL(*state->payload) != ZCBOR_VALUE_IS_4_BYTES, ZCBOR_ERR_FLOAT_SIZE);
 
 	if (!value_extract(state, result, sizeof(*result))) {
@@ -740,7 +749,7 @@ bool zcbor_float32_expect(zcbor_state_t *state, float result)
 
 bool zcbor_float64_decode(zcbor_state_t *state, double *result)
 {
-	INITIAL_CHECKS_WITH_TYPE(ZCBOR_MAJOR_TYPE_PRIM);
+	INITIAL_CHECKS_WITH_TYPE(ZCBOR_MAJOR_TYPE_SIMPLE);
 	ZCBOR_ERR_IF(ADDITIONAL(*state->payload) != ZCBOR_VALUE_IS_8_BYTES, ZCBOR_ERR_FLOAT_SIZE);
 
 	if (!value_extract(state, result, sizeof(*result))) {

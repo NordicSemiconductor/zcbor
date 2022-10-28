@@ -873,6 +873,32 @@ void test_encode_int_0(void)
 }
 
 
+void test_simple(void)
+{
+	uint8_t payload1[100];
+	ZCBOR_STATE_E(state_e, 1, payload1, sizeof(payload1), 0);
+	ZCBOR_STATE_D(state_d, 1, payload1, sizeof(payload1), 16);
+	uint8_t simple1 = 0;
+	uint8_t simple2 = 2;
+
+	zassert_true(zcbor_simple_encode(state_e, &simple1), NULL);
+	zassert_true(zcbor_simple_put(state_e, 14), NULL);
+	zassert_true(zcbor_simple_put(state_e, 22), NULL);
+	zassert_true(zcbor_simple_put(state_e, 24), NULL);
+	zassert_true(zcbor_simple_put(state_e, 255), NULL);
+
+	zassert_true(zcbor_simple_decode(state_d, &simple2), NULL);
+	zassert_true(zcbor_simple_expect(state_d, 14), NULL);
+	zassert_true(zcbor_nil_expect(state_d, NULL), NULL);
+	zassert_false(zcbor_undefined_expect(state_d, NULL), NULL);
+	zassert_true(zcbor_simple_expect(state_d, 24), NULL);
+	zassert_false(zcbor_simple_expect(state_d, 254), NULL);
+	zassert_true(zcbor_simple_decode(state_d, &simple1), NULL);
+	zassert_equal(0, simple2, NULL);
+	zassert_equal(255, simple1, NULL);
+}
+
+
 void test_main(void)
 {
 	ztest_test_suite(zcbor_unit_tests,
@@ -889,7 +915,8 @@ void test_main(void)
 			 ztest_unit_test(test_canonical_list),
 			 ztest_unit_test(test_int),
 			 ztest_unit_test(test_uint),
-			 ztest_unit_test(test_encode_int_0)
+			 ztest_unit_test(test_encode_int_0),
+			 ztest_unit_test(test_simple)
 	);
 	ztest_run_test_suite(zcbor_unit_tests);
 }

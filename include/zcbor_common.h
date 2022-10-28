@@ -148,14 +148,14 @@ typedef bool(zcbor_decoder_t)(zcbor_state_t *, void *);
  */
 typedef enum
 {
-	ZCBOR_MAJOR_TYPE_PINT = 0, ///! Positive Integer
-	ZCBOR_MAJOR_TYPE_NINT = 1, ///! Negative Integer
-	ZCBOR_MAJOR_TYPE_BSTR = 2, ///! Byte String
-	ZCBOR_MAJOR_TYPE_TSTR = 3, ///! Text String
-	ZCBOR_MAJOR_TYPE_LIST = 4, ///! List
-	ZCBOR_MAJOR_TYPE_MAP  = 5, ///! Map
-	ZCBOR_MAJOR_TYPE_TAG  = 6, ///! Semantic Tag
-	ZCBOR_MAJOR_TYPE_PRIM = 7, ///! Primitive Type
+	ZCBOR_MAJOR_TYPE_PINT   = 0, ///! Positive Integer
+	ZCBOR_MAJOR_TYPE_NINT   = 1, ///! Negative Integer
+	ZCBOR_MAJOR_TYPE_BSTR   = 2, ///! Byte String
+	ZCBOR_MAJOR_TYPE_TSTR   = 3, ///! Text String
+	ZCBOR_MAJOR_TYPE_LIST   = 4, ///! List
+	ZCBOR_MAJOR_TYPE_MAP    = 5, ///! Map
+	ZCBOR_MAJOR_TYPE_TAG    = 6, ///! Semantic Tag
+	ZCBOR_MAJOR_TYPE_SIMPLE = 7, ///! Simple values and floats
 } zcbor_major_type_t;
 
 
@@ -201,7 +201,7 @@ do { \
 #define ZCBOR_VALUE_IS_8_BYTES 27 ///! The next 8 bytes contain the value.
 #define ZCBOR_VALUE_IS_INDEFINITE_LENGTH 31 ///! The list or map has indefinite length, and will instead be terminated by a 0xFF token.
 
-#define ZCBOR_BOOL_TO_PRIM ((uint8_t)20) ///! In CBOR, false/true have the values 20/21
+#define ZCBOR_BOOL_TO_SIMPLE ((uint8_t)20) ///! In CBOR, false/true have the values 20/21
 
 #define ZCBOR_FLAG_RESTORE 1UL ///! Restore from the backup. Overwrite the current state with the state from the backup.
 #define ZCBOR_FLAG_CONSUME 2UL ///! Consume the backup. Remove the backup from the stack of backups.
