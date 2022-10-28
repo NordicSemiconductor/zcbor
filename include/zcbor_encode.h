@@ -46,6 +46,7 @@ bool zcbor_size_put(zcbor_state_t *state, size_t input);
 bool zcbor_int_encode(zcbor_state_t *state, const void *input_int, size_t int_size);
 bool zcbor_int32_encode(zcbor_state_t *state, const int32_t *input);
 bool zcbor_int64_encode(zcbor_state_t *state, const int64_t *input);
+bool zcbor_uint_encode(zcbor_state_t *state, const void *input_uint, size_t uint_size);
 bool zcbor_uint32_encode(zcbor_state_t *state, const uint32_t *input);
 bool zcbor_uint64_encode(zcbor_state_t *state, const uint64_t *input);
 bool zcbor_size_encode(zcbor_state_t *state, const size_t *input);

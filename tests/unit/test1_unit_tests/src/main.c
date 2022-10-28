@@ -804,6 +804,52 @@ void test_int(void)
 }
 
 
+void test_uint(void)
+{
+	uint8_t payload1[100];
+	ZCBOR_STATE_E(state_e, 1, payload1, sizeof(payload1), 0);
+	ZCBOR_STATE_D(state_d, 1, payload1, sizeof(payload1), 16);
+
+	/* Encode all numbers */
+	/* Arbitrary positive numbers in each size */
+	uint8_t uint8 = 12;
+	uint16_t uint16 = 1234;
+	uint32_t uint32 = 12345678;
+	uint64_t uint64 = 1234567812345678;
+
+	zassert_true(zcbor_uint_encode(state_e, &uint8, sizeof(uint8)), NULL);
+	zassert_true(zcbor_uint_encode(state_e, &uint16, sizeof(uint16)), NULL);
+	zassert_true(zcbor_uint_encode(state_e, &uint32, sizeof(uint32)), NULL);
+	zassert_true(zcbor_uint_encode(state_e, &uint64, sizeof(uint64)), NULL);
+
+	/* Check absolute maximum number. */
+	zassert_true(zcbor_uint64_put(state_e, UINT64_MAX), NULL);
+
+	/* Decode all numbers */
+	/* Arbitrary positive numbers in each size */
+	zassert_true(zcbor_uint_decode(state_d, &uint8, sizeof(uint8)), NULL);
+	zassert_false(zcbor_uint_decode(state_d, &uint16, sizeof(uint8)), NULL);
+	zassert_true(zcbor_uint_decode(state_d, &uint16, sizeof(uint16)), NULL);
+	zassert_false(zcbor_uint_decode(state_d, &uint32, sizeof(uint8)), NULL);
+	zassert_false(zcbor_uint_decode(state_d, &uint32, sizeof(uint16)), NULL);
+	zassert_true(zcbor_uint_decode(state_d, &uint32, sizeof(uint32)), NULL);
+	zassert_false(zcbor_uint_decode(state_d, &uint64, sizeof(uint8)), NULL);
+	zassert_false(zcbor_uint_decode(state_d, &uint64, sizeof(uint16)), NULL);
+	zassert_false(zcbor_uint_decode(state_d, &uint64, sizeof(uint32)), NULL);
+	zassert_true(zcbor_uint_decode(state_d, &uint64, sizeof(uint64)), NULL);
+
+	zassert_equal(uint8, 12, "%d\r\n", uint8);
+	zassert_equal(uint16, 1234, "%d\r\n", uint16);
+	zassert_equal(uint32, 12345678, "%d\r\n", uint32);
+	zassert_equal(uint64, 1234567812345678, "%d\r\n", uint64);
+
+	/* Check absolute maximum number. */
+	zassert_true(zcbor_uint_decode(state_d, &uint64, sizeof(uint64)), NULL);
+
+	zassert_equal(uint64, UINT64_MAX, NULL);
+}
+
+
 /** This tests a regression in big-endian encoding, where small numbers (like 0)
   * where handled incorrectly (1-off), because of an error in get_result().
   */
@@ -837,6 +883,7 @@ void test_main(void)
 			 ztest_unit_test(test_bstr_cbor_fragments),
 			 ztest_unit_test(test_canonical_list),
 			 ztest_unit_test(test_int),
+			 ztest_unit_test(test_uint),
 			 ztest_unit_test(test_encode_int_0)
 	);
 	ztest_run_test_suite(zcbor_unit_tests);

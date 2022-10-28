@@ -41,6 +41,7 @@ bool zcbor_uint32_decode(zcbor_state_t *state, uint32_t *result);
 bool zcbor_uint64_decode(zcbor_state_t *state, uint64_t *result);
 bool zcbor_size_decode(zcbor_state_t *state, size_t *result);
 bool zcbor_int_decode(zcbor_state_t *state, void *result_int, size_t int_size);
+bool zcbor_uint_decode(zcbor_state_t *state, void *result_uint, size_t uint_size);
 
 /** The following applies to all _expect() functions that don't have docs.
  *

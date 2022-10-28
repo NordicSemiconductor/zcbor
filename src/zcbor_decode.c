@@ -204,6 +204,18 @@ bool zcbor_int64_decode(zcbor_state_t *state, int64_t *result)
 }
 
 
+bool zcbor_uint_decode(zcbor_state_t *state, void *result_uint, size_t uint_size)
+{
+	INITIAL_CHECKS_WITH_TYPE(ZCBOR_MAJOR_TYPE_PINT);
+
+	if (!value_extract(state, result_uint, uint_size)) {
+		zcbor_print("uint with size %d failed.\r\n", uint_size);
+		ZCBOR_FAIL();
+	}
+	return true;
+}
+
+
 bool zcbor_uint32_decode(zcbor_state_t *state, uint32_t *result)
 {
 	INITIAL_CHECKS_WITH_TYPE(ZCBOR_MAJOR_TYPE_PINT);

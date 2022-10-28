@@ -177,6 +177,15 @@ bool zcbor_int_encode(zcbor_state_t *state, const void *input_int, size_t int_si
 }
 
 
+bool zcbor_uint_encode(zcbor_state_t *state, const void *input_uint, size_t uint_size)
+{
+	if (!value_encode(state, ZCBOR_MAJOR_TYPE_PINT, input_uint, uint_size)) {
+		ZCBOR_FAIL();
+	}
+	return true;
+}
+
+
 bool zcbor_int32_encode(zcbor_state_t *state, const int32_t *input)
 {
 	return zcbor_int_encode(state, input, sizeof(*input));
