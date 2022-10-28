@@ -131,7 +131,11 @@ static inline bool zcbor_tstr_expect_ptr(zcbor_state_t *state, char const *ptr, 
 bool zcbor_tag_decode(zcbor_state_t *state, uint32_t *result);
 bool zcbor_tag_expect(zcbor_state_t *state, uint32_t result);
 
-/** Decode and consume a boolean primitive value. */
+/** Decode and consume a simple value. */
+bool zcbor_simple_decode(zcbor_state_t *state, uint8_t *result);
+bool zcbor_simple_expect(zcbor_state_t *state, uint8_t result);
+
+/** Decode and consume a boolean simple value. */
 bool zcbor_bool_decode(zcbor_state_t *state, bool *result);
 bool zcbor_bool_expect(zcbor_state_t *state, bool result);
 
@@ -143,7 +147,7 @@ bool zcbor_float64_expect(zcbor_state_t *state, double result);
 bool zcbor_float_decode(zcbor_state_t *state, double *result);
 bool zcbor_float_expect(zcbor_state_t *state, double result);
 
-/** Consume and expect a "nil"/"undefined" primitive value.
+/** Consume and expect a "nil"/"undefined" simple value.
  *
  * @param[inout] state   The current state of the encoding.
  * @param[in]    unused  Unused parameter to maintain signature parity with

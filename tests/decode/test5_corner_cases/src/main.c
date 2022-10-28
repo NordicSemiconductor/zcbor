@@ -360,7 +360,7 @@ void test_strings(void)
 				0x1A, 0xFF, 0xFF, 0xFF, 0xFF, // 0xFFFFFFFF
 				0xD9, 0xFF, 0xFF, 0x09, // 9, tagged (0xFFFF)
 			END
-		STR_LEN(0x52, 3), // Primitives (len: 18)
+		STR_LEN(0x52, 3), // Simples (len: 18)
 			LIST(5),
 				0xF5, // True
 				0xF4, // False
@@ -411,7 +411,7 @@ void test_strings(void)
 					0x1A, 0xFF, 0xFF, 0xFF, 0xFF, // 0xFFFFFFFF
 					0xD9, 0xFF, 0xFF, 0x29, // -10, tagged (0xFFFF)
 				END
-			STR_LEN(0x46, 1), // Primitives (len: 6)
+			STR_LEN(0x46, 1), // Simples (len: 6)
 				LIST(5),
 					0xF5, // True
 					0xF4, // False
@@ -442,10 +442,10 @@ void test_strings(void)
 	zassert_equal(9, strings1.threehundrebytebstr.value[299], NULL);
 	zassert_equal(30, strings1.tentothirtybytetstr.len, NULL);
 	zassert_equal(STR_LEN(29, 1), strings1.cborNumbers.len, NULL);
-	zassert_equal(3, strings1.cborseqPrimitives_cbor_count, NULL);
-	zassert_false(strings1.cborseqPrimitives_cbor[0].boolval, NULL);
-	zassert_true(strings1.cborseqPrimitives_cbor[1].boolval, NULL);
-	zassert_false(strings1.cborseqPrimitives_cbor[2].boolval, NULL);
+	zassert_equal(3, strings1.cborseqSimples_cbor_count, NULL);
+	zassert_false(strings1.cborseqSimples_cbor[0].boolval, NULL);
+	zassert_true(strings1.cborseqSimples_cbor[1].boolval, NULL);
+	zassert_false(strings1.cborseqSimples_cbor[2].boolval, NULL);
 
 	zassert_equal(300, strings2.threehundrebytebstr.len, NULL);
 	zassert_equal(10, strings2.tentothirtybytetstr.len, NULL);
@@ -456,38 +456,38 @@ void test_strings(void)
 	zassert_equal(-2147483648, numbers2.negint, NULL);
 	zassert_equal(0xFFFFFFFF, numbers2.posint, NULL);
 	zassert_equal(-10, numbers2.tagged_int, NULL);
-	zassert_equal(1, strings2.cborseqPrimitives_cbor_count, NULL);
-	zassert_false(strings2.cborseqPrimitives_cbor[0].boolval, NULL);
+	zassert_equal(1, strings2.cborseqSimples_cbor_count, NULL);
+	zassert_false(strings2.cborseqSimples_cbor[0].boolval, NULL);
 }
 
-void test_primitives(void)
+void test_simples(void)
 {
-	uint8_t payload_prim1[] = {LIST(5), 0xF5, 0xF4, 0xF4, 0xF6, 0xF7, END};
-	uint8_t payload_prim2[] = {LIST(5), 0xF5, 0xF4, 0xF5, 0xF6, 0xF7, END};
-	uint8_t payload_prim_inv3[] = {LIST(5), 0xF7, 0xF4, 0xF4, 0xF6, 0xF7, END};
-	uint8_t payload_prim_inv4[] = {LIST(5), 0xF5, 0xF7, 0xF4, 0xF6, 0xF7, END};
-	uint8_t payload_prim_inv5[] = {LIST(5), 0xF5, 0xF4, 0xF7, 0xF6, 0xF7, END};
-	uint8_t payload_prim_inv6[] = {LIST(5), 0xF5, 0xF4, 0xF5, 0xF7, 0xF7, END};
-	uint8_t payload_prim_inv7[] = {LIST(5), 0xF5, 0xF4, 0xF5, 0xF6, 0xF6, END};
-	uint8_t payload_prim_inv8[] = {LIST(5), 0xF5, 0xF4, 0xF5, 0xF6, 0xF5, END};
-	uint8_t payload_prim_inv9[] = {LIST(5), 0xF5, 0xF4, 0xF6, 0xF6, 0xF7, END};
-	uint8_t payload_prim_inv10[] = {LIST(5), 0xF5, 0xF5, 0xF5, 0xF6, 0xF7, END};
-	uint8_t payload_prim_inv11[] = {LIST(5), 0xF4, 0xF4, 0xF5, 0xF6, 0xF7, END};
+	uint8_t payload_simple1[] = {LIST(5), 0xF5, 0xF4, 0xF4, 0xF6, 0xF7, END};
+	uint8_t payload_simple2[] = {LIST(5), 0xF5, 0xF4, 0xF5, 0xF6, 0xF7, END};
+	uint8_t payload_simple_inv3[] = {LIST(5), 0xF7, 0xF4, 0xF4, 0xF6, 0xF7, END};
+	uint8_t payload_simple_inv4[] = {LIST(5), 0xF5, 0xF7, 0xF4, 0xF6, 0xF7, END};
+	uint8_t payload_simple_inv5[] = {LIST(5), 0xF5, 0xF4, 0xF7, 0xF6, 0xF7, END};
+	uint8_t payload_simple_inv6[] = {LIST(5), 0xF5, 0xF4, 0xF5, 0xF7, 0xF7, END};
+	uint8_t payload_simple_inv7[] = {LIST(5), 0xF5, 0xF4, 0xF5, 0xF6, 0xF6, END};
+	uint8_t payload_simple_inv8[] = {LIST(5), 0xF5, 0xF4, 0xF5, 0xF6, 0xF5, END};
+	uint8_t payload_simple_inv9[] = {LIST(5), 0xF5, 0xF4, 0xF6, 0xF6, 0xF7, END};
+	uint8_t payload_simple_inv10[] = {LIST(5), 0xF5, 0xF5, 0xF5, 0xF6, 0xF7, END};
+	uint8_t payload_simple_inv11[] = {LIST(5), 0xF4, 0xF4, 0xF5, 0xF6, 0xF7, END};
 
-	struct Primitives result;
+	struct Simples result;
 	size_t len_decode;
 
-	zassert_equal(ZCBOR_SUCCESS, cbor_decode_Prim2(payload_prim1, sizeof(payload_prim1), &result, &len_decode), NULL);
-	zassert_equal(ZCBOR_SUCCESS, cbor_decode_Prim2(payload_prim2, sizeof(payload_prim2), &result, &len_decode), NULL);
-	zassert_equal(ZCBOR_ERR_WRONG_VALUE, cbor_decode_Prim2(payload_prim_inv3, sizeof(payload_prim_inv3), &result, &len_decode), NULL);
-	zassert_equal(ZCBOR_ERR_WRONG_VALUE, cbor_decode_Prim2(payload_prim_inv4, sizeof(payload_prim_inv4), &result, &len_decode), NULL);
-	zassert_equal(ZCBOR_ERR_WRONG_VALUE, cbor_decode_Prim2(payload_prim_inv5, sizeof(payload_prim_inv5), &result, &len_decode), NULL);
-	zassert_equal(ZCBOR_ERR_WRONG_VALUE, cbor_decode_Prim2(payload_prim_inv6, sizeof(payload_prim_inv6), &result, &len_decode), NULL);
-	zassert_equal(ZCBOR_ERR_WRONG_VALUE, cbor_decode_Prim2(payload_prim_inv7, sizeof(payload_prim_inv7), &result, &len_decode), NULL);
-	zassert_equal(ZCBOR_ERR_WRONG_VALUE, cbor_decode_Prim2(payload_prim_inv8, sizeof(payload_prim_inv8), &result, &len_decode), NULL);
-	zassert_equal(ZCBOR_ERR_WRONG_VALUE, cbor_decode_Prim2(payload_prim_inv9, sizeof(payload_prim_inv9), &result, &len_decode), NULL);
-	zassert_equal(ZCBOR_ERR_WRONG_VALUE, cbor_decode_Prim2(payload_prim_inv10, sizeof(payload_prim_inv10), &result, &len_decode), NULL);
-	zassert_equal(ZCBOR_ERR_WRONG_VALUE, cbor_decode_Prim2(payload_prim_inv11, sizeof(payload_prim_inv11), &result, &len_decode), NULL);
+	zassert_equal(ZCBOR_SUCCESS, cbor_decode_Simple2(payload_simple1, sizeof(payload_simple1), &result, &len_decode), NULL);
+	zassert_equal(ZCBOR_SUCCESS, cbor_decode_Simple2(payload_simple2, sizeof(payload_simple2), &result, &len_decode), NULL);
+	zassert_equal(ZCBOR_ERR_WRONG_VALUE, cbor_decode_Simple2(payload_simple_inv3, sizeof(payload_simple_inv3), &result, &len_decode), NULL);
+	zassert_equal(ZCBOR_ERR_WRONG_VALUE, cbor_decode_Simple2(payload_simple_inv4, sizeof(payload_simple_inv4), &result, &len_decode), NULL);
+	zassert_equal(ZCBOR_ERR_WRONG_TYPE, cbor_decode_Simple2(payload_simple_inv5, sizeof(payload_simple_inv5), &result, &len_decode), NULL);
+	zassert_equal(ZCBOR_ERR_WRONG_VALUE, cbor_decode_Simple2(payload_simple_inv6, sizeof(payload_simple_inv6), &result, &len_decode), NULL);
+	zassert_equal(ZCBOR_ERR_WRONG_VALUE, cbor_decode_Simple2(payload_simple_inv7, sizeof(payload_simple_inv7), &result, &len_decode), NULL);
+	zassert_equal(ZCBOR_ERR_WRONG_VALUE, cbor_decode_Simple2(payload_simple_inv8, sizeof(payload_simple_inv8), &result, &len_decode), NULL);
+	zassert_equal(ZCBOR_ERR_WRONG_TYPE, cbor_decode_Simple2(payload_simple_inv9, sizeof(payload_simple_inv9), &result, &len_decode), NULL);
+	zassert_equal(ZCBOR_ERR_WRONG_VALUE, cbor_decode_Simple2(payload_simple_inv10, sizeof(payload_simple_inv10), &result, &len_decode), NULL);
+	zassert_equal(ZCBOR_ERR_WRONG_VALUE, cbor_decode_Simple2(payload_simple_inv11, sizeof(payload_simple_inv11), &result, &len_decode), NULL);
 }
 
 void test_string_overflow(void)
@@ -1837,7 +1837,7 @@ void test_main(void)
 			 ztest_unit_test(test_tagged_union),
 			 ztest_unit_test(test_number_map),
 			 ztest_unit_test(test_strings),
-			 ztest_unit_test(test_primitives),
+			 ztest_unit_test(test_simples),
 			 ztest_unit_test(test_string_overflow),
 			 ztest_unit_test(test_optional),
 			 ztest_unit_test(test_union),

@@ -266,15 +266,6 @@ static bool str_start_encode(zcbor_state_t *state,
 }
 
 
-static bool primitive_put(zcbor_state_t *state, uint32_t input)
-{
-	if (!value_encode(state, ZCBOR_MAJOR_TYPE_PRIM, &input, sizeof(input))) {
-		ZCBOR_FAIL();
-	}
-	return true;
-}
-
-
 static size_t remaining_str_len(zcbor_state_t *state)
 {
 	size_t max_len = (size_t)state->payload_end - (size_t)state->payload;
@@ -448,7 +439,7 @@ static bool list_map_end_encode(zcbor_state_t *state, uint_fast32_t max_num,
 		state->payload = payload;
 	}
 #else
-	if (!encode_header_byte(state, ZCBOR_MAJOR_TYPE_PRIM, ZCBOR_VALUE_IS_INDEFINITE_LENGTH)) {
+	if (!encode_header_byte(state, ZCBOR_MAJOR_TYPE_SIMPLE, ZCBOR_VALUE_IS_INDEFINITE_LENGTH)) {
 		ZCBOR_FAIL();
 	}
 #endif
@@ -480,41 +471,51 @@ bool zcbor_list_map_end_force_encode(zcbor_state_t *state)
 }
 
 
+bool zcbor_simple_encode(zcbor_state_t *state, uint8_t *input)
+{
+	if (!value_encode(state, ZCBOR_MAJOR_TYPE_SIMPLE, input, sizeof(*input))) {
+		zcbor_print("Error encoding %u (0x%p)\r\n", *input, input);
+		ZCBOR_FAIL();
+	}
+	return true;
+}
+
+
+bool zcbor_simple_put(zcbor_state_t *state, uint8_t input)
+{
+	return value_encode(state, ZCBOR_MAJOR_TYPE_SIMPLE, &input, sizeof(input));
+}
+
+
 bool zcbor_nil_put(zcbor_state_t *state, const void *unused)
 {
 	(void)unused;
-	return primitive_put(state, 22);
+	return zcbor_simple_put(state, 22);
 }
 
 
 bool zcbor_undefined_put(zcbor_state_t *state, const void *unused)
 {
 	(void)unused;
-	return primitive_put(state, 23);
+	return zcbor_simple_put(state, 23);
 }
 
 
 bool zcbor_bool_encode(zcbor_state_t *state, const bool *input)
 {
-	if (!primitive_put(state, (uint32_t)(*input + ZCBOR_BOOL_TO_PRIM))) {
-		ZCBOR_FAIL();
-	}
-	return true;
+	return zcbor_bool_put(state, *input);
 }
 
 
 bool zcbor_bool_put(zcbor_state_t *state, bool input)
 {
-	if (!primitive_put(state, (uint32_t)(input + ZCBOR_BOOL_TO_PRIM))) {
-		ZCBOR_FAIL();
-	}
-	return true;
+	return zcbor_simple_put(state, (!!input + ZCBOR_BOOL_TO_SIMPLE));
 }
 
 
 bool zcbor_float64_encode(zcbor_state_t *state, const double *input)
 {
-	if (!value_encode_len(state, ZCBOR_MAJOR_TYPE_PRIM, input,
+	if (!value_encode_len(state, ZCBOR_MAJOR_TYPE_SIMPLE, input,
 			sizeof(*input))) {
 		ZCBOR_FAIL();
 	}
@@ -531,7 +532,7 @@ bool zcbor_float64_put(zcbor_state_t *state, double input)
 
 bool zcbor_float32_encode(zcbor_state_t *state, const float *input)
 {
-	if (!value_encode_len(state, ZCBOR_MAJOR_TYPE_PRIM, input,
+	if (!value_encode_len(state, ZCBOR_MAJOR_TYPE_SIMPLE, input,
 			sizeof(*input))) {
 		ZCBOR_FAIL();
 	}

@@ -258,9 +258,9 @@ void test_strings(void)
 				0xD9, 0xFF, 0xFF, 9, // 9
 				END
 #ifndef ZCBOR_CANONICAL
-		0x55, // Primitives (len: 21)
+		0x55, // Simples (len: 21)
 #else
-		0x52, // Primitives (len: 18)
+		0x52, // Simples (len: 18)
 #endif
 			LIST(5), // List start
 				0xF5, // True
@@ -321,9 +321,9 @@ void test_strings(void)
 					0xD9, 0xFF, 0xFF, 0x29, // -10
 					END
 #ifndef ZCBOR_CANONICAL
-			0x47, // Primitives (len: 7)
+			0x47, // Simples (len: 7)
 #else
-			0x46, // Primitives (len: 6)
+			0x46, // Simples (len: 6)
 #endif
 				LIST(5), // List start
 					0xF5, // True
@@ -371,17 +371,17 @@ void test_strings(void)
 	strings1.threehundrebytebstr.value = bytes300;
 	strings1.tentothirtybytetstr.len = 30;
 	strings1.tentothirtybytetstr.value = bytes300;
-	strings1.cborseqPrimitives_cbor_count = 3;
-	strings1.cborseqPrimitives_cbor[0].boolval = false;
-	strings1.cborseqPrimitives_cbor[1].boolval = true;
-	strings1.cborseqPrimitives_cbor[2].boolval = false;
+	strings1.cborseqSimples_cbor_count = 3;
+	strings1.cborseqSimples_cbor[0].boolval = false;
+	strings1.cborseqSimples_cbor[1].boolval = true;
+	strings1.cborseqSimples_cbor[2].boolval = false;
 
 	strings2.threehundrebytebstr.len = 300;
 	strings2.threehundrebytebstr.value = bytes300;
 	strings2.tentothirtybytetstr.len = 9; // Invalid
 	strings2.tentothirtybytetstr.value = bytes300;
-	strings2.cborseqPrimitives_cbor_count = 1;
-	strings2.cborseqPrimitives_cbor[0].boolval = false;
+	strings2.cborseqSimples_cbor_count = 1;
+	strings2.cborseqSimples_cbor[0].boolval = false;
 
 	zassert_equal(ZCBOR_SUCCESS, cbor_encode_Numbers(output2, sizeof(output2), &numbers1, &out_len), NULL);
 	strings1.cborNumbers.value = output2;
@@ -403,24 +403,24 @@ void test_strings(void)
 	zassert_mem_equal(exp_payload_strings1, output4, sizeof(exp_payload_strings1), NULL);
 }
 
-void test_primitives(void)
+void test_simples(void)
 {
-	uint8_t exp_payload_prim1[] = {LIST(5), 0xF5, 0xF4, 0xF4, 0xF6, 0xF7, END};
-	uint8_t exp_payload_prim2[] = {LIST(5), 0xF5, 0xF4, 0xF5, 0xF6, 0xF7, END};
+	uint8_t exp_payload_simple1[] = {LIST(5), 0xF5, 0xF4, 0xF4, 0xF6, 0xF7, END};
+	uint8_t exp_payload_simple2[] = {LIST(5), 0xF5, 0xF4, 0xF5, 0xF6, 0xF7, END};
 
-	struct Primitives input;
+	struct Simples input;
 	size_t len_encode;
 	uint8_t output[10];
 
 	input.boolval = false;
-	zassert_equal(ZCBOR_SUCCESS, cbor_encode_Prim2(output, sizeof(output), &input, &len_encode), NULL);
-	zassert_equal(len_encode, sizeof(exp_payload_prim1), NULL);
-	zassert_mem_equal(exp_payload_prim1, output, sizeof(exp_payload_prim1), NULL);
+	zassert_equal(ZCBOR_SUCCESS, cbor_encode_Simple2(output, sizeof(output), &input, &len_encode), NULL);
+	zassert_equal(len_encode, sizeof(exp_payload_simple1), NULL);
+	zassert_mem_equal(exp_payload_simple1, output, sizeof(exp_payload_simple1), NULL);
 
 	input.boolval = true;
-	zassert_equal(ZCBOR_SUCCESS, cbor_encode_Prim2(output, sizeof(output), &input, &len_encode), NULL);
-	zassert_equal(len_encode, sizeof(exp_payload_prim2), NULL);
-	zassert_mem_equal(exp_payload_prim2, output, sizeof(exp_payload_prim2), NULL);
+	zassert_equal(ZCBOR_SUCCESS, cbor_encode_Simple2(output, sizeof(output), &input, &len_encode), NULL);
+	zassert_equal(len_encode, sizeof(exp_payload_simple2), NULL);
+	zassert_mem_equal(exp_payload_simple2, output, sizeof(exp_payload_simple2), NULL);
 }
 
 void test_optional(void)
@@ -1452,7 +1452,7 @@ void test_main(void)
 			 ztest_unit_test(test_tagged_union),
 			 ztest_unit_test(test_number_map),
 			 ztest_unit_test(test_strings),
-			 ztest_unit_test(test_primitives),
+			 ztest_unit_test(test_simples),
 			 ztest_unit_test(test_optional),
 			 ztest_unit_test(test_union),
 			 ztest_unit_test(test_levels),

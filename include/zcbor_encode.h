@@ -111,7 +111,11 @@ static inline bool zcbor_tstr_encode_ptr(zcbor_state_t *state, const char *ptr, 
 /** Encode a tag. Must be called before encoding the value being tagged. */
 bool zcbor_tag_encode(zcbor_state_t *state, uint32_t tag);
 
-/** Encode a boolean primitive value. */
+/** Encode a simple value. */
+bool zcbor_simple_encode(zcbor_state_t *state, uint8_t *input);
+bool zcbor_simple_put(zcbor_state_t *state, uint8_t input);
+
+/** Encode a boolean simple value. */
 bool zcbor_bool_put(zcbor_state_t *state, bool input);
 bool zcbor_bool_encode(zcbor_state_t *state, const bool *input);
 
@@ -121,7 +125,7 @@ bool zcbor_float32_encode(zcbor_state_t *state, const float *input);
 bool zcbor_float64_put(zcbor_state_t *state, double input);
 bool zcbor_float64_encode(zcbor_state_t *state, const double *input);
 
-/** Encode a "nil"/"undefined" primitive value. @p unused should be NULL.
+/** Encode a "nil"/"undefined" simple value. @p unused should be NULL.
  *
  * @param[inout] state   The current state of the encoding.
  * @param[in]    unused  Unused parameter to maintain signature parity with
