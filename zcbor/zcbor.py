@@ -2615,6 +2615,10 @@ static bool {xcoder.func_name}(
 #include "zcbor_{mode}.h"
 #include "{type_def_file}"
 
+#ifdef __cplusplus
+extern "C" {{
+#endif
+
 #if DEFAULT_MAX_QTY != {self.default_max_qty}
 #error "The type file was generated with a different default_max_qty than this file"
 #endif
@@ -2622,6 +2626,10 @@ static bool {xcoder.func_name}(
 {(linesep+linesep).join(
     [f"{xcoder.public_xcode_func_sig()};" for xcoder in self.entry_types[mode]])}
 
+
+#ifdef __cplusplus
+}}
+#endif
 
 #endif /* {header_guard} */
 """
@@ -2644,6 +2652,10 @@ static bool {xcoder.func_name}(
 #include <string.h>
 #include "zcbor_{mode}.h"
 
+#ifdef __cplusplus
+extern "C" {{
+#endif
+
 /** Which value for --default-max-qty this file was created with.
  *
  *  The define is used in the other generated file to do a build-time
@@ -2657,6 +2669,9 @@ static bool {xcoder.func_name}(
     [f"{typedef[1]} {{{linesep}{linesep.join(typedef[0][1:])};"
         for typedef in self.type_defs[mode]])}
 
+#ifdef __cplusplus
+}}
+#endif
 
 #endif /* {header_guard} */
 """

@@ -7,6 +7,7 @@
 #include <zcbor_decode.h>
 #include <zcbor_encode.h>
 #include <zephyr/sys/printk.h>
+#include <pet_decode.h>
 
 int main(void)
 {
@@ -25,7 +26,7 @@ int main(void)
 
 	ZCBOR_STATE_E(state_e, 3, payload, sizeof(payload), 0);
 	ZCBOR_STATE_D(state_d, 3, payload, sizeof(payload), 30);
-	
+
 	state_e->constant_state->stop_on_error = true;
 	state_d->constant_state->stop_on_error = true;
 
@@ -99,11 +100,25 @@ int main(void)
 	zcbor_multi_decode(1, 1, &one, (zcbor_decoder_t *)zcbor_int32_expect, state_d, (void*)14, 0);
 	zcbor_int32_expect(state_d, 15);
 	ret = zcbor_present_decode(&one, (zcbor_decoder_t *)zcbor_int32_expect, state_d, (void*)16);
-	
+
 	if (!ret) {
 		printk("Decode error: %d\r\n", zcbor_peek_error(state_d));
 		return 1;
 	}
+
+
+	struct Pet pet;
+	uint8_t input[] = {
+		0x83, 0x82, 0x63, 0x66, 0x6f, 0x6f, 0x63, 0x62, 0x61, 0x72,
+		0x48, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+		0x02};
+	int int_ret = cbor_decode_Pet(input, sizeof(input), &pet, NULL);
+
+	if (int_ret != ZCBOR_SUCCESS) {
+		printk("Decode error: %d\r\n", int_ret);
+		return 1;
+	}
+
 	printk("Success!\r\n");
 
 	return 0;
