@@ -17,3 +17,23 @@ target_sources(app PRIVATE
 target_include_directories(app PRIVATE ../../../include)
 
 zephyr_compile_definitions(ZCBOR_STOP_ON_ERROR)
+
+set(py_command_pet
+  zcbor
+  code
+  -c ${CMAKE_CURRENT_LIST_DIR}/../../cases/pet.cddl
+  --output-cmake ${PROJECT_BINARY_DIR}/pet.cmake
+  -t Pet
+  -d
+  ${bit_arg}
+  --short-names
+  )
+
+execute_process(
+  COMMAND ${py_command_pet}
+  COMMAND_ERROR_IS_FATAL ANY
+  )
+
+include(${PROJECT_BINARY_DIR}/pet.cmake)
+target_link_libraries(pet PRIVATE zephyr_interface)
+target_link_libraries(app PRIVATE pet)
