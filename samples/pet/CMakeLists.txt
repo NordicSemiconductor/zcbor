@@ -29,6 +29,7 @@ set(py_command_convert_pet1
   zcbor convert -c ${CMAKE_CURRENT_LIST_DIR}/../../tests/cases/pet.cddl -t Pet
   -i ${CMAKE_CURRENT_LIST_DIR}/pet1.yml
   -o ${PROJECT_BINARY_DIR}/include/pet1.h --c-code-var-name pet1
+  --yaml-compatibility
   )
 add_custom_target(pet1_yaml
   COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/include

@@ -1,0 +1,14 @@
+Bstr_obj = [{
+	"foo": uint,
+	"bar": bool,
+}]
+
+Yaml_compatibility_example = {
+	"bstr_hex" => bstr .size 8,
+	"bstr_obj" => bstr .cbor Bstr_obj,
+	"nonstandard_key" => {
+		[tstr] => [tstr]
+	},
+	"tagged" => #6.12345678(tstr),
+	"undefined" => undefined,
+}

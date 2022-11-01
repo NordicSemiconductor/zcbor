@@ -14,7 +14,8 @@ from argparse import ArgumentParser, ArgumentTypeError, RawDescriptionHelpFormat
 from datetime import datetime
 from copy import copy
 from itertools import tee
-from cbor2 import loads, dumps, CBORTag, load, CBORDecodeValueError, CBORDecodeEOF, undefined
+from cbor2 import (loads, dumps, CBORTag, load, CBORDecodeValueError, CBORDecodeEOF, undefined,
+                   CBORSimpleValue)
 from yaml import safe_load as yaml_load, dump as yaml_dump
 from json import loads as json_load, dumps as json_dump
 from io import BytesIO
@@ -1553,9 +1554,9 @@ CBOR-formatted bstr, all elements must be bstrs. If not, it is a programmer erro
         return decoded
 
     # YAML => python object
-    def decode_str_yaml(self, yaml_str):
+    def decode_str_yaml(self, yaml_str, yaml_compat=False):
         yaml_obj = yaml_load(yaml_str)
-        obj = self._to_cbor_obj(yaml_obj)
+        obj = self._from_yaml_obj(yaml_obj) if yaml_compat else yaml_obj
         self.validate_obj(obj)
         return self.decode_obj(obj)
 
@@ -1576,53 +1577,53 @@ CBOR-formatted bstr, all elements must be bstrs. If not, it is a programmer erro
 
     # Convert object from YAML/JSON (with special dicts for bstr, tag etc) to CBOR object
     # that cbor2 understands.
-    def _to_cbor_obj(self, obj):
+    def _from_yaml_obj(self, obj):
         if isinstance(obj, list):
             if len(obj) == 1 and obj[0] == "zcbor_undefined":
                 return undefined
-            return [self._to_cbor_obj(elem) for elem in obj]
+            return [self._from_yaml_obj(elem) for elem in obj]
         elif isinstance(obj, dict):
-            if ["bstr"] == list(obj.keys()):
-                if isinstance(obj["bstr"], str):
-                    bstr = bytes.fromhex(obj["bstr"])
+            if ["zcbor_bstr"] == list(obj.keys()):
+                if isinstance(obj["zcbor_bstr"], str):
+                    bstr = bytes.fromhex(obj["zcbor_bstr"])
                 else:
-                    bstr = dumps(self._to_cbor_obj(obj["bstr"]))
+                    bstr = dumps(self._from_yaml_obj(obj["zcbor_bstr"]))
                 return bstr
-            elif ["tag", "val"] == list(obj.keys()):
-                return CBORTag(obj["tag"], self._to_cbor_obj(obj["val"]))
+            elif ["zcbor_tag", "zcbor_tag_val"] == list(obj.keys()):
+                return CBORTag(obj["zcbor_tag"], self._from_yaml_obj(obj["zcbor_tag_val"]))
             retval = dict()
             for key, val in obj.items():
-                match = fullmatch(r"keyval\d+", key)
+                match = fullmatch(r"zcbor_keyval\d+", key)
                 if match is not None:
-                    new_key = self._to_cbor_obj(val["key"])
-                    new_val = self._to_cbor_obj(val["val"])
+                    new_key = self._from_yaml_obj(val["key"])
+                    new_val = self._from_yaml_obj(val["val"])
                     if isinstance(new_key, list):
                         new_key = tuple(new_key)
                     retval[new_key] = new_val
                 else:
-                    retval[key] = self._to_cbor_obj(val)
+                    retval[key] = self._from_yaml_obj(val)
             return retval
         return obj
 
-    # inverse of _to_cbor_obj
-    def _from_cbor_obj(self, obj):
+    # inverse of _from_yaml_obj
+    def _to_yaml_obj(self, obj):
         if isinstance(obj, list) or isinstance(obj, tuple):
-            return [self._from_cbor_obj(elem) for elem in obj]
+            return [self._to_yaml_obj(elem) for elem in obj]
         elif isinstance(obj, dict):
             retval = dict()
             i = 0
             for key, val in obj.items():
                 if not isinstance(key, str):
-                    retval[f"keyval{i}"] = {
-                        "key": self._from_cbor_obj(key), "val": self._from_cbor_obj(val)}
+                    retval[f"zcbor_keyval{i}"] = {
+                        "key": self._to_yaml_obj(key), "val": self._to_yaml_obj(val)}
                     i += 1
                 else:
-                    retval[key] = val
+                    retval[key] = self._to_yaml_obj(val)
             return retval
         elif isinstance(obj, bytes):
             f = BytesIO(obj)
             try:
-                bstr_obj = self._from_cbor_obj(load(f))
+                bstr_obj = self._to_yaml_obj(load(f))
             except (CBORDecodeValueError, CBORDecodeEOF):
                 # failed decoding
                 bstr_obj = obj.hex()
@@ -1630,45 +1631,47 @@ CBOR-formatted bstr, all elements must be bstrs. If not, it is a programmer erro
                 if f.read(1) != b'':
                     # not fully decoded
                     bstr_obj = obj.hex()
-            return {"bstr": bstr_obj}
+            return {"zcbor_bstr": bstr_obj}
         elif isinstance(obj, CBORTag):
-            return {"tag": obj.tag, "val": self._from_cbor_obj(obj.value)}
+            return {"zcbor_tag": obj.tag, "zcbor_tag_val": self._to_yaml_obj(obj.value)}
         elif obj is undefined:
             return ["zcbor_undefined"]
         assert not isinstance(obj, bytes)
         return obj
 
     # YAML str => CBOR bytestr
-    def from_yaml(self, yaml_str):
+    def from_yaml(self, yaml_str, yaml_compat=False):
         yaml_obj = yaml_load(yaml_str)
-        obj = self._to_cbor_obj(yaml_obj)
+        obj = self._from_yaml_obj(yaml_obj) if yaml_compat else yaml_obj
         self.validate_obj(obj)
         return dumps(obj)
 
     # CBOR object => YAML str
-    def obj_to_yaml(self, obj):
+    def obj_to_yaml(self, obj, yaml_compat=False):
         self.validate_obj(obj)
-        return yaml_dump(self._from_cbor_obj(obj))
+        yaml_obj = self._to_yaml_obj(obj) if yaml_compat else obj
+        return yaml_dump(yaml_obj)
 
     # CBOR bytestring => YAML str
-    def str_to_yaml(self, cbor_str):
-        return self.obj_to_yaml(loads(cbor_str))
+    def str_to_yaml(self, cbor_str, yaml_compat=False):
+        return self.obj_to_yaml(loads(cbor_str), yaml_compat=yaml_compat)
 
     # JSON str => CBOR bytestr
-    def from_json(self, json_str):
-        obj = self._to_cbor_obj(json_load(json_str))
+    def from_json(self, json_str, yaml_compat=False):
+        json_obj = json_load(json_str)
+        obj = self._from_yaml_obj(json_obj) if yaml_compat else json_obj
         self.validate_obj(obj)
         return dumps(obj)
 
     # CBOR object => JSON str
-    def obj_to_json(self, obj):
+    def obj_to_json(self, obj, yaml_compat=False):
         self.validate_obj(obj)
-        json_obj = self._from_cbor_obj(obj)
+        json_obj = self._to_yaml_obj(obj) if yaml_compat else obj
         return json_dump(json_obj)
 
     # CBOR bytestring => JSON str
-    def str_to_json(self, cbor_str):
-        return self.obj_to_json(loads(cbor_str))
+    def str_to_json(self, cbor_str, yaml_compat=False):
+        return self.obj_to_json(loads(cbor_str), yaml_compat=yaml_compat)
 
     # CBOR bytestring => C code (uint8_t array initialization)
     def str_to_c_code(self, cbor_str, var_name, columns=0):
@@ -2871,11 +2874,20 @@ If omitted, the format is inferred from the file name.
     validate_parent_parser.add_argument(
         "-t", "--entry-type", required=True, type=str,
         help='''Name of the type (from the CDDL) to interpret the data as.''')
-    parent_parser.add_argument(
+    validate_parent_parser.add_argument(
         "--default-max-qty", "--dq", required=False, type=int, default=0xFFFFFFFF,
         help="""Default maximum number of repetitions when no maximum is specified.
 It is only relevant when handling data that will be decoded by generated code.
 If omitted, a large number will be used.""")
+    validate_parent_parser.add_argument(
+        "--yaml-compatibility", required=False, action="store_true", default=False,
+        help='''Whether to convert CBOR-only values to YAML-compatible ones
+(when converting from CBOR), or vice versa (when converting to CBOR).
+
+When this is enabled, all CBOR data is guaranteed to convert into YAML/JSON.
+JSON and YAML do not support all data types that CBOR/CDDL supports.
+bytestrings (BSTR), tags, undefined, and maps with non-text keys need
+special handling. See the zcbor README for more information.''')
 
     validate_parser = subparsers.add_parser(
         "validate", description='''Read CBOR, YAML, or JSON data from file or stdin and validate
@@ -2890,29 +2902,7 @@ it against a CDDL schema file.
 The script decodes the CBOR/YAML/JSON data from a file or stdin
 and verifies that it conforms to the CDDL description.
 The script fails if the data does not conform.
-'zcbor validate' can be used if only validate is needed.
-
-JSON and YAML do not support all data types that CBOR/CDDL supports.
-bytestrings (BSTR), tags, and maps with non-text keys need special handling:
-
-All strings in JSON/YAML are text strings. If a BSTR is needed, use
-a dict with a single entry, with "bstr" as the key, and the byte
-string (as a hex string) as the value, e.g.
-{"bstr": "0123456789abcdef"}.
-The value can also be another type, e.g. which will be interpreted as a
-BSTR with the given value as contents (in cddl: 'bstr .cbor SomeType').
-E.g.
-{"bstr": ["first element", 2, [3]]}
-
-Dicts in JSON/YAML only support text strings for keys, so if a dict
-needs other types of keys, encapsulate the key and value into a dict (n is an arbitrary integer):
-e.g. {"name": "foo", "keyvaln": {"key": 123, "val": "bar"}}
-which will conform to the CDDL {tstr => tstr, int => tstr}.
-
-Tags are specified by a dict with two elements, e.g.
-{"tag": 1234, "value": ["tagged string within list"]}
-
-'undefined' is specified as a list with a single text entry: "zcbor_undefined".''',
+'zcbor validate' can be used if only validate is needed.''',
         parents=[parent_parser, validate_parent_parser])
 
     convert_parser.add_argument(
@@ -3057,10 +3047,10 @@ def read_data(args, cddl):
     in_file_format = args.input_as or in_file_ext.strip(".")
     if in_file_format in ["yaml", "yml"]:
         f = sys.stdin if args.input == "-" else open(args.input, "r")
-        cbor_str = cddl.from_yaml(f.read())
+        cbor_str = cddl.from_yaml(f.read(), yaml_compat=args.yaml_compatibility)
     elif in_file_format == "json":
         f = sys.stdin if args.input == "-" else open(args.input, "r")
-        cbor_str = cddl.from_json(f.read())
+        cbor_str = cddl.from_json(f.read(), yaml_compat=args.yaml_compatibility)
     elif in_file_format == "cborhex":
         f = sys.stdin if args.input == "-" else open(args.input, "r")
         cbor_str = bytes.fromhex(f.read().replace("\n", ""))
@@ -3078,10 +3068,10 @@ def write_data(args, cddl, cbor_str):
     out_file_format = args.output_as or out_file_ext.strip(".")
     if out_file_format in ["yaml", "yml"]:
         f = sys.stdout if args.output == "-" else open(args.output, "w")
-        f.write(cddl.str_to_yaml(cbor_str))
+        f.write(cddl.str_to_yaml(cbor_str, yaml_compat=args.yaml_compatibility))
     elif out_file_format == "json":
         f = sys.stdout if args.output == "-" else open(args.output, "w")
-        f.write(cddl.str_to_json(cbor_str))
+        f.write(cddl.str_to_json(cbor_str, yaml_compat=args.yaml_compatibility))
     elif out_file_format in ["c", "h", "c_code"]:
         f = sys.stdout if args.output == "-" else open(args.output, "w")
         assert args.c_code_var_name is not None, \

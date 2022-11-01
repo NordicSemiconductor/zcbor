@@ -1,0 +1,13 @@
+bstr_hex: {zcbor_bstr: 0123456789abcdef}
+bstr_obj:
+  zcbor_bstr:
+    - foo: 1
+      bar: false
+nonstandard_key:
+  zcbor_keyval0:
+    key: ["This list is a dict key."]
+    val: ["This list is a dict value."]
+tagged:
+  zcbor_tag: 12345678
+  zcbor_tag_val: "This string is CBOR tagged with the tag 12345678."
+undefined: ["zcbor_undefined"]
