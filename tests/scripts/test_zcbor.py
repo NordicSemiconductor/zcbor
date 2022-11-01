@@ -45,6 +45,8 @@ p_manifest14_priv = Path(p_tests, 'cases', 'manifest14.priv')
 p_manifest14_pub = Path(p_tests, 'cases', 'manifest14.pub')
 p_map_bstr_cddl = Path(p_tests, 'cases', 'map_bstr.cddl')
 p_map_bstr_yaml = Path(p_tests, 'cases', 'map_bstr.yaml')
+p_yaml_compat_cddl = Path(p_tests, 'cases', 'yaml_compatibility.cddl')
+p_yaml_compat_yaml = Path(p_tests, 'cases', 'yaml_compatibility.yaml')
 p_README = Path(p_root, 'README.md')
 p_prelude = Path(p_root, 'zcbor', 'cddl', 'prelude.cddl')
 
@@ -543,15 +545,17 @@ class TestEx5InvManifest20(TestEx5InvManifest16):
         self.decode_file(p_test_vectors20[5], p_manifest20, p_cose)
 
 
-class TestCLI(TestCase):
-    def get_std_args(self, input, cmd="convert"):
-        return ["zcbor", cmd, "--cddl", str(p_manifest12), "--input", str(input), "-t", "SUIT_Envelope_Tagged"]
-
-    def popen_test(self, args, input, exp_retcode=0):
+class PopenTest(TestCase):
+    def popen_test(self, args, input="", exp_retcode=0):
         call0 = Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE)
         stdout0, stderr0 = call0.communicate(input)
         self.assertEqual(exp_retcode, call0.returncode, stderr0.decode('utf-8'))
         return stdout0, stderr0
+
+
+class TestCLI(PopenTest):
+    def get_std_args(self, input, cmd="convert"):
+        return ["zcbor", cmd, "--cddl", str(p_manifest12), "--input", str(input), "-t", "SUIT_Envelope_Tagged", "--yaml-compatibility"]
 
     def do_testManifest(self, n):
         self.popen_test(self.get_std_args(p_test_vectors12[n], cmd="validate"), "")
@@ -600,7 +604,7 @@ class TestCLI(TestCase):
         self.do_testManifest(5)
 
     def test_map_bstr(self):
-        stdout1, _ = self.popen_test(["zcbor", "convert", "--cddl", str(p_map_bstr_cddl), "--input", str(p_map_bstr_yaml), "-t", "map", "--output", "-"], "")
+        stdout1, _ = self.popen_test(["zcbor", "convert", "--cddl", str(p_map_bstr_cddl), "--input", str(p_map_bstr_yaml), "-t", "map", "--yaml-compatibility", "--output", "-"], "")
         self.assertEqual(dumps({"test": bytes.fromhex("1234abcd"), "test2": cbor2.CBORTag(1234, bytes.fromhex("1a2b3c4d")), ("test3",): dumps(1234)}), stdout1)
 
     def test_decode_encode(self):
@@ -643,10 +647,10 @@ class TestUndefined(TestCase):
         cddl = cddl_res.my_types['Simples']
         test_yaml = "[true, false, true, null, [zcbor_undefined]]"
 
-        decoded = cddl.decode_str_yaml(test_yaml)
+        decoded = cddl.decode_str_yaml(test_yaml, yaml_compat=True)
         self.assertEqual(True, decoded.boolval)
 
-        encoded = cddl.str_to_yaml(cddl.from_yaml(test_yaml))
+        encoded = cddl.str_to_yaml(cddl.from_yaml(test_yaml, yaml_compat=True), yaml_compat=True)
         self.assertEqual(safe_load(encoded), safe_load(test_yaml))
 
 
@@ -666,6 +670,15 @@ class TestFloat(TestCase):
 
         encoded = cddl.str_to_yaml(cddl.from_yaml(test_yaml))
         self.assertEqual(safe_load(encoded), safe_load(test_yaml))
+
+
+class TestYamlCompatibility(PopenTest):
+    def test_yaml_compatibility(self):
+        self.popen_test(["zcbor", "validate", "-c", p_yaml_compat_cddl, "-i", p_yaml_compat_yaml, "-t", "Yaml_compatibility_example"], exp_retcode=1)
+        self.popen_test(["zcbor", "validate", "-c", p_yaml_compat_cddl, "-i", p_yaml_compat_yaml, "-t", "Yaml_compatibility_example", "--yaml-compatibility"])
+        stdout1, _ = self.popen_test(["zcbor", "convert", "-c", p_yaml_compat_cddl, "-i", p_yaml_compat_yaml, "-o", "-", "-t", "Yaml_compatibility_example", "--yaml-compatibility"])
+        stdout2, _ = self.popen_test(["zcbor", "convert", "-c", p_yaml_compat_cddl, "-i", "-", "-o", "-", "--output-as", "yaml", "-t", "Yaml_compatibility_example", "--yaml-compatibility"], stdout1)
+        self.assertEqual(safe_load(stdout2), safe_load(p_yaml_compat_yaml.read_text()))
 
 
 if __name__ == "__main__":

@@ -107,13 +107,16 @@ zcbor validate -c <CDDL description file> -t <which CDDL type to expect> -i <inp
 zcbor convert -c <CDDL description file> -t <which CDDL type to expect> -i <input data file> -o <output data file>
 ```
 
-Note that since CBOR supports more data types than YAML and JSON, zcbor uses an idiomatic format when converting to/from YAML/JSON.
+Note that since CBOR supports more data types than YAML and JSON, zcbor can use an idiomatic format when converting to/from YAML/JSON.
+This is controlled by the `--yaml-compatibility` option to 'validate' and 'convert'.
 This is relevant when handling YAML/JSON conversions of data that uses the unsupported features.
 The following data types are supported by CBOR, but not by YAML (and JSON which is a subset of YAML):
 
  1. bytestrings: YAML supports only text strings. In YAML, bytestrings ('<bytestring>') are represented as {"bstr": "<hex-formatted bytestring>"}, or as {"bstr": <any type>} if the CBOR bytestring contains CBOR-formatted data, in which the data is decoded into <any type>.
  2. map keys other than text string: In YAML, such key value pairs are represented as {"keyval<unique int>": {"key": <key, not text>, "val": <value>}}
  3. tags: In cbor2, tags are represented by a special type, cbor2.CBORTag. In YAML, these are represented as {"tag": <tag number>, "val": <tagged data>}.
+
+You can see an example of the conversions in [tests/cases/yaml_compatibility.yaml](tests/cases/yaml_compatibility.yaml) and its CDDL file [tests/cases/yaml_compatibility.cddl](tests/cases/yaml_compatibility.cddl).
 
 Importing zcbor in a Python script
 ----------------------------------
@@ -507,9 +510,10 @@ zcbor validate --help
 ---------------------
 
 ```
-usage: zcbor validate [-h] -c CDDL [--no-prelude] [-v]
-                      [--default-max-qty DEFAULT_MAX_QTY] -i INPUT
+usage: zcbor validate [-h] -c CDDL [--no-prelude] [-v] -i INPUT
                       [--input-as {yaml,json,cbor,cborhex}] -t ENTRY_TYPE
+                      [--default-max-qty DEFAULT_MAX_QTY]
+                      [--yaml-compatibility]
 
 Read CBOR, YAML, or JSON data from file or stdin and validate it against a
 CDDL schema file.
@@ -523,11 +527,6 @@ options:
                         the repo, or together with the script.
   -v, --verbose         Print more information while parsing CDDL and
                         generating code.
-  --default-max-qty DEFAULT_MAX_QTY, --dq DEFAULT_MAX_QTY
-                        Default maximum number of repetitions when no maximum
-                        is specified. It is only relevant when handling data
-                        that will be decoded by generated code. If omitted, a
-                        large number will be used.
   -i INPUT, --input INPUT
                         Input data file. The option --input-as specifies how
                         to interpret the contents. Use "-" to indicate stdin.
@@ -539,6 +538,19 @@ options:
   -t ENTRY_TYPE, --entry-type ENTRY_TYPE
                         Name of the type (from the CDDL) to interpret the data
                         as.
+  --default-max-qty DEFAULT_MAX_QTY, --dq DEFAULT_MAX_QTY
+                        Default maximum number of repetitions when no maximum
+                        is specified. It is only relevant when handling data
+                        that will be decoded by generated code. If omitted, a
+                        large number will be used.
+  --yaml-compatibility  Whether to convert CBOR-only values to YAML-compatible
+                        ones (when converting from CBOR), or vice versa (when
+                        converting to CBOR). When this is enabled, all CBOR
+                        data is guaranteed to convert into YAML/JSON. JSON and
+                        YAML do not support all data types that CBOR/CDDL
+                        supports. bytestrings (BSTR), tags, undefined, and
+                        maps with non-text keys need special handling. See the
+                        zcbor README for more information.
 
 ```
 
@@ -546,31 +558,18 @@ zcbor convert --help
 --------------------
 
 ```
-usage: zcbor convert [-h] -c CDDL [--no-prelude] [-v]
-                     [--default-max-qty DEFAULT_MAX_QTY] -i INPUT
-                     [--input-as {yaml,json,cbor,cborhex}] -t ENTRY_TYPE -o
-                     OUTPUT [--output-as {yaml,json,cbor,cborhex,c_code}]
+usage: zcbor convert [-h] -c CDDL [--no-prelude] [-v] -i INPUT
+                     [--input-as {yaml,json,cbor,cborhex}] -t ENTRY_TYPE
+                     [--default-max-qty DEFAULT_MAX_QTY]
+                     [--yaml-compatibility] -o OUTPUT
+                     [--output-as {yaml,json,cbor,cborhex,c_code}]
                      [--c-code-var-name C_CODE_VAR_NAME]
                      [--c-code-columns C_CODE_COLUMNS]
 
 Parse a CDDL file and validate/convert between CBOR and YAML/JSON. The script
 decodes the CBOR/YAML/JSON data from a file or stdin and verifies that it
 conforms to the CDDL description. The script fails if the data does not
-conform. 'zcbor validate' can be used if only validate is needed. JSON and
-YAML do not support all data types that CBOR/CDDL supports. bytestrings
-(BSTR), tags, and maps with non-text keys need special handling: All strings
-in JSON/YAML are text strings. If a BSTR is needed, use a dict with a single
-entry, with "bstr" as the key, and the byte string (as a hex string) as the
-value, e.g. {"bstr": "0123456789abcdef"}. The value can also be another type,
-e.g. which will be interpreted as a BSTR with the given value as contents (in
-cddl: 'bstr .cbor SomeType'). E.g. {"bstr": ["first element", 2, [3]]} Dicts
-in JSON/YAML only support text strings for keys, so if a dict needs other
-types of keys, encapsulate the key and value into a dict (n is an arbitrary
-integer): e.g. {"name": "foo", "keyvaln": {"key": 123, "val": "bar"}} which
-will conform to the CDDL {tstr => tstr, int => tstr}. Tags are specified by a
-dict with two elements, e.g. {"tag": 1234, "value": ["tagged string within
-list"]} 'undefined' is specified as a list with a single text entry:
-"zcbor_undefined".
+conform. 'zcbor validate' can be used if only validate is needed.
 
 options:
   -h, --help            show this help message and exit
@@ -581,11 +580,6 @@ options:
                         the repo, or together with the script.
   -v, --verbose         Print more information while parsing CDDL and
                         generating code.
-  --default-max-qty DEFAULT_MAX_QTY, --dq DEFAULT_MAX_QTY
-                        Default maximum number of repetitions when no maximum
-                        is specified. It is only relevant when handling data
-                        that will be decoded by generated code. If omitted, a
-                        large number will be used.
   -i INPUT, --input INPUT
                         Input data file. The option --input-as specifies how
                         to interpret the contents. Use "-" to indicate stdin.
@@ -597,6 +591,19 @@ options:
   -t ENTRY_TYPE, --entry-type ENTRY_TYPE
                         Name of the type (from the CDDL) to interpret the data
                         as.
+  --default-max-qty DEFAULT_MAX_QTY, --dq DEFAULT_MAX_QTY
+                        Default maximum number of repetitions when no maximum
+                        is specified. It is only relevant when handling data
+                        that will be decoded by generated code. If omitted, a
+                        large number will be used.
+  --yaml-compatibility  Whether to convert CBOR-only values to YAML-compatible
+                        ones (when converting from CBOR), or vice versa (when
+                        converting to CBOR). When this is enabled, all CBOR
+                        data is guaranteed to convert into YAML/JSON. JSON and
+                        YAML do not support all data types that CBOR/CDDL
+                        supports. bytestrings (BSTR), tags, undefined, and
+                        maps with non-text keys need special handling. See the
+                        zcbor README for more information.
   -o OUTPUT, --output OUTPUT
                         Output data file. The option --output-as specifies how
                         to interpret the contents. Use "-" to indicate stdout.
