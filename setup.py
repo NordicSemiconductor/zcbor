@@ -86,6 +86,6 @@ setuptools.setup(
     data_files=[
         ("lib/zcbor/include",
             ("include/zcbor_decode.h", "include/zcbor_encode.h", "include/zcbor_common.h",
-                "include/zcbor_debug.h")),
+                "include/zcbor_tags.h", "include/zcbor_debug.h")),
         ("lib/zcbor/src", ("src/zcbor_decode.c", "src/zcbor_encode.c", "src/zcbor_common.c"))],
 )

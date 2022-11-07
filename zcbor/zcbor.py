@@ -3032,6 +3032,7 @@ def process_code(args):
         copyfile(Path(h_code_dir, "zcbor_decode.h"), Path(new_h_code_dir, "zcbor_decode.h"))
         copyfile(Path(h_code_dir, "zcbor_encode.h"), Path(new_h_code_dir, "zcbor_encode.h"))
         copyfile(Path(h_code_dir, "zcbor_common.h"), Path(new_h_code_dir, "zcbor_common.h"))
+        copyfile(Path(h_code_dir, "zcbor_tags.h"), Path(new_h_code_dir, "zcbor_tags.h"))
         copyfile(Path(h_code_dir, "zcbor_debug.h"), Path(new_h_code_dir, "zcbor_debug.h"))
         c_code_dir = new_c_code_dir
         h_code_dir = new_h_code_dir
