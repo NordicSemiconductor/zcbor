@@ -109,7 +109,7 @@ static inline bool zcbor_tstr_encode_ptr(zcbor_state_t *state, const char *ptr, 
 	zcbor_tstr_encode_ptr(state, string, sizeof(string))
 
 /** Encode a tag. Must be called before encoding the value being tagged. */
-bool zcbor_tag_encode(zcbor_state_t *state, uint32_t input);
+bool zcbor_tag_encode(zcbor_state_t *state, uint32_t tag);
 
 /** Encode a boolean primitive value. */
 bool zcbor_bool_put(zcbor_state_t *state, bool input);
