@@ -5,8 +5,9 @@
  */
 
 #include <zephyr/ztest.h>
-#include "corner_cases.h"
-#include "zcbor_debug.h" // Enables use of print functions when debugging tests.
+#include <corner_cases.h>
+#include <zcbor_decode.h>
+#include <zcbor_debug.h> // Enables use of print functions when debugging tests.
 
 #define CONCAT_BYTE(a,b) a ## b
 
