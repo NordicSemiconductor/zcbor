@@ -2612,7 +2612,6 @@ static bool {xcoder.func_name}(
 #include <stdbool.h>
 #include <stddef.h>
 #include <string.h>
-#include "zcbor_{mode}.h"
 #include "{type_def_file}"
 
 #ifdef __cplusplus
@@ -2635,6 +2634,10 @@ extern "C" {{
 """
 
     def render_type_file(self, header_guard, mode):
+        body = (
+            linesep + linesep).join(
+                [f"{typedef[1]} {{{linesep}{linesep.join(typedef[0][1:])};"
+                    for typedef in self.type_defs[mode]])
         return \
             f"""/*
  * Generated using zcbor version {self.version}
@@ -2649,8 +2652,7 @@ extern "C" {{
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
-#include <string.h>
-#include "zcbor_{mode}.h"
+{'#include <zcbor_common.h>' if "struct zcbor_string" in body else ""}
 
 #ifdef __cplusplus
 extern "C" {{
@@ -2665,9 +2667,7 @@ extern "C" {{
  */
 #define DEFAULT_MAX_QTY {self.default_max_qty}
 
-{(linesep+linesep).join(
-    [f"{typedef[1]} {{{linesep}{linesep.join(typedef[0][1:])};"
-        for typedef in self.type_defs[mode]])}
+{body}
 
 #ifdef __cplusplus
 }}
