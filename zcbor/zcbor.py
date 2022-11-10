@@ -2677,7 +2677,13 @@ extern "C" {{
 """
 
     def render_cmake_file(self, target_name, h_files, c_files, type_file,
-                          output_c_dir, output_h_dir):
+                          output_c_dir, output_h_dir, cmake_dir):
+        include_dirs = sorted(set(((Path(output_h_dir)),
+                                  (Path(type_file.name).parent),
+                                  *((Path(h.name).parent) for h in h_files.values()))))
+
+        def relativify(p):
+            return "${CMAKE_CURRENT_LIST_DIR}/" + path.relpath(Path(p), cmake_dir)
         return \
             f"""\
 #
@@ -2688,15 +2694,13 @@ extern "C" {{
 
 add_library({target_name})
 target_sources({target_name} PRIVATE
-    {Path(output_c_dir, "zcbor_decode.c")}
-    {Path(output_c_dir, "zcbor_encode.c")}
-    {Path(output_c_dir, "zcbor_common.c")}
-    {(linesep + "    ").join((c.name for c in c_files.values()))}
+    {relativify(Path(output_c_dir, "zcbor_decode.c"))}
+    {relativify(Path(output_c_dir, "zcbor_encode.c"))}
+    {relativify(Path(output_c_dir, "zcbor_common.c"))}
+    {(linesep + "    ").join(((relativify(c.name)) for c in c_files.values()))}
     )
 target_include_directories({target_name} PUBLIC
-    {(linesep + "    ").join(set((str(Path(output_h_dir)),
-                                  str(Path(type_file.name).parent),
-                                  *(str(Path(h.name).parent) for h in h_files.values()))))}
+    {(linesep + "    ").join(((relativify(f) for f in include_dirs)))}
     )
 """
 
@@ -2725,7 +2729,7 @@ target_include_directories({target_name} PUBLIC
             print("Writing to " + cmake_file.name)
             cmake_file.write(self.render_cmake_file(
                 Path(cmake_file.name).stem, h_files, c_files, type_file,
-                output_c_dir, output_h_dir))
+                output_c_dir, output_h_dir, Path(cmake_file.name).absolute().parent))
 
 
 def int_or_str(arg):
