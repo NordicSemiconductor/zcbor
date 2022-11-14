@@ -120,6 +120,7 @@ class TestDocs(TestCase):
         super(TestDocs, self).__init__(*args, **kwargs)
         remote_tracking = run(['git', 'rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{u}'],
                               capture_output=True).stdout.strip()
+
         if remote_tracking:
             remote, remote_branch = tuple(remote_tracking.split(b'/'))
             repo_url = check_output(['git', 'remote', 'get-url', remote]).strip().strip(b'.git')
@@ -128,6 +129,10 @@ class TestDocs(TestCase):
             else:
                 # The URL is not in github.com, so we are not sure it is constructed correctly.
                 self.base_url = None
+        elif "GITHUB_SHA" in os.environ and "GITHUB_REPOSITORY" in os.environ:
+            repo = os.environ["GITHUB_REPOSITORY"]
+            sha = os.environ["GITHUB_SHA"]
+            self.base_url = f"https://github.com/{repo}/blob/{sha}/"
         else:
             # There is no remote tracking branch.
             self.base_url = None
