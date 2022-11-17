@@ -2748,8 +2748,6 @@ def parse_args():
     parent_parser = ArgumentParser(add_help=False)
 
     parent_parser.add_argument(
-        "--version", action="version", version=f"zcbor {__version__}")
-    parent_parser.add_argument(
         "-c", "--cddl", required=True, type=FileType('r'), action="append",
         help="""Path to one or more input CDDL file(s). Passing multiple files is equivalent to
 concatenating them.""")
@@ -2764,6 +2762,9 @@ concatenating them.""")
     parser = ArgumentParser(
         description='''Parse a CDDL file and validate/convert between YAML, JSON, and CBOR.
 Can also generate C code for validation/encoding/decoding of CBOR.''')
+
+    parser.add_argument(
+        "--version", action="version", version=f"zcbor {__version__}")
 
     subparsers = parser.add_subparsers()
     code_parser = subparsers.add_parser(

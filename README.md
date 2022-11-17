@@ -380,7 +380,7 @@ zcbor --help
 ------------
 
 ```
-usage: zcbor [-h] {code,validate,convert} ...
+usage: zcbor [-h] [--version] {code,validate,convert} ...
 
 Parse a CDDL file and validate/convert between YAML, JSON, and CBOR. Can also
 generate C code for validation/encoding/decoding of CBOR.
@@ -390,6 +390,7 @@ positional arguments:
 
 options:
   -h, --help            show this help message and exit
+  --version             show program's version number and exit
 
 ```
 
@@ -397,7 +398,7 @@ zcbor code --help
 -----------------
 
 ```
-usage: zcbor code [-h] [--version] -c CDDL [--no-prelude] [-v]
+usage: zcbor code [-h] -c CDDL [--no-prelude] [-v]
                   [--default-max-qty DEFAULT_MAX_QTY] [--output-c OUTPUT_C]
                   [--output-h OUTPUT_H] [--output-h-types OUTPUT_H_TYPES]
                   [--copy-sources] [--output-cmake OUTPUT_CMAKE] -t
@@ -422,7 +423,6 @@ This script requires 'regex' for lookaround functionality not present in 're'.
 
 options:
   -h, --help            show this help message and exit
-  --version             show program's version number and exit
   -c CDDL, --cddl CDDL  Path to one or more input CDDL file(s). Passing
                         multiple files is equivalent to concatenating them.
   --no-prelude          Exclude the standard CDDL prelude from the build. The
@@ -507,7 +507,7 @@ zcbor validate --help
 ---------------------
 
 ```
-usage: zcbor validate [-h] [--version] -c CDDL [--no-prelude] [-v]
+usage: zcbor validate [-h] -c CDDL [--no-prelude] [-v]
                       [--default-max-qty DEFAULT_MAX_QTY] -i INPUT
                       [--input-as {yaml,json,cbor,cborhex}] -t ENTRY_TYPE
 
@@ -516,7 +516,6 @@ CDDL schema file.
 
 options:
   -h, --help            show this help message and exit
-  --version             show program's version number and exit
   -c CDDL, --cddl CDDL  Path to one or more input CDDL file(s). Passing
                         multiple files is equivalent to concatenating them.
   --no-prelude          Exclude the standard CDDL prelude from the build. The
@@ -547,7 +546,7 @@ zcbor convert --help
 --------------------
 
 ```
-usage: zcbor convert [-h] [--version] -c CDDL [--no-prelude] [-v]
+usage: zcbor convert [-h] -c CDDL [--no-prelude] [-v]
                      [--default-max-qty DEFAULT_MAX_QTY] -i INPUT
                      [--input-as {yaml,json,cbor,cborhex}] -t ENTRY_TYPE -o
                      OUTPUT [--output-as {yaml,json,cbor,cborhex,c_code}]
@@ -575,7 +574,6 @@ list"]} 'undefined' is specified as a list with a single text entry:
 
 options:
   -h, --help            show this help message and exit
-  --version             show program's version number and exit
   -c CDDL, --cddl CDDL  Path to one or more input CDDL file(s). Passing
                         multiple files is equivalent to concatenating them.
   --no-prelude          Exclude the standard CDDL prelude from the build. The
