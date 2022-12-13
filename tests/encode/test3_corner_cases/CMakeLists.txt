@@ -6,8 +6,6 @@
 
 cmake_minimum_required(VERSION 3.13.1)
 
-set_property(GLOBAL PROPERTY CSTD c11) # To avoid issues with c99 and -Wpedantic
-
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(test3_corner_cases)
 include(../../cmake/test_template.cmake)
@@ -58,8 +56,3 @@ include(${PROJECT_BINARY_DIR}/corner_cases.cmake)
 
 target_link_libraries(corner_cases PRIVATE zephyr_interface)
 target_link_libraries(app PRIVATE corner_cases)
-
-if (NOT VERBOSE)
-  # VERBOSE means including printk which doesn't build with these options.
-  target_compile_options(corner_cases PRIVATE -Wpedantic -Wconversion)
-endif()
