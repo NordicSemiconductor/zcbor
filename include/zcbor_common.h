@@ -284,6 +284,13 @@ bool zcbor_union_end_code(zcbor_state_t *state);
 void zcbor_new_state(zcbor_state_t *state_array, size_t n_states,
 		const uint8_t *payload, size_t payload_len, size_t elem_count);
 
+/** Do boilerplate entry function procedure.
+ *  Initialize states, call function, and check the result.
+ */
+int zcbor_entry_function(const uint8_t *payload, size_t payload_len,
+	void *result, size_t *payload_len_out, zcbor_state_t *state, zcbor_decoder_t func,
+	uint_fast32_t n_states, uint_fast32_t elem_count);
+
 #ifdef ZCBOR_STOP_ON_ERROR
 /** Check stored error and fail if present, but only if stop_on_error is true. */
 static inline bool zcbor_check_error(const zcbor_state_t *state)

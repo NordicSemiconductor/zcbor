@@ -50,20 +50,6 @@ int cbor_decode_Pet(
 {
 	zcbor_state_t states[4];
 
-	zcbor_new_state(states, sizeof(states) / sizeof(zcbor_state_t), payload, payload_len, 1);
-
-	bool ret = decode_Pet(states, result);
-
-	if (ret && (payload_len_out != NULL)) {
-		*payload_len_out = MIN(payload_len,
-				(size_t)states[0].payload - (size_t)payload);
-	}
-
-	if (!ret) {
-		int err = zcbor_pop_error(states);
-
-		zcbor_print("Return error: %d\r\n", err);
-		return (err == ZCBOR_SUCCESS) ? ZCBOR_ERR_UNKNOWN : err;
-	}
-	return ZCBOR_SUCCESS;
+	return zcbor_entry_function(payload, payload_len, (void *)result, payload_len_out, states,
+		(zcbor_decoder_t *)decode_Pet, sizeof(states) / sizeof(zcbor_state_t), 1);
 }
