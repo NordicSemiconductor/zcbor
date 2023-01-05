@@ -255,3 +255,27 @@ bool zcbor_array_at_end(zcbor_state_t *state)
 			&& (state->payload < state->payload_end)
 			&& (*state->payload == 0xFF)));
 }
+
+
+int zcbor_entry_function(const uint8_t *payload, size_t payload_len,
+	void *result, size_t *payload_len_out, zcbor_state_t *state, zcbor_decoder_t func,
+	uint_fast32_t n_states, uint_fast32_t elem_count)
+{
+	zcbor_new_state(state, n_states, payload, payload_len, elem_count);
+
+	bool ret = func(state, result);
+
+	if (!ret) {
+		int err = zcbor_pop_error(state);
+
+		err = (err == ZCBOR_SUCCESS) ? ZCBOR_ERR_UNKNOWN : err;
+		zcbor_print("Return error: %d\\r\\n", err);
+		return err;
+	}
+
+	if (payload_len_out != NULL) {
+		*payload_len_out = MIN(payload_len,
+				(size_t)state[0].payload - (size_t)payload);
+	}
+	return ZCBOR_SUCCESS;
+}
