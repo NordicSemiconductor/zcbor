@@ -580,6 +580,30 @@ class CddlParser:
                 return
         raise ValueError("invalid quantifier: %s" % quantifier)
 
+    def convert_min_max(self):
+        defines = {
+            (2**64) - 1: "UINT64_MAX",
+            (2**63) - 1: "INT64_MAX",
+            (2**32) - 1: "UINT32_MAX",
+            (2**31) - 1: "INT32_MAX",
+            (2**16) - 1: "UINT16_MAX",
+            (2**15) - 1: "INT16_MAX",
+            (2**8) - 1: "UINT8_MAX",
+            (2**7) - 1: "INT8_MAX",
+            -(2**63): "INT64_MIN",
+            -(2**31): "INT32_MIN",
+            -(2**15): "INT16_MIN",
+            -(2**7): "INT8_MIN",
+        }
+        if self.min_value in defines:
+            self.min_value = defines[self.min_value]
+        if self.max_value in defines:
+            self.max_value = defines[self.max_value]
+        if self.min_size in defines:
+            self.min_size = defines[self.min_size]
+        if self.max_size in defines:
+            self.max_size = defines[self.max_size]
+
     # Set the self.size of this element. This will also set the self.minValue and self.max_value of
     # UINT types.
     # For use during CDDL parsing.
@@ -594,6 +618,7 @@ class CddlParser:
                 self.max_value = int(value - 1)
             if self.type in ["INT", "NINT"]:
                 self.min_value = int(-1 * (value >> 1) + 1)
+            self.convert_min_max()
         elif self.type in ["BSTR", "TSTR", "FLOAT"]:
             self.set_size_range(size, size)
         else:
@@ -619,6 +644,7 @@ class CddlParser:
         if self.type == "UINT":
             self.minValue = 256**min(0, abs(min_size - 1)) if min_size else None
         self.min_size = min_size if min_size else None
+        self.convert_min_max()
 
     # Set self.max_size, and self.max_value if type is UINT.
     def set_max_size(self, max_size):
@@ -629,6 +655,7 @@ class CddlParser:
                     max_size)
             self.max_value = 256**max_size - 1
         self.max_size = max_size
+        self.convert_min_max()
 
     # Set the self.cbor of this element. For use during CDDL parsing.
     def set_cbor(self, cbor, cborseq):
@@ -1798,7 +1825,10 @@ class CodeGenerator(CddlXcoder):
                 bit_size = 32
 
                 for v in [self.value or 0, self.max_value or 0, self.min_value or 0]:
-                    if self.type == "UINT":
+                    if (type(v) is str):
+                        if "64" in v:
+                            bit_size = 64
+                    elif self.type == "UINT":
                         if (v > UINT32_MAX):
                             bit_size = 64
                     else:
@@ -2305,6 +2335,8 @@ class CodeGenerator(CddlXcoder):
 
     # Appends ULL or LL if a value exceeding 32-bits is used
     def value_suffix(self, value):
+        if type(value) is str:
+            return ""
         if self.type == "INT" or self.type == "NINT":
             if value > INT32_MAX or value <= INT32_MIN:
                 return "LL"
