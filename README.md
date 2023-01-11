@@ -420,6 +420,7 @@ usage: zcbor code [-h] -c CDDL [--no-prelude] [-v]
                   ENTRY_TYPES [ENTRY_TYPES ...] [-d] [-e] [--time-header]
                   [--git-sha-header] [-b {32,64}]
                   [--include-prefix INCLUDE_PREFIX] [-s]
+                  [--file-header FILE_HEADER]
 
 Parse a CDDL file and produce C code that validates and xcodes CBOR.
 The output from this script is a C file and a header file. The header file
@@ -515,6 +516,9 @@ options:
                         labels or layout, or disable this option. This might
                         also make enum names different from the corresponding
                         union members.
+  --file-header FILE_HEADER
+                        Header to be included in the comment at the top of
+                        generated C files, e.g. copyright.
 
 ```
 

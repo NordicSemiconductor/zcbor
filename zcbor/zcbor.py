@@ -2488,7 +2488,7 @@ int cbor_{self.xcode_func_name()}(
 
 
 class CodeRenderer():
-    def __init__(self, entry_types, modes, print_time, default_max_qty, git_sha=''):
+    def __init__(self, entry_types, modes, print_time, default_max_qty, git_sha='', file_header=''):
         self.entry_types = entry_types
         self.print_time = print_time
         self.default_max_qty = default_max_qty
@@ -2511,6 +2511,12 @@ class CodeRenderer():
 
         if git_sha:
             self.version += f'-{git_sha}'
+
+        self.file_header = file_header.strip() + "\n\n" if file_header.strip() else ""
+        self.file_header += f"""Generated using zcbor version {self.version}
+https://github.com/NordicSemiconductor/zcbor{'''
+at: ''' + datetime.now().strftime('%Y-%m-%d %H:%M:%S') if self.print_time else ''}
+Generated with a --default-max-qty of {self.default_max_qty}"""
 
     def header_guard(self, file_name):
         return path.basename(file_name).replace(".", "_").replace("-", "_").upper() + "__"
@@ -2627,13 +2633,13 @@ static bool {xcoder.func_name}(
 	return ZCBOR_SUCCESS;
 }}"""
 
+    def render_file_header(self, line_prefix):
+        lp = line_prefix
+        return (f"\n{lp} " + self.file_header.replace("\n", f"\n{lp} ")).replace(" \n", "\n")
+
     # Render the entire generated C file contents.
     def render_c_file(self, header_file_name, mode):
-        return f"""/*
- * Generated using zcbor version {self.version}
- * https://github.com/NordicSemiconductor/zcbor{'''
- * at: ''' + datetime.now().strftime('%Y-%m-%d %H:%M:%S') if self.print_time else ''}
- * Generated with a --default-max-qty of {self.default_max_qty}
+        return f"""/*{self.render_file_header(" *")}
  */
 
 #include <stdint.h>
@@ -2657,11 +2663,7 @@ static bool {xcoder.func_name}(
     # Render the entire generated header file contents.
     def render_h_file(self, type_def_file, header_guard, mode):
         return \
-            f"""/*
- * Generated using zcbor version {self.version}
- * https://github.com/NordicSemiconductor/zcbor{'''
- * at: ''' + datetime.now().strftime('%Y-%m-%d %H:%M:%S') if self.print_time else ''}
- * Generated with a --default-max-qty of {self.default_max_qty}
+            f"""/*{self.render_file_header(" *")}
  */
 
 #ifndef {header_guard}
@@ -2698,11 +2700,7 @@ extern "C" {{
                 [f"{typedef[1]} {{{linesep}{linesep.join(typedef[0][1:])};"
                     for typedef in self.type_defs[mode]])
         return \
-            f"""/*
- * Generated using zcbor version {self.version}
- * https://github.com/NordicSemiconductor/zcbor{'''
- * at: ''' + datetime.now().strftime('%Y-%m-%d %H:%M:%S') if self.print_time else ''}
- * Generated with a --default-max-qty of {self.default_max_qty}
+            f"""/*{self.render_file_header(" *")}
  */
 
 #ifndef {header_guard}
@@ -2745,10 +2743,7 @@ extern "C" {{
             return "${CMAKE_CURRENT_LIST_DIR}/" + path.relpath(Path(p), cmake_dir)
         return \
             f"""\
-#
-# Generated using zcbor version {self.version}
-# https://github.com/NordicSemiconductor/zcbor{'''
-# at: ''' + datetime.now().strftime('%Y-%m-%d %H:%M:%S') if self.print_time else ''}
+#{self.render_file_header("#")}
 #
 
 add_library({target_name})
@@ -2915,6 +2910,10 @@ the code will be running on.""")
 names identical which will cause a compile error. If so, tweak the CDDL labels
 or layout, or disable this option. This might also make enum names different
 from the corresponding union members.""")
+    code_parser.add_argument(
+        "--file-header", required=False, type=str, default="",
+        help="Header to be included in the comment at the top of generated C files, e.g. copyright."
+    )
     code_parser.set_defaults(process=process_code)
 
     validate_parent_parser = ArgumentParser(add_help=False)
@@ -3069,6 +3068,7 @@ def process_code(args):
                                          for entry in args.entry_types] for mode in modes},
                             modes=modes, print_time=args.time_header,
                             default_max_qty=args.default_max_qty, git_sha=git_sha,
+                            file_header=args.file_header
                             )
 
     c_code_dir = Path(c_code_root, "src")

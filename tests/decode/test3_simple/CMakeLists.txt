@@ -22,6 +22,7 @@ set(py_command_pet
   -d
   ${bit_arg}
   --short-names
+  --file-header "Copyright (c) 2020 Nordic Semiconductor ASA\n\nSPDX-License-Identifier: Apache-2.0"
   )
 set(py_command_serial_recovery
   zcbor
