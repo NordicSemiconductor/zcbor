@@ -113,6 +113,23 @@ class TestSamples(TestCase):
         self.maxDiff = None
         self.assertEqual(contents, new_contents)
 
+    def test_pet_file_header(self):
+        files = (list(p_pet_include.iterdir()) + list(p_pet_src.iterdir()) + [p_pet_cmake])
+        for p in [f for f in files if "pet" in f.name]:
+            with p.open('r') as f:
+                f.readline()  # discard
+                self.assertEqual(
+                    f.readline().strip(" *#\n"),
+                    "Copyright (c) 2022 Nordic Semiconductor ASA")
+                f.readline()  # discard
+                self.assertEqual(
+                    f.readline().strip(" *#\n"),
+                    "SPDX-License-Identifier: Apache-2.0")
+                f.readline()  # discard
+                self.assertIn("Generated using zcbor version", f.readline())
+                self.assertIn("https://github.com/NordicSemiconductor/zcbor", f.readline())
+                self.assertIn("Generated with a --default-max-qty of", f.readline())
+
 
 class TestDocs(TestCase):
     def __init__(self, *args, **kwargs):

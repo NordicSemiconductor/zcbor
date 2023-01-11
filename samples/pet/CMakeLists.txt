@@ -19,6 +19,7 @@ if (REGENERATE_ZCBOR)
     --output-cmake ${CMAKE_CURRENT_LIST_DIR}/pet.cmake # The generated cmake file will be placed here
                                                        # This also causes the c code to be placed in
                                                        # ${CMAKE_CURRENT_LIST_DIR}/src and ${CMAKE_CURRENT_LIST_DIR}/include)
+    --file-header "Copyright (c) 2022 Nordic Semiconductor ASA\n\nSPDX-License-Identifier: Apache-2.0"
     )
   execute_process(COMMAND ${zcbor_command})
 endif()
