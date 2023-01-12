@@ -899,6 +899,76 @@ void test_simple(void)
 }
 
 
+void test_header_len(void)
+{
+	zassert_equal(1, zcbor_header_len(0), NULL);
+	zassert_equal(1, zcbor_header_len(23), NULL);
+	zassert_equal(2, zcbor_header_len(24), NULL);
+	zassert_equal(2, zcbor_header_len(0xFF), NULL);
+	zassert_equal(3, zcbor_header_len(0x100), NULL);
+	zassert_equal(3, zcbor_header_len(0xFFFF), NULL);
+	zassert_equal(5, zcbor_header_len(0x10000), NULL);
+	zassert_equal(5, zcbor_header_len(0xFFFFFFFF), NULL);
+#if SIZE_MAX >= 0x100000000ULL
+	zassert_equal(9, zcbor_header_len(0x100000000), NULL);
+	zassert_equal(9, zcbor_header_len(0xFFFFFFFFFFFFFFFF), NULL);
+#endif
+}
+
+
+void test_compare_strings(void)
+{
+	const uint8_t hello[] = "hello";
+	const uint8_t hello2[] = "hello";
+	const uint8_t long_str[] = "This is a very long string. This is a very long string. "
+		"This is a very long string. This is a very long string. This is a very long string. "
+		"This is a very long string. This is a very long string. This is a very long string. "
+		"This is a very long string. This is a very long string. This is a very long string. "
+		"This is a very long string. This is a very long string. This is a very long string. "
+		"This is a very long string. This is a very long string. This is a very long string. "
+		"This is a very long string. This is a very long string. This is a very long string. "
+		"This is a very long string. This is a very long string. This is a very long string. "
+		"This is a very long string. This is a very long string. This is a very long string. "
+		"This is a very long string. This is a very long string. This is a very long string. "
+		"This is a very long string. This is a very long string. This is a very long string. "
+		"This is a very long string. This is a very long string. This is a very long string. ";
+	const uint8_t long_str2[] = "This is a very long string. This is a very long string. "
+		"This is a very long string. This is a very long string. This is a very long string. "
+		"This is a very long string. This is a very long string. This is a very long string. "
+		"This is a very long string. This is a very long string. This is a very long string. "
+		"This is a very long string. This is a very long string. This is a very long string. "
+		"This is a very long string. This is a very long string. This is a very long string. "
+		"This is a very long string. This is a very long string. This is a very long string. "
+		"This is a very long string. This is a very long string. This is a very long string. "
+		"This is a very long string. This is a very long string. This is a very long string. "
+		"This is a very long string. This is a very long string. This is a very long string. "
+		"This is a very long string. This is a very long string. This is a very long string. "
+		"This is a very long string. This is a very long string. This is a very long string. ";
+	struct zcbor_string test_str1_hello = {hello, 5};
+	struct zcbor_string test_str2_hello_short = {hello, 4};
+	struct zcbor_string test_str3_hello_offset = {&hello[1], 4};
+	struct zcbor_string test_str4_long = {long_str, sizeof(long_str)};
+	struct zcbor_string test_str5_long2 = {long_str2, sizeof(long_str2)};
+	struct zcbor_string test_str6_empty = {hello, 0};
+	struct zcbor_string test_str7_hello2 = {hello2, 5};
+	struct zcbor_string test_str8_empty = {hello2, 0};
+	struct zcbor_string test_str9_NULL = {NULL, 0};
+
+	zassert_true(zcbor_compare_strings(&test_str1_hello, &test_str1_hello), NULL);
+	zassert_true(zcbor_compare_strings(&test_str1_hello, &test_str7_hello2), NULL);
+	zassert_true(zcbor_compare_strings(&test_str4_long, &test_str5_long2), NULL);
+	zassert_true(zcbor_compare_strings(&test_str6_empty, &test_str8_empty), NULL);
+
+	zassert_false(zcbor_compare_strings(&test_str2_hello_short, &test_str7_hello2), NULL);
+	zassert_false(zcbor_compare_strings(&test_str3_hello_offset, &test_str7_hello2), NULL);
+	zassert_false(zcbor_compare_strings(&test_str1_hello, NULL), NULL);
+	zassert_false(zcbor_compare_strings(NULL, &test_str5_long2), NULL);
+	zassert_false(zcbor_compare_strings(&test_str6_empty, NULL), NULL);
+	zassert_false(zcbor_compare_strings(&test_str1_hello, &test_str9_NULL), NULL);
+	zassert_false(zcbor_compare_strings(&test_str9_NULL, &test_str5_long2), NULL);
+}
+
+
 void test_main(void)
 {
 	ztest_test_suite(zcbor_unit_tests,
@@ -916,7 +986,9 @@ void test_main(void)
 			 ztest_unit_test(test_int),
 			 ztest_unit_test(test_uint),
 			 ztest_unit_test(test_encode_int_0),
-			 ztest_unit_test(test_simple)
+			 ztest_unit_test(test_simple),
+			 ztest_unit_test(test_header_len),
+			 ztest_unit_test(test_compare_strings)
 	);
 	ztest_run_test_suite(zcbor_unit_tests);
 }
