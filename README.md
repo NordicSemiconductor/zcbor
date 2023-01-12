@@ -261,7 +261,7 @@ These tests can be found in [tests/decode](tests/decode) and [tests/encode](test
 To set up the environment to run the ztest tests, follow [Zephyr's Getting Started Guide](https://docs.zephyrproject.org/latest/getting_started/index.html), or see the workflow in the [`.github`](.github) directory.
 
 Tests for `convert` and `verify` are implemented with the unittest module.
-These tests can be found in [tests/scripts/test_zcbor.py](tests/scripts/run_teststest_zcbor.py).
+These tests can be found in [tests/scripts/test_zcbor.py](tests/scripts/test_zcbor.py).
 In this file there are also tests for code style of all python scripts, using the `pycodestyle` library.
 
 Tests for the docs, samples, etc. can be found in [tests/scripts/test_repo_files.py](tests/scripts/test_repo_files.py).
@@ -380,7 +380,7 @@ Since CBOR, YAML, and JSON are all represented in roughly the same way internall
 
 Some places where zcbor is currently used:
 - [MCUboot's serial recovery mechanism](https://github.com/mcu-tools/mcuboot/blob/main/boot/boot_serial/src/boot_serial.c)
-- [Zephyr's mcumgr](https://github.com/zephyrproject-rtos/zephyr/blob/main/subsys/mgmt/mcumgr/lib/cmd/img_mgmt/src/img_mgmt.c)
+- [Zephyr's mcumgr](https://github.com/zephyrproject-rtos/zephyr/blob/main/subsys/mgmt/mcumgr/grp/img_mgmt/src/img_mgmt.c)
 - [Zephyr's LwM2M SenML](https://github.com/zephyrproject-rtos/zephyr/blob/main/subsys/net/lib/lwm2m/lwm2m_rw_senml_cbor.c)
 - [nRF Connect SDK's full modem update mechanism](https://github.com/nrfconnect/sdk-nrf/blob/main/subsys/mgmt/fmfu/src/fmfu_mgmt.c)
 - [nRF Connect SDK's nrf_rpc](https://github.com/nrfconnect/sdk-nrfxlib/blob/main/nrf_rpc/nrf_rpc_cbor.c)
