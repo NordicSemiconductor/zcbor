@@ -10,6 +10,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <string.h>
 #include "zcbor_tags.h"
 
 #ifdef __cplusplus
@@ -385,6 +386,30 @@ bool zcbor_validate_string_fragments(struct zcbor_string_fragment *fragments,
  */
 bool zcbor_splice_string_fragments(struct zcbor_string_fragment *fragments,
 		uint_fast32_t num_fragments, uint8_t *result, size_t *result_len);
+
+/** Compare two struct zcbor_string instances.
+ *
+ *  @param[in] str1  A string
+ *  @param[in] str2  A string to compare to @p str1
+ *
+ *  @retval true   if the strings are identical
+ *  @retval false  if length or contents don't match, or one one or both strings is NULL.
+ */
+bool zcbor_compare_strings(const struct zcbor_string *str1,
+		const struct zcbor_string *str2);
+
+/** Calculate the length of a CBOR string, list, or map header.
+ *
+ *  This can be used to find the start of the CBOR object when you have a
+ *  pointer to the start of the contents. The function assumes that the header
+ *  will be the shortest it can be.
+ *
+ *  @param[in] num_elems  The number of elements in the string, list, or map.
+ *
+ *  @return  The length of the header in bytes (1-9).
+ */
+size_t zcbor_header_len(size_t num_elems);
+
 
 #ifdef __cplusplus
 }

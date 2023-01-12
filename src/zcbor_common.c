@@ -221,3 +221,28 @@ bool zcbor_splice_string_fragments(struct zcbor_string_fragment *fragments,
 	*result_len = total_len;
 	return true;
 }
+
+
+bool zcbor_compare_strings(const struct zcbor_string *str1,
+		const struct zcbor_string *str2)
+{
+	return (str1 != NULL) && (str2 != NULL)
+		&& (str1->value != NULL) && (str2->value != NULL) && (str1->len == str2->len)
+		&& (memcmp(str1->value, str2->value, str1->len) == 0);
+}
+
+
+size_t zcbor_header_len(size_t num_elems)
+{
+	if (num_elems <= ZCBOR_VALUE_IN_HEADER) {
+		return 1;
+	} else if (num_elems <= 0xFF) {
+		return 2;
+	} else if (num_elems <= 0xFFFF) {
+		return 3;
+	} else if (num_elems <= 0xFFFFFFFF) {
+		return 5;
+	} else {
+		return 9;
+	}
+}
