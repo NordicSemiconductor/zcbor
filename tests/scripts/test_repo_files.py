@@ -137,14 +137,14 @@ class TestDocs(TestCase):
             # There is no remote tracking branch.
             self.base_url = None
 
-    def check_code(self, link):
+    def check_code(self, link, codes):
         """Check the status code of a URL link. Assert if not 200 (OK)."""
         try:
             call = request.urlopen(link)
             code = call.getcode()
         except HTTPError as e:
             code = e.code
-        self.assertEqual(code, 200, f"'{link}' gives code {code}")
+        codes.append((link, code))
 
     def do_test_links(self, path):
         """Get all Markdown links in the file at <path> and check that they work."""
@@ -152,6 +152,7 @@ class TestDocs(TestCase):
             raise SkipTest('This test requires the current branch to be pushed to Github.')
 
         text = path.read_text()
+        # Use .parent to test relative links (links to repo files):
         relative_path = str(path.relative_to(p_root).parent)
         relative_path = "" if relative_path == "." else relative_path + "/"
 
@@ -159,11 +160,15 @@ class TestDocs(TestCase):
         codes = list()
         threads = list()
         for m in matches:
+            # Github sometimes need the filename for anchor (#) links to work, so add it:
+            m = m if not m.startswith("#") else path.name + m
             link = self.base_url + relative_path + m if "http" not in m else m
-            threads.append(t := Thread(target=self.check_code, args=(link,), daemon=True))
+            threads.append(t := Thread(target=self.check_code, args=(link, codes), daemon=True))
             t.start()
         for t in threads:
             t.join()
+        for link, code in codes:
+            self.assertEqual(code, 200, f"'{link}' gives code {code}")
 
     def test_readme_links(self):
         self.do_test_links(p_readme)
