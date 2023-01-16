@@ -19,7 +19,7 @@ runs:
       shell: sh
       run: |
         sudo apt update
-        sudo apt install -y gcc-multilib ninja-build
+        sudo apt install -y gcc-multilib g++-multilib ninja-build
 
     - name: Clone zephyr
       shell: sh
