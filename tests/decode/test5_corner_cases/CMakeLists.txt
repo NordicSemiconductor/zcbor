@@ -49,6 +49,7 @@ set(py_command
     MapLength
     UnionInt1
     UnionInt2
+    Barewords
   --decode
   --git-sha-header
   --short-names

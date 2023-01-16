@@ -72,7 +72,7 @@ Union = Group / MultiGroup / (3,4) / "\"hello\""
 
 Map = {
 	listkey: [5,6] => bool,
-	union: (7=>uint) / (-8=>uint),
+	((7=>uint) / (-8=>uint)),
 	twotothree: 2*3 nil => bstr,
 }
 
@@ -213,3 +213,14 @@ UnionInt2 = [
 	(-100000, null, number) //
 	Structure_One
 ]
+
+Baz = (baz1: 14, baz2: 15)
+
+Barewords = {
+	((foo: 12)),
+	bar: 13,
+	Baz,
+
+	; uuid should refer to the 'uuid' type defined above
+	uuid: 16
+}

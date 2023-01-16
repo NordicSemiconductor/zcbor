@@ -488,18 +488,18 @@ void test_serial1(void)
 	zassert_equal(ZCBOR_SUCCESS, ret, "decoding failed.");
 	zassert_equal(sizeof(serial_rec_input1), decode_len, NULL);
 
-	zassert_equal(5, upload.members_count,
+	zassert_equal(5, upload._Member_count,
 		"expect 5 members");
-	zassert_equal(_Member_data, upload.members[0].members
+	zassert_equal(_Member_data, upload._Member[0]._Member
 		.Member_choice, "expect data 1st");
-	zassert_equal(_Member_image, upload.members[1].members
+	zassert_equal(_Member_image, upload._Member[1]._Member
 		.Member_choice, "expect image 2nd");
-	zassert_equal(_Member_len, upload.members[2].members
-		.Member_choice, "was %d\r\n", upload.members[2].members
+	zassert_equal(_Member_len, upload._Member[2]._Member
+		.Member_choice, "was %d\r\n", upload._Member[2]._Member
 		.Member_choice);
-	zassert_equal(_Member_off, upload.members[3].members
+	zassert_equal(_Member_off, upload._Member[3]._Member
 		.Member_choice, "expect off 4th");
-	zassert_equal(_Member_sha, upload.members[4].members
+	zassert_equal(_Member_sha, upload._Member[4]._Member
 		.Member_choice, "expect sha 5th");
 }
 
@@ -512,17 +512,17 @@ void test_serial2(void)
 	zassert_equal(ZCBOR_SUCCESS, ret, "decoding failed.");
 	zassert_equal(sizeof(serial_rec_input2), decode_len, NULL);
 
-	zassert_equal(5, upload.members_count,
-		"expect 5 members");
-	zassert_equal(_Member_data, upload.members[0].members
+	zassert_equal(5, upload._Member_count,
+		"expect 5 _Member");
+	zassert_equal(_Member_data, upload._Member[0]._Member
 		.Member_choice, "expect data 1st");
-	zassert_equal(_Member_image, upload.members[1].members
+	zassert_equal(_Member_image, upload._Member[1]._Member
 		.Member_choice, "expect image 2nd");
-	zassert_equal(_Member_len, upload.members[2].members
+	zassert_equal(_Member_len, upload._Member[2]._Member
 		.Member_choice, "expect len 3rd");
-	zassert_equal(_Member_off, upload.members[3].members
+	zassert_equal(_Member_off, upload._Member[3]._Member
 		.Member_choice, "expect off 4th");
-	zassert_equal(_Member_sha, upload.members[4].members
+	zassert_equal(_Member_sha, upload._Member[4]._Member
 		.Member_choice, "expect sha 5th");
 }
 

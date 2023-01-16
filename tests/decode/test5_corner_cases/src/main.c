@@ -1924,6 +1924,27 @@ void test_union_int(void)
 }
 
 
+void test_barewords(void)
+{
+	uint8_t barewords_payload1[] = {MAP(5),
+		0x63, 'f', 'o', 'o', 12,
+		0x63, 'b', 'a', 'r', 13,
+		0x64, 'b', 'a', 'z', '1', 14,
+		0x64, 'b', 'a', 'z', '2', 15,
+		0x50, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+		END
+	};
+
+	struct Barewords result;
+	size_t num_decode;
+
+	int err = cbor_decode_Barewords(barewords_payload1,
+		sizeof(barewords_payload1), &result, &num_decode);
+	zassert_equal(ZCBOR_SUCCESS, err, "%d\r\n", err);
+	zassert_equal(sizeof(barewords_payload1), num_decode, NULL);
+}
+
+
 void test_main(void)
 {
 	ztest_test_suite(cbor_decode_test5,
@@ -1953,7 +1974,8 @@ void test_main(void)
 			 ztest_unit_test(test_prelude),
 			 ztest_unit_test(test_cbor_bstr),
 			 ztest_unit_test(test_map_length),
-			 ztest_unit_test(test_union_int)
+			 ztest_unit_test(test_union_int),
+			 ztest_unit_test(test_barewords)
 	);
 	ztest_run_test_suite(cbor_decode_test5);
 }

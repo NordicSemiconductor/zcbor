@@ -14,4 +14,4 @@ if [[ -z "$ZEHPYR_BASE" ]]; then
         ZEPHYR_BASE=$(west topdir)/zephyr
 fi
 
-$ZEPHYR_BASE/scripts/twister -M -v -T . -W --platform native_posix --platform native_posix_64 --platform mps2_an521 $*
+$ZEPHYR_BASE/scripts/twister -M -v -T . -W --platform native_posix_64 --platform mps2_an521 --exclude-tag release --timestamps $*

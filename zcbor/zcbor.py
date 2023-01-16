@@ -251,6 +251,8 @@ class CddlParser:
         self.base_stem = base_stem.replace("-", "_")
         self.short_names = short_names
 
+        self.expect_key = None
+
     @classmethod
     def from_cddl(cddl_class, cddl_string, default_max_qty, *args, **kwargs):
         my_types = dict()
@@ -280,6 +282,7 @@ class CddlParser:
         # post_validate all the definitions.
         for my_type in my_types:
             my_types[my_type].set_id_prefix()
+            my_types[my_type].resolve_barewords(None)
             my_types[my_type].post_validate()
             my_types[my_type].set_base_names()
         for my_control_group in my_control_groups:
@@ -404,6 +407,47 @@ class CddlParser:
             self.cbor.set_id_prefix(self.child_base_id())
         if self.key:
             self.key.set_id_prefix(self.child_base_id())
+
+    def resolve_barewords(self, expect_key, set_expect_key=False):
+        if self.expect_key is not None:
+            # This has already been processed.
+            return
+        if set_expect_key:
+            self.expect_key = expect_key
+
+        if expect_key:
+            expect_key = False
+            if (self.key, self.label) == (None, None):
+                if self.type not in ["GROUP", "UNION", "OTHER"]:
+                    raise ValueError(f"Element {self} needs either a key or label.")
+                else:
+                    # Expect that a child element has the key.
+                    expect_key = True
+            if self.key is None and self.label is not None:
+                if self.label in self.my_types:
+                    self.key = self.parse(self.label)[0]
+                else:
+                    self.key = self.parse('"' + self.label + '"')[0]
+
+        if self.type in ["LIST", "MAP", "GROUP", "UNION"]:
+            if self.type == "LIST":
+                expect_key = False
+            if self.type == "MAP":
+                expect_key = True
+            for child in self.value:
+                if child.single_func_impl_condition():
+                    child.resolve_barewords(expect_key)
+                else:
+                    child.resolve_barewords(expect_key)
+        elif self.type == "OTHER":
+            if self.my_types[self.value].expect_key is None:
+                self.my_types[self.value].resolve_barewords(expect_key, set_expect_key=True)
+            elif expect_key is not None:
+                assert self.my_types[self.value].expect_key == expect_key, \
+                       f"{self.expect_key} != {expect_key}. Type used in both map and list: {self}"
+
+        if self.cbor:
+            self.cbor.resolve_barewords(False)
 
     # Id to pass to children for them to use as basis for their id/base name.
     def child_base_id(self):

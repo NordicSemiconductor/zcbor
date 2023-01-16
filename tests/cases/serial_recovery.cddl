@@ -12,5 +12,5 @@ Member = ("image" => int) /
 	(tstr => any)
 
 Upload = {
-	3*8members: Member
+	3*8Member
 }
