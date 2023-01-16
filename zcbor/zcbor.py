@@ -687,12 +687,13 @@ class CddlParser:
     # for choosing between label and key. If the string is recognized as a type, it is treated as a
     # key. For use during CDDL parsing.
     def set_key_or_label(self, key_or_label):
-        if key_or_label.type == "OTHER" and key_or_label.value not in self.my_types:
-            self.set_label(key_or_label.value)
+        if key_or_label in self.my_types:
+            self.set_key(self.parse(key_or_label)[0])
+            assert self.key.type == "OTHER", "This should only be able to produce an OTHER key."
+            if self.label is None:
+                self.set_label(key_or_label)
         else:
-            if key_or_label.type == "OTHER" and self.label is None:
-                self.set_label(key_or_label.value)
-            self.set_key(key_or_label)
+            self.set_label(key_or_label)
 
     def add_tag(self, tag):
         self.tags.append(int(tag))
@@ -747,35 +748,47 @@ class CddlParser:
     # ("MAP"/"LIST"/"UNION"/"GROUP") is encountered, this function will create new instances and add
     # them to self.value as a list. Likewise, if a key or cbor definition is encountered, a new
     # element will be created and assigned to self.key or self.cbor. When new elements are created,
-    # getValue() is called on those elements, via parse().
+    # get_value() is called on those elements, via parse().
     def get_value(self, instr):
         match_uint = r"(0x[0-9a-fA-F]+|0o[0-7]+|0b[01]+|\d+)"
         match_int = r"(-?" + match_uint + ")"
         match_nint = r"(-" + match_uint + ")"
 
-        # The following regexes match different parts of the element. The order of the list is
-        # important because it implements the operator precendence defined in the CDDL spec. Note
-        # that some regexes are inserted afterwards because they involve a match of a concatenation
-        # of all the initial regexes (with a '|' between each element).
-        types = [
+        range_types = [
             (r'\[(?P<item>(?>[^[\]]+|(?R))*)\]',
              lambda list_str: self.type_and_value("LIST", lambda: self.parse(list_str))),
             (r'\((?P<item>(?>[^\(\)]+|(?R))*)\)',
              lambda group_str: self.type_and_value("GROUP", lambda:self.parse(group_str))),
             (r'{(?P<item>(?>[^{}]+|(?R))*)}',
              lambda map_str: self.type_and_value("MAP", lambda: self.parse(map_str))),
+            (r'\'(?P<item>.*?)(?<!\\)\'',
+             lambda string: self.type_and_value("BSTR", lambda: string)),
+            (r'\"(?P<item>.*?)(?<!\\)\"',
+             lambda string: self.type_and_value("TSTR", lambda: string)),
+        ]
+        range_types_regex = '|'.join([regex for (regex, _) in range_types])
+        for i in range(range_types_regex.count("item")):
+            range_types_regex = range_types_regex.replace("item", "it%dem" % i, 1)
+
+        # The following regexes match different parts of the element. The order of the list is
+        # important because it implements the operator precendence defined in the CDDL spec. Note
+        # that some regexes are inserted afterwards because they involve a match of a concatenation
+        # of all the initial regexes (with a '|' between each element).
+        types = range_types + [
             (r'\/\/\s*(?P<item>.+?)(?=\/\/|\Z)',
              lambda union_str: self.union_add_value(
                  self.parse("(%s)" % union_str if ',' in union_str else union_str)[0],
                  doubleslash=True)),
-            (r'(\=\>)',
+            (r'(?P<item>[a-zA-Z][\w-]*)\s*:',
+             lambda key_str: self.set_key_or_label(key_str)),
+            (r'((\=\>)|:)',
              lambda _: self.convert_to_key()),
-            (r'(?P<item>\w)\s*\:',
-             lambda key_str: self.set_key_or_label(keystr)),
             (r'([+*?])',
              self.set_quantifier),
             (r'(' + match_uint + r'\*\*?' + match_uint + r'?)',
              self.set_quantifier),
+            (r'\/\s*(?P<item>((' + range_types_regex + r')|[^,\[\]{}()])+?)(?=\/|\Z|,)',
+             lambda union_str: self.union_add_value(self.parse(union_str)[0])),
             (r'uint(?![\w-])',
              lambda _: self.type_and_value("UINT", lambda: None)),
             (r'nint(?![\w-])',
@@ -820,12 +833,8 @@ class CddlParser:
              lambda num: self.type_and_value("UINT", lambda: int(num, 0))),
             (r'bstr(?!\w)',
              lambda _: self.type_and_value("BSTR", lambda: None)),
-            (r'\'(?P<item>.*?)(?<!\\)\'',
-             lambda string: self.type_and_value("BSTR", lambda: string)),
             (r'tstr(?!\w)',
              lambda _: self.type_and_value("TSTR", lambda: None)),
-            (r'\"(?P<item>.*?)(?<!\\)\"',
-             lambda string: self.type_and_value("TSTR", lambda: string)),
             (r'bool(?!\w)',
              lambda _: self.type_and_value("BOOL", lambda: None)),
             (r'true(?!\w)',
@@ -872,15 +881,6 @@ class CddlParser:
             (r'\.bits (?P<item>[\w-]+)',
              lambda bits_str: self.set_bits(bits_str))
         ]
-        all_type_regex = '|'.join([regex for (regex, _) in (types[:3] + types[5:])])
-        for i in range(0, all_type_regex.count("item")):
-            all_type_regex = all_type_regex.replace("item", "it%dem" % i, 1)
-        types.insert(5, (r'(?P<item>' + all_type_regex + r')\s*\:',
-                         lambda key_str: self.set_key_or_label(self.parse(key_str)[0])))
-        types.insert(6, (r'(?P<item>' + all_type_regex + r')\s*\=\>',
-                         lambda key_str: self.set_key(self.parse(key_str)[0])))
-        types.insert(7, (r'\/\s*(?P<item>((' + all_type_regex + r')\s*)+?)(?=\/|\,|\Z)',
-                         lambda union_str: self.union_add_value(self.parse(union_str)[0])))
 
         # Keep parsing until a comma, or to the end of the string.
         while instr != '' and instr[0] != ',':
