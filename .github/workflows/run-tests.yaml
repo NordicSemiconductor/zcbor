@@ -15,7 +15,7 @@ jobs:
     name: Merge tests 1 (${{ matrix.platform }}${{ matrix.asserts != '' && ' with asserts' || '' }})
     steps:
     - name: Checkout the code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Install zcbor
       uses: ./.github/actions/install_zcbor
@@ -35,10 +35,10 @@ jobs:
     name: Merge tests 2 (Python ${{ matrix.python-version }})
     steps:
     - name: Checkout the code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Setup Python
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -57,7 +57,7 @@ jobs:
     name: Merge tests 3 (Windows)
     steps:
     - name: Checkout the code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Install west and dependencies
       run: |
@@ -83,10 +83,10 @@ jobs:
     name: Merge tests 4 (Test repo files)
     steps:
     - name: Checkout the code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Setup Python
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v4
       with:
         python-version: '3.10'
 
@@ -111,7 +111,7 @@ jobs:
     if: "startswith(github.head_ref, 'release/')"
     steps:
     - name: Checkout the code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Install zcbor
       uses: ./.github/actions/install_zcbor
@@ -139,7 +139,7 @@ jobs:
         ./test-afl.sh 400 64 pet
 
     - name: Upload release files
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: zcbor-release
         path: dist/*
@@ -159,10 +159,10 @@ jobs:
     if: "startswith(github.head_ref, 'release/')"
     steps:
     - name: Checkout the code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Setup Python
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
 
