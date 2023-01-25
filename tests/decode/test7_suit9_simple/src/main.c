@@ -105,8 +105,8 @@ ZTEST(cbor_decode_test7, test_suit9_simple2)
 	zassert_equal(ZCBOR_SUCCESS, res, "top-level decoding failed.");
 
 	res = cbor_decode_SUIT_Manifest(
-		envelope1._SUIT_Envelope_suit_manifest.value,
-		envelope1._SUIT_Envelope_suit_manifest.len, &manifest, NULL);
+		envelope1.SUIT_Envelope_suit_manifest.value,
+		envelope1.SUIT_Envelope_suit_manifest.len, &manifest, NULL);
 
 	zassert_equal(ZCBOR_SUCCESS, res, "manifest decoding failed.");
 }
@@ -125,8 +125,8 @@ ZTEST(cbor_decode_test7, test_suit9_simple5)
 	zassert_equal(ZCBOR_SUCCESS, res, "top-level decoding failed.");
 
 	res = cbor_decode_SUIT_Manifest(
-		envelope1._SUIT_Envelope_suit_manifest.value,
-		envelope1._SUIT_Envelope_suit_manifest.len, &manifest, NULL);
+		envelope1.SUIT_Envelope_suit_manifest.value,
+		envelope1.SUIT_Envelope_suit_manifest.len, &manifest, NULL);
 
 	zassert_equal(ZCBOR_SUCCESS, res, "manifest decoding failed.");
 }

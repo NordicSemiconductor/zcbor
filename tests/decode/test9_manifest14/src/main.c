@@ -40,35 +40,35 @@ ZTEST(cbor_decode_test9, test_suit14_ex0_auth)
 	zassert_equal(ZCBOR_SUCCESS, cbor_decode_SUIT_Envelope_Tagged(example0, sizeof(example0), &envelope, &out_len), NULL);
 	zassert_equal(sizeof(example0), out_len, NULL);
 
-	digest = &envelope._SUIT_Envelope_suit_authentication_wrapper_cbor._SUIT_Authentication_SUIT_Digest_bstr_cbor;
-	zassert_equal(_suit_cose_hash_algs__cose_alg_sha_256,
-		digest->_SUIT_Digest_suit_digest_algorithm_id._suit_cose_hash_algs_choice, NULL);
+	digest = &envelope.SUIT_Envelope_suit_authentication_wrapper_cbor.SUIT_Authentication_SUIT_Digest_bstr_cbor;
+	zassert_equal(suit_cose_hash_algs_cose_alg_sha_256_m,
+		digest->SUIT_Digest_suit_digest_algorithm_id.suit_cose_hash_algs_choice, NULL);
 	zassert_equal(sizeof(exp_digest),
-		digest->_SUIT_Digest_suit_digest_bytes.len, NULL);
+		digest->SUIT_Digest_suit_digest_bytes.len, NULL);
 	zassert_mem_equal(exp_digest,
-		digest->_SUIT_Digest_suit_digest_bytes.value,
-		digest->_SUIT_Digest_suit_digest_bytes.len, NULL);
-	zassert_equal(1, envelope._SUIT_Envelope_suit_authentication_wrapper_cbor._SUIT_Authentication_Block_bstr_count, NULL);
-	zassert_equal(_SUIT_Authentication_Block__COSE_Sign1_Tagged,
-		envelope._SUIT_Envelope_suit_authentication_wrapper_cbor._SUIT_Authentication_Block_bstr[0]._SUIT_Authentication_Block_bstr_cbor._SUIT_Authentication_Block_choice, NULL);
-	cose_sign1 = &envelope._SUIT_Envelope_suit_authentication_wrapper_cbor._SUIT_Authentication_Block_bstr[0]._SUIT_Authentication_Block_bstr_cbor._SUIT_Authentication_Block__COSE_Sign1_Tagged;
-	zassert_equal(_empty_or_serialized_map_header_map_bstr,
-		cose_sign1->_COSE_Sign1__Headers._Headers_protected._empty_or_serialized_map_choice, NULL);
-	zassert_equal(0, cose_sign1->_COSE_Sign1__Headers._Headers_protected._empty_or_serialized_map_header_map_bstr_cbor._header_map_label_count, NULL);
-	zassert_true(cose_sign1->_COSE_Sign1__Headers._Headers_protected._empty_or_serialized_map_header_map_bstr_cbor._header_map__Generic_Headers._Generic_Headers_uint1union_present, NULL);
-	zassert_false(cose_sign1->_COSE_Sign1__Headers._Headers_protected._empty_or_serialized_map_header_map_bstr_cbor._header_map__Generic_Headers._Generic_Headers___label_present, NULL);
-	zassert_false(cose_sign1->_COSE_Sign1__Headers._Headers_protected._empty_or_serialized_map_header_map_bstr_cbor._header_map__Generic_Headers._Generic_Headers_uint3union_present, NULL);
-	zassert_false(cose_sign1->_COSE_Sign1__Headers._Headers_protected._empty_or_serialized_map_header_map_bstr_cbor._header_map__Generic_Headers._Generic_Headers_uint4bstr_present, NULL);
-	zassert_false(cose_sign1->_COSE_Sign1__Headers._Headers_protected._empty_or_serialized_map_header_map_bstr_cbor._header_map__Generic_Headers._Generic_Headers_uint5bstr_present, NULL);
-	zassert_false(cose_sign1->_COSE_Sign1__Headers._Headers_protected._empty_or_serialized_map_header_map_bstr_cbor._header_map__Generic_Headers._Generic_Headers_uint6bstr_present, NULL);
-	zassert_equal(_Generic_Headers_uint1union_int,
-		cose_sign1->_COSE_Sign1__Headers._Headers_protected._empty_or_serialized_map_header_map_bstr_cbor._header_map__Generic_Headers._Generic_Headers_uint1union._Generic_Headers_uint1union_choice, NULL);
+		digest->SUIT_Digest_suit_digest_bytes.value,
+		digest->SUIT_Digest_suit_digest_bytes.len, NULL);
+	zassert_equal(1, envelope.SUIT_Envelope_suit_authentication_wrapper_cbor.SUIT_Authentication_Block_bstr_count, NULL);
+	zassert_equal(SUIT_Authentication_Block_COSE_Sign1_Tagged_m,
+		envelope.SUIT_Envelope_suit_authentication_wrapper_cbor.SUIT_Authentication_Block_bstr[0].SUIT_Authentication_Block_bstr_cbor.SUIT_Authentication_Block_choice, NULL);
+	cose_sign1 = &envelope.SUIT_Envelope_suit_authentication_wrapper_cbor.SUIT_Authentication_Block_bstr[0].SUIT_Authentication_Block_bstr_cbor.SUIT_Authentication_Block_COSE_Sign1_Tagged_m;
+	zassert_equal(empty_or_serialized_map_header_map_bstr,
+		cose_sign1->COSE_Sign1_Headers_m.Headers_protected.empty_or_serialized_map_choice, NULL);
+	zassert_equal(0, cose_sign1->COSE_Sign1_Headers_m.Headers_protected.empty_or_serialized_map_header_map_bstr_cbor.header_map_label_count, NULL);
+	zassert_true(cose_sign1->COSE_Sign1_Headers_m.Headers_protected.empty_or_serialized_map_header_map_bstr_cbor.header_map_Generic_Headers_m.Generic_Headers_uint1union_present, NULL);
+	zassert_false(cose_sign1->COSE_Sign1_Headers_m.Headers_protected.empty_or_serialized_map_header_map_bstr_cbor.header_map_Generic_Headers_m.Generic_Headers_label_m_l_present, NULL);
+	zassert_false(cose_sign1->COSE_Sign1_Headers_m.Headers_protected.empty_or_serialized_map_header_map_bstr_cbor.header_map_Generic_Headers_m.Generic_Headers_uint3union_present, NULL);
+	zassert_false(cose_sign1->COSE_Sign1_Headers_m.Headers_protected.empty_or_serialized_map_header_map_bstr_cbor.header_map_Generic_Headers_m.Generic_Headers_uint4bstr_present, NULL);
+	zassert_false(cose_sign1->COSE_Sign1_Headers_m.Headers_protected.empty_or_serialized_map_header_map_bstr_cbor.header_map_Generic_Headers_m.Generic_Headers_uint5bstr_present, NULL);
+	zassert_false(cose_sign1->COSE_Sign1_Headers_m.Headers_protected.empty_or_serialized_map_header_map_bstr_cbor.header_map_Generic_Headers_m.Generic_Headers_uint6bstr_present, NULL);
+	zassert_equal(Generic_Headers_uint1union_int,
+		cose_sign1->COSE_Sign1_Headers_m.Headers_protected.empty_or_serialized_map_header_map_bstr_cbor.header_map_Generic_Headers_m.Generic_Headers_uint1union.Generic_Headers_uint1union_choice, NULL);
 	zassert_equal(-7,
-		cose_sign1->_COSE_Sign1__Headers._Headers_protected._empty_or_serialized_map_header_map_bstr_cbor._header_map__Generic_Headers._Generic_Headers_uint1union._Generic_Headers_uint1union_int, NULL);
-	zassert_equal(sizeof(exp_signature), cose_sign1->_COSE_Sign1_signature.len, NULL);
-	zassert_mem_equal(exp_signature, cose_sign1->_COSE_Sign1_signature.value,
-		cose_sign1->_COSE_Sign1_signature.len, NULL);
-	zassert_equal(_COSE_Sign1_payload_nil, cose_sign1->_COSE_Sign1_payload_choice, NULL);
+		cose_sign1->COSE_Sign1_Headers_m.Headers_protected.empty_or_serialized_map_header_map_bstr_cbor.header_map_Generic_Headers_m.Generic_Headers_uint1union.Generic_Headers_uint1union_int, NULL);
+	zassert_equal(sizeof(exp_signature), cose_sign1->COSE_Sign1_signature.len, NULL);
+	zassert_mem_equal(exp_signature, cose_sign1->COSE_Sign1_signature.value,
+		cose_sign1->COSE_Sign1_signature.len, NULL);
+	zassert_equal(COSE_Sign1_payload_nil, cose_sign1->COSE_Sign1_payload_choice, NULL);
 }
 
 
@@ -79,8 +79,8 @@ ZTEST(cbor_decode_test9, test_suit14_ex0_common_sequence)
 	struct SUIT_Manifest manifest;
 	struct SUIT_Common_Sequence common_sequence;
 	struct SUIT_Command_Sequence command_sequence;
-	struct SUIT_Parameters_ *parameter;
-	struct SUIT_Condition_ *condition;
+	struct SUIT_Parameters_r *parameter;
+	struct SUIT_Condition_r *condition;
 	size_t out_len;
 	uint8_t exp_vendor_id[] = {
 		0xfa, 0x6b, 0x4a, 0x53, 0xd5, 0xad, 0x5f, 0xdf,
@@ -97,92 +97,92 @@ ZTEST(cbor_decode_test9, test_suit14_ex0_common_sequence)
 		0xfe, 0xdc, 0xba, 0x98, 0x76, 0x54, 0x32, 0x10,
 	};
 	uint32_t exp_rep_policy = (
-		(1 << _suit_reporting_bits_suit_send_record_success)
-		| (1 << _suit_reporting_bits_suit_send_record_failure)
-		| (1 << _suit_reporting_bits_suit_send_sysinfo_success)
-		| (1 << _suit_reporting_bits_suit_send_sysinfo_failure));
+		(1 << suit_reporting_bits_suit_send_record_success)
+		| (1 << suit_reporting_bits_suit_send_record_failure)
+		| (1 << suit_reporting_bits_suit_send_sysinfo_success)
+		| (1 << suit_reporting_bits_suit_send_sysinfo_failure));
 
 	zassert_equal(ZCBOR_SUCCESS, cbor_decode_SUIT_Envelope_Tagged(example0, sizeof(example0), &envelope, &out_len), NULL);
 	zassert_equal(sizeof(example0), out_len, NULL);
-	zassert_equal(ZCBOR_SUCCESS, cbor_decode_SUIT_Manifest(envelope._SUIT_Envelope_suit_manifest.value,
-		envelope._SUIT_Envelope_suit_manifest.len, &manifest, &out_len), NULL);
-	zassert_equal(envelope._SUIT_Envelope_suit_manifest.len, out_len, NULL);
-	zassert_true(manifest._SUIT_Manifest_suit_common_cbor._SUIT_Common_suit_components_present, NULL);
-	zassert_true(manifest._SUIT_Manifest_suit_common_cbor._SUIT_Common_suit_common_sequence_present, NULL);
+	zassert_equal(ZCBOR_SUCCESS, cbor_decode_SUIT_Manifest(envelope.SUIT_Envelope_suit_manifest.value,
+		envelope.SUIT_Envelope_suit_manifest.len, &manifest, &out_len), NULL);
+	zassert_equal(envelope.SUIT_Envelope_suit_manifest.len, out_len, NULL);
+	zassert_true(manifest.SUIT_Manifest_suit_common_cbor.SUIT_Common_suit_components_present, NULL);
+	zassert_true(manifest.SUIT_Manifest_suit_common_cbor.SUIT_Common_suit_common_sequence_present, NULL);
 	zassert_equal(ZCBOR_SUCCESS, cbor_decode_SUIT_Common_Sequence(
-		manifest._SUIT_Manifest_suit_common_cbor._SUIT_Common_suit_common_sequence._SUIT_Common_suit_common_sequence.value,
-		manifest._SUIT_Manifest_suit_common_cbor._SUIT_Common_suit_common_sequence._SUIT_Common_suit_common_sequence.len,
+		manifest.SUIT_Manifest_suit_common_cbor.SUIT_Common_suit_common_sequence.SUIT_Common_suit_common_sequence.value,
+		manifest.SUIT_Manifest_suit_common_cbor.SUIT_Common_suit_common_sequence.SUIT_Common_suit_common_sequence.len,
 		&common_sequence, &out_len), NULL);
 	zassert_equal(ZCBOR_SUCCESS, cbor_decode_SUIT_Command_Sequence(
-		manifest._SUIT_Manifest_suit_common_cbor._SUIT_Common_suit_common_sequence._SUIT_Common_suit_common_sequence.value,
-		manifest._SUIT_Manifest_suit_common_cbor._SUIT_Common_suit_common_sequence._SUIT_Common_suit_common_sequence.len,
+		manifest.SUIT_Manifest_suit_common_cbor.SUIT_Common_suit_common_sequence.SUIT_Common_suit_common_sequence.value,
+		manifest.SUIT_Manifest_suit_common_cbor.SUIT_Common_suit_common_sequence.SUIT_Common_suit_common_sequence.len,
 		&command_sequence, &out_len), NULL);
 	zassert_equal(
-		manifest._SUIT_Manifest_suit_common_cbor._SUIT_Common_suit_common_sequence._SUIT_Common_suit_common_sequence.len,
+		manifest.SUIT_Manifest_suit_common_cbor.SUIT_Common_suit_common_sequence.SUIT_Common_suit_common_sequence.len,
 		out_len, NULL);
-	zassert_equal(3, common_sequence._SUIT_Common_Sequence_union_count, NULL);
-	zassert_equal(_SUIT_Common_Sequence_union__SUIT_Common_Commands, common_sequence._SUIT_Common_Sequence_union[0]._SUIT_Common_Sequence_union_choice, NULL);
-	zassert_equal(_SUIT_Common_Commands___suit_directive_override_parameters, common_sequence._SUIT_Common_Sequence_union[0]._SUIT_Common_Sequence_union__SUIT_Common_Commands._SUIT_Common_Commands_choice, NULL);
-	zassert_equal(4, common_sequence._SUIT_Common_Sequence_union[0]._SUIT_Common_Sequence_union__SUIT_Common_Commands.___suit_directive_override_parameters_map__SUIT_Parameters_count, NULL);
-	parameter = &common_sequence._SUIT_Common_Sequence_union[0]._SUIT_Common_Sequence_union__SUIT_Common_Commands.___suit_directive_override_parameters_map__SUIT_Parameters[0].___suit_directive_override_parameters_map__SUIT_Parameters;
+	zassert_equal(3, common_sequence.SUIT_Common_Sequence_union_count, NULL);
+	zassert_equal(SUIT_Common_Sequence_union_SUIT_Common_Commands_m, common_sequence.SUIT_Common_Sequence_union[0].SUIT_Common_Sequence_union_choice, NULL);
+	zassert_equal(SUIT_Common_Commands_suit_directive_override_parameters_m_l, common_sequence.SUIT_Common_Sequence_union[0].SUIT_Common_Sequence_union_SUIT_Common_Commands_m.SUIT_Common_Commands_choice, NULL);
+	zassert_equal(4, common_sequence.SUIT_Common_Sequence_union[0].SUIT_Common_Sequence_union_SUIT_Common_Commands_m.suit_directive_override_parameters_m_l_map_SUIT_Parameters_m_count, NULL);
+	parameter = &common_sequence.SUIT_Common_Sequence_union[0].SUIT_Common_Sequence_union_SUIT_Common_Commands_m.suit_directive_override_parameters_m_l_map_SUIT_Parameters_m[0].suit_directive_override_parameters_m_l_map_SUIT_Parameters_m;
 	zassert_equal(
-		_SUIT_Parameters_suit_parameter_vendor_identifier,
-		parameter->_SUIT_Parameters_choice, NULL);
+		SUIT_Parameters_suit_parameter_vendor_identifier,
+		parameter->SUIT_Parameters_choice, NULL);
 	zassert_equal(
-		_SUIT_Parameters_suit_parameter_vendor_identifier__RFC4122_UUID,
-		parameter->_SUIT_Parameters_suit_parameter_vendor_identifier_choice, NULL);
+		SUIT_Parameters_suit_parameter_vendor_identifier_RFC4122_UUID_m,
+		parameter->SUIT_Parameters_suit_parameter_vendor_identifier_choice, NULL);
 	zassert_equal(
-		parameter->_SUIT_Parameters_suit_parameter_vendor_identifier__RFC4122_UUID.len,
+		parameter->SUIT_Parameters_suit_parameter_vendor_identifier_RFC4122_UUID_m.len,
 		sizeof(exp_vendor_id), NULL);
 	zassert_mem_equal(exp_vendor_id,
-		parameter->_SUIT_Parameters_suit_parameter_vendor_identifier__RFC4122_UUID.value,
-		parameter->_SUIT_Parameters_suit_parameter_vendor_identifier__RFC4122_UUID.len, NULL);
+		parameter->SUIT_Parameters_suit_parameter_vendor_identifier_RFC4122_UUID_m.value,
+		parameter->SUIT_Parameters_suit_parameter_vendor_identifier_RFC4122_UUID_m.len, NULL);
 
-	parameter = &common_sequence._SUIT_Common_Sequence_union[0]._SUIT_Common_Sequence_union__SUIT_Common_Commands.___suit_directive_override_parameters_map__SUIT_Parameters[1].___suit_directive_override_parameters_map__SUIT_Parameters;
+	parameter = &common_sequence.SUIT_Common_Sequence_union[0].SUIT_Common_Sequence_union_SUIT_Common_Commands_m.suit_directive_override_parameters_m_l_map_SUIT_Parameters_m[1].suit_directive_override_parameters_m_l_map_SUIT_Parameters_m;
 	zassert_equal(
-		_SUIT_Parameters_suit_parameter_class_identifier,
-		parameter->_SUIT_Parameters_choice, NULL);
+		SUIT_Parameters_suit_parameter_class_identifier,
+		parameter->SUIT_Parameters_choice, NULL);
 	zassert_equal(
-		parameter->_SUIT_Parameters_suit_parameter_class_identifier.len,
+		parameter->SUIT_Parameters_suit_parameter_class_identifier.len,
 		sizeof(exp_class_id), NULL);
 	zassert_mem_equal(exp_class_id,
-		parameter->_SUIT_Parameters_suit_parameter_class_identifier.value,
-		parameter->_SUIT_Parameters_suit_parameter_class_identifier.len, NULL);
+		parameter->SUIT_Parameters_suit_parameter_class_identifier.value,
+		parameter->SUIT_Parameters_suit_parameter_class_identifier.len, NULL);
 
-	parameter = &common_sequence._SUIT_Common_Sequence_union[0]._SUIT_Common_Sequence_union__SUIT_Common_Commands.___suit_directive_override_parameters_map__SUIT_Parameters[2].___suit_directive_override_parameters_map__SUIT_Parameters;
+	parameter = &common_sequence.SUIT_Common_Sequence_union[0].SUIT_Common_Sequence_union_SUIT_Common_Commands_m.suit_directive_override_parameters_m_l_map_SUIT_Parameters_m[2].suit_directive_override_parameters_m_l_map_SUIT_Parameters_m;
 	zassert_equal(
-		_SUIT_Parameters_suit_parameter_image_digest,
-		parameter->_SUIT_Parameters_choice, NULL);
+		SUIT_Parameters_suit_parameter_image_digest,
+		parameter->SUIT_Parameters_choice, NULL);
 	zassert_equal(
-		parameter->_SUIT_Parameters_suit_parameter_image_digest_cbor._SUIT_Digest_suit_digest_bytes.len,
+		parameter->SUIT_Parameters_suit_parameter_image_digest_cbor.SUIT_Digest_suit_digest_bytes.len,
 		sizeof(exp_digest), NULL);
-	zassert_equal(_suit_cose_hash_algs__cose_alg_sha_256,
-		parameter->_SUIT_Parameters_suit_parameter_image_digest_cbor._SUIT_Digest_suit_digest_algorithm_id._suit_cose_hash_algs_choice, NULL);
+	zassert_equal(suit_cose_hash_algs_cose_alg_sha_256_m,
+		parameter->SUIT_Parameters_suit_parameter_image_digest_cbor.SUIT_Digest_suit_digest_algorithm_id.suit_cose_hash_algs_choice, NULL);
 	zassert_mem_equal(exp_digest,
-		parameter->_SUIT_Parameters_suit_parameter_image_digest_cbor._SUIT_Digest_suit_digest_bytes.value,
-		parameter->_SUIT_Parameters_suit_parameter_image_digest_cbor._SUIT_Digest_suit_digest_bytes.len, NULL);
+		parameter->SUIT_Parameters_suit_parameter_image_digest_cbor.SUIT_Digest_suit_digest_bytes.value,
+		parameter->SUIT_Parameters_suit_parameter_image_digest_cbor.SUIT_Digest_suit_digest_bytes.len, NULL);
 
-	parameter = &common_sequence._SUIT_Common_Sequence_union[0]._SUIT_Common_Sequence_union__SUIT_Common_Commands.___suit_directive_override_parameters_map__SUIT_Parameters[3].___suit_directive_override_parameters_map__SUIT_Parameters;
+	parameter = &common_sequence.SUIT_Common_Sequence_union[0].SUIT_Common_Sequence_union_SUIT_Common_Commands_m.suit_directive_override_parameters_m_l_map_SUIT_Parameters_m[3].suit_directive_override_parameters_m_l_map_SUIT_Parameters_m;
 	zassert_equal(
-		_SUIT_Parameters_suit_parameter_image_size,
-		parameter->_SUIT_Parameters_choice, NULL);
-	zassert_equal(34768, parameter->_SUIT_Parameters_suit_parameter_image_size, NULL);
+		SUIT_Parameters_suit_parameter_image_size,
+		parameter->SUIT_Parameters_choice, NULL);
+	zassert_equal(34768, parameter->SUIT_Parameters_suit_parameter_image_size, NULL);
 
-	zassert_equal(_SUIT_Common_Sequence_union__SUIT_Condition, common_sequence._SUIT_Common_Sequence_union[1]._SUIT_Common_Sequence_union_choice, NULL);
-	condition = &common_sequence._SUIT_Common_Sequence_union[1]._SUIT_Common_Sequence_union__SUIT_Condition;
-	zassert_equal(_SUIT_Condition___suit_condition_vendor_identifier,
-		condition->_SUIT_Condition_choice, NULL);
+	zassert_equal(SUIT_Common_Sequence_union_SUIT_Condition_m, common_sequence.SUIT_Common_Sequence_union[1].SUIT_Common_Sequence_union_choice, NULL);
+	condition = &common_sequence.SUIT_Common_Sequence_union[1].SUIT_Common_Sequence_union_SUIT_Condition_m;
+	zassert_equal(SUIT_Condition_suit_condition_vendor_identifier_m_l,
+		condition->SUIT_Condition_choice, NULL);
 	zassert_equal(exp_rep_policy,
-		condition->_SUIT_Condition___suit_condition_vendor_identifier__SUIT_Rep_Policy, NULL);
+		condition->SUIT_Condition_suit_condition_vendor_identifier_m_l_SUIT_Rep_Policy_m, NULL);
 	zassert_equal(exp_rep_policy,
-		condition->_SUIT_Condition___suit_condition_class_identifier__SUIT_Rep_Policy, NULL);
+		condition->SUIT_Condition_suit_condition_class_identifier_m_l_SUIT_Rep_Policy_m, NULL);
 
-	zassert_equal(_SUIT_Common_Sequence_union__SUIT_Condition, common_sequence._SUIT_Common_Sequence_union[2]._SUIT_Common_Sequence_union_choice, NULL);
-	condition = &common_sequence._SUIT_Common_Sequence_union[2]._SUIT_Common_Sequence_union__SUIT_Condition;
-	zassert_equal(_SUIT_Condition___suit_condition_class_identifier,
-		condition->_SUIT_Condition_choice, NULL);
+	zassert_equal(SUIT_Common_Sequence_union_SUIT_Condition_m, common_sequence.SUIT_Common_Sequence_union[2].SUIT_Common_Sequence_union_choice, NULL);
+	condition = &common_sequence.SUIT_Common_Sequence_union[2].SUIT_Common_Sequence_union_SUIT_Condition_m;
+	zassert_equal(SUIT_Condition_suit_condition_class_identifier_m_l,
+		condition->SUIT_Condition_choice, NULL);
 	zassert_equal(exp_rep_policy,
-		condition->_SUIT_Condition___suit_condition_class_identifier__SUIT_Rep_Policy, NULL);
+		condition->SUIT_Condition_suit_condition_class_identifier_m_l_SUIT_Rep_Policy_m, NULL);
 }
 
 /* Check the common sequence when decoded as a command sequence.
@@ -195,8 +195,8 @@ ZTEST(cbor_decode_test9, test_suit14_ex0_common_sequence_as_command_sequence)
 	struct SUIT_Manifest manifest;
 	struct SUIT_Common_Sequence common_sequence;
 	struct SUIT_Command_Sequence command_sequence;
-	struct SUIT_Parameters_ *parameter;
-	struct SUIT_Condition_ *condition;
+	struct SUIT_Parameters_r *parameter;
+	struct SUIT_Condition_r *condition;
 	size_t out_len;
 	uint8_t exp_vendor_id[] = {
 		0xfa, 0x6b, 0x4a, 0x53, 0xd5, 0xad, 0x5f, 0xdf,
@@ -213,96 +213,96 @@ ZTEST(cbor_decode_test9, test_suit14_ex0_common_sequence_as_command_sequence)
 		0xfe, 0xdc, 0xba, 0x98, 0x76, 0x54, 0x32, 0x10,
 	};
 	uint32_t exp_rep_policy = (
-		(1 << _suit_reporting_bits_suit_send_record_success)
-		| (1 << _suit_reporting_bits_suit_send_record_failure)
-		| (1 << _suit_reporting_bits_suit_send_sysinfo_success)
-		| (1 << _suit_reporting_bits_suit_send_sysinfo_failure));
+		(1 << suit_reporting_bits_suit_send_record_success)
+		| (1 << suit_reporting_bits_suit_send_record_failure)
+		| (1 << suit_reporting_bits_suit_send_sysinfo_success)
+		| (1 << suit_reporting_bits_suit_send_sysinfo_failure));
 
 	zassert_equal(ZCBOR_SUCCESS, cbor_decode_SUIT_Envelope_Tagged(example0, sizeof(example0), &envelope, &out_len), NULL);
 	zassert_equal(sizeof(example0), out_len, NULL);
-	zassert_equal(ZCBOR_SUCCESS, cbor_decode_SUIT_Manifest(envelope._SUIT_Envelope_suit_manifest.value,
-		envelope._SUIT_Envelope_suit_manifest.len, &manifest, &out_len), NULL);
-	zassert_equal(envelope._SUIT_Envelope_suit_manifest.len, out_len, NULL);
-	zassert_true(manifest._SUIT_Manifest_suit_common_cbor._SUIT_Common_suit_components_present, NULL);
-	zassert_true(manifest._SUIT_Manifest_suit_common_cbor._SUIT_Common_suit_common_sequence_present, NULL);
+	zassert_equal(ZCBOR_SUCCESS, cbor_decode_SUIT_Manifest(envelope.SUIT_Envelope_suit_manifest.value,
+		envelope.SUIT_Envelope_suit_manifest.len, &manifest, &out_len), NULL);
+	zassert_equal(envelope.SUIT_Envelope_suit_manifest.len, out_len, NULL);
+	zassert_true(manifest.SUIT_Manifest_suit_common_cbor.SUIT_Common_suit_components_present, NULL);
+	zassert_true(manifest.SUIT_Manifest_suit_common_cbor.SUIT_Common_suit_common_sequence_present, NULL);
 	zassert_equal(ZCBOR_SUCCESS, cbor_decode_SUIT_Common_Sequence(
-		manifest._SUIT_Manifest_suit_common_cbor._SUIT_Common_suit_common_sequence._SUIT_Common_suit_common_sequence.value,
-		manifest._SUIT_Manifest_suit_common_cbor._SUIT_Common_suit_common_sequence._SUIT_Common_suit_common_sequence.len,
+		manifest.SUIT_Manifest_suit_common_cbor.SUIT_Common_suit_common_sequence.SUIT_Common_suit_common_sequence.value,
+		manifest.SUIT_Manifest_suit_common_cbor.SUIT_Common_suit_common_sequence.SUIT_Common_suit_common_sequence.len,
 		&common_sequence, &out_len), NULL);
 	zassert_equal(
-		manifest._SUIT_Manifest_suit_common_cbor._SUIT_Common_suit_common_sequence._SUIT_Common_suit_common_sequence.len,
+		manifest.SUIT_Manifest_suit_common_cbor.SUIT_Common_suit_common_sequence.SUIT_Common_suit_common_sequence.len,
 		out_len, NULL);
 	zassert_equal(ZCBOR_SUCCESS, cbor_decode_SUIT_Command_Sequence(
-		manifest._SUIT_Manifest_suit_common_cbor._SUIT_Common_suit_common_sequence._SUIT_Common_suit_common_sequence.value,
-		manifest._SUIT_Manifest_suit_common_cbor._SUIT_Common_suit_common_sequence._SUIT_Common_suit_common_sequence.len,
+		manifest.SUIT_Manifest_suit_common_cbor.SUIT_Common_suit_common_sequence.SUIT_Common_suit_common_sequence.value,
+		manifest.SUIT_Manifest_suit_common_cbor.SUIT_Common_suit_common_sequence.SUIT_Common_suit_common_sequence.len,
 		&command_sequence, &out_len), NULL);
 	zassert_equal(
-		manifest._SUIT_Manifest_suit_common_cbor._SUIT_Common_suit_common_sequence._SUIT_Common_suit_common_sequence.len,
+		manifest.SUIT_Manifest_suit_common_cbor.SUIT_Common_suit_common_sequence.SUIT_Common_suit_common_sequence.len,
 		out_len, NULL);
-	zassert_equal(3, command_sequence._SUIT_Command_Sequence_union_count, NULL);
-	zassert_equal(_SUIT_Command_Sequence_union__SUIT_Directive, command_sequence._SUIT_Command_Sequence_union[0]._SUIT_Command_Sequence_union_choice, NULL);
-	zassert_equal(_SUIT_Directive___suit_directive_override_parameters, command_sequence._SUIT_Command_Sequence_union[0]._SUIT_Command_Sequence_union__SUIT_Directive._SUIT_Directive_choice, NULL);
-	zassert_equal(4, command_sequence._SUIT_Command_Sequence_union[0]._SUIT_Command_Sequence_union__SUIT_Directive.___suit_directive_override_parameters_map__SUIT_Parameters_count, NULL);
+	zassert_equal(3, command_sequence.SUIT_Command_Sequence_union_count, NULL);
+	zassert_equal(SUIT_Command_Sequence_union_SUIT_Directive_m, command_sequence.SUIT_Command_Sequence_union[0].SUIT_Command_Sequence_union_choice, NULL);
+	zassert_equal(SUIT_Directive_suit_directive_override_parameters_m_l, command_sequence.SUIT_Command_Sequence_union[0].SUIT_Command_Sequence_union_SUIT_Directive_m.SUIT_Directive_choice, NULL);
+	zassert_equal(4, command_sequence.SUIT_Command_Sequence_union[0].SUIT_Command_Sequence_union_SUIT_Directive_m.suit_directive_override_parameters_m_l_map_SUIT_Parameters_m_count, NULL);
 
-	parameter = &command_sequence._SUIT_Command_Sequence_union[0]._SUIT_Command_Sequence_union__SUIT_Directive.___suit_directive_override_parameters_map__SUIT_Parameters[0].___suit_directive_override_parameters_map__SUIT_Parameters;
+	parameter = &command_sequence.SUIT_Command_Sequence_union[0].SUIT_Command_Sequence_union_SUIT_Directive_m.suit_directive_override_parameters_m_l_map_SUIT_Parameters_m[0].suit_directive_override_parameters_m_l_map_SUIT_Parameters_m;
 	zassert_equal(
-		_SUIT_Parameters_suit_parameter_vendor_identifier,
-		parameter->_SUIT_Parameters_choice, NULL);
+		SUIT_Parameters_suit_parameter_vendor_identifier,
+		parameter->SUIT_Parameters_choice, NULL);
 	zassert_equal(
-		_SUIT_Parameters_suit_parameter_vendor_identifier__RFC4122_UUID,
-		parameter->_SUIT_Parameters_suit_parameter_vendor_identifier_choice, NULL);
+		SUIT_Parameters_suit_parameter_vendor_identifier_RFC4122_UUID_m,
+		parameter->SUIT_Parameters_suit_parameter_vendor_identifier_choice, NULL);
 	zassert_equal(
-		parameter->_SUIT_Parameters_suit_parameter_vendor_identifier__RFC4122_UUID.len,
+		parameter->SUIT_Parameters_suit_parameter_vendor_identifier_RFC4122_UUID_m.len,
 		sizeof(exp_vendor_id), NULL);
 	zassert_mem_equal(exp_vendor_id,
-		parameter->_SUIT_Parameters_suit_parameter_vendor_identifier__RFC4122_UUID.value,
-		parameter->_SUIT_Parameters_suit_parameter_vendor_identifier__RFC4122_UUID.len, NULL);
+		parameter->SUIT_Parameters_suit_parameter_vendor_identifier_RFC4122_UUID_m.value,
+		parameter->SUIT_Parameters_suit_parameter_vendor_identifier_RFC4122_UUID_m.len, NULL);
 
-	parameter = &command_sequence._SUIT_Command_Sequence_union[0]._SUIT_Command_Sequence_union__SUIT_Directive.___suit_directive_override_parameters_map__SUIT_Parameters[1].___suit_directive_override_parameters_map__SUIT_Parameters;
+	parameter = &command_sequence.SUIT_Command_Sequence_union[0].SUIT_Command_Sequence_union_SUIT_Directive_m.suit_directive_override_parameters_m_l_map_SUIT_Parameters_m[1].suit_directive_override_parameters_m_l_map_SUIT_Parameters_m;
 	zassert_equal(
-		_SUIT_Parameters_suit_parameter_class_identifier,
-		parameter->_SUIT_Parameters_choice, NULL);
+		SUIT_Parameters_suit_parameter_class_identifier,
+		parameter->SUIT_Parameters_choice, NULL);
 	zassert_equal(
-		parameter->_SUIT_Parameters_suit_parameter_class_identifier.len,
+		parameter->SUIT_Parameters_suit_parameter_class_identifier.len,
 		sizeof(exp_class_id), NULL);
 	zassert_mem_equal(exp_class_id,
-		parameter->_SUIT_Parameters_suit_parameter_class_identifier.value,
-		parameter->_SUIT_Parameters_suit_parameter_class_identifier.len, NULL);
+		parameter->SUIT_Parameters_suit_parameter_class_identifier.value,
+		parameter->SUIT_Parameters_suit_parameter_class_identifier.len, NULL);
 
-	parameter = &command_sequence._SUIT_Command_Sequence_union[0]._SUIT_Command_Sequence_union__SUIT_Directive.___suit_directive_override_parameters_map__SUIT_Parameters[2].___suit_directive_override_parameters_map__SUIT_Parameters;
+	parameter = &command_sequence.SUIT_Command_Sequence_union[0].SUIT_Command_Sequence_union_SUIT_Directive_m.suit_directive_override_parameters_m_l_map_SUIT_Parameters_m[2].suit_directive_override_parameters_m_l_map_SUIT_Parameters_m;
 	zassert_equal(
-		_SUIT_Parameters_suit_parameter_image_digest,
-		parameter->_SUIT_Parameters_choice, NULL);
+		SUIT_Parameters_suit_parameter_image_digest,
+		parameter->SUIT_Parameters_choice, NULL);
 	zassert_equal(
-		parameter->_SUIT_Parameters_suit_parameter_image_digest_cbor._SUIT_Digest_suit_digest_bytes.len,
+		parameter->SUIT_Parameters_suit_parameter_image_digest_cbor.SUIT_Digest_suit_digest_bytes.len,
 		sizeof(exp_digest), NULL);
-	zassert_equal(_suit_cose_hash_algs__cose_alg_sha_256,
-		parameter->_SUIT_Parameters_suit_parameter_image_digest_cbor._SUIT_Digest_suit_digest_algorithm_id._suit_cose_hash_algs_choice, NULL);
+	zassert_equal(suit_cose_hash_algs_cose_alg_sha_256_m,
+		parameter->SUIT_Parameters_suit_parameter_image_digest_cbor.SUIT_Digest_suit_digest_algorithm_id.suit_cose_hash_algs_choice, NULL);
 	zassert_mem_equal(exp_digest,
-		parameter->_SUIT_Parameters_suit_parameter_image_digest_cbor._SUIT_Digest_suit_digest_bytes.value,
-		parameter->_SUIT_Parameters_suit_parameter_image_digest_cbor._SUIT_Digest_suit_digest_bytes.len, NULL);
+		parameter->SUIT_Parameters_suit_parameter_image_digest_cbor.SUIT_Digest_suit_digest_bytes.value,
+		parameter->SUIT_Parameters_suit_parameter_image_digest_cbor.SUIT_Digest_suit_digest_bytes.len, NULL);
 
-	parameter = &command_sequence._SUIT_Command_Sequence_union[0]._SUIT_Command_Sequence_union__SUIT_Directive.___suit_directive_override_parameters_map__SUIT_Parameters[3].___suit_directive_override_parameters_map__SUIT_Parameters;
+	parameter = &command_sequence.SUIT_Command_Sequence_union[0].SUIT_Command_Sequence_union_SUIT_Directive_m.suit_directive_override_parameters_m_l_map_SUIT_Parameters_m[3].suit_directive_override_parameters_m_l_map_SUIT_Parameters_m;
 	zassert_equal(
-		_SUIT_Parameters_suit_parameter_image_size,
-		parameter->_SUIT_Parameters_choice, NULL);
-	zassert_equal(34768, parameter->_SUIT_Parameters_suit_parameter_image_size, NULL);
+		SUIT_Parameters_suit_parameter_image_size,
+		parameter->SUIT_Parameters_choice, NULL);
+	zassert_equal(34768, parameter->SUIT_Parameters_suit_parameter_image_size, NULL);
 
-	zassert_equal(_SUIT_Command_Sequence_union__SUIT_Condition, command_sequence._SUIT_Command_Sequence_union[1]._SUIT_Command_Sequence_union_choice, NULL);
-	condition = &command_sequence._SUIT_Command_Sequence_union[1]._SUIT_Command_Sequence_union__SUIT_Condition;
-	zassert_equal(_SUIT_Condition___suit_condition_vendor_identifier,
-		condition->_SUIT_Condition_choice, NULL);
+	zassert_equal(SUIT_Command_Sequence_union_SUIT_Condition_m, command_sequence.SUIT_Command_Sequence_union[1].SUIT_Command_Sequence_union_choice, NULL);
+	condition = &command_sequence.SUIT_Command_Sequence_union[1].SUIT_Command_Sequence_union_SUIT_Condition_m;
+	zassert_equal(SUIT_Condition_suit_condition_vendor_identifier_m_l,
+		condition->SUIT_Condition_choice, NULL);
 	zassert_equal(exp_rep_policy,
-		condition->_SUIT_Condition___suit_condition_vendor_identifier__SUIT_Rep_Policy, NULL);
+		condition->SUIT_Condition_suit_condition_vendor_identifier_m_l_SUIT_Rep_Policy_m, NULL);
 	zassert_equal(exp_rep_policy,
-		condition->_SUIT_Condition___suit_condition_class_identifier__SUIT_Rep_Policy, NULL);
+		condition->SUIT_Condition_suit_condition_class_identifier_m_l_SUIT_Rep_Policy_m, NULL);
 
-	zassert_equal(_SUIT_Command_Sequence_union__SUIT_Condition, command_sequence._SUIT_Command_Sequence_union[2]._SUIT_Command_Sequence_union_choice, NULL);
-	condition = &command_sequence._SUIT_Command_Sequence_union[2]._SUIT_Command_Sequence_union__SUIT_Condition;
-	zassert_equal(_SUIT_Condition___suit_condition_class_identifier,
-		condition->_SUIT_Condition_choice, NULL);
+	zassert_equal(SUIT_Command_Sequence_union_SUIT_Condition_m, command_sequence.SUIT_Command_Sequence_union[2].SUIT_Command_Sequence_union_choice, NULL);
+	condition = &command_sequence.SUIT_Command_Sequence_union[2].SUIT_Command_Sequence_union_SUIT_Condition_m;
+	zassert_equal(SUIT_Condition_suit_condition_class_identifier_m_l,
+		condition->SUIT_Condition_choice, NULL);
 	zassert_equal(exp_rep_policy,
-		condition->_SUIT_Condition___suit_condition_class_identifier__SUIT_Rep_Policy, NULL);
+		condition->SUIT_Condition_suit_condition_class_identifier_m_l_SUIT_Rep_Policy_m, NULL);
 }
 
 ZTEST(cbor_decode_test9, test_suit14_ex0_validate_run)
@@ -310,54 +310,54 @@ ZTEST(cbor_decode_test9, test_suit14_ex0_validate_run)
 	struct SUIT_Envelope envelope;
 	struct SUIT_Manifest manifest;
 	struct SUIT_Command_Sequence command_sequence;
-	struct SUIT_Condition_ *condition;
-	struct SUIT_Directive_ *directive;
+	struct SUIT_Condition_r *condition;
+	struct SUIT_Directive_r *directive;
 	size_t out_len;
 	uint32_t exp_rep_policy1 = (
-		(1 << _suit_reporting_bits_suit_send_record_success)
-		| (1 << _suit_reporting_bits_suit_send_record_failure)
-		| (1 << _suit_reporting_bits_suit_send_sysinfo_success)
-		| (1 << _suit_reporting_bits_suit_send_sysinfo_failure));
-	uint32_t exp_rep_policy2 = (1 << _suit_reporting_bits_suit_send_record_failure);
+		(1 << suit_reporting_bits_suit_send_record_success)
+		| (1 << suit_reporting_bits_suit_send_record_failure)
+		| (1 << suit_reporting_bits_suit_send_sysinfo_success)
+		| (1 << suit_reporting_bits_suit_send_sysinfo_failure));
+	uint32_t exp_rep_policy2 = (1 << suit_reporting_bits_suit_send_record_failure);
 
 	zassert_equal(ZCBOR_SUCCESS, cbor_decode_SUIT_Envelope_Tagged(example0, sizeof(example0), &envelope, &out_len), NULL);
 	zassert_equal(sizeof(example0), out_len, NULL);
-	zassert_equal(ZCBOR_SUCCESS, cbor_decode_SUIT_Manifest(envelope._SUIT_Envelope_suit_manifest.value,
-		envelope._SUIT_Envelope_suit_manifest.len, &manifest, &out_len), NULL);
-	zassert_equal(envelope._SUIT_Envelope_suit_manifest.len, out_len, NULL);
-	zassert_true(manifest._SUIT_Manifest__SUIT_Unseverable_Members._SUIT_Unseverable_Members_suit_validate_present, NULL);
-	zassert_false(manifest._SUIT_Manifest__SUIT_Unseverable_Members._SUIT_Unseverable_Members_suit_load_present, NULL);
-	zassert_true(manifest._SUIT_Manifest__SUIT_Unseverable_Members._SUIT_Unseverable_Members_suit_run_present, NULL);
+	zassert_equal(ZCBOR_SUCCESS, cbor_decode_SUIT_Manifest(envelope.SUIT_Envelope_suit_manifest.value,
+		envelope.SUIT_Envelope_suit_manifest.len, &manifest, &out_len), NULL);
+	zassert_equal(envelope.SUIT_Envelope_suit_manifest.len, out_len, NULL);
+	zassert_true(manifest.SUIT_Manifest_SUIT_Unseverable_Members_m.SUIT_Unseverable_Members_suit_validate_present, NULL);
+	zassert_false(manifest.SUIT_Manifest_SUIT_Unseverable_Members_m.SUIT_Unseverable_Members_suit_load_present, NULL);
+	zassert_true(manifest.SUIT_Manifest_SUIT_Unseverable_Members_m.SUIT_Unseverable_Members_suit_run_present, NULL);
 
 	zassert_equal(ZCBOR_SUCCESS, cbor_decode_SUIT_Command_Sequence(
-		manifest._SUIT_Manifest__SUIT_Unseverable_Members._SUIT_Unseverable_Members_suit_validate._SUIT_Unseverable_Members_suit_validate.value,
-		manifest._SUIT_Manifest__SUIT_Unseverable_Members._SUIT_Unseverable_Members_suit_validate._SUIT_Unseverable_Members_suit_validate.len,
+		manifest.SUIT_Manifest_SUIT_Unseverable_Members_m.SUIT_Unseverable_Members_suit_validate.SUIT_Unseverable_Members_suit_validate.value,
+		manifest.SUIT_Manifest_SUIT_Unseverable_Members_m.SUIT_Unseverable_Members_suit_validate.SUIT_Unseverable_Members_suit_validate.len,
 		&command_sequence, &out_len), NULL);
 	zassert_equal(
-		manifest._SUIT_Manifest__SUIT_Unseverable_Members._SUIT_Unseverable_Members_suit_validate._SUIT_Unseverable_Members_suit_validate.len,
+		manifest.SUIT_Manifest_SUIT_Unseverable_Members_m.SUIT_Unseverable_Members_suit_validate.SUIT_Unseverable_Members_suit_validate.len,
 		out_len, NULL);
-	zassert_equal(1, command_sequence._SUIT_Command_Sequence_union_count, NULL);
-	zassert_equal(_SUIT_Command_Sequence_union__SUIT_Condition, command_sequence._SUIT_Command_Sequence_union[0]._SUIT_Command_Sequence_union_choice, NULL);
-	condition = &command_sequence._SUIT_Command_Sequence_union[0]._SUIT_Command_Sequence_union__SUIT_Condition;
-	zassert_equal(_SUIT_Condition___suit_condition_image_match,
-		condition->_SUIT_Condition_choice, NULL);
+	zassert_equal(1, command_sequence.SUIT_Command_Sequence_union_count, NULL);
+	zassert_equal(SUIT_Command_Sequence_union_SUIT_Condition_m, command_sequence.SUIT_Command_Sequence_union[0].SUIT_Command_Sequence_union_choice, NULL);
+	condition = &command_sequence.SUIT_Command_Sequence_union[0].SUIT_Command_Sequence_union_SUIT_Condition_m;
+	zassert_equal(SUIT_Condition_suit_condition_image_match_m_l,
+		condition->SUIT_Condition_choice, NULL);
 	zassert_equal(exp_rep_policy1,
-		condition->_SUIT_Condition___suit_condition_image_match__SUIT_Rep_Policy, NULL);
+		condition->SUIT_Condition_suit_condition_image_match_m_l_SUIT_Rep_Policy_m, NULL);
 
 	zassert_equal(ZCBOR_SUCCESS, cbor_decode_SUIT_Command_Sequence(
-		manifest._SUIT_Manifest__SUIT_Unseverable_Members._SUIT_Unseverable_Members_suit_run._SUIT_Unseverable_Members_suit_run.value,
-		manifest._SUIT_Manifest__SUIT_Unseverable_Members._SUIT_Unseverable_Members_suit_run._SUIT_Unseverable_Members_suit_run.len,
+		manifest.SUIT_Manifest_SUIT_Unseverable_Members_m.SUIT_Unseverable_Members_suit_run.SUIT_Unseverable_Members_suit_run.value,
+		manifest.SUIT_Manifest_SUIT_Unseverable_Members_m.SUIT_Unseverable_Members_suit_run.SUIT_Unseverable_Members_suit_run.len,
 		&command_sequence, &out_len), NULL);
 	zassert_equal(
-		manifest._SUIT_Manifest__SUIT_Unseverable_Members._SUIT_Unseverable_Members_suit_run._SUIT_Unseverable_Members_suit_run.len,
+		manifest.SUIT_Manifest_SUIT_Unseverable_Members_m.SUIT_Unseverable_Members_suit_run.SUIT_Unseverable_Members_suit_run.len,
 		out_len, NULL);
-	zassert_equal(1, command_sequence._SUIT_Command_Sequence_union_count, NULL);
-	zassert_equal(_SUIT_Command_Sequence_union__SUIT_Directive, command_sequence._SUIT_Command_Sequence_union[0]._SUIT_Command_Sequence_union_choice, NULL);
-	directive = &command_sequence._SUIT_Command_Sequence_union[0]._SUIT_Command_Sequence_union__SUIT_Directive;
-	zassert_equal(_SUIT_Directive___suit_directive_run,
-		directive->_SUIT_Directive_choice, NULL);
+	zassert_equal(1, command_sequence.SUIT_Command_Sequence_union_count, NULL);
+	zassert_equal(SUIT_Command_Sequence_union_SUIT_Directive_m, command_sequence.SUIT_Command_Sequence_union[0].SUIT_Command_Sequence_union_choice, NULL);
+	directive = &command_sequence.SUIT_Command_Sequence_union[0].SUIT_Command_Sequence_union_SUIT_Directive_m;
+	zassert_equal(SUIT_Directive_suit_directive_run_m_l,
+		directive->SUIT_Directive_choice, NULL);
 	zassert_equal(exp_rep_policy2,
-		directive->_SUIT_Directive___suit_directive_run__SUIT_Rep_Policy, NULL);
+		directive->SUIT_Directive_suit_directive_run_m_l_SUIT_Rep_Policy_m, NULL);
 
 }
 

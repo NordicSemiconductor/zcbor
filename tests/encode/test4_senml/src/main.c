@@ -33,23 +33,23 @@
 ZTEST(cbor_encode_test4, test_senml)
 {
 	struct lwm2m_senml input = {
-		._lwm2m_senml__record[0] = {
-			._record_bn = {._record_bn = {.value = "Foo", .len = 3}},
-			._record_bn_present = 1,
-			._record_bt = {._record_bt = 42},
-			._record_bt_present = 1,
-			._record_n = {._record_n = {.value = "Bar", .len = 3}},
-			._record_n_present = 1,
-			._record_t = {._record_t = 7},
-			._record_t_present = 1,
-			._record_union = {
-				._union_vb = true,
-				._record_union_choice = _union_vb,
+		.lwm2m_senml_record_m[0] = {
+			.record_bn = {.record_bn = {.value = "Foo", .len = 3}},
+			.record_bn_present = 1,
+			.record_bt = {.record_bt = 42},
+			.record_bt_present = 1,
+			.record_n = {.record_n = {.value = "Bar", .len = 3}},
+			.record_n_present = 1,
+			.record_t = {.record_t = 7},
+			.record_t_present = 1,
+			.record_union = {
+				.union_vb = true,
+				.record_union_choice = union_vb,
 			},
-			._record_union_present = 1,
-			._record__key_value_pair_count = 0,
+			.record_union_present = 1,
+			.record_key_value_pair_m_count = 0,
 		},
-		._lwm2m_senml__record_count = 1,
+		.lwm2m_senml_record_m_count = 1,
 	};
 	uint8_t payload[100];
 	size_t encode_len;

@@ -115,33 +115,33 @@ ZTEST(cbor_decode_test, test_1)
 			"test_vector2 failed");
 	zassert_equal(sizeof(test_vector2), decode_len, NULL);
 	zassert_equal(2, outerwrapper
-			._OuterWrapper_manifest_cbor
-			._Manifest_sequence,
-			"Sequence number incorrect (%d)", outerwrapper._OuterWrapper_manifest_cbor._Manifest_sequence);
+			.OuterWrapper_manifest_cbor
+			.Manifest_sequence,
+			"Sequence number incorrect (%d)", outerwrapper.OuterWrapper_manifest_cbor.Manifest_sequence);
 	zassert_true(outerwrapper
-			._OuterWrapper_manifest_cbor
-			._Manifest_payloads_present,
+			.OuterWrapper_manifest_cbor
+			.Manifest_payloads_present,
 			"Expected payloads entry");
 	zassert_equal(1, outerwrapper
-			._OuterWrapper_manifest_cbor
-			._Manifest_payloads_present,
+			.OuterWrapper_manifest_cbor
+			.Manifest_payloads_present,
 			"Expected payloads present");
 	zassert_equal(1, outerwrapper
-			._OuterWrapper_manifest_cbor
-			._Manifest_payloads
-			._Manifest_payloads__PayloadInfo_count,
+			.OuterWrapper_manifest_cbor
+			.Manifest_payloads
+			.Manifest_payloads_PayloadInfo_m_count,
 			"Expected single payloads entry, was %d",
 			outerwrapper
-			._OuterWrapper_manifest_cbor
-			._Manifest_payloads
-			._Manifest_payloads__PayloadInfo_count);
+			.OuterWrapper_manifest_cbor
+			.Manifest_payloads
+			.Manifest_payloads_PayloadInfo_m_count);
 	zassert_mem_equal(expected_tag,
 			outerwrapper
-			._OuterWrapper_manifest_cbor
-			._Manifest_payloads
-			._Manifest_payloads__PayloadInfo[0]
-			._PayloadInfo_payloadDigest
-			._COSE_Mac0_tag
+			.OuterWrapper_manifest_cbor
+			.Manifest_payloads
+			.Manifest_payloads_PayloadInfo_m[0]
+			.PayloadInfo_payloadDigest
+			.COSE_Mac0_tag
 			.value,
 			sizeof(expected_tag),
 			"Expected a certain payloads tag");
@@ -163,35 +163,35 @@ ZTEST(cbor_decode_test, test_2)
 			"test_vector3 failed");
 	zassert_equal(sizeof(test_vector3), decode_len, NULL);
 	zassert_equal(2, outerwrapper
-			._OuterWrapper_manifest_cbor
-			._Manifest_sequence,
-			"Sequence number incorrect (%d)", outerwrapper._OuterWrapper_manifest_cbor._Manifest_sequence);
+			.OuterWrapper_manifest_cbor
+			.Manifest_sequence,
+			"Sequence number incorrect (%d)", outerwrapper.OuterWrapper_manifest_cbor.Manifest_sequence);
 	zassert_equal(1, outerwrapper
-			._OuterWrapper_textExt_present,
+			.OuterWrapper_textExt_present,
 			"Expected text present");
 	zassert_equal(1, outerwrapper
-			._OuterWrapper_textExt
-			._OuterWrapper_textExt_cbor_count,
+			.OuterWrapper_textExt
+			.OuterWrapper_textExt_cbor_count,
 			"Expected single text entry");
 	zassert_equal(1, outerwrapper
-			._OuterWrapper_textExt
-			._OuterWrapper_textExt_cbor_count,
+			.OuterWrapper_textExt
+			.OuterWrapper_textExt_cbor_count,
 			"Expected single text entry");
 	zassert_equal(1, outerwrapper
-			._OuterWrapper_manifest_cbor
-			._Manifest_payloads
-			._Manifest_payloads__PayloadInfo_count,
+			.OuterWrapper_manifest_cbor
+			.Manifest_payloads
+			.Manifest_payloads_PayloadInfo_m_count,
 			"Expected single payloads entry, was %d",
 			outerwrapper
-			._OuterWrapper_manifest_cbor
-			._Manifest_payloads
-			._Manifest_payloads__PayloadInfo_count);
+			.OuterWrapper_manifest_cbor
+			.Manifest_payloads
+			.Manifest_payloads_PayloadInfo_m_count);
 	zassert_mem_equal(expected_updateDescription,
 			outerwrapper
-			._OuterWrapper_textExt
-			._OuterWrapper_textExt_cbor[0]
-			._Text_inttstr[0]
-			._Text_inttstr
+			.OuterWrapper_textExt
+			.OuterWrapper_textExt_cbor[0]
+			.Text_inttstr[0]
+			.Text_inttstr
 			.value,
 			sizeof(expected_updateDescription) - 1,
 			"Expected lorem ipsum text.");
@@ -208,159 +208,159 @@ ZTEST(cbor_decode_test, test_3)
 	zassert_equal(sizeof(test_vector4), decode_len, NULL);
 	zassert_equal(2,
 		      outerwrapper4
-		      ._SUIT_Outer_Wrapper_suit_manifest_cbor
-		      ._SUIT_Manifest_suit_manifest_sequence_number,
+		      .SUIT_Outer_Wrapper_suit_manifest_cbor
+		      .SUIT_Manifest_suit_manifest_sequence_number,
 		      "Sequence number incorrect");
 	zassert_equal(1,
 		      outerwrapper4
-		      ._SUIT_Outer_Wrapper_suit_manifest_cbor
-		      ._SUIT_Manifest_suit_install_present,
+		      .SUIT_Outer_Wrapper_suit_manifest_cbor
+		      .SUIT_Manifest_suit_install_present,
 		      "Expected install present");
-	zassert_equal(_SUIT_Severable_Command_Sequence3_SUIT_Command_Sequence_bstr,
+	zassert_equal(SUIT_Severable_Command_Sequence3_SUIT_Command_Sequence_bstr,
 		      outerwrapper4
-		      ._SUIT_Outer_Wrapper_suit_manifest_cbor
-		      ._SUIT_Manifest_suit_install
-		      ._SUIT_Manifest_suit_install
-		      ._SUIT_Severable_Command_Sequence3_choice,
+		      .SUIT_Outer_Wrapper_suit_manifest_cbor
+		      .SUIT_Manifest_suit_install
+		      .SUIT_Manifest_suit_install
+		      .SUIT_Severable_Command_Sequence3_choice,
 		      "Expected install present");
 	zassert_equal(3,
 		      outerwrapper4
-		      ._SUIT_Outer_Wrapper_suit_manifest_cbor
-		      ._SUIT_Manifest_suit_install
-		      ._SUIT_Manifest_suit_install
-		      ._SUIT_Severable_Command_Sequence3_SUIT_Command_Sequence_bstr_cbor
-		      ._SUIT_Command_Sequence__SUIT_Command_count,
+		      .SUIT_Outer_Wrapper_suit_manifest_cbor
+		      .SUIT_Manifest_suit_install
+		      .SUIT_Manifest_suit_install
+		      .SUIT_Severable_Command_Sequence3_SUIT_Command_Sequence_bstr_cbor
+		      .SUIT_Command_Sequence_SUIT_Command_m_count,
 		      "Expected x commands.");
-	zassert_equal(_SUIT_Command_union__SUIT_Directive,
+	zassert_equal(SUIT_Command_union_SUIT_Directive_m,
 		      outerwrapper4
-		      ._SUIT_Outer_Wrapper_suit_manifest_cbor
-		      ._SUIT_Manifest_suit_install
-		      ._SUIT_Manifest_suit_install
-		      ._SUIT_Severable_Command_Sequence3_SUIT_Command_Sequence_bstr_cbor
-		      ._SUIT_Command_Sequence__SUIT_Command[0]
-		      ._SUIT_Command_union_choice,
+		      .SUIT_Outer_Wrapper_suit_manifest_cbor
+		      .SUIT_Manifest_suit_install
+		      .SUIT_Manifest_suit_install
+		      .SUIT_Severable_Command_Sequence3_SUIT_Command_Sequence_bstr_cbor
+		      .SUIT_Command_Sequence_SUIT_Command_m[0]
+		      .SUIT_Command_union_choice,
 		      "Expected directive");
-	zassert_equal(_SUIT_Directive_Set_Component_Index,
+	zassert_equal(SUIT_Directive_Set_Component_Index,
 		      outerwrapper4
-		      ._SUIT_Outer_Wrapper_suit_manifest_cbor
-		      ._SUIT_Manifest_suit_install
-		      ._SUIT_Manifest_suit_install
-		      ._SUIT_Severable_Command_Sequence3_SUIT_Command_Sequence_bstr_cbor
-		      ._SUIT_Command_Sequence__SUIT_Command[0]
-		      ._SUIT_Command_union__SUIT_Directive
-		      ._SUIT_Directive_choice,
+		      .SUIT_Outer_Wrapper_suit_manifest_cbor
+		      .SUIT_Manifest_suit_install
+		      .SUIT_Manifest_suit_install
+		      .SUIT_Severable_Command_Sequence3_SUIT_Command_Sequence_bstr_cbor
+		      .SUIT_Command_Sequence_SUIT_Command_m[0]
+		      .SUIT_Command_union_SUIT_Directive_m
+		      .SUIT_Directive_choice,
 		      "Expected Component_Index");
-	zassert_equal(_SUIT_Directive_Set_Component_Index_uint,
+	zassert_equal(SUIT_Directive_Set_Component_Index_uint,
 		      outerwrapper4
-		      ._SUIT_Outer_Wrapper_suit_manifest_cbor
-		      ._SUIT_Manifest_suit_install
-		      ._SUIT_Manifest_suit_install
-		      ._SUIT_Severable_Command_Sequence3_SUIT_Command_Sequence_bstr_cbor
-		      ._SUIT_Command_Sequence__SUIT_Command[0]
-		      ._SUIT_Command_union__SUIT_Directive
-		      ._SUIT_Directive_Set_Component_Index_choice,
+		      .SUIT_Outer_Wrapper_suit_manifest_cbor
+		      .SUIT_Manifest_suit_install
+		      .SUIT_Manifest_suit_install
+		      .SUIT_Severable_Command_Sequence3_SUIT_Command_Sequence_bstr_cbor
+		      .SUIT_Command_Sequence_SUIT_Command_m[0]
+		      .SUIT_Command_union_SUIT_Directive_m
+		      .SUIT_Directive_Set_Component_Index_choice,
 		      NULL);
-	zassert_equal(_SUIT_Command_union__SUIT_Directive,
+	zassert_equal(SUIT_Command_union_SUIT_Directive_m,
 		      outerwrapper4
-		      ._SUIT_Outer_Wrapper_suit_manifest_cbor
-		      ._SUIT_Manifest_suit_install
-		      ._SUIT_Manifest_suit_install
-		      ._SUIT_Severable_Command_Sequence3_SUIT_Command_Sequence_bstr_cbor
-		      ._SUIT_Command_Sequence__SUIT_Command[1]
-		      ._SUIT_Command_union_choice,
+		      .SUIT_Outer_Wrapper_suit_manifest_cbor
+		      .SUIT_Manifest_suit_install
+		      .SUIT_Manifest_suit_install
+		      .SUIT_Severable_Command_Sequence3_SUIT_Command_Sequence_bstr_cbor
+		      .SUIT_Command_Sequence_SUIT_Command_m[1]
+		      .SUIT_Command_union_choice,
 		      "Expected directive");
-	zassert_equal(_SUIT_Directive_Set_Parameters,
+	zassert_equal(SUIT_Directive_Set_Parameters,
 		      outerwrapper4
-		      ._SUIT_Outer_Wrapper_suit_manifest_cbor
-		      ._SUIT_Manifest_suit_install
-		      ._SUIT_Manifest_suit_install
-		      ._SUIT_Severable_Command_Sequence3_SUIT_Command_Sequence_bstr_cbor
-		      ._SUIT_Command_Sequence__SUIT_Command[1]
-		      ._SUIT_Command_union__SUIT_Directive
-		      ._SUIT_Directive_choice,
+		      .SUIT_Outer_Wrapper_suit_manifest_cbor
+		      .SUIT_Manifest_suit_install
+		      .SUIT_Manifest_suit_install
+		      .SUIT_Severable_Command_Sequence3_SUIT_Command_Sequence_bstr_cbor
+		      .SUIT_Command_Sequence_SUIT_Command_m[1]
+		      .SUIT_Command_union_SUIT_Directive_m
+		      .SUIT_Directive_choice,
 		      "Expected Set_Parameters");
 	zassert_equal(1,
 		      outerwrapper4
-		      ._SUIT_Outer_Wrapper_suit_manifest_cbor
-		      ._SUIT_Manifest_suit_install
-		      ._SUIT_Manifest_suit_install
-		      ._SUIT_Severable_Command_Sequence3_SUIT_Command_Sequence_bstr_cbor
-		      ._SUIT_Command_Sequence__SUIT_Command[1]
-		      ._SUIT_Command_union__SUIT_Directive
-		      ._SUIT_Directive_Set_Parameters__SUIT_Parameters_count,
+		      .SUIT_Outer_Wrapper_suit_manifest_cbor
+		      .SUIT_Manifest_suit_install
+		      .SUIT_Manifest_suit_install
+		      .SUIT_Severable_Command_Sequence3_SUIT_Command_Sequence_bstr_cbor
+		      .SUIT_Command_Sequence_SUIT_Command_m[1]
+		      .SUIT_Command_union_SUIT_Directive_m
+		      .SUIT_Directive_Set_Parameters_SUIT_Parameters_m_count,
 		      "Expected 1 parameter");
-zassert_equal(_SUIT_Parameters_SUIT_Parameter_URI_List,
+zassert_equal(SUIT_Parameters_SUIT_Parameter_URI_List,
 		      outerwrapper4
-		      ._SUIT_Outer_Wrapper_suit_manifest_cbor
-		      ._SUIT_Manifest_suit_install
-		      ._SUIT_Manifest_suit_install
-		      ._SUIT_Severable_Command_Sequence3_SUIT_Command_Sequence_bstr_cbor
-		      ._SUIT_Command_Sequence__SUIT_Command[1]
-		      ._SUIT_Command_union__SUIT_Directive
-		      ._SUIT_Directive_Set_Parameters__SUIT_Parameters[0]
-		      ._SUIT_Directive_Set_Parameters__SUIT_Parameters
-		      ._SUIT_Parameters_choice,
+		      .SUIT_Outer_Wrapper_suit_manifest_cbor
+		      .SUIT_Manifest_suit_install
+		      .SUIT_Manifest_suit_install
+		      .SUIT_Severable_Command_Sequence3_SUIT_Command_Sequence_bstr_cbor
+		      .SUIT_Command_Sequence_SUIT_Command_m[1]
+		      .SUIT_Command_union_SUIT_Directive_m
+		      .SUIT_Directive_Set_Parameters_SUIT_Parameters_m[0]
+		      .SUIT_Directive_Set_Parameters_SUIT_Parameters_m
+		      .SUIT_Parameters_choice,
 		      "Expected uri list parameter");
 	zassert_equal(1,
 		      outerwrapper4
-		      ._SUIT_Outer_Wrapper_suit_manifest_cbor
-		      ._SUIT_Manifest_suit_install
-		      ._SUIT_Manifest_suit_install
-		      ._SUIT_Severable_Command_Sequence3_SUIT_Command_Sequence_bstr_cbor
-		      ._SUIT_Command_Sequence__SUIT_Command[1]
-		      ._SUIT_Command_union__SUIT_Directive
-		      ._SUIT_Directive_Set_Parameters__SUIT_Parameters[0]
-		      ._SUIT_Directive_Set_Parameters__SUIT_Parameters
-		      ._SUIT_Parameters_SUIT_Parameter_URI_List_cbor
-		      ._SUIT_URI_List__SUIT_Prioritized_URI_count,
+		      .SUIT_Outer_Wrapper_suit_manifest_cbor
+		      .SUIT_Manifest_suit_install
+		      .SUIT_Manifest_suit_install
+		      .SUIT_Severable_Command_Sequence3_SUIT_Command_Sequence_bstr_cbor
+		      .SUIT_Command_Sequence_SUIT_Command_m[1]
+		      .SUIT_Command_union_SUIT_Directive_m
+		      .SUIT_Directive_Set_Parameters_SUIT_Parameters_m[0]
+		      .SUIT_Directive_Set_Parameters_SUIT_Parameters_m
+		      .SUIT_Parameters_SUIT_Parameter_URI_List_cbor
+		      .SUIT_URI_List_SUIT_Prioritized_URI_m_count,
 		      "Expected 1 uri");
 	zassert_equal(0,
 		      outerwrapper4
-		      ._SUIT_Outer_Wrapper_suit_manifest_cbor
-		      ._SUIT_Manifest_suit_install
-		      ._SUIT_Manifest_suit_install
-		      ._SUIT_Severable_Command_Sequence3_SUIT_Command_Sequence_bstr_cbor
-		      ._SUIT_Command_Sequence__SUIT_Command[1]
-		      ._SUIT_Command_union__SUIT_Directive
-		      ._SUIT_Directive_Set_Parameters__SUIT_Parameters[0]
-		      ._SUIT_Directive_Set_Parameters__SUIT_Parameters
-		      ._SUIT_Parameters_SUIT_Parameter_URI_List_cbor
-		      ._SUIT_URI_List__SUIT_Prioritized_URI[0]
-		      ._SUIT_Prioritized_URI_priority,
+		      .SUIT_Outer_Wrapper_suit_manifest_cbor
+		      .SUIT_Manifest_suit_install
+		      .SUIT_Manifest_suit_install
+		      .SUIT_Severable_Command_Sequence3_SUIT_Command_Sequence_bstr_cbor
+		      .SUIT_Command_Sequence_SUIT_Command_m[1]
+		      .SUIT_Command_union_SUIT_Directive_m
+		      .SUIT_Directive_Set_Parameters_SUIT_Parameters_m[0]
+		      .SUIT_Directive_Set_Parameters_SUIT_Parameters_m
+		      .SUIT_Parameters_SUIT_Parameter_URI_List_cbor
+		      .SUIT_URI_List_SUIT_Prioritized_URI_m[0]
+		      .SUIT_Prioritized_URI_priority,
 		      "Expected priority x");
 	zassert_mem_equal(expected_uri,
 		      outerwrapper4
-		      ._SUIT_Outer_Wrapper_suit_manifest_cbor
-		      ._SUIT_Manifest_suit_install
-		      ._SUIT_Manifest_suit_install
-		      ._SUIT_Severable_Command_Sequence3_SUIT_Command_Sequence_bstr_cbor
-		      ._SUIT_Command_Sequence__SUIT_Command[1]
-		      ._SUIT_Command_union__SUIT_Directive
-		      ._SUIT_Directive_Set_Parameters__SUIT_Parameters[0]
-		      ._SUIT_Directive_Set_Parameters__SUIT_Parameters
-		      ._SUIT_Parameters_SUIT_Parameter_URI_List_cbor
-		      ._SUIT_URI_List__SUIT_Prioritized_URI[0]
-		      ._SUIT_Prioritized_URI_uri.value,
+		      .SUIT_Outer_Wrapper_suit_manifest_cbor
+		      .SUIT_Manifest_suit_install
+		      .SUIT_Manifest_suit_install
+		      .SUIT_Severable_Command_Sequence3_SUIT_Command_Sequence_bstr_cbor
+		      .SUIT_Command_Sequence_SUIT_Command_m[1]
+		      .SUIT_Command_union_SUIT_Directive_m
+		      .SUIT_Directive_Set_Parameters_SUIT_Parameters_m[0]
+		      .SUIT_Directive_Set_Parameters_SUIT_Parameters_m
+		      .SUIT_Parameters_SUIT_Parameter_URI_List_cbor
+		      .SUIT_URI_List_SUIT_Prioritized_URI_m[0]
+		      .SUIT_Prioritized_URI_uri.value,
 		      sizeof(expected_uri) - 1,
 		      "Expected example.com uri");
-	zassert_equal(_SUIT_Command_union__SUIT_Directive,
+	zassert_equal(SUIT_Command_union_SUIT_Directive_m,
 		      outerwrapper4
-		      ._SUIT_Outer_Wrapper_suit_manifest_cbor
-		      ._SUIT_Manifest_suit_install
-		      ._SUIT_Manifest_suit_install
-		      ._SUIT_Severable_Command_Sequence3_SUIT_Command_Sequence_bstr_cbor
-		      ._SUIT_Command_Sequence__SUIT_Command[2]
-		      ._SUIT_Command_union_choice,
+		      .SUIT_Outer_Wrapper_suit_manifest_cbor
+		      .SUIT_Manifest_suit_install
+		      .SUIT_Manifest_suit_install
+		      .SUIT_Severable_Command_Sequence3_SUIT_Command_Sequence_bstr_cbor
+		      .SUIT_Command_Sequence_SUIT_Command_m[2]
+		      .SUIT_Command_union_choice,
 		      "Expected directive");
-	zassert_equal(_SUIT_Directive_Fetch,
+	zassert_equal(SUIT_Directive_Fetch,
 		      outerwrapper4
-		      ._SUIT_Outer_Wrapper_suit_manifest_cbor
-		      ._SUIT_Manifest_suit_install
-		      ._SUIT_Manifest_suit_install
-		      ._SUIT_Severable_Command_Sequence3_SUIT_Command_Sequence_bstr_cbor
-		      ._SUIT_Command_Sequence__SUIT_Command[2]
-		      ._SUIT_Command_union__SUIT_Directive
-		      ._SUIT_Directive_choice,
+		      .SUIT_Outer_Wrapper_suit_manifest_cbor
+		      .SUIT_Manifest_suit_install
+		      .SUIT_Manifest_suit_install
+		      .SUIT_Severable_Command_Sequence3_SUIT_Command_Sequence_bstr_cbor
+		      .SUIT_Command_Sequence_SUIT_Command_m[2]
+		      .SUIT_Command_union_SUIT_Directive_m
+		      .SUIT_Directive_choice,
 		      "Expected Directive_Fetch");
 }
 
