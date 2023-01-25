@@ -447,7 +447,7 @@ ZTEST(cbor_decode_test3, test_pet)
 	zassert_mem_equal("bar", pet.names[1].value, 3, "Expect first name 'bar'");
 	zassert_equal(8, pet.birthday.len, "Expect len 8 birthday");
 	zassert_mem_equal(exp_birthday, pet.birthday.value, 8, "Expect birthday");
-	zassert_equal(_Pet_species_dog, pet.species_choice, "Expect dog");
+	zassert_equal(Pet_species_dog, pet.species_choice, "Expect dog");
 }
 
 
@@ -490,16 +490,16 @@ ZTEST(cbor_decode_test3, test_serial1)
 
 	zassert_equal(5, upload.members_count,
 		"expect 5 members");
-	zassert_equal(_Member_data, upload.members[0].members
+	zassert_equal(Member_data, upload.members[0].members
 		.Member_choice, "expect data 1st");
-	zassert_equal(_Member_image, upload.members[1].members
+	zassert_equal(Member_image, upload.members[1].members
 		.Member_choice, "expect image 2nd");
-	zassert_equal(_Member_len, upload.members[2].members
+	zassert_equal(Member_len, upload.members[2].members
 		.Member_choice, "was %d\r\n", upload.members[2].members
 		.Member_choice);
-	zassert_equal(_Member_off, upload.members[3].members
+	zassert_equal(Member_off, upload.members[3].members
 		.Member_choice, "expect off 4th");
-	zassert_equal(_Member_sha, upload.members[4].members
+	zassert_equal(Member_sha, upload.members[4].members
 		.Member_choice, "expect sha 5th");
 }
 
@@ -514,15 +514,15 @@ ZTEST(cbor_decode_test3, test_serial2)
 
 	zassert_equal(5, upload.members_count,
 		"expect 5 members");
-	zassert_equal(_Member_data, upload.members[0].members
+	zassert_equal(Member_data, upload.members[0].members
 		.Member_choice, "expect data 1st");
-	zassert_equal(_Member_image, upload.members[1].members
+	zassert_equal(Member_image, upload.members[1].members
 		.Member_choice, "expect image 2nd");
-	zassert_equal(_Member_len, upload.members[2].members
+	zassert_equal(Member_len, upload.members[2].members
 		.Member_choice, "expect len 3rd");
-	zassert_equal(_Member_off, upload.members[3].members
+	zassert_equal(Member_off, upload.members[3].members
 		.Member_choice, "expect off 4th");
-	zassert_equal(_Member_sha, upload.members[4].members
+	zassert_equal(Member_sha, upload.members[4].members
 		.Member_choice, "expect sha 5th");
 }
 

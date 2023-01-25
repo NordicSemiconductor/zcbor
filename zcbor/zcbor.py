@@ -324,25 +324,39 @@ class CddlParser:
 
     # Generate a (hopefully) unique and descriptive name
     def generate_base_name(self):
+        # The first non-None entry is used:
         raw_name = ((
+            # The label is the default if present:
             self.label
+            # Name a key/value pair by its key type or string value:
             or (self.key.value if self.key and self.key.type in ["TSTR", "OTHER"] else None)
+            # Name a string by its expected value:
             or (f"{self.value.replace(self.backslash_quotation_mark, '')}_{self.type.lower()}"
                 if self.type == "TSTR" and self.value is not None else None)
+            # Name an integer by its expected value:
             or (f"{self.type.lower()}{self.value}"
                 if self.type in ["INT", "UINT"] and self.value is not None else None)
+            # Name a type by its type name
             or (next((key for key, value in self.my_types.items() if value == self), None))
+            # Name a control group by its name
             or (next((key for key, value in self.my_control_groups.items() if value == self), None))
-            or ("_" + self.value if self.type == "OTHER" else None)
-            or ("_" + self.value[0].get_base_name()
+            # Name an instance by its type:
+            or (self.value + "_m" if self.type == "OTHER" else None)
+            # Name a list by its first element:
+            or (self.value[0].get_base_name() + "_l"
                 if self.type in ["LIST", "GROUP"] and self.value else None)
+            # Name a cbor-encoded bstr by its expected cbor contents:
             or ((self.cbor.value + "_bstr")
                 if self.cbor and self.cbor.type in ["TSTR", "OTHER"] else None)
+            # Name a key value pair by its key (regardless of the key type)
             or ((self.key.generate_base_name() + self.type.lower()) if self.key else None)
+            # Name an element by its minimum/maximum "size" (if the min == the max)
             or (f"{self.type.lower()}{self.min_size * 8}"
                 if self.min_size and self.min_size == self.max_size else None)
+            # Name an element by its minimum/maximum "size" (if the min != the max)
             or (f"{self.type.lower()}{self.min_size * 8}-{self.max_size * 8}"
                 if self.min_size and self.max_size else None)
+            # Name an element by its type.
             or self.type.lower()).replace("-", "_"))
         return raw_name
 
@@ -980,12 +994,9 @@ class CddlXcoder(CddlParser):
 
     # Name of variables and enum members for this element.
     def var_name(self, with_prefix=False):
-        if with_prefix or not self.short_names:
-            name = ("_%s" % self.id(with_prefix=with_prefix))
-        else:
-            name = self.id(with_prefix=with_prefix)
-            if name in ["int", "bool", "float"]:
-                name = "_" + name
+        name = self.id(with_prefix=with_prefix)
+        if name in ["int", "bool", "float"]:
+            name = name.capitalize()
         return name
 
     def skip_condition(self):
@@ -1886,11 +1897,13 @@ class CodeGenerator(CddlXcoder):
         return name
 
     # Name of the type of for the repeated part of this element.
+    # I.e. the part that happens multiple times if the element has a quantifier.
+    # I.e. not including things like the "count" or "present" variable.
     def repeated_type_name(self):
         if self.self_repeated_multi_var_condition():
             name = self.raw_type_name()
             if self.val_type_name() == name:
-                name = name + "_"
+                name = name + "_r"
         else:
             name = self.val_type_name()
         return name
@@ -1899,10 +1912,6 @@ class CodeGenerator(CddlXcoder):
     def type_name(self):
         if self.multi_var_condition():
             name = self.raw_type_name()
-            if self.val_type_name() == name:
-                name = name + "_"
-            if self.repeated_type_name() == name:
-                name = name + "_"
         else:
             name = self.repeated_type_name()
         return name
@@ -2095,11 +2104,11 @@ class CodeGenerator(CddlXcoder):
 
     # Name of the encoder/decoder function for this element.
     def xcode_func_name(self):
-        return f"{self.mode}{self.var_name(with_prefix=True)}"
+        return f"{self.mode}_{self.var_name(with_prefix=True)}"
 
     # Name of the encoder/decoder function for the repeated part of this element.
     def repeated_xcode_func_name(self):
-        return f"{self.mode}_repeated{self.var_name(with_prefix=True)}"
+        return f"{self.mode}_repeated_{self.var_name(with_prefix=True)}"
 
     def single_func_prim_name(self, union_int=None):
         """Function name for xcoding this type, when it is a primitive type"""

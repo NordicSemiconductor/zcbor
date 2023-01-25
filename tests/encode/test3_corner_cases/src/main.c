@@ -122,9 +122,9 @@ ZTEST(cbor_encode_test3, test_tagged_union)
 
 	uint8_t output[5];
 
-	struct TaggedUnion_ input;
-	input.TaggedUnion_choice = _TaggedUnion_bool;
-	input._bool = true;
+	struct TaggedUnion_r input;
+	input.TaggedUnion_choice = TaggedUnion_bool;
+	input.Bool = true;
 
 	zassert_equal(ZCBOR_SUCCESS, cbor_encode_TaggedUnion(output,
 		sizeof(output), &input, &encode_len), "%d\r\n");
@@ -132,7 +132,7 @@ ZTEST(cbor_encode_test3, test_tagged_union)
 	zassert_equal(sizeof(exp_payload_tagged_union1), encode_len, NULL);
 	zassert_mem_equal(exp_payload_tagged_union1, output, sizeof(exp_payload_tagged_union1), NULL);
 
-	input.TaggedUnion_choice = _TaggedUnion_uint;
+	input.TaggedUnion_choice = TaggedUnion_uint;
 	input.uint = 0x10;
 
 	zassert_equal(ZCBOR_SUCCESS, cbor_encode_TaggedUnion(output,
@@ -512,43 +512,43 @@ ZTEST(cbor_encode_test3, test_union)
 		0x03, 0x23, 0x03, 0x23, 0x03, 0x23
 	};
 
-	struct Union_ _union1 = {.Union_choice = _Union__Group};
-	struct Union_ _union2 = {.Union_choice = _Union__MultiGroup, ._MultiGroup.MultiGroup_count = 1};
-	struct Union_ _union3 = {.Union_choice = _Union__uint3};
-	struct Union_ _union4 = {.Union_choice = _Union_hello_tstr};
-	struct Union_ _union5 = {.Union_choice = _Union__MultiGroup, ._MultiGroup.MultiGroup_count = 6};
-	struct Union_ _union6_inv = {.Union_choice = _Union__MultiGroup, ._MultiGroup.MultiGroup_count = 7};
+	struct Union_r union1 = {.Union_choice = Union_Group_m};
+	struct Union_r union2 = {.Union_choice = Union_MultiGroup_m, .MultiGroup_m.MultiGroup_count = 1};
+	struct Union_r union3 = {.Union_choice = Union_uint3_l};
+	struct Union_r union4 = {.Union_choice = Union_hello_tstr};
+	struct Union_r union5 = {.Union_choice = Union_MultiGroup_m, .MultiGroup_m.MultiGroup_count = 6};
+	struct Union_r union6_inv = {.Union_choice = Union_MultiGroup_m, .MultiGroup_m.MultiGroup_count = 7};
 
 	uint8_t output[15];
 	size_t out_len;
 
 	zassert_equal(ZCBOR_SUCCESS, cbor_encode_Union(output, sizeof(output),
-				&_union1, &out_len), NULL);
+				&union1, &out_len), NULL);
 	zassert_equal(sizeof(exp_payload_union1), out_len, NULL);
 	zassert_mem_equal(exp_payload_union1, output, sizeof(exp_payload_union1), NULL);
 
 	zassert_equal(ZCBOR_SUCCESS, cbor_encode_Union(output, sizeof(output),
-				&_union2, &out_len), NULL);
+				&union2, &out_len), NULL);
 	zassert_equal(sizeof(exp_payload_union2), out_len, NULL);
 	zassert_mem_equal(exp_payload_union2, output, sizeof(exp_payload_union2), NULL);
 
 	zassert_equal(ZCBOR_SUCCESS, cbor_encode_Union(output, sizeof(output),
-				&_union3, &out_len), NULL);
+				&union3, &out_len), NULL);
 	zassert_equal(sizeof(exp_payload_union3), out_len, NULL);
 	zassert_mem_equal(exp_payload_union3, output, sizeof(exp_payload_union3), NULL);
 
 	zassert_equal(ZCBOR_SUCCESS, cbor_encode_Union(output, sizeof(output),
-				&_union4, &out_len), NULL);
+				&union4, &out_len), NULL);
 	zassert_equal(sizeof(exp_payload_union4), out_len, NULL);
 	zassert_mem_equal(exp_payload_union4, output, sizeof(exp_payload_union4), NULL);
 
 	zassert_equal(ZCBOR_SUCCESS, cbor_encode_Union(output, sizeof(output),
-				&_union5, &out_len), NULL);
+				&union5, &out_len), NULL);
 	zassert_equal(sizeof(exp_payload_union5), out_len, NULL);
 	zassert_mem_equal(exp_payload_union5, output, sizeof(exp_payload_union5), NULL);
 
 	zassert_equal(ZCBOR_ERR_ITERATIONS, cbor_encode_Union(output, sizeof(output),
-				&_union6_inv, &out_len), NULL);
+				&union6_inv, &out_len), NULL);
 }
 
 ZTEST(cbor_encode_test3, test_levels)
@@ -572,8 +572,8 @@ ZTEST(cbor_encode_test3, test_levels)
 	uint8_t output[32];
 	size_t out_len;
 
-	struct Level2 level1 = {._Level3_count = 2, ._Level3 = {
-		{._Level4_count = 4}, {._Level4_count = 4}
+	struct Level2 level1 = {.Level3_m_count = 2, .Level3_m = {
+		{.Level4_m_count = 4}, {.Level4_m_count = 4}
 	}};
 	_Static_assert(sizeof(exp_payload_levels1) <= sizeof(output),
 		"Payload is larger than output");
@@ -613,7 +613,7 @@ ZTEST(cbor_encode_test3, test_map)
 	};
 
 	struct Map map1 = {
-		.union_choice = _union_uint7uint,
+		.union_choice = union_uint7uint,
 		.uint7uint = 1,
 		.twotothree_count = 2,
 		.twotothree = {
@@ -623,7 +623,7 @@ ZTEST(cbor_encode_test3, test_map)
 	};
 	struct Map map2 = {
 		.listkey = true,
-		.union_choice = _union_uint7uint,
+		.union_choice = union_uint7uint,
 		.uint7uint = 1,
 		.twotothree_count = 3,
 		.twotothree = {
@@ -633,7 +633,7 @@ ZTEST(cbor_encode_test3, test_map)
 		}
 	};
 	struct Map map3 = {
-		.union_choice = _union_nintuint,
+		.union_choice = union_nintuint,
 		.nintuint = 1,
 		.twotothree_count = 2,
 		.twotothree = {
@@ -740,31 +740,31 @@ ZTEST(cbor_encode_test3, test_nested_map_list_map)
 	const uint8_t exp_payload_nested_mlm4[] = {MAP(2), LIST(0), END LIST(0), END LIST(0), END LIST(0), END END};
 	const uint8_t exp_payload_nested_mlm5[] = {MAP(3), LIST(0), END LIST(0), END LIST(0), END LIST(0), END LIST(0), END LIST(2), MAP(0), END MAP(0), END END END};
 	struct NestedMapListMap maplistmap1 = {
-		._map_count = 1,
-		._map = {{0}}
+		.map_l_count = 1,
+		.map_l = {{0}}
 	};
 	struct NestedMapListMap maplistmap2 = {
-		._map_count = 1,
-		._map = {
+		.map_l_count = 1,
+		.map_l = {
 			{.map_count = 1}
 		}
 	};
 	struct NestedMapListMap maplistmap3 = {
-		._map_count = 1,
-		._map = {
+		.map_l_count = 1,
+		.map_l = {
 			{.map_count = 2}
 		}
 	};
 	struct NestedMapListMap maplistmap4 = {
-		._map_count = 2,
-		._map = {
+		.map_l_count = 2,
+		.map_l = {
 			{.map_count = 0},
 			{.map_count = 0},
 		}
 	};
 	struct NestedMapListMap maplistmap5 = {
-		._map_count = 3,
-		._map = {
+		.map_l_count = 3,
+		.map_l = {
 			{.map_count = 0},
 			{.map_count = 0},
 			{.map_count = 2},
@@ -1072,12 +1072,12 @@ ZTEST(cbor_encode_test3, test_unabstracted)
 	uint8_t exp_payload_unabstracted0[] = {LIST(2), 0x01, 0x03, END};
 	uint8_t exp_payload_unabstracted1[] = {LIST(2), 0x02, 0x04, END};
 	struct Unabstracted result_unabstracted0 = {
-		.unabstractedunion1_choice = _Unabstracted_unabstractedunion1_choice1,
-		.unabstractedunion2_choice = _Unabstracted_unabstractedunion2_uint3,
+		.unabstractedunion1_choice = Unabstracted_unabstractedunion1_choice1,
+		.unabstractedunion2_choice = Unabstracted_unabstractedunion2_uint3,
 	};
 	struct Unabstracted result_unabstracted1 = {
-		.unabstractedunion1_choice = _Unabstracted_unabstractedunion1_choice2,
-		.unabstractedunion2_choice = _Unabstracted_unabstractedunion2_choice4,
+		.unabstractedunion1_choice = Unabstracted_unabstractedunion1_choice2,
+		.unabstractedunion2_choice = Unabstracted_unabstractedunion2_choice4,
 	};
 	uint8_t output[4];
 	size_t out_len;
@@ -1153,14 +1153,14 @@ ZTEST(cbor_encode_test3, test_doublemap)
 		.uintmap = {
 			{
 				.uintmap_key = 1,
-				._MyKeys = {
+				.MyKeys_m = {
 					.uint1int_present = true,
 					.uint1int = {.uint1int = 1},
 				}
 			},
 			{
 				.uintmap_key = 2,
-				._MyKeys = {
+				.MyKeys_m = {
 					.uint2int_present = true,
 					.uint2int = {.uint2int = 2},
 				}
@@ -1351,7 +1351,7 @@ ZTEST(cbor_encode_test3, test_map_length)
 	uint8_t output[60];
 
 	uint8_t mac[] = {1, 2, 3, 4, 5, 6};
-	uint8_t uuid[] = {8, 7, 6, 5, 4, 3, 2, 1, 8, 7, 6, 5, 4, 3, 2, 1, 0};
+	uint8_t uuid_m[] = {8, 7, 6, 5, 4, 3, 2, 1, 8, 7, 6, 5, 4, 3, 2, 1, 0};
 
 	input.result = 1;
 	input.mac_addr.len = 6;
@@ -1364,23 +1364,23 @@ ZTEST(cbor_encode_test3, test_map_length)
 	zassert_mem_equal(exp_map_length_payload1, output, num_encode, NULL);
 
 	input.end_device_array_present = true;
-	input.end_device_array._uuid_count = 0;
+	input.end_device_array.uuid_m_count = 0;
 	zassert_equal(ZCBOR_SUCCESS, cbor_encode_MapLength(output,
 		sizeof(output), &input, &num_encode), NULL);
 	zassert_equal(sizeof(exp_map_length_payload2), num_encode, "%d != %d\r\n", sizeof(exp_map_length_payload2), num_encode);
 	zassert_mem_equal(exp_map_length_payload2, output, num_encode, NULL);
 
-	input.end_device_array._uuid_count = 1;
-	input.end_device_array._uuid[0].len = 16;
-	input.end_device_array._uuid[0].value = uuid;
+	input.end_device_array.uuid_m_count = 1;
+	input.end_device_array.uuid_m[0].len = 16;
+	input.end_device_array.uuid_m[0].value = uuid_m;
 	zassert_equal(ZCBOR_SUCCESS, cbor_encode_MapLength(output,
 		sizeof(output), &input, &num_encode), NULL);
 	zassert_equal(sizeof(exp_map_length_payload3), num_encode, "%d != %d\r\n", sizeof(exp_map_length_payload3), num_encode);
 	zassert_mem_equal(exp_map_length_payload3, output, num_encode, NULL);
 
-	input.end_device_array._uuid_count = 2;
-	input.end_device_array._uuid[1].len = 16;
-	input.end_device_array._uuid[1].value = uuid;
+	input.end_device_array.uuid_m_count = 2;
+	input.end_device_array.uuid_m[1].len = 16;
+	input.end_device_array.uuid_m[1].value = uuid_m;
 	int err = cbor_encode_MapLength(output,
 		sizeof(output), &input, &num_encode);
 	zassert_equal(ZCBOR_SUCCESS, err, "%d\r\b", err);
@@ -1392,7 +1392,7 @@ ZTEST(cbor_encode_test3, test_map_length)
 		sizeof(output), &input, &num_encode), NULL);
 
 	input.mac_addr.len++;
-	input.end_device_array._uuid[1].len++;
+	input.end_device_array.uuid_m[1].len++;
 	err = cbor_encode_MapLength(output,
 		sizeof(output), &input, &num_encode);
 	zassert_equal(ZCBOR_ERR_WRONG_RANGE, err, "%d\r\b", err);
@@ -1421,13 +1421,13 @@ ZTEST(cbor_encode_test3, test_union_int)
 	size_t num_encode;
 	uint8_t output[60];
 
-	input.union_choice = _union__uint5;
+	input.union_choice = union_uint5_l;
 	zassert_equal(ZCBOR_SUCCESS, cbor_encode_UnionInt2(output, sizeof(output),
 			&input, &num_encode), NULL);
 	zassert_equal(sizeof(exp_union_int_payload1), num_encode, NULL);
 	zassert_mem_equal(exp_union_int_payload1, output, num_encode, NULL);
 
-	input.union_choice = _union__uint1000;
+	input.union_choice = union_uint1000_l;
 	input.bstr.len = 16;
 	input.bstr.value = (uint8_t *)&"This is thousand";
 	zassert_equal(ZCBOR_SUCCESS, cbor_encode_UnionInt2(output, sizeof(output),
@@ -1435,17 +1435,17 @@ ZTEST(cbor_encode_test3, test_union_int)
 	zassert_equal(sizeof(exp_union_int_payload2), num_encode, NULL);
 	zassert_mem_equal(exp_union_int_payload2, output, num_encode, NULL);
 
-	input.union_choice = _union__nint;
-	input._number.number_choice = _number_int;
-	input._number._int = 1;
+	input.union_choice = union_nint_l;
+	input.number_m.number_choice = number_int;
+	input.number_m.Int = 1;
 	zassert_equal(ZCBOR_SUCCESS, cbor_encode_UnionInt2(output, sizeof(output),
 			&input, &num_encode), NULL);
 	zassert_equal(sizeof(exp_union_int_payload3), num_encode, NULL);
 	zassert_mem_equal(exp_union_int_payload3, output, num_encode, NULL);
 
-	input.union_choice = _UnionInt2_union__Structure_One;
-	input._Structure_One.some_array.value = (uint8_t *)&"hi";
-	input._Structure_One.some_array.len = 2;
+	input.union_choice = UnionInt2_union_Structure_One_m;
+	input.Structure_One_m.some_array.value = (uint8_t *)&"hi";
+	input.Structure_One_m.some_array.len = 2;
 	zassert_equal(ZCBOR_SUCCESS, cbor_encode_UnionInt2(output, sizeof(output),
 			&input, &num_encode), NULL);
 	zassert_equal(sizeof(exp_union_int_payload4), num_encode, NULL);

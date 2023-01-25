@@ -53,136 +53,136 @@ ZTEST(cbor_decode_test2, test_5)
 						&outerwrapper1, &decode_len);
 	zassert_equal(ZCBOR_SUCCESS, res, "top-level decoding failed.");
 	zassert_equal(sizeof(test_vector1), decode_len, NULL);
-	zassert_equal(_SUIT_Manifest_Wrapped_suit_manifest, outerwrapper1
-			._SUIT_Outer_Wrapper__SUIT_Manifest_Wrapped
-			._SUIT_Manifest_Wrapped_choice,
+	zassert_equal(SUIT_Manifest_Wrapped_suit_manifest, outerwrapper1
+			.SUIT_Outer_Wrapper_SUIT_Manifest_Wrapped_m
+			.SUIT_Manifest_Wrapped_choice,
 			"wrong manifest variant");
 	manifest = &outerwrapper1
-			._SUIT_Outer_Wrapper__SUIT_Manifest_Wrapped
-			._SUIT_Manifest_Wrapped_suit_manifest_cbor;
+			.SUIT_Outer_Wrapper_SUIT_Manifest_Wrapped_m
+			.SUIT_Manifest_Wrapped_suit_manifest_cbor;
 	zassert_equal(1, manifest
-			->_SUIT_Manifest_suit_manifest_sequence_number,
+			->SUIT_Manifest_suit_manifest_sequence_number,
 			"wrong sequence number");
 	zassert_equal(1, manifest
-			->_SUIT_Manifest_suit_common_present,
+			->SUIT_Manifest_suit_common_present,
 			"common should be present");
 	zassert_equal(0, manifest
-			->_SUIT_Manifest_suit_dependency_resolution_present,
+			->SUIT_Manifest_suit_dependency_resolution_present,
 			"should not be present");
 	zassert_equal(0, manifest
-			->_SUIT_Manifest_suit_payload_fetch_present,
+			->SUIT_Manifest_suit_payload_fetch_present,
 			"should not be present");
 	zassert_equal(0, manifest
-			->_SUIT_Manifest_suit_install_present,
+			->SUIT_Manifest_suit_install_present,
 			"should not be present");
 	zassert_equal(0, manifest
-			->_SUIT_Manifest_suit_validate_present,
+			->SUIT_Manifest_suit_validate_present,
 			"should not be present");
 	zassert_equal(0, manifest
-			->_SUIT_Manifest_suit_load_present,
+			->SUIT_Manifest_suit_load_present,
 			"should not be present");
 	zassert_equal(1, manifest
-			->_SUIT_Manifest_suit_run_present,
+			->SUIT_Manifest_suit_run_present,
 			"should not be present");
 	zassert_equal(0, manifest
-			->_SUIT_Manifest_suit_text_present,
+			->SUIT_Manifest_suit_text_present,
 			"should not be present");
 	zassert_equal(0, manifest
-			->_SUIT_Manifest_suit_coswid_present,
+			->SUIT_Manifest_suit_coswid_present,
 			"should not be present");
 	zassert_equal(1, manifest
-			->_SUIT_Manifest_suit_common
-			._SUIT_Manifest_suit_common_cbor
-			._SUIT_Common_suit_components
-			._SUIT_Common_suit_components_cbor
-			._SUIT_Components__SUIT_Component_Identifier_count,
+			->SUIT_Manifest_suit_common
+			.SUIT_Manifest_suit_common_cbor
+			.SUIT_Common_suit_components
+			.SUIT_Common_suit_components_cbor
+			.SUIT_Components_SUIT_Component_Identifier_m_count,
 			"Wrong number of common components");
 	component = &manifest
-			->_SUIT_Manifest_suit_common
-			._SUIT_Manifest_suit_common_cbor
-			._SUIT_Common_suit_components
-			._SUIT_Common_suit_components_cbor
-			._SUIT_Components__SUIT_Component_Identifier[0];
+			->SUIT_Manifest_suit_common
+			.SUIT_Manifest_suit_common_cbor
+			.SUIT_Common_suit_components
+			.SUIT_Common_suit_components_cbor
+			.SUIT_Components_SUIT_Component_Identifier_m[0];
 	zassert_equal(2, component
-			->_SUIT_Component_Identifier_bstr_count,
+			->SUIT_Component_Identifier_bstr_count,
 			"Wrong number of elements in component");
 	zassert_equal(sizeof(expected_component0), component
-			->_SUIT_Component_Identifier_bstr[0]
+			->SUIT_Component_Identifier_bstr[0]
 			.len,
 			"component elem 0 len doesn't match.");
 	zassert_mem_equal(expected_component0, component
-			->_SUIT_Component_Identifier_bstr[0]
+			->SUIT_Component_Identifier_bstr[0]
 			.value,
 			sizeof(expected_component0),
 			"component elem 0 doesn't match.");
 	zassert_equal(sizeof(expected_component1), component
-			->_SUIT_Component_Identifier_bstr[1]
+			->SUIT_Component_Identifier_bstr[1]
 			.len,
 			"component elem 1 len doesn't match.");
 	zassert_mem_equal(expected_component1, component
-			->_SUIT_Component_Identifier_bstr[1]
+			->SUIT_Component_Identifier_bstr[1]
 			.value,
 			sizeof(expected_component1),
 			"component elem 1 doesn't match.");
 
 	zcbor_print("\r\n");
 	zassert_equal(1, manifest
-			->_SUIT_Manifest_suit_common
-			._SUIT_Manifest_suit_common_cbor
-			._SUIT_Common_suit_common_sequence_present,
+			->SUIT_Manifest_suit_common
+			.SUIT_Manifest_suit_common_cbor
+			.SUIT_Common_suit_common_sequence_present,
 			"common sequence should be present.");
 	memset(&sequence, 0, sizeof(sequence));
 	res = cbor_decode_SUIT_Command_Sequence(
 			manifest
-			->_SUIT_Manifest_suit_common
-			._SUIT_Manifest_suit_common_cbor
-			._SUIT_Common_suit_common_sequence
-			._SUIT_Common_suit_common_sequence
+			->SUIT_Manifest_suit_common
+			.SUIT_Manifest_suit_common_cbor
+			.SUIT_Common_suit_common_sequence
+			.SUIT_Common_suit_common_sequence
 			.value,
 			manifest
-			->_SUIT_Manifest_suit_common
-			._SUIT_Manifest_suit_common_cbor
-			._SUIT_Common_suit_common_sequence
-			._SUIT_Common_suit_common_sequence
+			->SUIT_Manifest_suit_common
+			.SUIT_Manifest_suit_common_cbor
+			.SUIT_Common_suit_common_sequence
+			.SUIT_Common_suit_common_sequence
 			.len,
 			&sequence, &decode_len);
 	zassert_equal(ZCBOR_SUCCESS, res, "Parsing common sequence failed.");
 	zassert_equal(manifest
-			->_SUIT_Manifest_suit_common
-			._SUIT_Manifest_suit_common_cbor
-			._SUIT_Common_suit_common_sequence
-			._SUIT_Common_suit_common_sequence
+			->SUIT_Manifest_suit_common
+			.SUIT_Manifest_suit_common_cbor
+			.SUIT_Common_suit_common_sequence
+			.SUIT_Common_suit_common_sequence
 			.len, decode_len, NULL);
 	zassert_equal(1, sequence
-			._SUIT_Command_Sequence__SUIT_Command_count,
+			.SUIT_Command_Sequence_SUIT_Command_m_count,
 			"Should be one command (was %d).", sequence
-			._SUIT_Command_Sequence__SUIT_Command_count);
-	zassert_equal(_SUIT_Command__SUIT_Directive, sequence
-			._SUIT_Command_Sequence__SUIT_Command[0]
-			._SUIT_Command_choice,
+			.SUIT_Command_Sequence_SUIT_Command_m_count);
+	zassert_equal(SUIT_Command_SUIT_Directive_m, sequence
+			.SUIT_Command_Sequence_SUIT_Command_m[0]
+			.SUIT_Command_choice,
 			"Should be a directive.");
 	zassert_equal(2, sequence
-			._SUIT_Command_Sequence__SUIT_Command[0]
-			._SUIT_Command__SUIT_Directive
-			.___suit_directive_set_parameters_map__SUIT_Parameters_count,
+			.SUIT_Command_Sequence_SUIT_Command_m[0]
+			.SUIT_Command_SUIT_Directive_m
+			.suit_directive_set_parameters_m_l_map_SUIT_Parameters_m_count,
 			"Should be two vars (parameters).");
 	zcbor_print("\r\n");
 
 	memset(&sequence, 0, sizeof(sequence));
 	res = cbor_decode_SUIT_Command_Sequence(
 			manifest
-			->_SUIT_Manifest_suit_run
-			._SUIT_Manifest_suit_run
+			->SUIT_Manifest_suit_run
+			.SUIT_Manifest_suit_run
 			.value,
 			manifest
-			->_SUIT_Manifest_suit_run
-			._SUIT_Manifest_suit_run
+			->SUIT_Manifest_suit_run
+			.SUIT_Manifest_suit_run
 			.len,
 			&sequence, &decode_len);
 	zassert_equal(ZCBOR_SUCCESS, res, "Parsing run command sequence failed.");
 	zassert_equal(manifest
-			->_SUIT_Manifest_suit_run
-			._SUIT_Manifest_suit_run
+			->SUIT_Manifest_suit_run
+			.SUIT_Manifest_suit_run
 			.len, decode_len, NULL);
 }
 
