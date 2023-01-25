@@ -139,7 +139,7 @@ class TestDocs(TestCase):
         remote_tracking = run(remote_tr_args, capture_output=True).stdout.decode('utf-8').strip()
 
         if remote_tracking:
-            remote, remote_branch = remote_tracking.split('/')
+            remote, remote_branch = remote_tracking.split('/', 1)  # '1' to only split one time.
             repo_url_args = ['git', 'remote', 'get-url', remote]
             repo_url = check_output(repo_url_args).decode('utf-8').strip().strip('.git')
             if 'github.com' in repo_url:
