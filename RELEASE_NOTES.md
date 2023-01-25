@@ -4,21 +4,44 @@ Any new bugs, requests, or missing features should be reported as [Github issues
 
 ## Improvements:
 
+### Code generation
+ * Add support for float16 encoding and decoding
+ * Add support for C++ in generated code
+ * Use (U)INT(8|16|32|64)_(MIN|MAX) macros in generated code
+ * Add the --c-code-columns option for adding newlines to c_code
+ * Refactor CBOR <-> YAML/JSON translation
+ * Allow adding file headers to generated files, e.g. for copyright.
+
+### C libraries
+ * Add support for float16 encoding and decoding
+ * Add helper functions zcbor_compare_strings() and zcbor_header_len()
+ * Rename prim/primitive to simple
+ * Add new APIs zcbor_uint_(encode/decode)
+ * Move tags enum into separate file zcbor_tags.h and add more tags from the IANA list
+ * When generating cmake files, make all paths relative to the cmake file.
+
+### Other
+ * README: Improve docs, particularly to help new users
+ * Add two samples: a hello world with no code generation, and one with code generation and script usage
+
 ## Bugfixes:
+ * Bring back 'zcbor --version'
 
 ## Unsupported CDDL features
-Not all features outlined in the [CDDL spec](https://datatracker.ietf.org/doc/html/rfc8610) are supported by zcbor.
-The following is a list of limitiations and missing features:
+Not all features outlined in the CDDL specs [RFC8610](https://datatracker.ietf.org/doc/html/rfc8610), [RFC9090](https://datatracker.ietf.org/doc/html/rfc9090), and [RFC9165](https://datatracker.ietf.org/doc/html/rfc9165) are supported by zcbor.
+The following is a list of limitations and missing features:
 
  * Map elements in data must appear in the same order as they appear in the CDDL.
  * C API doesn't support searching through a map.
  * Using `&()` to turn groups into choices (unions). `&()` is supported when used with `.bits`.
  * Representation Types (`#x.y`), except for tags (`#6.y(foo)`) which are supported.
  * Unwrapping (`~`)
- * The control operator `.regexp`.
- * The control operator `.ne`.
- * The control operator `.default`.
+ * The control operators `.regexp`, `.ne`, `.default`, and `.within` from RFC8610.
+ * The control operators `.sdnv`, `.sdnvseq`, and `.oid` from RFC9090.
+ * The control operators `.plus`, `.cat`, `.det`, `.abnf`, `.abnfb`, and `.feature` from RFC9165.
  * Generics (`foo<a, b>`).
+ * Using `:` for map keys.
+ * Cuts, either via `^` or implicitly via `:`.
  * Most of the "Extended Diagnostic Notation" is unsupported.
 
 
@@ -44,7 +67,7 @@ Any new bugs, requests, or missing features should be reported as [Github issues
 
 ## Unsupported CDDL features
 Not all features outlined in the [CDDL spec](https://datatracker.ietf.org/doc/html/rfc8610) are supported by zcbor.
-The following is a list of limitiations and missing features:
+The following is a list of limitations and missing features:
 
  * Map elements in data must appear in the same order as they appear in the CDDL.
  * C API doesn't support searching through a map.
@@ -73,7 +96,7 @@ Any new bugs, requests, or missing features should be reported as [Github issues
 
 ## Unsupported CDDL features
 Not all features outlined in the [CDDL spec](https://datatracker.ietf.org/doc/html/rfc8610) are supported by zcbor.
-The following is a list of limitiations and missing features:
+The following is a list of limitations and missing features:
 
  * Map elements in data must appear in the same order as they appear in the CDDL.
  * C API doesn't support searching through a map.
@@ -126,7 +149,7 @@ Any new bugs, requests, or missing features should be reported as [Github issues
 
 ## Unsupported CDDL features
 Not all features outlined in the [CDDL spec](https://datatracker.ietf.org/doc/html/rfc8610) are supported by zcbor.
-The following is a list of limitiations and missing features:
+The following is a list of limitations and missing features:
 
  * Map elements in data must appear in the same order as they appear in the CDDL.
  * C API doesn't support searching through a map.
@@ -229,7 +252,7 @@ Any new bugs, requests, or missing features should be reported as [Github issues
 ## Unsupported CDDL features
 
 Not all features outlined in the [CDDL spec](https://datatracker.ietf.org/doc/html/rfc8610) are supported by zcbor.
-The following is a list of limitiations and missing features:
+The following is a list of limitations and missing features:
 
  * Map elements in data must appear in the same order as they appear in the CDDL.
  * C API doesn't support searching through a map.
@@ -297,7 +320,7 @@ Any new bugs, requests, or missing features should be reported as [Github issues
 ## Unsupported CDDL features
 
 Not all features outlined in the [CDDL spec](https://datatracker.ietf.org/doc/html/rfc8610) are supported by cddl-gen.
-The following is a list of limitiations and missing features:
+The following is a list of limitations and missing features:
 
  * Map elements in data must appear in the same order as they appear in the CDDL.
  * Floating point numbers.
