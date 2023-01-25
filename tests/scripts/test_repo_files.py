@@ -139,7 +139,7 @@ class TestDocs(TestCase):
                               capture_output=True).stdout.strip()
 
         if remote_tracking:
-            remote, remote_branch = tuple(remote_tracking.split(b'/'))
+            remote, remote_branch = tuple(remote_tracking.split(b'/', 1))
             repo_url = check_output(['git', 'remote', 'get-url', remote]).strip().strip(b'.git')
             if b"github.com" in repo_url:
                 self.base_url = (repo_url + b'/tree/' + remote_branch + b'/').decode('utf-8')
