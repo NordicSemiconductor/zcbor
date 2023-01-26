@@ -15,7 +15,7 @@ _Static_assert((sizeof(size_t) == sizeof(void *)),
 	"This code needs size_t to be the same length as pointers.");
 
 
-static uint8_t log2ceil(uint_fast32_t val)
+static uint8_t log2ceil(size_t val)
 {
 	switch(val) {
 		case 1: return 0;
@@ -33,7 +33,7 @@ static uint8_t log2ceil(uint_fast32_t val)
 }
 
 
-static uint8_t get_additional(uint_fast32_t len, uint8_t value0)
+static uint8_t get_additional(size_t len, uint8_t value0)
 {
 	return len == 0 ? value0 : (uint8_t)(24 + log2ceil(len));
 }
@@ -52,16 +52,16 @@ static bool encode_header_byte(zcbor_state_t *state,
 }
 
 
-static uint_fast32_t get_encoded_len(const void *const result, uint_fast32_t result_len);
+static size_t get_encoded_len(const void *const result, size_t result_len);
 
 
 /** Encode a single value.
  */
 static bool value_encode_len(zcbor_state_t *state, zcbor_major_type_t major_type,
-		const void *const result, uint_fast32_t result_len)
+		const void *const result, size_t result_len)
 {
 	uint8_t *u8_result  = (uint8_t *)result;
-	uint_fast32_t encoded_len = get_encoded_len(result, result_len);
+	size_t encoded_len = get_encoded_len(result, result_len);
 
 	if ((state->payload + 1 + encoded_len) > state->payload_end) {
 		ZCBOR_ERR(ZCBOR_ERR_NO_PAYLOAD);
@@ -89,10 +89,10 @@ static bool value_encode_len(zcbor_state_t *state, zcbor_major_type_t major_type
 }
 
 
-static uint_fast32_t get_result_len(const void *const input, uint_fast32_t max_result_len)
+static size_t get_result_len(const void *const input, size_t max_result_len)
 {
 	uint8_t *u8_result  = (uint8_t *)input;
-	uint_fast32_t len = max_result_len;
+	size_t len = max_result_len;
 
 	for (; len > 0; len--) {
 #ifdef CONFIG_BIG_ENDIAN
@@ -109,8 +109,8 @@ static uint_fast32_t get_result_len(const void *const input, uint_fast32_t max_r
 }
 
 
-static const void *get_result(const void *const input, uint_fast32_t max_result_len,
-	uint_fast32_t result_len)
+static const void *get_result(const void *const input, size_t max_result_len,
+	size_t result_len)
 {
 #ifdef CONFIG_BIG_ENDIAN
 	return &((uint8_t *)input)[max_result_len - (result_len ? result_len : 1)];
@@ -122,7 +122,7 @@ static const void *get_result(const void *const input, uint_fast32_t max_result_
 }
 
 
-static uint_fast32_t get_encoded_len(const void *const result, uint_fast32_t result_len)
+static size_t get_encoded_len(const void *const result, size_t result_len)
 {
 	const uint8_t *u8_result  = (const uint8_t *)result;
 
@@ -134,11 +134,11 @@ static uint_fast32_t get_encoded_len(const void *const result, uint_fast32_t res
 
 
 static bool value_encode(zcbor_state_t *state, zcbor_major_type_t major_type,
-		const void *const input, uint_fast32_t max_result_len)
+		const void *const input, size_t max_result_len)
 {
 	zcbor_assert_state(max_result_len != 0, "0-length result not supported.\r\n");
 
-	uint_fast32_t result_len = get_result_len(input, max_result_len);
+	size_t result_len = get_result_len(input, max_result_len);
 	const void *const result = get_result(input, max_result_len, result_len);
 
 	return value_encode_len(state, major_type, result, result_len);
@@ -352,7 +352,7 @@ bool zcbor_tstr_encode(zcbor_state_t *state, const struct zcbor_string *input)
 }
 
 
-static bool list_map_start_encode(zcbor_state_t *state, uint_fast32_t max_num,
+static bool list_map_start_encode(zcbor_state_t *state, size_t max_num,
 		zcbor_major_type_t major_type)
 {
 #ifdef ZCBOR_CANONICAL
@@ -376,22 +376,22 @@ static bool list_map_start_encode(zcbor_state_t *state, uint_fast32_t max_num,
 }
 
 
-bool zcbor_list_start_encode(zcbor_state_t *state, uint_fast32_t max_num)
+bool zcbor_list_start_encode(zcbor_state_t *state, size_t max_num)
 {
 	return list_map_start_encode(state, max_num, ZCBOR_MAJOR_TYPE_LIST);
 }
 
 
-bool zcbor_map_start_encode(zcbor_state_t *state, uint_fast32_t max_num)
+bool zcbor_map_start_encode(zcbor_state_t *state, size_t max_num)
 {
 	return list_map_start_encode(state, max_num, ZCBOR_MAJOR_TYPE_MAP);
 }
 
 
 #ifdef ZCBOR_CANONICAL
-static uint_fast32_t get_encoded_len2(const void *const input, uint_fast32_t max_result_len)
+static size_t get_encoded_len2(const void *const input, size_t max_result_len)
 {
-	uint_fast32_t result_len = get_result_len(input, max_result_len);
+	size_t result_len = get_result_len(input, max_result_len);
 	const void *const result = get_result(input, max_result_len, result_len);
 
 	return get_encoded_len(result, result_len);
@@ -399,18 +399,18 @@ static uint_fast32_t get_encoded_len2(const void *const input, uint_fast32_t max
 #endif
 
 
-static bool list_map_end_encode(zcbor_state_t *state, uint_fast32_t max_num,
+static bool list_map_end_encode(zcbor_state_t *state, size_t max_num,
 			zcbor_major_type_t major_type)
 {
 #ifdef ZCBOR_CANONICAL
-	uint_fast32_t list_count = ((major_type == ZCBOR_MAJOR_TYPE_LIST) ?
+	size_t list_count = ((major_type == ZCBOR_MAJOR_TYPE_LIST) ?
 					state->elem_count
 					: (state->elem_count / 2));
 
 	const uint8_t *payload = state->payload;
 
-	uint_fast32_t max_header_len = get_encoded_len2(&max_num, 4);
-	uint_fast32_t header_len = get_encoded_len2(&list_count, 4);
+	size_t max_header_len = get_encoded_len2(&max_num, 4);
+	size_t header_len = get_encoded_len2(&list_count, 4);
 
 	if (!zcbor_process_backup(state, ZCBOR_FLAG_RESTORE | ZCBOR_FLAG_CONSUME, 0xFFFFFFFF)) {
 		ZCBOR_FAIL();
@@ -454,13 +454,13 @@ static bool list_map_end_encode(zcbor_state_t *state, uint_fast32_t max_num,
 }
 
 
-bool zcbor_list_end_encode(zcbor_state_t *state, uint_fast32_t max_num)
+bool zcbor_list_end_encode(zcbor_state_t *state, size_t max_num)
 {
 	return list_map_end_encode(state, max_num, ZCBOR_MAJOR_TYPE_LIST);
 }
 
 
-bool zcbor_map_end_encode(zcbor_state_t *state, uint_fast32_t max_num)
+bool zcbor_map_end_encode(zcbor_state_t *state, size_t max_num)
 {
 	return list_map_end_encode(state, max_num, ZCBOR_MAJOR_TYPE_MAP);
 }
@@ -672,13 +672,13 @@ bool zcbor_tag_encode(zcbor_state_t *state, uint32_t tag)
 }
 
 
-bool zcbor_multi_encode_minmax(uint_fast32_t min_encode,
-		uint_fast32_t max_encode,
-		const uint_fast32_t *num_encode,
+bool zcbor_multi_encode_minmax(size_t min_encode,
+		size_t max_encode,
+		const size_t *num_encode,
 		zcbor_encoder_t encoder,
 		zcbor_state_t *state,
 		const void *input,
-		uint_fast32_t result_len)
+		size_t result_len)
 {
 
 	if ((*num_encode >= min_encode) && (*num_encode <= max_encode)) {
@@ -689,14 +689,14 @@ bool zcbor_multi_encode_minmax(uint_fast32_t min_encode,
 }
 
 
-bool zcbor_multi_encode(uint_fast32_t num_encode,
+bool zcbor_multi_encode(size_t num_encode,
 		zcbor_encoder_t encoder,
 		zcbor_state_t *state,
 		const void *input,
-		uint_fast32_t result_len)
+		size_t result_len)
 {
 	ZCBOR_CHECK_ERROR();
-	for (uint_fast32_t i = 0; i < num_encode; i++) {
+	for (size_t i = 0; i < num_encode; i++) {
 		if (!encoder(state, (const uint8_t *)input + i*result_len)) {
 			ZCBOR_FAIL();
 		}
@@ -706,7 +706,7 @@ bool zcbor_multi_encode(uint_fast32_t num_encode,
 }
 
 
-bool zcbor_present_encode(const uint_fast32_t *present,
+bool zcbor_present_encode(const bool *present,
 		zcbor_encoder_t encoder,
 		zcbor_state_t *state,
 		const void *input)
@@ -715,8 +715,8 @@ bool zcbor_present_encode(const uint_fast32_t *present,
 }
 
 
-void zcbor_new_encode_state(zcbor_state_t *state_array, uint_fast32_t n_states,
-		uint8_t *payload, size_t payload_len, uint_fast32_t elem_count)
+void zcbor_new_encode_state(zcbor_state_t *state_array, size_t n_states,
+		uint8_t *payload, size_t payload_len, size_t elem_count)
 {
 	zcbor_new_state(state_array, n_states, payload, payload_len, elem_count);
 }

@@ -310,9 +310,9 @@ bool zcbor_list_map_end_force_decode(zcbor_state_t *state);
  * @retval false  If @p decoder failed before having decoded @p min_decode
  *                values.
  */
-bool zcbor_multi_decode(uint_fast32_t min_decode, uint_fast32_t max_decode, uint_fast32_t *num_decode,
+bool zcbor_multi_decode(size_t min_decode, size_t max_decode, size_t *num_decode,
 		zcbor_decoder_t decoder, zcbor_state_t *state, void *result,
-		uint_fast32_t result_len);
+		size_t result_len);
 
 /** Attempt to decode a value that might not be present in the data.
  *
@@ -325,14 +325,14 @@ bool zcbor_multi_decode(uint_fast32_t min_decode, uint_fast32_t max_decode, uint
  *
  * @return Should always return true.
  */
-bool zcbor_present_decode(uint_fast32_t *present,
+bool zcbor_present_decode(bool *present,
 		zcbor_decoder_t decoder,
 		zcbor_state_t *state,
 		void *result);
 
 /** See @ref zcbor_new_state() */
-void zcbor_new_decode_state(zcbor_state_t *state_array, uint_fast32_t n_states,
-		const uint8_t *payload, size_t payload_len, uint_fast32_t elem_count);
+void zcbor_new_decode_state(zcbor_state_t *state_array, size_t n_states,
+		const uint8_t *payload, size_t payload_len, size_t elem_count);
 
 /** Convenience macro for declaring and initializing a state with backups.
  *

@@ -835,7 +835,7 @@ ZTEST(cbor_decode_test5, test_empty_map)
 	const uint8_t payload2_inv[] = {MAP(1), END};
 	const uint8_t payload3_inv[] = {MAP(1), 0, END};
 	const uint8_t payload4[] = {MAP(0), END MAP(0), END MAP(0), END};
-	uint_fast32_t num_decode;
+	size_t num_decode;
 
 	ZCBOR_STATE_D(state, 0, payload4, sizeof(payload4), 3);
 
@@ -1260,7 +1260,7 @@ ZTEST(cbor_decode_test5, test_single)
 	uint8_t payload_single3[] = {9};
 	uint8_t payload_single4_inv[] = {10};
 	struct zcbor_string result_bstr;
-	uint_fast32_t result_int;
+	size_t result_int;
 	size_t out_len;
 
 	zassert_equal(ZCBOR_SUCCESS, cbor_decode_SingleBstr(payload_single0, sizeof(payload_single0), &result_bstr, &out_len), NULL);

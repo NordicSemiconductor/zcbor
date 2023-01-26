@@ -1750,11 +1750,11 @@ class CodeGenerator(CddlXcoder):
 
     # Declaration of the "present" variable for this element.
     def present_var(self):
-        return ["uint_fast32_t %s;" % self.present_var_name()]
+        return ["bool %s;" % self.present_var_name()]
 
     # Declaration of the "count" variable for this element.
     def count_var(self):
-        return ["uint_fast32_t %s;" % self.count_var_name()]
+        return ["size_t %s;" % self.count_var_name()]
 
     # Declaration of the "choice" variable for this element.
     def anonymous_choice_var(self):

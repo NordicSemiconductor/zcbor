@@ -1056,18 +1056,18 @@ bool zcbor_tag_expect(zcbor_state_t *state, uint32_t result)
 }
 
 
-bool zcbor_multi_decode(uint_fast32_t min_decode,
-		uint_fast32_t max_decode,
-		uint_fast32_t *num_decode,
+bool zcbor_multi_decode(size_t min_decode,
+		size_t max_decode,
+		size_t *num_decode,
 		zcbor_decoder_t decoder,
 		zcbor_state_t *state,
 		void *result,
-		uint_fast32_t result_len)
+		size_t result_len)
 {
 	ZCBOR_CHECK_ERROR();
-	for (uint_fast32_t i = 0; i < max_decode; i++) {
+	for (size_t i = 0; i < max_decode; i++) {
 		uint8_t const *payload_bak = state->payload;
-		uint_fast32_t elem_count_bak = state->elem_count;
+		size_t elem_count_bak = state->elem_count;
 
 		if (!decoder(state,
 				(uint8_t *)result + i*result_len)) {
@@ -1085,23 +1085,23 @@ bool zcbor_multi_decode(uint_fast32_t min_decode,
 }
 
 
-bool zcbor_present_decode(uint_fast32_t *present,
+bool zcbor_present_decode(bool *present,
 		zcbor_decoder_t decoder,
 		zcbor_state_t *state,
 		void *result)
 {
-	uint_fast32_t num_decode;
+	size_t num_decode;
 	bool retval = zcbor_multi_decode(0, 1, &num_decode, decoder, state, result, 0);
 
 	zcbor_assert_state(retval, "zcbor_multi_decode should not fail with these parameters.\r\n");
 
-	*present = num_decode;
+	*present = !!num_decode;
 	return retval;
 }
 
 
-void zcbor_new_decode_state(zcbor_state_t *state_array, uint_fast32_t n_states,
-		const uint8_t *payload, size_t payload_len, uint_fast32_t elem_count)
+void zcbor_new_decode_state(zcbor_state_t *state_array, size_t n_states,
+		const uint8_t *payload, size_t payload_len, size_t elem_count)
 {
 	zcbor_new_state(state_array, n_states, payload, payload_len, elem_count);
 }

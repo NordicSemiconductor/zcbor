@@ -21,7 +21,8 @@ int main(void)
 	bool false_ = false;
 	float eleven_six = 11.6;
 	double thirteen_eight = 13.8;
-	uint_fast32_t one = 1;
+	size_t one = 1;
+	bool one_b = 1;
 	struct zcbor_string dummy_string;
 
 	ZCBOR_STATE_E(state_e, 3, payload, sizeof(payload), 0);
@@ -61,7 +62,7 @@ int main(void)
 	zcbor_list_end_encode(state_e, 1);
 	zcbor_multi_encode(1, (zcbor_encoder_t *)zcbor_int32_put, state_e, (void*)14, 0);
 	zcbor_multi_encode_minmax(1, 1, &one, (zcbor_encoder_t *)zcbor_int32_put, state_e, (void*)15, 0);
-	bool ret = zcbor_present_encode(&one, (zcbor_encoder_t *)zcbor_int32_put, state_e, (void*)16);
+	bool ret = zcbor_present_encode(&one_b, (zcbor_encoder_t *)zcbor_int32_put, state_e, (void*)16);
 
 	if (!ret) {
 		printk("Encode error: %d\r\n", zcbor_peek_error(state_e));
@@ -99,7 +100,7 @@ int main(void)
 	zcbor_list_end_decode(state_d);
 	zcbor_multi_decode(1, 1, &one, (zcbor_decoder_t *)zcbor_int32_expect, state_d, (void*)14, 0);
 	zcbor_int32_expect(state_d, 15);
-	ret = zcbor_present_decode(&one, (zcbor_decoder_t *)zcbor_int32_expect, state_d, (void*)16);
+	ret = zcbor_present_decode(&one_b, (zcbor_decoder_t *)zcbor_int32_expect, state_d, (void*)16);
 
 	if (!ret) {
 		printk("Decode error: %d\r\n", zcbor_peek_error(state_d));

@@ -107,11 +107,11 @@ union {
 	                             processed. */
 };
 	uint8_t const *payload_bak; /**< Temporary backup of payload. */
-	uint_fast32_t elem_count; /**< The current element is part of a LIST or a MAP,
-	                               and this keeps count of how many elements are
-	                               expected. This will be checked before processing
-	                               and decremented if the element is correctly
-	                               processed. */
+	size_t elem_count; /**< The current element is part of a LIST or a MAP,
+	                        and this keeps count of how many elements are
+	                        expected. This will be checked before processing
+	                        and decremented if the element is correctly
+	                        processed. */
 	uint8_t const *payload_end; /**< The end of the payload. This will be
 	                                 checked against payload before
 	                                 processing each element. */
@@ -127,8 +127,8 @@ union {
 
 struct zcbor_state_constant {
 	zcbor_state_t *backup_list;
-	uint_fast32_t current_backup;
-	uint_fast32_t num_backups;
+	size_t current_backup;
+	size_t num_backups;
 	int error;
 #ifdef ZCBOR_STOP_ON_ERROR
 	bool stop_on_error;
@@ -236,7 +236,7 @@ do { \
 #ifdef UINT_FAST32_MAX
 #define ZCBOR_MAX_ELEM_COUNT UINT_FAST32_MAX
 #else
-#define ZCBOR_MAX_ELEM_COUNT ((uint_fast32_t)(-1L))
+#define ZCBOR_MAX_ELEM_COUNT ((size_t)(-1L))
 #endif
 
 /** Initial value for elem_count for when it just needs to be large. */
@@ -244,13 +244,13 @@ do { \
 
 
 /** Take a backup of the current state. Overwrite the current elem_count. */
-bool zcbor_new_backup(zcbor_state_t *state, uint_fast32_t new_elem_count);
+bool zcbor_new_backup(zcbor_state_t *state, size_t new_elem_count);
 
 /** Consult the most recent backup. In doing so, check whether elem_count is
  *  less than or equal to max_elem_count.
  *  Also, take action based on the flags (See ZCBOR_FLAG_*).
  */
-bool zcbor_process_backup(zcbor_state_t *state, uint32_t flags, uint_fast32_t max_elem_count);
+bool zcbor_process_backup(zcbor_state_t *state, uint32_t flags, size_t max_elem_count);
 
 /** Convenience function for starting encoding/decoding of a union.
  *
@@ -281,8 +281,8 @@ bool zcbor_union_end_code(zcbor_state_t *state);
  *  payload, payload_len, and elem_count are used to initialize the first state.
  *  in the array, which is the state that can be passed to cbor functions.
  */
-void zcbor_new_state(zcbor_state_t *state_array, uint_fast32_t n_states,
-		const uint8_t *payload, size_t payload_len, uint_fast32_t elem_count);
+void zcbor_new_state(zcbor_state_t *state_array, size_t n_states,
+		const uint8_t *payload, size_t payload_len, size_t elem_count);
 
 #ifdef ZCBOR_STOP_ON_ERROR
 /** Check stored error and fail if present, but only if stop_on_error is true. */
@@ -366,7 +366,7 @@ void zcbor_update_state(zcbor_state_t *state,
  *                  found, or if any fragment value is NULL.
  */
 bool zcbor_validate_string_fragments(struct zcbor_string_fragment *fragments,
-		uint_fast32_t num_fragments);
+		size_t num_fragments);
 
 /** Assemble the fragments into a single string.
  *
@@ -385,7 +385,7 @@ bool zcbor_validate_string_fragments(struct zcbor_string_fragment *fragments,
  *                  The buffer might still be written to.
  */
 bool zcbor_splice_string_fragments(struct zcbor_string_fragment *fragments,
-		uint_fast32_t num_fragments, uint8_t *result, size_t *result_len);
+		size_t num_fragments, uint8_t *result, size_t *result_len);
 
 /** Compare two struct zcbor_string instances.
  *
