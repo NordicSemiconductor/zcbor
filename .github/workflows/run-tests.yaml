@@ -184,14 +184,41 @@ jobs:
       with:
         zcbor_package: 'setup_install'
 
-    - name: Run python tests on samples
-      working-directory: tests/scripts
-      run: |
-        python3 -m unittest test_files.TestSamples
-
     - name: Prepare and run tests
       uses: ./.github/actions/prepare_and_run_tests
       with:
         twister_arguments: "--platform native_posix --platform native_posix_64 --platform mps2_an521 --platform qemu_malta_be ${{ matrix.asserts }}"
         zephyr_toolchain: zephyr
         zephyr_toolchain_arch: arm,mips
+
+  release-test-3:
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        python-version: ['3.8', '3.9', '3.10', '3.11']
+        asserts: ["", "-x VERBOSE=ON -x ASSERTS=ON"]
+    name: Release tests 3 (Python ${{ matrix.python-version }}${{ matrix.asserts != '' && ' with asserts' || '' }})
+    needs:
+    - merge-test-1
+    - merge-test-2
+    - merge-test-3
+    - merge-test-4
+    if: "startswith(github.head_ref, 'release/')"
+    steps:
+    - name: Checkout the code
+      uses: actions/checkout@v3
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install zcbor
+      uses: ./.github/actions/install_zcbor
+      with:
+        zcbor_package: 'setup_develop'
+
+    - name: Run python tests on samples
+      working-directory: tests/scripts
+      run: |
+        python3 -m unittest test_repo_files.TestSamples
