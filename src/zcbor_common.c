@@ -16,7 +16,7 @@ _Static_assert((sizeof(size_t) == sizeof(void *)),
 _Static_assert((sizeof(zcbor_state_t) >= sizeof(struct zcbor_state_constant)),
 	"This code needs zcbor_state_t to be at least as large as zcbor_backups_t.");
 
-bool zcbor_new_backup(zcbor_state_t *state, uint_fast32_t new_elem_count)
+bool zcbor_new_backup(zcbor_state_t *state, size_t new_elem_count)
 {
 	ZCBOR_CHECK_ERROR();
 
@@ -31,7 +31,7 @@ bool zcbor_new_backup(zcbor_state_t *state, uint_fast32_t new_elem_count)
 
 	/* use the backup at current_backup - 1, since otherwise, the 0th
 	 * backup would be unused. */
-	uint_fast32_t i = (state->constant_state->current_backup) - 1;
+	size_t i = (state->constant_state->current_backup) - 1;
 
 	memcpy(&state->constant_state->backup_list[i], state,
 		sizeof(zcbor_state_t));
@@ -43,10 +43,10 @@ bool zcbor_new_backup(zcbor_state_t *state, uint_fast32_t new_elem_count)
 
 
 bool zcbor_process_backup(zcbor_state_t *state, uint32_t flags,
-		uint_fast32_t max_elem_count)
+		size_t max_elem_count)
 {
 	const uint8_t *payload = state->payload;
-	const uint_fast32_t elem_count = state->elem_count;
+	const size_t elem_count = state->elem_count;
 
 	ZCBOR_CHECK_ERROR();
 
@@ -58,7 +58,7 @@ bool zcbor_process_backup(zcbor_state_t *state, uint32_t flags,
 	if (flags & ZCBOR_FLAG_RESTORE) {
 		/* use the backup at current_backup - 1, since otherwise, the
 		 * 0th backup would be unused. */
-		uint_fast32_t i = state->constant_state->current_backup - 1;
+		size_t i = state->constant_state->current_backup - 1;
 
 		if (!(flags & ZCBOR_FLAG_TRANSFER_PAYLOAD)) {
 			if (state->constant_state->backup_list[i].payload_moved) {
@@ -123,8 +123,8 @@ bool zcbor_union_end_code(zcbor_state_t *state)
 	return true;
 }
 
-void zcbor_new_state(zcbor_state_t *state_array, uint_fast32_t n_states,
-		const uint8_t *payload, size_t payload_len, uint_fast32_t elem_count)
+void zcbor_new_state(zcbor_state_t *state_array, size_t n_states,
+		const uint8_t *payload, size_t payload_len, size_t elem_count)
 {
 	state_array[0].payload = payload;
 	state_array[0].payload_end = payload + payload_len;
@@ -162,7 +162,7 @@ void zcbor_update_state(zcbor_state_t *state,
 
 
 bool zcbor_validate_string_fragments(struct zcbor_string_fragment *fragments,
-		uint_fast32_t num_fragments)
+		size_t num_fragments)
 {
 	size_t total_len = 0;
 
@@ -170,7 +170,7 @@ bool zcbor_validate_string_fragments(struct zcbor_string_fragment *fragments,
 		return false;
 	}
 
-	for (uint_fast32_t i = 0; i < num_fragments; i++) {
+	for (size_t i = 0; i < num_fragments; i++) {
 		if (fragments[i].offset != total_len) {
 			return false;
 		}
@@ -191,7 +191,7 @@ bool zcbor_validate_string_fragments(struct zcbor_string_fragment *fragments,
 	}
 
 	if (num_fragments && (fragments[0].total_len == ZCBOR_STRING_FRAGMENT_UNKNOWN_LENGTH)) {
-		for (uint_fast32_t i = 0; i < num_fragments; i++) {
+		for (size_t i = 0; i < num_fragments; i++) {
 			fragments[i].total_len = total_len;
 		}
 	}
@@ -200,7 +200,7 @@ bool zcbor_validate_string_fragments(struct zcbor_string_fragment *fragments,
 }
 
 bool zcbor_splice_string_fragments(struct zcbor_string_fragment *fragments,
-		uint_fast32_t num_fragments, uint8_t *result, size_t *result_len)
+		size_t num_fragments, uint8_t *result, size_t *result_len)
 {
 	size_t total_len = 0;
 
@@ -208,7 +208,7 @@ bool zcbor_splice_string_fragments(struct zcbor_string_fragment *fragments,
 		return false;
 	}
 
-	for (uint_fast32_t i = 0; i < num_fragments; i++) {
+	for (size_t i = 0; i < num_fragments; i++) {
 		if ((total_len > *result_len)
 			|| (fragments[i].fragment.len > (*result_len - total_len))) {
 			return false;

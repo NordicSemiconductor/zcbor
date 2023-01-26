@@ -31,7 +31,7 @@ extern "C" {
 
 struct Pet {
 	struct zcbor_string names[3];
-	uint_fast32_t names_count;
+	size_t names_count;
 	struct zcbor_string birthday;
 	enum {
 		_Pet_species_cat = 1,

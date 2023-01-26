@@ -173,8 +173,8 @@ bool zcbor_bstr_end_encode(zcbor_state_t *state, struct zcbor_string *result);
  *                        call.
  *                        Only used when ZCBOR_CANONICAL is defined.
  */
-bool zcbor_list_start_encode(zcbor_state_t *state, uint_fast32_t max_num);
-bool zcbor_map_start_encode(zcbor_state_t *state, uint_fast32_t max_num);
+bool zcbor_list_start_encode(zcbor_state_t *state, size_t max_num);
+bool zcbor_map_start_encode(zcbor_state_t *state, size_t max_num);
 
 /** Encode the end of a list/map. Do some checks and deallocate backup.
  *
@@ -193,8 +193,8 @@ bool zcbor_map_start_encode(zcbor_state_t *state, uint_fast32_t max_num);
  *                        @ref zcbor_list_start_encode call.
  *                        Only used when ZCBOR_CANONICAL is defined.
  */
-bool zcbor_list_end_encode(zcbor_state_t *state, uint_fast32_t max_num);
-bool zcbor_map_end_encode(zcbor_state_t *state, uint_fast32_t max_num);
+bool zcbor_list_end_encode(zcbor_state_t *state, size_t max_num);
+bool zcbor_map_end_encode(zcbor_state_t *state, size_t max_num);
 bool zcbor_list_map_end_force_encode(zcbor_state_t *state);
 
 /** Encode 0 or more elements with the same type and constraints.
@@ -245,32 +245,32 @@ bool zcbor_list_map_end_force_encode(zcbor_state_t *state);
  * @retval false  If @p encoder failed before having encoded @p min_encode
  *                values.
  */
-bool zcbor_multi_encode(uint_fast32_t num_encode,
+bool zcbor_multi_encode(size_t num_encode,
 		zcbor_encoder_t encoder,
 		zcbor_state_t *state,
 		const void *input,
-		uint_fast32_t result_len);
+		size_t result_len);
 
 /** Works like @ref zcbor_multi_encode
  *
  * But first checks that @p num_encode is between @p min_encode and @p max_encode.
  */
-bool zcbor_multi_encode_minmax(uint_fast32_t min_encode, uint_fast32_t max_encode, const uint_fast32_t *num_encode,
+bool zcbor_multi_encode_minmax(size_t min_encode, size_t max_encode, const size_t *num_encode,
 		zcbor_encoder_t encoder, zcbor_state_t *state, const void *input,
-		uint_fast32_t input_len);
+		size_t input_len);
 
 /** Runs @p encoder on @p state and @p input if @p present is true.
  *
  * Calls @ref zcbor_multi_encode under the hood.
  */
-bool zcbor_present_encode(const uint_fast32_t *present,
+bool zcbor_present_encode(const bool *present,
 		zcbor_encoder_t encoder,
 		zcbor_state_t *state,
 		const void *input);
 
 /** See @ref zcbor_new_state() */
-void zcbor_new_encode_state(zcbor_state_t *state_array, uint_fast32_t n_states,
-		uint8_t *payload, size_t payload_len, uint_fast32_t elem_count);
+void zcbor_new_encode_state(zcbor_state_t *state_array, size_t n_states,
+		uint8_t *payload, size_t payload_len, size_t elem_count);
 
 /** Convenience macro for declaring and initializing a state with backups.
  *
