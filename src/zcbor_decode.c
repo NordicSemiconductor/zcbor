@@ -14,7 +14,7 @@
 
 /** Return value length from additional value.
  */
-static uint_fast32_t additional_len(uint8_t additional)
+static size_t additional_len(uint8_t additional)
 {
 	if (ZCBOR_VALUE_IS_1_BYTE <= additional && additional <= ZCBOR_VALUE_IS_8_BYTES) {
 		/* 24 => 1
@@ -119,7 +119,7 @@ do { \
  *          big to little-endian if necessary (@ref CONFIG_BIG_ENDIAN).
  */
 static bool value_extract(zcbor_state_t *state,
-		void *const result, uint_fast32_t result_len)
+		void *const result, size_t result_len)
 {
 	zcbor_trace();
 	zcbor_assert_state(result_len != 0, "0-length result not supported.\r\n");
@@ -142,7 +142,7 @@ static bool value_extract(zcbor_state_t *state,
 		u8_result[0] = additional;
 #endif /* CONFIG_BIG_ENDIAN */
 	} else {
-		uint_fast32_t len = additional_len(additional);
+		size_t len = additional_len(additional);
 
 		FAIL_AND_DECR_IF(len > result_len, ZCBOR_ERR_INT_SIZE);
 		FAIL_AND_DECR_IF(len == 0, ZCBOR_ERR_ADDITIONAL_INVAL); // additional_len() did not recognize the additional value.
@@ -152,7 +152,7 @@ static bool value_extract(zcbor_state_t *state,
 #ifdef CONFIG_BIG_ENDIAN
 		memcpy(&u8_result[result_len - len], state->payload, len);
 #else
-		for (uint_fast32_t i = 0; i < len; i++) {
+		for (size_t i = 0; i < len; i++) {
 			u8_result[i] = (state->payload)[len - i - 1];
 		}
 #endif /* CONFIG_BIG_ENDIAN */
@@ -554,7 +554,7 @@ bool zcbor_tstr_expect(zcbor_state_t *state, struct zcbor_string *result)
 static bool list_map_start_decode(zcbor_state_t *state,
 		zcbor_major_type_t exp_major_type)
 {
-	uint_fast32_t new_elem_count;
+	size_t new_elem_count;
 	bool indefinite_length_array = false;
 
 	INITIAL_CHECKS_WITH_TYPE(exp_major_type);
@@ -615,7 +615,7 @@ static bool array_end_expect(zcbor_state_t *state)
 
 static bool list_map_end_decode(zcbor_state_t *state)
 {
-	uint_fast32_t max_elem_count = 0;
+	size_t max_elem_count = 0;
 
 	if (state->indefinite_length_array) {
 		if (!array_end_expect(state)) {
@@ -1007,7 +1007,7 @@ bool zcbor_any_skip(zcbor_state_t *state, void *result)
 				state_copy.payload++;
 				value = ZCBOR_LARGE_ELEM_COUNT;
 			}
-			state_copy.elem_count = (uint_fast32_t)value;
+			state_copy.elem_count = (size_t)value;
 			state_copy.indefinite_length_array = indefinite_length_array;
 			while (!zcbor_array_at_end(&state_copy)) {
 				if (!zcbor_any_skip(&state_copy, NULL)) {
