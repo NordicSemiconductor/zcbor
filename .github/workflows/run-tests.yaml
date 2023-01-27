@@ -23,7 +23,7 @@ jobs:
     - name: Prepare and run tests
       uses: ./.github/actions/prepare_and_run_tests
       with:
-        twister_arguments: "--platform ${{ matrix.platform }} ${{ matrix.asserts }} --exclude-tag release"
+        twister_arguments: "--timestamps --platform ${{ matrix.platform }} ${{ matrix.asserts }} --exclude-tag release"
         zephyr_toolchain: ${{ matrix.platform == 'mps2_an521' && 'zephyr' || 'host'}}
         zephyr_toolchain_arch: ${{ matrix.platform == 'mps2_an521' && 'arm' || ''}}
 
@@ -174,7 +174,7 @@ jobs:
     - name: Prepare and run tests
       uses: ./.github/actions/prepare_and_run_tests
       with:
-        twister_arguments: "--platform native_posix --platform native_posix_64 --platform mps2_an521 --platform qemu_malta_be ${{ matrix.asserts }}"
+        twister_arguments: "--timestamps --platform native_posix --platform native_posix_64 --platform mps2_an521 --platform qemu_malta_be ${{ matrix.asserts }}"
         zephyr_toolchain: zephyr
         zephyr_toolchain_arch: arm,mips
 
