@@ -1,4 +1,4 @@
 
   - ["first", "middle", "last"]
-  - bstr: "12345678aabbccdd"
+  - zcbor_bstr: "12345678aabbccdd"
   - 3
