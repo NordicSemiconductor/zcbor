@@ -27,16 +27,17 @@ if (${TEST_CASE} STREQUAL pet)
         )
 
     execute_process(
-        COMMAND python3 ../../../zcbor/zcbor.py
+        COMMAND python3 ${CMAKE_CURRENT_LIST_DIR}/../../zcbor/zcbor.py
         convert
-        --cddl ../../cases/pet.cddl
-        --input ../../cases/pet0.yaml
+        --cddl ${CMAKE_CURRENT_LIST_DIR}/../cases/pet.cddl
+        --input ${CMAKE_CURRENT_LIST_DIR}/../cases/pet0.yaml
         -t Pet
+        --yaml-compatibility
         --output ${PROJECT_BINARY_DIR}/fuzz_input/input0.cbor
         --output-as cbor
         )
 
-    target_sources(fuzz_target PRIVATE fuzz_pet.c)
+    target_sources(fuzz_target PRIVATE ${CMAKE_CURRENT_LIST_DIR}/fuzz_pet.c)
     include(${PROJECT_BINARY_DIR}/pet.cmake)
     target_link_libraries(fuzz_target PRIVATE pet)
 
@@ -52,11 +53,11 @@ elseif (${TEST_CASE} STREQUAL manifest12)
 
     foreach(n RANGE 0 5)
         execute_process(
-        COMMAND python3 ../../../zcbor/zcbor.py
+        COMMAND python3 ${CMAKE_CURRENT_LIST_DIR}/../../zcbor/zcbor.py
         convert
-        --cddl ../../cases/manifest12.cddl
+        --cddl ${CMAKE_CURRENT_LIST_DIR}/../cases/manifest12.cddl
         --default-max-qty 16
-        --input ../../cases/manifest12_example${n}.cborhex
+        --input ${CMAKE_CURRENT_LIST_DIR}/../cases/manifest12_example${n}.cborhex
         -t SUIT_Envelope_Tagged
         --output ${PROJECT_BINARY_DIR}/fuzz_input/input${n}.cbor
         --output-as cbor
