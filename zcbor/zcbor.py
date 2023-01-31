@@ -581,28 +581,7 @@ class CddlParser:
         raise ValueError("invalid quantifier: %s" % quantifier)
 
     def convert_min_max(self):
-        defines = {
-            (2**64) - 1: "UINT64_MAX",
-            (2**63) - 1: "INT64_MAX",
-            (2**32) - 1: "UINT32_MAX",
-            (2**31) - 1: "INT32_MAX",
-            (2**16) - 1: "UINT16_MAX",
-            (2**15) - 1: "INT16_MAX",
-            (2**8) - 1: "UINT8_MAX",
-            (2**7) - 1: "INT8_MAX",
-            -(2**63): "INT64_MIN",
-            -(2**31): "INT32_MIN",
-            -(2**15): "INT16_MIN",
-            -(2**7): "INT8_MIN",
-        }
-        if self.min_value in defines:
-            self.min_value = defines[self.min_value]
-        if self.max_value in defines:
-            self.max_value = defines[self.max_value]
-        if self.min_size in defines:
-            self.min_size = defines[self.min_size]
-        if self.max_size in defines:
-            self.max_size = defines[self.max_size]
+        pass
 
     # Set the self.size of this element. This will also set the self.minValue and self.max_value of
     # UINT types.
@@ -1813,6 +1792,30 @@ class CodeGenerator(CddlXcoder):
 
     def enum_type_name(self):
         return "enum %s" % self.id()
+
+    def convert_min_max(self):
+        defines = {
+            (2**64) - 1: "UINT64_MAX",
+            (2**63) - 1: "INT64_MAX",
+            (2**32) - 1: "UINT32_MAX",
+            (2**31) - 1: "INT32_MAX",
+            (2**16) - 1: "UINT16_MAX",
+            (2**15) - 1: "INT16_MAX",
+            (2**8) - 1: "UINT8_MAX",
+            (2**7) - 1: "INT8_MAX",
+            -(2**63): "INT64_MIN",
+            -(2**31): "INT32_MIN",
+            -(2**15): "INT16_MIN",
+            -(2**7): "INT8_MIN",
+        }
+        if self.min_value in defines:
+            self.min_value = defines[self.min_value]
+        if self.max_value in defines:
+            self.max_value = defines[self.max_value]
+        if self.min_size in defines:
+            self.min_size = defines[self.min_size]
+        if self.max_size in defines:
+            self.max_size = defines[self.max_size]
 
     # The bit width of the integers as represented in code.
     def bit_size(self):
