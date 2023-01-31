@@ -509,6 +509,7 @@ class CddlParser:
                 self.size = sizeof(value)
                 self.set_min_value(value)
                 self.set_max_value(value)
+                self.convert_min_max()
         if self.type == "NINT":
             self.max_value = -1
 
@@ -1808,6 +1809,8 @@ class CodeGenerator(CddlXcoder):
             -(2**15): "INT16_MIN",
             -(2**7): "INT8_MIN",
         }
+        if self.value in defines:
+            self.value = defines[self.value]
         if self.min_value in defines:
             self.min_value = defines[self.min_value]
         if self.max_value in defines:
@@ -2141,7 +2144,8 @@ class CodeGenerator(CddlXcoder):
             arg = tmp_str_or_null(self.value)
         elif self.type in ["UINT", "INT", "NINT", "FLOAT", "BOOL"]:
             # Make False and True lower case
-            arg = ("(void *) " if ptr_result else "") + str(self.value).lower()
+            value = str(self.value).lower() if self.type == "BOOL" else str(self.value)
+            arg = ("(void *) " if ptr_result else "") + value
         else:
             assert False, "Should not come here."
 
