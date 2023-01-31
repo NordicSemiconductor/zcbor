@@ -2489,7 +2489,8 @@ class CodeGenerator(CddlXcoder):
         return f"""
 int cbor_{self.xcode_func_name()}(
 		{"const " if self.mode == "decode" else ""}uint8_t *payload, size_t payload_len,
-		{"" if self.mode == "decode" else "const "}{type_name if type_name else "void"} *{
+		{"" if self.mode == "decode" else "const "}{type_name
+            if struct_ptr_name(self.mode) in self.full_xcode() else "void"} *{
             struct_ptr_name(self.mode)},
 		{"size_t *payload_len_out"})"""
 
