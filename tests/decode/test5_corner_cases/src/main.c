@@ -1924,6 +1924,74 @@ void test_union_int(void)
 }
 
 
+void test_intmax(void)
+{
+	uint8_t intmax1_payload1[] = {LIST(C),
+		0x38, 0x7F, 0x18, 0x7F, 0x18, 0xFF,
+		0x39, 0x7F, 0xFF,
+		0x19, 0x7F, 0xFF,
+		0x19, 0xFF, 0xFF,
+		0x3A, 0x7F, 0xFF, 0xFF, 0xFF,
+		0x1A, 0x7F, 0xFF, 0xFF, 0xFF,
+		0x1A, 0xFF, 0xFF, 0xFF, 0xFF,
+		0x3B, 0x7F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+		0x1B, 0x7F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+		0x1B, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+		END
+	};
+	uint8_t intmax2_payload1[] = {LIST(8),
+		0x38, 0x7F, 0x0,
+		0x39, 0x7F, 0xFF,
+		0x0,
+		0x3A, 0x7F, 0xFF, 0xFF, 0xFF,
+		0x0,
+		0x3B, 0x7F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+		0x0,
+		END
+	};
+	uint8_t intmax2_payload2[] = {LIST(8),
+		0x18, 0x7F, 0x18, 0xFF,
+		0x19, 0x7F, 0xFF,
+		0x19, 0xFF, 0xFF,
+		0x1A, 0x7F, 0xFF, 0xFF, 0xFF,
+		0x1A, 0xFF, 0xFF, 0xFF, 0xFF,
+		0x1B, 0x7F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+		0x1B, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+		END
+	};
+	struct Intmax2 result2;
+	size_t num_decode;
+
+	zassert_equal(ZCBOR_SUCCESS, cbor_decode_Intmax1(intmax1_payload1,
+		sizeof(intmax1_payload1), NULL, &num_decode), NULL);
+	zassert_equal(sizeof(intmax1_payload1), num_decode, NULL);
+
+	zassert_equal(ZCBOR_SUCCESS, cbor_decode_Intmax2(intmax2_payload1,
+		sizeof(intmax2_payload1), &result2, &num_decode), NULL);
+	zassert_equal(sizeof(intmax2_payload1), num_decode, NULL);
+	zassert_equal(result2.INT_8, INT8_MIN, NULL);
+	zassert_equal(result2.UINT_8, 0, NULL);
+	zassert_equal(result2.INT_16, INT16_MIN, NULL);
+	zassert_equal(result2.UINT_16, 0, NULL);
+	zassert_equal(result2.INT_32, INT32_MIN, NULL);
+	zassert_equal(result2.UINT_32, 0, NULL);
+	zassert_equal(result2.INT_64, INT64_MIN, NULL);
+	zassert_equal(result2.UINT_64, 0, NULL);
+
+	zassert_equal(ZCBOR_SUCCESS, cbor_decode_Intmax2(intmax2_payload2,
+		sizeof(intmax2_payload2), &result2, &num_decode), NULL);
+	zassert_equal(sizeof(intmax2_payload2), num_decode, NULL);
+	zassert_equal(result2.INT_8, INT8_MAX, NULL);
+	zassert_equal(result2.UINT_8, UINT8_MAX, NULL);
+	zassert_equal(result2.INT_16, INT16_MAX, NULL);
+	zassert_equal(result2.UINT_16, UINT16_MAX, NULL);
+	zassert_equal(result2.INT_32, INT32_MAX, NULL);
+	zassert_equal(result2.UINT_32, UINT32_MAX, NULL);
+	zassert_equal(result2.INT_64, INT64_MAX, NULL);
+	zassert_equal(result2.UINT_64, UINT64_MAX, NULL);
+}
+
+
 void test_main(void)
 {
 	ztest_test_suite(cbor_decode_test5,
@@ -1953,7 +2021,8 @@ void test_main(void)
 			 ztest_unit_test(test_prelude),
 			 ztest_unit_test(test_cbor_bstr),
 			 ztest_unit_test(test_map_length),
-			 ztest_unit_test(test_union_int)
+			 ztest_unit_test(test_union_int),
+			 ztest_unit_test(test_intmax)
 	);
 	ztest_run_test_suite(cbor_decode_test5);
 }

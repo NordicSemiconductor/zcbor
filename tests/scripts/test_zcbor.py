@@ -682,5 +682,40 @@ class TestYamlCompatibility(PopenTest):
         self.assertEqual(safe_load(stdout2), safe_load(p_yaml_compat_yaml.read_text()))
 
 
+class TestIntmax(TestCase):
+    def test_intmax1(self):
+        cddl_res = zcbor.DataTranslator.from_cddl(
+            p_prelude.read_text() + '\n' + p_corner_cases.read_text(), 16)
+        cddl = cddl_res.my_types['Intmax1']
+        test_yaml = f"[-128, 127, 255, -32768, 32767, 65535, -2147483648, 2147483647, 4294967295, -9223372036854775808, 9223372036854775807, 18446744073709551615]"
+        decoded = cddl.decode_str_yaml(test_yaml)
+
+    def test_intmax2(self):
+        cddl_res = zcbor.DataTranslator.from_cddl(
+            p_prelude.read_text() + '\n' + p_corner_cases.read_text(), 16)
+        cddl = cddl_res.my_types['Intmax2']
+        test_yaml1 = f"[-128, 0, -32768, 0, -2147483648, 0, -9223372036854775808, 0]"
+        decoded = cddl.decode_str_yaml(test_yaml1)
+        self.assertEqual(decoded.INT_8, -128)
+        self.assertEqual(decoded.UINT_8, 0)
+        self.assertEqual(decoded.INT_16, -32768)
+        self.assertEqual(decoded.UINT_16, 0)
+        self.assertEqual(decoded.INT_32, -2147483648)
+        self.assertEqual(decoded.UINT_32, 0)
+        self.assertEqual(decoded.INT_64, -9223372036854775808)
+        self.assertEqual(decoded.UINT_64, 0)
+
+        test_yaml2 = f"[127, 255, 32767, 65535, 2147483647, 4294967295, 9223372036854775807, 18446744073709551615]"
+        decoded = cddl.decode_str_yaml(test_yaml2)
+        self.assertEqual(decoded.INT_8, 127)
+        self.assertEqual(decoded.UINT_8, 255)
+        self.assertEqual(decoded.INT_16, 32767)
+        self.assertEqual(decoded.UINT_16, 65535)
+        self.assertEqual(decoded.INT_32, 2147483647)
+        self.assertEqual(decoded.UINT_32, 4294967295)
+        self.assertEqual(decoded.INT_64, 9223372036854775807)
+        self.assertEqual(decoded.UINT_64, 18446744073709551615)
+
+
 if __name__ == "__main__":
     main()
