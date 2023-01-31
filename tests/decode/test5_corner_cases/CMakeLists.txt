@@ -49,6 +49,8 @@ set(py_command
     MapLength
     UnionInt1
     UnionInt2
+    Intmax1
+    Intmax2
   --decode
   --git-sha-header
   --short-names

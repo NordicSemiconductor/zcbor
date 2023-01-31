@@ -1452,6 +1452,78 @@ void test_union_int(void)
 }
 
 
+void test_intmax(void)
+{
+	uint8_t exp_intmax1_payload1[] = {LIST(C),
+		0x38, 0x7F, 0x18, 0x7F, 0x18, 0xFF,
+		0x39, 0x7F, 0xFF,
+		0x19, 0x7F, 0xFF,
+		0x19, 0xFF, 0xFF,
+		0x3A, 0x7F, 0xFF, 0xFF, 0xFF,
+		0x1A, 0x7F, 0xFF, 0xFF, 0xFF,
+		0x1A, 0xFF, 0xFF, 0xFF, 0xFF,
+		0x3B, 0x7F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+		0x1B, 0x7F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+		0x1B, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+		END
+	};
+	uint8_t exp_intmax2_payload1[] = {LIST(8),
+		0x38, 0x7F, 0x0,
+		0x39, 0x7F, 0xFF,
+		0x0,
+		0x3A, 0x7F, 0xFF, 0xFF, 0xFF,
+		0x0,
+		0x3B, 0x7F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+		0x0,
+		END
+	};
+	uint8_t exp_intmax2_payload2[] = {LIST(8),
+		0x18, 0x7F, 0x18, 0xFF,
+		0x19, 0x7F, 0xFF,
+		0x19, 0xFF, 0xFF,
+		0x1A, 0x7F, 0xFF, 0xFF, 0xFF,
+		0x1A, 0xFF, 0xFF, 0xFF, 0xFF,
+		0x1B, 0x7F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+		0x1B, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+		END
+	};
+	struct Intmax2 intput2;
+	size_t num_encode;
+	uint8_t output[60];
+
+	zassert_equal(ZCBOR_SUCCESS, cbor_encode_Intmax1(output,
+		sizeof(output), NULL, &num_encode), NULL);
+	zassert_equal(sizeof(exp_intmax1_payload1), num_encode, NULL);
+	zassert_mem_equal(exp_intmax1_payload1, output, num_encode, NULL);
+
+	intput2.INT_8 = INT8_MIN;
+	intput2.UINT_8 = 0;
+	intput2.INT_16 = INT16_MIN;
+	intput2.UINT_16 = 0;
+	intput2.INT_32 = INT32_MIN;
+	intput2.UINT_32 = 0;
+	intput2.INT_64 = INT64_MIN;
+	intput2.UINT_64 = 0;
+	zassert_equal(ZCBOR_SUCCESS, cbor_encode_Intmax2(output,
+		sizeof(output), &intput2, &num_encode), NULL);
+	zassert_equal(sizeof(exp_intmax2_payload1), num_encode, NULL);
+	zassert_mem_equal(exp_intmax2_payload1, output, num_encode, NULL);
+
+	intput2.INT_8 = INT8_MAX;
+	intput2.UINT_8 = UINT8_MAX;
+	intput2.INT_16 = INT16_MAX;
+	intput2.UINT_16 = UINT16_MAX;
+	intput2.INT_32 = INT32_MAX;
+	intput2.UINT_32 = UINT32_MAX;
+	intput2.INT_64 = INT64_MAX;
+	intput2.UINT_64 = UINT64_MAX;
+	zassert_equal(ZCBOR_SUCCESS, cbor_encode_Intmax2(output,
+		sizeof(output), &intput2, &num_encode), NULL);
+	zassert_equal(sizeof(exp_intmax2_payload2), num_encode, NULL);
+	zassert_mem_equal(exp_intmax2_payload2, output, num_encode, NULL);
+}
+
+
 void test_main(void)
 {
 	ztest_test_suite(cbor_encode_test3,
@@ -1478,7 +1550,8 @@ void test_main(void)
 			 ztest_unit_test(test_floats2),
 			 ztest_unit_test(test_cbor_bstr),
 			 ztest_unit_test(test_map_length),
-			 ztest_unit_test(test_union_int)
+			 ztest_unit_test(test_union_int),
+			 ztest_unit_test(test_intmax)
 	);
 	ztest_run_test_suite(cbor_encode_test3);
 }

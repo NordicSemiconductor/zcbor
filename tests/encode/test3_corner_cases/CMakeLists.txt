@@ -42,6 +42,8 @@ set(py_command
   CBORBstr
   MapLength
   UnionInt2
+  Intmax1
+  Intmax2
   -e
   ${bit_arg}
   --short-names
