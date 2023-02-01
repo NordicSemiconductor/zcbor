@@ -115,6 +115,8 @@ static const void *get_result(const void *const input, uint_fast32_t max_result_
 #ifdef CONFIG_BIG_ENDIAN
 	return &((uint8_t *)input)[max_result_len - (result_len ? result_len : 1)];
 #else
+	(void)max_result_len;
+	(void)result_len;
 	return input;
 #endif
 }
@@ -163,7 +165,7 @@ bool zcbor_int_encode(zcbor_state_t *state, const void *input_int, size_t int_si
 		major_type = ZCBOR_MAJOR_TYPE_NINT;
 
 		/* Convert to CBOR's representation by flipping all bits. */
-		for (int i = 0; i < int_size; i++) {
+		for (unsigned int i = 0; i < int_size; i++) {
 			input_buf[i] = (uint8_t)~input_uint8[i];
 		}
 		input = input_buf;
@@ -321,7 +323,8 @@ bool zcbor_bstr_end_encode(zcbor_state_t *state, struct zcbor_string *result)
 static bool str_encode(zcbor_state_t *state,
 		const struct zcbor_string *input, zcbor_major_type_t major_type)
 {
-	if (input->len > (state->payload_end - state->payload)) {
+	ZCBOR_CHECK_PAYLOAD(); /* To make the size_t cast below safe. */
+	if (input->len > (size_t)(state->payload_end - state->payload)) {
 		ZCBOR_ERR(ZCBOR_ERR_NO_PAYLOAD);
 	}
 	if (!str_start_encode(state, input, major_type)) {
@@ -363,6 +366,8 @@ static bool list_map_start_encode(zcbor_state_t *state, uint_fast32_t max_num,
 	}
 	state->elem_count--; /* Because of dummy header. */
 #else
+	(void)max_num;
+
 	if (!encode_header_byte(state, major_type, ZCBOR_VALUE_IS_INDEFINITE_LENGTH)) {
 		ZCBOR_FAIL();
 	}
@@ -439,6 +444,8 @@ static bool list_map_end_encode(zcbor_state_t *state, uint_fast32_t max_num,
 		state->payload = payload;
 	}
 #else
+	(void)max_num;
+	(void)major_type;
 	if (!encode_header_byte(state, ZCBOR_MAJOR_TYPE_SIMPLE, ZCBOR_VALUE_IS_INDEFINITE_LENGTH)) {
 		ZCBOR_FAIL();
 	}
@@ -467,6 +474,7 @@ bool zcbor_list_map_end_force_encode(zcbor_state_t *state)
 		ZCBOR_FAIL();
 	}
 #endif
+	(void)state;
 	return true;
 }
 

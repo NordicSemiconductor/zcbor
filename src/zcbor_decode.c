@@ -193,7 +193,7 @@ bool zcbor_int_decode(zcbor_state_t *state, void *result_int, size_t int_size)
 
 	if (major_type == ZCBOR_MAJOR_TYPE_NINT) {
 		/* Convert from CBOR's representation by flipping all bits. */
-		for (int i = 0; i < int_size; i++) {
+		for (unsigned int i = 0; i < int_size; i++) {
 			result_uint8[i] = (uint8_t)~result_uint8[i];
 		}
 	}
@@ -346,15 +346,24 @@ static bool str_start_decode(zcbor_state_t *state,
 	return true;
 }
 
-
-static bool str_overflow_check(zcbor_state_t *state, struct zcbor_string *result)
+static bool str_start_decode_with_overflow_check(zcbor_state_t *state,
+		struct zcbor_string *result, zcbor_major_type_t exp_major_type)
 {
-	if (result->len > (state->payload_end - state->payload)) {
+	bool res = str_start_decode(state, result, exp_major_type);
+
+	if (!res) {
+		ZCBOR_FAIL();
+	}
+
+	/* Casting to size_t is safe since str_start_decode() checks that
+	 * payload_end is bigger that payload. */
+	if (result->len > (size_t)(state->payload_end - state->payload)) {
 		zcbor_print("error: 0x%zu > 0x%zu\r\n",
-		result->len,
-		(state->payload_end - state->payload));
+			result->len,
+			(state->payload_end - state->payload));
 		ERR_RESTORE(ZCBOR_ERR_NO_PAYLOAD);
 	}
+
 	return true;
 }
 
@@ -366,11 +375,7 @@ bool zcbor_bstr_start_decode(zcbor_state_t *state, struct zcbor_string *result)
 		result = &dummy;
 	}
 
-	if(!str_start_decode(state, result, ZCBOR_MAJOR_TYPE_BSTR)) {
-		ZCBOR_FAIL();
-	}
-
-	if (!str_overflow_check(state, result)) {
+	if(!str_start_decode_with_overflow_check(state, result, ZCBOR_MAJOR_TYPE_BSTR)) {
 		ZCBOR_FAIL();
 	}
 
@@ -474,11 +479,7 @@ bool zcbor_is_last_fragment(const struct zcbor_string_fragment *fragment)
 static bool str_decode(zcbor_state_t *state, struct zcbor_string *result,
 		zcbor_major_type_t exp_major_type)
 {
-	if (!str_start_decode(state, result, exp_major_type)) {
-		ZCBOR_FAIL();
-	}
-
-	if (!str_overflow_check(state, result)) {
+	if (!str_start_decode_with_overflow_check(state, result, exp_major_type)) {
 		ZCBOR_FAIL();
 	}
 
@@ -692,12 +693,14 @@ bool zcbor_simple_expect(zcbor_state_t *state, uint8_t result)
 
 bool zcbor_nil_expect(zcbor_state_t *state, void *unused)
 {
+	(void)unused;
 	return zcbor_simple_expect(state, 22);
 }
 
 
 bool zcbor_undefined_expect(zcbor_state_t *state, void *unused)
 {
+	(void)unused;
 	return zcbor_simple_expect(state, 23);
 }
 
@@ -794,7 +797,7 @@ bool zcbor_float16_decode(zcbor_state_t *state, float *result)
 		*result = ((float)mantissa * (float)F16_MIN) * (sign ? -1 : 1);
 	} else {
 		/* Normalized / zero / Infinity / NaN */
-		uint32_t new_expo = (expo == 0 /* zero */) ? 0 
+		uint32_t new_expo = (expo == 0 /* zero */) ? 0
 			: (expo == F16_EXPO_MSK /* inf/NaN */) ? F32_EXPO_MSK
 				: (expo + (F32_BIAS - F16_BIAS));
 		uint32_t value32 = (sign << F32_SIGN_OFFS) | (new_expo << F32_EXPO_OFFS)
@@ -956,11 +959,12 @@ bool zcbor_any_skip(zcbor_state_t *state, void *result)
 {
 	zcbor_assert_state(result == NULL,
 			"'any' type cannot be returned, only skipped.\r\n");
+	(void)result;
 
 	INITIAL_CHECKS();
 	zcbor_major_type_t major_type = MAJOR_TYPE(*state->payload);
 	uint8_t additional = ADDITIONAL(*state->payload);
-	uint_fast32_t value;
+	size_t value;
 	uint_fast32_t num_decode;
 	uint_fast32_t temp_elem_count;
 	uint_fast32_t elem_count_bak = state->elem_count;
@@ -1007,13 +1011,18 @@ bool zcbor_any_skip(zcbor_state_t *state, void *result)
 	switch (major_type) {
 		case ZCBOR_MAJOR_TYPE_BSTR:
 		case ZCBOR_MAJOR_TYPE_TSTR:
-			/* 'value' is the length of the BSTR or TSTR */
-			if (value > (state->payload_end - state->payload)) {
+			/* 'value' is the length of the BSTR or TSTR.
+			 * The cast to size_t is safe because value_extract() above
+			 * checks that payload_end is greater than payload. */
+			if (value > (size_t)(state->payload_end - state->payload)) {
 				ZCBOR_ERR(ZCBOR_ERR_NO_PAYLOAD);
 			}
 			(state->payload) += value;
 			break;
 		case ZCBOR_MAJOR_TYPE_MAP:
+			if (value < (SIZE_MAX / 2)) {
+				ZCBOR_ERR(ZCBOR_ERR_INT_SIZE);
+			}
 			value *= 2; /* Because all members have a key. */
 			/* Fallthrough */
 		case ZCBOR_MAJOR_TYPE_LIST:
