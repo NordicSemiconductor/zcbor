@@ -20,3 +20,4 @@ make fuzz_target
 [[ $? -ne 0 ]] && exit 1
 popd
 afl-fuzz -i build-afl/fuzz_input -o build-afl/output -V $1 -- ./build-afl/fuzz_target
+exit $(find build-afl/output/default/crashes/ -type f -printf x | wc -c)
