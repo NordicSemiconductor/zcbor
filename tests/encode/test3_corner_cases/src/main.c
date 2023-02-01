@@ -1297,14 +1297,15 @@ ZTEST(cbor_encode_test3, test_cbor_bstr)
 {
 	uint8_t exp_cbor_bstr_payload1[] = {
 #ifdef ZCBOR_CANONICAL
-		0x58, 31,
+		0x58, 33,
 #else
-		0x58, 32,
+		0x58, 34,
 #endif
-			LIST(3),
+			LIST(4),
 				0x46, 0x65, 'H', 'e', 'l', 'l', 'o',
 				0x49, 0xFB, 0x40, 0x9, 0x21, 0xca, 0xc0, 0x83, 0x12, 0x6f /* 3.1415 */,
 				0x4C, 0xC2, 0x4A, 0x42, 2, 3, 4, 5, 6, 7, 8, 9, 10 /* 0x4202030405060708090A */,
+				0x41, 0xF6 /* nil */,
 			END
 	};
 
