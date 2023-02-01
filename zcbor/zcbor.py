@@ -1050,7 +1050,6 @@ class CddlXcoder(CddlParser):
         return (self.type in ["NIL", "UNDEF", "ANY"]
                 or (self.type in ["INT", "NINT", "UINT", "FLOAT", "BSTR", "TSTR", "BOOL"]
                     and self.value is not None)
-                or (self.type == "BSTR" and self.cbor is not None and self.cbor.is_unambiguous())
                 or (self.type == "OTHER" and self.my_types[self.value].is_unambiguous()))
 
     def is_unambiguous_repeated(self):
