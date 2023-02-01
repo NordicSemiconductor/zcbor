@@ -28,15 +28,18 @@ endif()
 set(LD ld)
 if(NOT CONFIG_NATIVE_APPLICATION)
   set(LD ${CROSS_COMPILE_TARGET}-ld)
+  if(DEFINED ENV{ZEPHYR_SDK_INSTALL_DIR})
+    set(LD $ENV{ZEPHYR_SDK_INSTALL_DIR}/${CROSS_COMPILE_TARGET}/bin/${LD})
+  endif()
 endif()
 
-execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/include)
-execute_process(COMMAND python3 ${CMAKE_CURRENT_LIST_DIR}/floats.py ${PROJECT_BINARY_DIR} decode)
-execute_process(COMMAND ${LD} ${LD_SIMULATION} -r -b binary -o fp_bytes_decode.o fp_bytes_decode.bin WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/include RESULT_VARIABLE err1)
+execute_process(COMMAND python3 ${CMAKE_CURRENT_LIST_DIR}/floats.py ${PROJECT_BINARY_DIR} decode RESULT_VARIABLE err2)
+execute_process(COMMAND ${LD} ${LD_SIMULATION} -r -b binary -o fp_bytes_decode.o fp_bytes_decode.bin WORKING_DIRECTORY ${PROJECT_BINARY_DIR} RESULT_VARIABLE err3)
 
 target_link_libraries(app PRIVATE ${PROJECT_BINARY_DIR}/fp_bytes_decode.o)
 
-execute_process(COMMAND python3 ${CMAKE_CURRENT_LIST_DIR}/floats.py ${PROJECT_BINARY_DIR} encode)
-execute_process(COMMAND ${LD} ${LD_SIMULATION} -r -b binary -o fp_bytes_encode.o fp_bytes_encode.bin WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+execute_process(COMMAND python3 ${CMAKE_CURRENT_LIST_DIR}/floats.py ${PROJECT_BINARY_DIR} encode RESULT_VARIABLE err4)
+execute_process(COMMAND ${LD} ${LD_SIMULATION} -r -b binary -o fp_bytes_encode.o fp_bytes_encode.bin WORKING_DIRECTORY ${PROJECT_BINARY_DIR} RESULT_VARIABLE err5)
 
 target_link_libraries(app PRIVATE ${PROJECT_BINARY_DIR}/fp_bytes_encode.o)
