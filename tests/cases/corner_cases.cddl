@@ -182,6 +182,7 @@ CBORBstr = bstr .cbor ([
 	hello: bstr .cbor "Hello",
 	pi: bstr .cbor 3.1415,
 	big_uint_bstr: (bstr .cbor biguint),
+	nilval2: bstr .cbor nil
 ])
 
 

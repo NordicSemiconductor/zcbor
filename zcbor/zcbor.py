@@ -1755,11 +1755,15 @@ class CodeGenerator(CddlXcoder):
 
         return cddl_res
 
+    # Whether this element (an OTHER) refers to an entry type.
+    def is_entry_type(self):
+        return (self.type == "OTHER") and (self.value in self.entry_type_names)
+
     # Whether to include a "cbor" variable for this element.
     def is_cbor(self):
-        return (self.type_name() is not None) and (
-            (self.type != "OTHER")
-            or ((self.value not in self.entry_type_names) and self.my_types[self.value].is_cbor()))
+        res = (self.type_name() is not None) and not self.is_entry_type() and (
+            (self.type != "OTHER") or self.my_types[self.value].is_cbor())
+        return res
 
     def init_args(self):
         return (self.mode, self.entry_type_names, self.default_bit_size, self.default_max_qty)
@@ -2311,7 +2315,7 @@ class CodeGenerator(CddlXcoder):
                 [child.full_xcode() for child in self.value])
 
     def xcode_bstr(self):
-        if self.cbor_var_condition():
+        if self.cbor and not self.cbor.is_entry_type():
             access_arg = f', {deref_if_not_null(self.val_access())}' if self.mode == 'decode' \
                 else ''
             res_arg = f', &tmp_str' if self.mode == 'encode' \
