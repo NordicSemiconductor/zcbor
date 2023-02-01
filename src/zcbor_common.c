@@ -90,7 +90,7 @@ bool zcbor_process_backup(zcbor_state_t *state, uint32_t flags,
 static void update_backups(zcbor_state_t *state, uint8_t const *new_payload_end)
 {
 	if (state->constant_state) {
-		for (int i = 0; i < state->constant_state->current_backup; i++) {
+		for (unsigned int i = 0; i < state->constant_state->current_backup; i++) {
 			state->constant_state->backup_list[i].payload_end = new_payload_end;
 			state->constant_state->backup_list[i].payload_moved = true;
 		}
