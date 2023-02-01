@@ -507,8 +507,7 @@ static bool str_expect(zcbor_state_t *state, struct zcbor_string *result,
 	if (!str_decode(state, &tmp_result, exp_major_type)) {
 		ZCBOR_FAIL();
 	}
-	if ((tmp_result.len != result->len)
-			|| memcmp(result->value, tmp_result.value, tmp_result.len)) {
+	if (!zcbor_compare_strings(&tmp_result, result)) {
 		ERR_RESTORE(ZCBOR_ERR_WRONG_VALUE);
 	}
 	return true;
