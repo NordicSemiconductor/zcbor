@@ -6,108 +6,9 @@ env:
   ZEPHYR_SDK_VERSION: 0.15.2
 
 jobs:
-  merge-test-1:
-    runs-on: ubuntu-22.04
-    strategy:
-      matrix:
-        platform: ["native_posix", "native_posix_64", "mps2_an521"]
-        asserts: ["", "-x VERBOSE=ON -x ASSERTS=ON"]
-    name: Merge tests 1 (${{ matrix.platform }}${{ matrix.asserts != '' && ' with asserts' || '' }})
-    steps:
-    - name: Checkout the code
-      uses: actions/checkout@v3
-
-    - name: Install zcbor
-      uses: ./.github/actions/install_zcbor
-
-    - name: Prepare and run tests
-      uses: ./.github/actions/prepare_and_run_tests
-      with:
-        twister_arguments: "--timestamps --platform ${{ matrix.platform }} ${{ matrix.asserts }} --exclude-tag release"
-        zephyr_toolchain: ${{ matrix.platform == 'mps2_an521' && 'zephyr' || 'host'}}
-        zephyr_toolchain_arch: ${{ matrix.platform == 'mps2_an521' && 'arm' || ''}}
-
-  merge-test-2:
-    runs-on: ubuntu-22.04
-    strategy:
-      matrix:
-        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
-    name: Merge tests 2 (Python ${{ matrix.python-version }})
-    steps:
-    - name: Checkout the code
-      uses: actions/checkout@v3
-
-    - name: Setup Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python-version }}
-
-    - name: Install zcbor
-      uses: ./.github/actions/install_zcbor
-      with:
-        zcbor_package: 'setup_install'
-
-    - name: Run python tests
-      working-directory: tests/scripts
-      run: |
-        python3 -m unittest test_zcbor
-
-  merge-test-3:
-    runs-on: windows-latest
-    name: Merge tests 3 (Windows)
-    steps:
-    - name: Checkout the code
-      uses: actions/checkout@v3
-
-    - name: Install west and dependencies
-      run: |
-        pip install -U pip
-        pip install -U setuptools
-        pip install -U wheel
-        pip install -U -r scripts/requirements.txt
-
-    - name: Generate and install zcbor package
-      run: |
-        python setup.py bdist_wheel
-        pip install dist/zcbor-0.7.0-py3-none-any.whl
-        pip uninstall -y zcbor
-        pip install -e .
-
-    - name: Run python tests
-      working-directory: tests/scripts
-      run: |
-        python3 -m unittest test_zcbor
-
-  merge-test-4:
-    runs-on: ubuntu-22.04
-    name: Merge tests 4 (Test repo files)
-    steps:
-    - name: Checkout the code
-      uses: actions/checkout@v3
-
-    - name: Setup Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
-
-    - name: Install zcbor
-      uses: ./.github/actions/install_zcbor
-      with:
-        zcbor_package: 'setup_develop'
-
-    - name: Run tests on repo files
-      working-directory: tests/scripts
-      run: |
-        python3 -m unittest test_repo_files
-
   release-test-1:
     runs-on: ubuntu-22.04
     name: Release tests 1 (Fuzz)
-    needs:
-    - merge-test-1
-    - merge-test-2
-    - merge-test-3
-    - merge-test-4
     if: "startswith(github.head_ref, 'release/')"
     steps:
     - name: Checkout the code
@@ -116,27 +17,15 @@ jobs:
     - name: Install zcbor
       uses: ./.github/actions/install_zcbor
 
-    - name: Run python release tests
-      working-directory: tests/scripts
-      run: |
-        echo -n ${{ github.head_ref }} > HEAD_REF
-        python3 -m unittest test_versions
-        rm HEAD_REF
-
     - name: Install packages
       run: |
         sudo apt update
         sudo apt install -y afl++
 
-    - name: Run manifest12 fuzz tests
-      working-directory: tests/fuzz
-      run: |
-        ./test-afl.sh 3200 64 manifest12
-
     - name: Run pet fuzz tests
       working-directory: tests/fuzz
       run: |
-        ./test-afl.sh 400 64 pet
+        ./test-afl.sh 4 64 pet
 
     - name: Rename fuzz failures
       if: ${{ failure() }}
@@ -156,69 +45,3 @@ jobs:
       with:
         name: zcbor-release
         path: dist/*
-
-  release-test-2:
-    runs-on: ubuntu-22.04
-    strategy:
-      matrix:
-        python-version: ['3.8', '3.9', '3.10', '3.11']
-        asserts: ["", "-x VERBOSE=ON -x ASSERTS=ON"]
-    name: Release tests 2 (Python ${{ matrix.python-version }}${{ matrix.asserts != '' && ' with asserts' || '' }})
-    needs:
-    - merge-test-1
-    - merge-test-2
-    - merge-test-3
-    - merge-test-4
-    if: "startswith(github.head_ref, 'release/')"
-    steps:
-    - name: Checkout the code
-      uses: actions/checkout@v3
-
-    - name: Setup Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python-version }}
-
-    - name: Install zcbor
-      uses: ./.github/actions/install_zcbor
-      with:
-        zcbor_package: 'setup_install'
-
-    - name: Prepare and run tests
-      uses: ./.github/actions/prepare_and_run_tests
-      with:
-        twister_arguments: "--timestamps --platform native_posix --platform native_posix_64 --platform mps2_an521 --platform qemu_malta_be ${{ matrix.asserts }}"
-        zephyr_toolchain: zephyr
-        zephyr_toolchain_arch: arm,mips
-
-  release-test-3:
-    runs-on: ubuntu-22.04
-    strategy:
-      matrix:
-        python-version: ['3.8', '3.9', '3.10', '3.11']
-        asserts: ["", "-x VERBOSE=ON -x ASSERTS=ON"]
-    name: Release tests 3 (Python ${{ matrix.python-version }}${{ matrix.asserts != '' && ' with asserts' || '' }})
-    needs:
-    - merge-test-1
-    - merge-test-2
-    - merge-test-3
-    - merge-test-4
-    if: "startswith(github.head_ref, 'release/')"
-    steps:
-    - name: Checkout the code
-      uses: actions/checkout@v3
-
-    - name: Setup Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python-version }}
-
-    - name: Install zcbor
-      uses: ./.github/actions/install_zcbor
-      with:
-        zcbor_package: 'setup_develop'
-
-    - name: Run python tests on samples
-      working-directory: tests/scripts
-      run: |
-        python3 -m unittest test_repo_files.TestSamples

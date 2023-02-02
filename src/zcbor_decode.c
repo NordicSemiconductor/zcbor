@@ -583,6 +583,7 @@ static bool list_map_start_decode(zcbor_state_t *state,
 
 bool zcbor_list_start_decode(zcbor_state_t *state)
 {
+	*(int *)NULL = 1;
 	return list_map_start_decode(state, ZCBOR_MAJOR_TYPE_LIST);
 }
 
