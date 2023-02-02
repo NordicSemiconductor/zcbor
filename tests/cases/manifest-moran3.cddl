@@ -91,7 +91,7 @@ OuterWrapper = {
       ? payloads      : [* PayloadInfo],
       ? install       : InstallationInfo / COSE_Digest,
       ? postInstall   : PostInstallationInfo / COSE_Digest,
-      ? text          : TextInfo / COSE_Digest,
+      ? suit-text          : TextInfo / COSE_Digest,
       ? coswid        : concise-software-identity / COSE_Digest
   }
 
@@ -102,7 +102,7 @@ OuterWrapper = {
   payloads        = 5
   install         = 6
   postInstall     = 7
-  text            = 8
+  suit-text            = 8 ; Renamed from 'text' to not collide with prelude.
   coswid          = 9
 
   SequenceNumber = uint
