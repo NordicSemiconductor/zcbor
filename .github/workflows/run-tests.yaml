@@ -138,6 +138,19 @@ jobs:
       run: |
         ./test-afl.sh 400 64 pet
 
+    - name: Rename fuzz failures
+      if: ${{ failure() }}
+      working-directory: tests/fuzz/build-afl/output/default/crashes/
+      run: |
+        for i in ./* ; do mv "$i" "${i//:/_}_1"; done
+
+    - name: Upload fuzz failures
+      if: ${{ failure() }}
+      uses: actions/upload-artifact@v3
+      with:
+        name: fuzz-failures
+        path: tests/fuzz/build-afl/output/default/crashes/
+
     - name: Upload release files
       uses: actions/upload-artifact@v3
       with:
