@@ -50,16 +50,16 @@ This is because decoding is generally more complex than encoding, since when dec
 The code generation will provide a number of checks that are tedious to write manually.
 These checks ensure that the payload is well-formed.
 
+
 CBOR decoding/encoding library
 ==============================
 
-The CBOR library can be found in [include/](include) and [src/](src) can be used directly, by including the files in your project.
-If using zcbor with Zephyr, the library will be available when the [CONFIG_ZCBOR](https://docs.zephyrproject.org/latest/kconfig.html#CONFIG_ZCBOR)
+The CBOR library can be found in [include/](include) and [src/](src) and can be used directly, by including the files in your project.
+If using zcbor with Zephyr, the library will be available when the [CONFIG_ZCBOR](https://docs.zephyrproject.org/latest/kconfig.html#CONFIG_ZCBOR) config is enabled.
 
 The library is also used by generated code. See the the [Code generation](#code-generation) section for more info about code generation.
 
 The C library is C++ compatible.
-
 
 The zcbor state object
 ----------------------
