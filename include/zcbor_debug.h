@@ -62,6 +62,40 @@ static void zcbor_print_compare_strings_diff(const uint8_t *str1, const uint8_t 
 	}
 }
 
+__attribute__((used))
+static const char *zcbor_error_str(int error)
+{
+	#define ZCBOR_ERR_CASE(err) case err: { \
+			return #err; /* The literal is static per C99 6.4.5 paragraph 5. */\
+		}
+	switch(error) {
+		ZCBOR_ERR_CASE(ZCBOR_SUCCESS)
+		ZCBOR_ERR_CASE(ZCBOR_ERR_NO_BACKUP_MEM)
+		ZCBOR_ERR_CASE(ZCBOR_ERR_NO_BACKUP_ACTIVE)
+		ZCBOR_ERR_CASE(ZCBOR_ERR_LOW_ELEM_COUNT)
+		ZCBOR_ERR_CASE(ZCBOR_ERR_HIGH_ELEM_COUNT)
+		ZCBOR_ERR_CASE(ZCBOR_ERR_INT_SIZE)
+		ZCBOR_ERR_CASE(ZCBOR_ERR_FLOAT_SIZE)
+		ZCBOR_ERR_CASE(ZCBOR_ERR_ADDITIONAL_INVAL)
+		ZCBOR_ERR_CASE(ZCBOR_ERR_NO_PAYLOAD)
+		ZCBOR_ERR_CASE(ZCBOR_ERR_PAYLOAD_NOT_CONSUMED)
+		ZCBOR_ERR_CASE(ZCBOR_ERR_WRONG_TYPE)
+		ZCBOR_ERR_CASE(ZCBOR_ERR_WRONG_VALUE)
+		ZCBOR_ERR_CASE(ZCBOR_ERR_WRONG_RANGE)
+		ZCBOR_ERR_CASE(ZCBOR_ERR_ITERATIONS)
+		ZCBOR_ERR_CASE(ZCBOR_ERR_ASSERTION)
+	}
+	#undef ZCBOR_ERR_CASE
+
+	return "ZCBOR_ERR_UNKNOWN";
+}
+
+__attribute__((used))
+static void zcbor_print_error(int error)
+{
+	printk("%s\r\n", zcbor_error_str(error));
+}
+
 #ifdef __cplusplus
 }
 #endif
