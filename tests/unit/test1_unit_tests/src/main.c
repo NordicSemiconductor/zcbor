@@ -974,6 +974,33 @@ ZTEST(zcbor_unit_tests, test_compare_strings)
 }
 
 
+ZTEST(zcbor_unit_tests, test_error_str)
+{
+#define test_str(err) zassert_mem_equal(zcbor_error_str(err), #err, sizeof(#err), NULL)
+
+	test_str(ZCBOR_SUCCESS);
+	test_str(ZCBOR_ERR_NO_BACKUP_MEM);
+	test_str(ZCBOR_ERR_NO_BACKUP_ACTIVE);
+	test_str(ZCBOR_ERR_LOW_ELEM_COUNT);
+	test_str(ZCBOR_ERR_HIGH_ELEM_COUNT);
+	test_str(ZCBOR_ERR_INT_SIZE);
+	test_str(ZCBOR_ERR_FLOAT_SIZE);
+	test_str(ZCBOR_ERR_ADDITIONAL_INVAL);
+	test_str(ZCBOR_ERR_NO_PAYLOAD);
+	test_str(ZCBOR_ERR_PAYLOAD_NOT_CONSUMED);
+	test_str(ZCBOR_ERR_WRONG_TYPE);
+	test_str(ZCBOR_ERR_WRONG_VALUE);
+	test_str(ZCBOR_ERR_WRONG_RANGE);
+	test_str(ZCBOR_ERR_ITERATIONS);
+	test_str(ZCBOR_ERR_ASSERTION);
+	test_str(ZCBOR_ERR_UNKNOWN);
+	zassert_mem_equal(zcbor_error_str(-1), "ZCBOR_ERR_UNKNOWN", sizeof("ZCBOR_ERR_UNKNOWN"), NULL);
+	zassert_mem_equal(zcbor_error_str(-10), "ZCBOR_ERR_UNKNOWN", sizeof("ZCBOR_ERR_UNKNOWN"), NULL);
+	zassert_mem_equal(zcbor_error_str(ZCBOR_ERR_ASSERTION + 1), "ZCBOR_ERR_UNKNOWN", sizeof("ZCBOR_ERR_UNKNOWN"), NULL);
+	zassert_mem_equal(zcbor_error_str(100000), "ZCBOR_ERR_UNKNOWN", sizeof("ZCBOR_ERR_UNKNOWN"), NULL);
+}
+
+
 ZTEST(zcbor_unit_tests, test_any_skip)
 {
 	uint8_t payload[200];
