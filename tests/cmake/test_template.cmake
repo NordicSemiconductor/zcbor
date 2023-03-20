@@ -16,6 +16,14 @@ if (CANONICAL)
   zephyr_compile_definitions(ZCBOR_CANONICAL)
 endif()
 
+if (DIAG_PRINT)
+  zephyr_compile_definitions(ZCBOR_DIAG_PRINT)
+endif()
+
+if (DIAG_PRINT_COLORS)
+  zephyr_compile_definitions(ZCBOR_DIAG_PRINT_PRETTY)
+endif()
+
 if (CONFIG_BIG_ENDIAN OR BIG_ENDIAN)
   zephyr_compile_definitions(ZCBOR_BIG_ENDIAN)
 endif()

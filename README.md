@@ -83,6 +83,27 @@ ZCBOR_STATE_D(decode_state, n, payload, payload_len, elem_count, n_flags);
 ZCBOR_STATE_E(encode_state, n, payload, payload_len, 0);
 ```
 
+Diagnostic printing of CBOR data
+--------------------------------
+
+The C library contains a function (`zcbor_diag_print()`) for printing CBOR data to terminal in a human readable way.
+The functionality must be enabled via the `ZCBOR_DIAG_PRINT` configuration option for the function to be available.
+By also defining `ZCBOR_DIAG_PRINT_PRETTY`, the output is made more readable via more thorough interpretation, and colorized using ANSI escape codes, see the figure below for the difference.
+The color choices can be configured via the `ZCBOR_DIAG_PRINT_COLOR_*` (`HEADER`, `VALUE`, `DESC`, `TAG`), the defaults are red, blue, green, and yellow respectively.
+If the `ZCBOR_DIAG_PRINT_PRETTY` functionality is wanted without the color, set all the `ZCBOR_*_COLOR` definitions to empty strings.
+If changing the color, the defines should be full ANSI escape codes:
+
+```c
+/* Make the header green */
+#define ZCBOR_DIAG_PRINT_COLOR_HEADER "\x1B[32m"
+```
+
+![`zcbor_diag_print() output`](images/zcbor_diag_print_ex1.png)
+Figure: Example output from `zcbor_diag_print()`, without and with `ZCBOR_DIAG_PRINT_PRETTY`.
+
+By default, `zcbor_diag_print()` uses Zephyr's `printk` to print.
+To change this, define `ZCBOR_DIAG_PRINT_FUNC` to your preferred function (must follow the `printf` signature).
+
 Configuration
 -------------
 
@@ -98,6 +119,8 @@ Name                      | Description
 `ZCBOR_STOP_ON_ERROR`     | Enable the `stop_on_error` functionality. This makes all functions abort their execution if called when an error has already happened.
 `ZCBOR_BIG_ENDIAN`        | All decoded values are returned as big-endian. The default is little-endian.
 `ZCBOR_MAP_SMART_SEARCH`  | Applies to decoding of unordered maps. When enabled, a flag is kept for each element in an array, ensuring it is not processed twice. If disabled, a count is kept for map as a whole. Enabling increases code size and memory usage, and requires the state variable to possess the memory necessary for the flags.
+`ZCBOR_DIAG_PRINT`        | Enable the `zcbor_diag_print()` function for printing CBOR.
+`ZCBOR_DIAG_PRINT_PRETTY` | Enable color printing and better readability for `zcbor_diag_print()`. `ZCBOR_DIAG_PRINT` must also be defined. This leads to bigger code size.
 
 
 Python script and module

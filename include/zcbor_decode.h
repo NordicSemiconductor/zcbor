@@ -440,6 +440,17 @@ void zcbor_bstr_next_fragment(zcbor_state_t *state,
 /** Can be used on any fragment to tell if it is the final fragment of the string. */
 bool zcbor_is_last_fragment(const struct zcbor_string_fragment *fragment);
 
+/** Diagnostic printing of CBOR data
+ *
+ * Traverses and prints one CBOR element, analogous to @ref zcbor_any_skip.
+ * Must be enabled via ZCBOR_DIAG_PRINT. Can be modified via
+ * ZCBOR_DIAG_PRINT_PRETTY, ZCBOR_DIAG_PRINT_COLOR_HEADER, ZCBOR_DIAG_PRINT_COLOR_VALUE,
+ * ZCBOR_DIAG_PRINT_COLOR_DESC, ZCBOR_DIAG_PRINT_COLOR_TAG, and ZCBOR_DIAG_PRINT_FUNC.
+ *
+ * See the README for more information.
+*/
+bool zcbor_diag_print(zcbor_state_t *state);
+
 #ifdef __cplusplus
 }
 #endif
