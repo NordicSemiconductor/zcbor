@@ -142,7 +142,7 @@ class TestDocs(TestCase):
             repo_url_args = ['git', 'remote', 'get-url', remote]
             repo_url = check_output(repo_url_args).decode('utf-8').strip().strip('.git')
             if 'github.com' in repo_url:
-                self.base_url = (repo_url + '/tree/' + remote_branch + '/')
+                self.base_url = (repo_url + '/blob/' + remote_branch + '/')
             else:
                 # The URL is not in github.com, so we are not sure it is constructed correctly.
                 self.base_url = None

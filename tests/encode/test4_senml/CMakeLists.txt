@@ -32,7 +32,7 @@ include(${PROJECT_BINARY_DIR}/senml.cmake)
 target_link_libraries(senml PRIVATE zephyr_interface)
 target_link_libraries(app PRIVATE senml)
 
-if (NOT VERBOSE)
+if (NOT VERBOSE AND NOT ZCBOR_PRINT_CBOR)
   # VERBOSE means including printk which doesn't build with these options.
   target_compile_options(senml PRIVATE -Wpedantic -Wconversion)
 endif()

@@ -13,6 +13,7 @@
 #include <stddef.h>
 #include <string.h>
 #include "zcbor_encode.h"
+#include "zcbor_print.h"
 #include "pet_encode.h"
 #include "zcbor_print.h"
 

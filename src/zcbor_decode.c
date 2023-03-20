@@ -962,6 +962,7 @@ bool zcbor_search_key_tstr_term(zcbor_state_t *state, char const *str, size_t ma
 }
 
 
+#ifndef ZCBOR_CANONICAL
 static bool array_end_expect(zcbor_state_t *state)
 {
 	INITIAL_CHECKS();
@@ -970,6 +971,7 @@ static bool array_end_expect(zcbor_state_t *state)
 	state->payload++;
 	return true;
 }
+#endif
 
 
 static bool list_map_end_decode(zcbor_state_t *state)
@@ -1397,46 +1399,71 @@ bool zcbor_float_pexpect(zcbor_state_t *state, double *expected)
 }
 
 
-bool zcbor_any_skip(zcbor_state_t *state, void *result)
-{
-	PRINT_FUNC();
-	zcbor_assert_state(result == NULL,
-			"'any' type cannot be returned, only skipped.\r\n");
-	(void)result;
+#ifdef ZCBOR_PRINT_CBOR
+static bool traverse_element(zcbor_state_t *state, bool do_print, uint8_t indent_len);
 
-	INITIAL_CHECKS();
-	zcbor_major_type_t major_type = ZCBOR_MAJOR_TYPE(*state->payload);
-	uint8_t additional = ZCBOR_ADDITIONAL(*state->payload);
-	uint64_t value = 0; /* In case of indefinite_length_array. */
+bool zcbor_print_cbor(zcbor_state_t *state)
+{
+	return traverse_element(state, true, 0);
+}
+
+static void print_cbor_if_valid(zcbor_state_t *state, size_t len, uint8_t indent_len);
+
+static void print_btstr_w_cbor(zcbor_state_t *state, size_t len, bool is_bstr, uint8_t indent_len)
+{
+	if (len) {
+		zcbor_print_btstr(state->payload, len, is_bstr, indent_len);
+		if (is_bstr) {
+			print_cbor_if_valid(state, len, indent_len);
+		}
+	}
+}
+
+#define PRINT_CBOR_IF(do_print, func, ...) do { \
+	if (do_print) func(__VA_ARGS__); \
+} while (0)
+
+#else
+#define PRINT_CBOR_IF(do_print, func, ...) /* Disabled */
+#endif
+
+static bool traverse_element(zcbor_state_t *state, bool do_print, uint8_t indent_len)
+{
+	/* INITIAL_CHECKS(); done by zcbor_tag_decode() below. */
 	zcbor_state_t state_copy;
+	uint32_t tag_dummy;
 
 	memcpy(&state_copy, state, sizeof(zcbor_state_t));
 
-	while (major_type == ZCBOR_MAJOR_TYPE_TAG) {
-		uint32_t tag_dummy;
-
-		if (!zcbor_tag_decode(&state_copy, &tag_dummy)) {
-			ZCBOR_FAIL();
-		}
-		ZCBOR_ERR_IF(state_copy.payload >= state_copy.payload_end, ZCBOR_ERR_NO_PAYLOAD);
-		major_type = ZCBOR_MAJOR_TYPE(*state_copy.payload);
-		additional = ZCBOR_ADDITIONAL(*state_copy.payload);
+	while (zcbor_tag_decode(&state_copy, &tag_dummy)) {
+		PRINT_CBOR_IF(do_print, zcbor_print_tag, tag_dummy, indent_len);
 	}
 
+	zcbor_major_type_t major_type = ZCBOR_MAJOR_TYPE(*state_copy.payload);
+	uint64_t value = 0; /* 0 in case of indefinite_length_array. */
+	uint8_t const *payload_after_tags = state_copy.payload;
+	(void)payload_after_tags; /* Not always used. */
 #ifdef ZCBOR_CANONICAL
 	const bool indefinite_length_array = false;
 #else
+	uint8_t additional = ZCBOR_ADDITIONAL(*state_copy.payload);
 	const bool indefinite_length_array = ((additional == ZCBOR_VALUE_IS_INDEFINITE_LENGTH)
 		&& ((major_type == ZCBOR_MAJOR_TYPE_LIST) || (major_type == ZCBOR_MAJOR_TYPE_MAP)));
 #endif
 
-	if (!indefinite_length_array && !value_extract(&state_copy, &value, sizeof(value))) {
+	if (indefinite_length_array) {
+		state_copy.payload++;
+	} else if (!value_extract(&state_copy, &value, sizeof(value))) {
 		/* Can happen because of elem_count (or payload_end) */
 		ZCBOR_FAIL();
 	}
 
+	PRINT_CBOR_IF(do_print, zcbor_print_value, payload_after_tags,
+		state_copy.payload - payload_after_tags, value, indent_len);
+
 	switch (major_type) {
 		case ZCBOR_MAJOR_TYPE_BSTR:
+			/* Fallthrough */
 		case ZCBOR_MAJOR_TYPE_TSTR:
 			/* 'value' is the length of the BSTR or TSTR.
 			 * The subtraction is safe because value_extract() above
@@ -1444,6 +1471,10 @@ bool zcbor_any_skip(zcbor_state_t *state, void *result)
 			ZCBOR_ERR_IF(
 				value > (uint64_t)(state_copy.payload_end - state_copy.payload),
 				ZCBOR_ERR_NO_PAYLOAD);
+
+			PRINT_CBOR_IF(do_print, print_btstr_w_cbor, &state_copy, (size_t)value,
+					major_type == ZCBOR_MAJOR_TYPE_BSTR, indent_len + 1);
+
 			(state_copy.payload) += value;
 			break;
 		case ZCBOR_MAJOR_TYPE_MAP:
@@ -1452,18 +1483,18 @@ bool zcbor_any_skip(zcbor_state_t *state, void *result)
 			/* fallthrough */
 		case ZCBOR_MAJOR_TYPE_LIST:
 			if (indefinite_length_array) {
-				state_copy.payload++;
 				value = ZCBOR_LARGE_ELEM_COUNT;
 			}
 			state_copy.elem_count = (size_t)value;
 			state_copy.decode_state.indefinite_length_array = indefinite_length_array;
 			while (!zcbor_array_at_end(&state_copy)) {
-				if (!zcbor_any_skip(&state_copy, NULL)) {
+				if (!traverse_element(&state_copy, do_print, indent_len + 1)) {
 					ZCBOR_FAIL();
 				}
 			}
-			if (indefinite_length_array && !array_end_expect(&state_copy)) {
-				ZCBOR_FAIL();
+			if (indefinite_length_array) {
+				state_copy.payload++; /* payload bounds checked by zcbor_array_at_end(). */
+				PRINT_CBOR_IF(do_print, zcbor_print_end, major_type, indent_len);
 			}
 			break;
 		default:
@@ -1475,6 +1506,34 @@ bool zcbor_any_skip(zcbor_state_t *state, void *result)
 	state->elem_count--;
 
 	return true;
+}
+
+__attribute__((used))
+static void print_cbor_if_valid(zcbor_state_t *state, size_t len, uint8_t indent_len)
+{
+	uint8_t const *payload_bak = state->payload;
+	size_t elem_count_bak = state->elem_count;
+
+	state->elem_count++;
+	if (traverse_element(state, false, indent_len)
+			&& (state->payload == (payload_bak + len))) {
+		state->elem_count++;
+		state->payload = payload_bak;
+		(void)traverse_element(state, true, indent_len);
+	}
+	state->payload = payload_bak;
+	state->elem_count = elem_count_bak;
+}
+
+
+bool zcbor_any_skip(zcbor_state_t *state, void *result)
+{
+	PRINT_FUNC();
+	zcbor_assert_state(result == NULL,
+			"'any' type cannot be returned, only skipped.\r\n");
+	(void)result;
+
+	return traverse_element(state, false, 0);
 }
 
 

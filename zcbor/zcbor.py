@@ -2668,6 +2668,7 @@ static bool {xcoder.func_name}(
 #include <stddef.h>
 #include <string.h>
 #include "zcbor_{mode}.h"
+#include "zcbor_print.h"
 #include "{header_file_name}"
 #include "zcbor_print.h"
 

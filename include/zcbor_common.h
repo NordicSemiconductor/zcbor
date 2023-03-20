@@ -48,6 +48,10 @@ struct zcbor_string_fragment {
 #define MAX(a, b) (((a) < (b)) ? (b) : (a))
 #endif
 
+#ifndef NAN
+#define NAN (0.0/0.0)
+#endif
+
 #ifndef ZCBOR_ARRAY_SIZE
 #define ZCBOR_ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 #endif
