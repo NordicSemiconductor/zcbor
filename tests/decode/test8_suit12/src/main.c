@@ -704,148 +704,119 @@ bool fuzz_one_input(const uint8_t *data, size_t size);
 
 #define FUZZ(x) fuzz_one_input(x, sizeof(x))
 
-void test_manifest12_crash0(void)
+ZTEST(cbor_decode_test8, test_manifest12_crash0)
 {
 	FUZZ(crash_vector0);
 }
 
-void test_manifest12_crash1(void)
+ZTEST(cbor_decode_test8, test_manifest12_crash1)
 {
 	FUZZ(crash_vector1);
 }
 
-void test_manifest12_crash2(void)
+ZTEST(cbor_decode_test8, test_manifest12_crash2)
 {
 	FUZZ(crash_vector2);
 }
 
-void test_manifest12_crash3(void)
+ZTEST(cbor_decode_test8, test_manifest12_crash3)
 {
 	FUZZ(crash_vector3);
 }
 
-void test_manifest12_crash4(void)
+ZTEST(cbor_decode_test8, test_manifest12_crash4)
 {
 	FUZZ(crash_vector4);
 }
 
-void test_manifest12_crash5(void)
+ZTEST(cbor_decode_test8, test_manifest12_crash5)
 {
 	FUZZ(crash_vector5);
 }
 
-void test_manifest12_crash6(void)
+ZTEST(cbor_decode_test8, test_manifest12_crash6)
 {
 	FUZZ(crash_vector6);
 }
 
-void test_manifest12_crash7(void)
+ZTEST(cbor_decode_test8, test_manifest12_crash7)
 {
 	FUZZ(crash_vector7);
 }
 
-void test_manifest12_crash8(void)
+ZTEST(cbor_decode_test8, test_manifest12_crash8)
 {
 	FUZZ(crash_vector8);
 }
 
-void test_manifest12_crash9(void)
+ZTEST(cbor_decode_test8, test_manifest12_crash9)
 {
 	FUZZ(crash_vector9);
 }
 
-void test_manifest12_crash10(void)
+ZTEST(cbor_decode_test8, test_manifest12_crash10)
 {
 	FUZZ(crash_vector10);
 }
 
-void test_manifest12_crash11(void)
+ZTEST(cbor_decode_test8, test_manifest12_crash11)
 {
 	FUZZ(crash_vector11);
 }
 
-void test_manifest12_crash12(void)
+ZTEST(cbor_decode_test8, test_manifest12_crash12)
 {
 	FUZZ(crash_vector12);
 }
 
-void test_manifest12_crash13(void)
+ZTEST(cbor_decode_test8, test_manifest12_crash13)
 {
 	FUZZ(crash_vector13);
 }
 
-void test_manifest12_crash14(void)
+ZTEST(cbor_decode_test8, test_manifest12_crash14)
 {
 	FUZZ(crash_vector14);
 }
 
-void test_manifest12_crash15(void)
+ZTEST(cbor_decode_test8, test_manifest12_crash15)
 {
 	FUZZ(crash_vector15);
 }
 
-void test_manifest12_crash16(void)
+ZTEST(cbor_decode_test8, test_manifest12_crash16)
 {
 	FUZZ(crash_vector16);
 }
 
-void test_manifest12_crash17(void)
+ZTEST(cbor_decode_test8, test_manifest12_crash17)
 {
 	FUZZ(crash_vector17);
 }
 
-void test_manifest12_crash18(void)
+ZTEST(cbor_decode_test8, test_manifest12_crash18)
 {
 	FUZZ(crash_vector18);
 }
 
-void test_manifest12_crash19(void)
+ZTEST(cbor_decode_test8, test_manifest12_crash19)
 {
 	FUZZ(crash_vector19);
 }
 
-void test_manifest12_crash20(void)
+ZTEST(cbor_decode_test8, test_manifest12_crash20)
 {
 	FUZZ(crash_vector20);
 }
 
-void test_manifest12_crash21(void)
+ZTEST(cbor_decode_test8, test_manifest12_crash21)
 {
 	FUZZ(crash_vector21);
 }
 
-void test_manifest12_crash22(void)
+ZTEST(cbor_decode_test8, test_manifest12_crash22)
 {
 	FUZZ(crash_vector22);
 }
 
-
-void test_main(void)
-{
-	ztest_test_suite(cbor_decode_test8,
-			 ztest_unit_test(test_manifest12_crash0),
-			 ztest_unit_test(test_manifest12_crash1),
-			 ztest_unit_test(test_manifest12_crash2),
-			 ztest_unit_test(test_manifest12_crash3),
-			 ztest_unit_test(test_manifest12_crash4),
-			 ztest_unit_test(test_manifest12_crash5),
-			 ztest_unit_test(test_manifest12_crash6),
-			 ztest_unit_test(test_manifest12_crash7),
-			 ztest_unit_test(test_manifest12_crash8),
-			 ztest_unit_test(test_manifest12_crash9),
-			 ztest_unit_test(test_manifest12_crash10),
-			 ztest_unit_test(test_manifest12_crash11),
-			 ztest_unit_test(test_manifest12_crash12),
-			 ztest_unit_test(test_manifest12_crash13),
-			 ztest_unit_test(test_manifest12_crash14),
-			 ztest_unit_test(test_manifest12_crash15),
-			 ztest_unit_test(test_manifest12_crash16),
-			 ztest_unit_test(test_manifest12_crash17),
-			 ztest_unit_test(test_manifest12_crash18),
-			 ztest_unit_test(test_manifest12_crash19),
-			 ztest_unit_test(test_manifest12_crash20),
-			 ztest_unit_test(test_manifest12_crash21),
-			 ztest_unit_test(test_manifest12_crash22)
-	);
-	ztest_run_test_suite(cbor_decode_test8);
-}
+ZTEST_SUITE(cbor_decode_test8, NULL, NULL, NULL, NULL, NULL);

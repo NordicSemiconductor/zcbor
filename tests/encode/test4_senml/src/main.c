@@ -30,7 +30,7 @@
 #define END
 #endif
 
-void test_senml(void)
+ZTEST(cbor_encode_test4, test_senml)
 {
 	struct lwm2m_senml input = {
 		._lwm2m_senml__record[0] = {
@@ -63,10 +63,4 @@ void test_senml(void)
 	zassert_mem_equal(payload, exp_payload1, encode_len, NULL);
 }
 
-void test_main(void)
-{
-	ztest_test_suite(cbor_encode_test4,
-			 ztest_unit_test(test_senml)
-	);
-	ztest_run_test_suite(cbor_encode_test4);
-}
+ZTEST_SUITE(cbor_encode_test4, NULL, NULL, NULL, NULL, NULL);

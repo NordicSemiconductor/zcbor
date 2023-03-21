@@ -21,7 +21,7 @@
 #endif
 
 
-void test_numbers(void)
+ZTEST(cbor_encode_test3, test_numbers)
 {
 	const uint8_t exp_payload_numbers1[] = {
 		LIST(A), // List start
@@ -84,7 +84,7 @@ void test_numbers(void)
 		sizeof(output), &numbers, &out_len), NULL);
 }
 
-void test_numbers2(void)
+ZTEST(cbor_encode_test3, test_numbers2)
 {
 	const uint8_t exp_payload_numbers2[] = {
 		LIST(7),
@@ -114,7 +114,7 @@ void test_numbers2(void)
 	zassert_mem_equal(exp_payload_numbers2, output, sizeof(exp_payload_numbers2), NULL);
 }
 
-void test_tagged_union(void)
+ZTEST(cbor_encode_test3, test_tagged_union)
 {
 	size_t encode_len;
 	const uint8_t exp_payload_tagged_union1[] = {0xD9, 0x10, 0xE1, 0xF5};
@@ -142,7 +142,7 @@ void test_tagged_union(void)
 	zassert_mem_equal(exp_payload_tagged_union2, output, sizeof(exp_payload_tagged_union2), NULL);
 }
 
-void test_number_map(void)
+ZTEST(cbor_encode_test3, test_number_map)
 {
 	size_t encode_len = 0xFFFFFFFF;
 	const uint8_t exp_payload_number_map1[] = {
@@ -222,7 +222,7 @@ void test_number_map(void)
 }
 
 
-void test_strings(void)
+ZTEST(cbor_encode_test3, test_strings)
 {
 	const uint8_t exp_payload_strings1[] = {
 		LIST(6),
@@ -403,7 +403,7 @@ void test_strings(void)
 	zassert_mem_equal(exp_payload_strings1, output4, sizeof(exp_payload_strings1), NULL);
 }
 
-void test_simples(void)
+ZTEST(cbor_encode_test3, test_simples)
 {
 	uint8_t exp_payload_simple1[] = {LIST(5), 0xF5, 0xF4, 0xF4, 0xF6, 0xF7, END};
 	uint8_t exp_payload_simple2[] = {LIST(5), 0xF5, 0xF4, 0xF5, 0xF6, 0xF7, END};
@@ -423,7 +423,7 @@ void test_simples(void)
 	zassert_mem_equal(exp_payload_simple2, output, sizeof(exp_payload_simple2), NULL);
 }
 
-void test_optional(void)
+ZTEST(cbor_encode_test3, test_optional)
 {
 	const uint8_t exp_payload_optional1[] = {
 		LIST(3) /* List start */, 0xCA /* tag */, 0xF4 /* False */, 0x02, 0x03, END
@@ -499,7 +499,7 @@ void test_optional(void)
 	zassert_mem_equal(exp_payload_optional7, output, sizeof(exp_payload_optional7), NULL);
 }
 
-void test_union(void)
+ZTEST(cbor_encode_test3, test_union)
 {
 	const uint8_t exp_payload_union1[] = {0x01, 0x21};
 	const uint8_t exp_payload_union2[] = {0x03, 0x23};
@@ -551,7 +551,7 @@ void test_union(void)
 				&_union6_inv, &out_len), NULL);
 }
 
-void test_levels(void)
+ZTEST(cbor_encode_test3, test_levels)
 {
 	const uint8_t exp_payload_levels1[] = {
 		LIST(1), // Level1
@@ -587,7 +587,7 @@ void test_levels(void)
 }
 
 
-void test_map(void)
+ZTEST(cbor_encode_test3, test_map)
 {
 	const uint8_t exp_payload_map1[] = {
 		MAP(4), LIST(2), 0x05, 0x06, END 0xF4, // [5,6] => false
@@ -661,7 +661,7 @@ void test_map(void)
 	zassert_mem_equal(exp_payload_map3, output, sizeof(exp_payload_map3), NULL);
 }
 
-void test_nested_list_map(void)
+ZTEST(cbor_encode_test3, test_nested_list_map)
 {
 	const uint8_t exp_payload_nested_lm1[] = {LIST(0), END};
 	const uint8_t exp_payload_nested_lm2[] = {LIST(1), MAP(0), END END};
@@ -732,7 +732,7 @@ void test_nested_list_map(void)
 	zassert_mem_equal(exp_payload_nested_lm5, output, sizeof(exp_payload_nested_lm5), NULL);
 }
 
-void test_nested_map_list_map(void)
+ZTEST(cbor_encode_test3, test_nested_map_list_map)
 {
 	const uint8_t exp_payload_nested_mlm1[] = {MAP(1), LIST(0), END LIST(0), END END};
 	const uint8_t exp_payload_nested_mlm2[] = {MAP(1), LIST(0), END LIST(1), MAP(0), END END END};
@@ -805,7 +805,7 @@ void test_nested_map_list_map(void)
 }
 
 
-void test_range(void)
+ZTEST(cbor_encode_test3, test_range)
 {
 	const uint8_t exp_payload_range1[] = {LIST(3),
 		0x08,
@@ -918,7 +918,7 @@ void test_range(void)
 				&out_len), NULL);
 }
 
-void test_value_range(void)
+ZTEST(cbor_encode_test3, test_value_range)
 {
 	const uint8_t exp_payload_value_range1[] = {LIST(6),
 		11,
@@ -1032,7 +1032,7 @@ void test_value_range(void)
 				&out_len), NULL);
 }
 
-void test_single(void)
+ZTEST(cbor_encode_test3, test_single)
 {
 	uint8_t exp_payload_single0[] = {0x45, 'h', 'e', 'l', 'l', 'o'};
 	uint8_t exp_payload_single1[] = {0x18, 52,};
@@ -1067,7 +1067,7 @@ void test_single(void)
 	zassert_equal(ZCBOR_ERR_WRONG_RANGE, cbor_encode_SingleInt2(output, sizeof(output), &input_single4_inv, &out_len), NULL);
 }
 
-void test_unabstracted(void)
+ZTEST(cbor_encode_test3, test_unabstracted)
 {
 	uint8_t exp_payload_unabstracted0[] = {LIST(2), 0x01, 0x03, END};
 	uint8_t exp_payload_unabstracted1[] = {LIST(2), 0x02, 0x04, END};
@@ -1093,7 +1093,7 @@ void test_unabstracted(void)
 	zassert_mem_equal(exp_payload_unabstracted1, output, sizeof(exp_payload_unabstracted1), NULL);
 }
 
-void test_string_overflow(void)
+ZTEST(cbor_encode_test3, test_string_overflow)
 {
 	struct zcbor_string input_overflow0 = {
 		.value = "",
@@ -1105,7 +1105,7 @@ void test_string_overflow(void)
 	zassert_equal(ZCBOR_ERR_NO_PAYLOAD, cbor_encode_SingleBstr(output, sizeof(output), &input_overflow0, &out_len), NULL);
 }
 
-void test_quantity_range(void)
+ZTEST(cbor_encode_test3, test_quantity_range)
 {
 	uint8_t exp_payload_qty_range1[] = {0xF5, 0xF5, 0xF5};
 	uint8_t exp_payload_qty_range2[] = {0xF6, 0xF6, 0xF6, 0xF6, 0xF5, 0xF5, 0xF5, 0xF5, 0xF5, 0xF5};
@@ -1145,7 +1145,7 @@ void test_quantity_range(void)
 			&result_qty_range4_inv, &out_len), NULL);
 }
 
-void test_doublemap(void)
+ZTEST(cbor_encode_test3, test_doublemap)
 {
 	uint8_t exp_payload_doublemap0[] = {MAP(2), 0x01, MAP(1), 0x01, 0x01, END 0x02, MAP(1), 0x02, 0x02, END END};
 	struct DoubleMap result_doublemap = {
@@ -1178,7 +1178,7 @@ void test_doublemap(void)
 	zassert_mem_equal(exp_payload_doublemap0, output, out_len, NULL);
 }
 
-void test_floats(void)
+ZTEST(cbor_encode_test3, test_floats)
 {
 	uint8_t exp_floats_payload1[] = {LIST(5), 0xF9, 0, 0, /* 0.0 */
 			0xFA, 0, 0, 0, 0 /* 0.0 */,
@@ -1262,7 +1262,7 @@ void test_floats(void)
 
 
 /* Test using ranges (greater/less than) on floats. */
-void test_floats2(void)
+ZTEST(cbor_encode_test3, test_floats2)
 {
 	uint8_t exp_floats2_payload1[] = {LIST(2),
 			0xFB, 0xc0, 0xf8, 0x1c, 0xd6, 0xe9, 0xe1, 0xb0, 0x8a /* -98765.4321 */,
@@ -1293,7 +1293,7 @@ void test_floats2(void)
 	zassert_mem_equal(exp_floats2_payload2, output, num_encode, NULL);
 }
 
-void test_cbor_bstr(void)
+ZTEST(cbor_encode_test3, test_cbor_bstr)
 {
 	uint8_t exp_cbor_bstr_payload1[] = {
 #ifdef ZCBOR_CANONICAL
@@ -1322,7 +1322,7 @@ void test_cbor_bstr(void)
 }
 
 
-void test_map_length(void)
+ZTEST(cbor_encode_test3, test_map_length)
 {
 	uint8_t exp_map_length_payload1[] = {MAP(2),
 		0x61, 'r', 0x01,
@@ -1398,7 +1398,7 @@ void test_map_length(void)
 }
 
 
-void test_union_int(void)
+ZTEST(cbor_encode_test3, test_union_int)
 {
 	uint8_t exp_union_int_payload1[] = {LIST(2),
 		0x05, 0x6E, 'T', 'h', 'i', 's', ' ', 'i', 's', ' ', 'a', ' ', 'f', 'i', 'v', 'e',
@@ -1452,7 +1452,7 @@ void test_union_int(void)
 }
 
 
-void test_intmax(void)
+ZTEST(cbor_encode_test3, test_intmax)
 {
 	uint8_t exp_intmax1_payload1[] = {LIST(C),
 		0x38, 0x7F, 0x18, 0x7F, 0x18, 0xFF,
@@ -1523,35 +1523,4 @@ void test_intmax(void)
 	zassert_mem_equal(exp_intmax2_payload2, output, num_encode, NULL);
 }
 
-
-void test_main(void)
-{
-	ztest_test_suite(cbor_encode_test3,
-			 ztest_unit_test(test_numbers),
-			 ztest_unit_test(test_numbers2),
-			 ztest_unit_test(test_tagged_union),
-			 ztest_unit_test(test_number_map),
-			 ztest_unit_test(test_strings),
-			 ztest_unit_test(test_simples),
-			 ztest_unit_test(test_optional),
-			 ztest_unit_test(test_union),
-			 ztest_unit_test(test_levels),
-			 ztest_unit_test(test_map),
-			 ztest_unit_test(test_nested_list_map),
-			 ztest_unit_test(test_nested_map_list_map),
-			 ztest_unit_test(test_range),
-			 ztest_unit_test(test_value_range),
-			 ztest_unit_test(test_single),
-			 ztest_unit_test(test_unabstracted),
-			 ztest_unit_test(test_string_overflow),
-			 ztest_unit_test(test_quantity_range),
-			 ztest_unit_test(test_doublemap),
-			 ztest_unit_test(test_floats),
-			 ztest_unit_test(test_floats2),
-			 ztest_unit_test(test_cbor_bstr),
-			 ztest_unit_test(test_map_length),
-			 ztest_unit_test(test_union_int),
-			 ztest_unit_test(test_intmax)
-	);
-	ztest_run_test_suite(cbor_encode_test3);
-}
+ZTEST_SUITE(cbor_encode_test3, NULL, NULL, NULL, NULL, NULL);

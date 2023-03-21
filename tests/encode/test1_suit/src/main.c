@@ -443,17 +443,11 @@ void test_manifest(const uint8_t *input, uint32_t len)
 	zassert_mem_equal(input, output, len, NULL);
 }
 
-void test_suit(void)
+ZTEST(cbor_encode_test1, test_suit)
 {
 	for(uint32_t i = 0; i < num_test_vectors; i++) {
 		test_manifest(test_vector[i], test_vector_len[i]);
 	}
 }
 
-void test_main(void)
-{
-	ztest_test_suite(cbor_encode_test1,
-			 ztest_unit_test(test_suit)
-	);
-	ztest_run_test_suite(cbor_encode_test1);
-}
+ZTEST_SUITE(cbor_encode_test1, NULL, NULL, NULL, NULL, NULL);

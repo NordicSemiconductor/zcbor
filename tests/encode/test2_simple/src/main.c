@@ -35,7 +35,7 @@
  * generated struct, and runs the generated encoding function, then checks that
  * everything is correct.
  */
-void test_pet(void)
+ZTEST(cbor_encode_test2, test_pet)
 {
 	struct Pet pet = {
 		.names = {{.value = "foo", .len = 3}, {.value = "bar", .len = 3}},
@@ -73,7 +73,7 @@ void test_pet(void)
  * It then makes a number of calls to functions in zcbor_encode.h and checks the
  * resulting payload agains the expected output.
  */
-void test_pet_raw(void)
+ZTEST(cbor_encode_test2, test_pet_raw)
 {
 	uint8_t payload[100] = {0};
 	ZCBOR_STATE_E(state, 4, payload, sizeof(payload), 1);
@@ -120,11 +120,4 @@ void test_pet_raw(void)
 	zassert_mem_equal(exp_output, payload, sizeof(exp_output), NULL);
 }
 
-void test_main(void)
-{
-	ztest_test_suite(cbor_encode_test2,
-			 ztest_unit_test(test_pet),
-			 ztest_unit_test(test_pet_raw)
-	);
-	ztest_run_test_suite(cbor_encode_test2);
-}
+ZTEST_SUITE(cbor_encode_test2, NULL, NULL, NULL, NULL, NULL);
