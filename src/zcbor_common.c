@@ -246,3 +246,12 @@ size_t zcbor_header_len(size_t num_elems)
 		return 9;
 	}
 }
+
+
+bool zcbor_array_at_end(zcbor_state_t *state)
+{
+	return ((!state->indefinite_length_array && (state->elem_count == 0))
+		|| (state->indefinite_length_array
+			&& (state->payload < state->payload_end)
+			&& (*state->payload == 0xFF)));
+}
