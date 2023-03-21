@@ -429,7 +429,7 @@ uint8_t crash_vector18[] = {
  * checks that the decoding was successful, and that the resulting struct is
  * populated correctly.
  */
-void test_pet(void)
+ZTEST(cbor_decode_test3, test_pet)
 {
 	struct Pet pet;
 	size_t decode_len;
@@ -456,7 +456,7 @@ bool fuzz_one_input(const uint8_t *data, size_t size);
 #define FUZZ(x) fuzz_one_input(x, sizeof(x))
 
 /* Run test cases discovered via fuzzing. */
-void test_pet_regression(void)
+ZTEST(cbor_decode_test3, test_pet_regression)
 {
 	FUZZ(crash_vector0);
 	FUZZ(crash_vector1);
@@ -479,7 +479,7 @@ void test_pet_regression(void)
 	FUZZ(crash_vector18);
 }
 
-void test_serial1(void)
+ZTEST(cbor_decode_test3, test_serial1)
 {
 	struct Upload upload;
 	size_t decode_len;
@@ -503,7 +503,7 @@ void test_serial1(void)
 		.Member_choice, "expect sha 5th");
 }
 
-void test_serial2(void)
+ZTEST(cbor_decode_test3, test_serial2)
 {
 	struct Upload upload;
 	size_t decode_len;
@@ -526,13 +526,4 @@ void test_serial2(void)
 		.Member_choice, "expect sha 5th");
 }
 
-void test_main(void)
-{
-	ztest_test_suite(cbor_decode_test3,
-			 ztest_unit_test(test_pet),
-			 ztest_unit_test(test_pet_regression),
-			 ztest_unit_test(test_serial1),
-			 ztest_unit_test(test_serial2)
-	);
-	ztest_run_test_suite(cbor_decode_test3);
-}
+ZTEST_SUITE(cbor_decode_test3, NULL, NULL, NULL, NULL, NULL);

@@ -9,7 +9,7 @@
 #include "zcbor_encode.h"
 #include "zcbor_debug.h"
 
-void test_int64(void)
+ZTEST(zcbor_unit_tests, test_int64)
 {
 	uint8_t payload[100] = {0};
 	int64_t int64;
@@ -61,7 +61,7 @@ void test_int64(void)
 }
 
 
-void test_uint64(void)
+ZTEST(zcbor_unit_tests, test_uint64)
 {
 	uint8_t payload[100] = {0};
 	uint64_t uint64;
@@ -95,7 +95,7 @@ void test_uint64(void)
 	zassert_true(zcbor_uint64_expect(&state_d, UINT64_MAX), NULL);
 }
 
-void test_size(void)
+ZTEST(zcbor_unit_tests, test_size)
 {
 	uint8_t payload[100] = {0};
 	size_t read;
@@ -146,7 +146,7 @@ void test_size(void)
 #define PAYL_SIZE 0x100000100
 #define STR_SIZE 0x100000010
 
-void test_size64(void)
+ZTEST(zcbor_unit_tests, test_size64)
 {
 	uint8_t *large_payload = malloc(PAYL_SIZE);
 	uint8_t *large_string = malloc(STR_SIZE);
@@ -175,14 +175,14 @@ void test_size64(void)
 
 
 #else
-void test_size64(void)
+ZTEST(zcbor_unit_tests, test_size64)
 {
 	printk("Skip on non-64-bit builds.\n");
 }
 #endif
 
 
-void test_string_macros(void)
+ZTEST(zcbor_unit_tests, test_string_macros)
 {
 	uint8_t payload[100];
 	ZCBOR_STATE_E(state_e, 0, payload, sizeof(payload), 0);
@@ -218,7 +218,7 @@ void test_string_macros(void)
 }
 
 
-void test_stop_on_error(void)
+ZTEST(zcbor_unit_tests, test_stop_on_error)
 {
 	uint8_t payload[100];
 	ZCBOR_STATE_E(state_e, 3, payload, sizeof(payload), 0);
@@ -394,7 +394,7 @@ void test_stop_on_error(void)
 /** The string "HelloWorld" is split into 2 fragments, and a number of different
  * functions are called to test that they respond correctly to the situation.
 **/
-void test_fragments(void)
+ZTEST(zcbor_unit_tests, test_fragments)
 {
 	uint8_t payload[100];
 	ZCBOR_STATE_E(state_e, 0, payload, sizeof(payload), 0);
@@ -445,7 +445,7 @@ void test_fragments(void)
  * errors are introduced one by one and zcbor_validate_string_fragments() is
  * checked to be false for all of them in turn.
  */
-void test_validate_fragments(void)
+ZTEST(zcbor_unit_tests, test_validate_fragments)
 {
 	uint8_t payload[200];
 	uint8_t frag_payload[15];
@@ -567,7 +567,7 @@ void test_validate_fragments(void)
  *  This means that the TSTR has to be handled using fragments (tstr_frags)
  *  as well.
  */
-void test_bstr_cbor_fragments(void)
+ZTEST(zcbor_unit_tests, test_bstr_cbor_fragments)
 {
 	uint8_t payload[100];
 	ZCBOR_STATE_E(state_e, 2, payload, sizeof(payload), 0);
@@ -660,7 +660,7 @@ void test_bstr_cbor_fragments(void)
 }
 
 
-void test_canonical_list(void)
+ZTEST(zcbor_unit_tests, test_canonical_list)
 {
 #ifndef ZCBOR_CANONICAL
 	printk("Skip on non-canonical builds.\n");
@@ -689,7 +689,7 @@ void test_canonical_list(void)
 }
 
 
-void test_int(void)
+ZTEST(zcbor_unit_tests, test_int)
 {
 	uint8_t payload1[100];
 	ZCBOR_STATE_E(state_e, 1, payload1, sizeof(payload1), 0);
@@ -809,7 +809,7 @@ void test_int(void)
 }
 
 
-void test_uint(void)
+ZTEST(zcbor_unit_tests, test_uint)
 {
 	uint8_t payload1[100];
 	ZCBOR_STATE_E(state_e, 1, payload1, sizeof(payload1), 0);
@@ -858,7 +858,7 @@ void test_uint(void)
 /** This tests a regression in big-endian encoding, where small numbers (like 0)
   * where handled incorrectly (1-off), because of an error in get_result().
   */
-void test_encode_int_0(void)
+ZTEST(zcbor_unit_tests, test_encode_int_0)
 {
 	uint8_t payload1[100];
 	uint32_t values_32[2] = {0, UINT32_MAX};
@@ -873,7 +873,7 @@ void test_encode_int_0(void)
 }
 
 
-void test_simple(void)
+ZTEST(zcbor_unit_tests, test_simple)
 {
 	uint8_t payload1[100];
 	ZCBOR_STATE_E(state_e, 1, payload1, sizeof(payload1), 0);
@@ -899,7 +899,7 @@ void test_simple(void)
 }
 
 
-void test_header_len(void)
+ZTEST(zcbor_unit_tests, test_header_len)
 {
 	zassert_equal(1, zcbor_header_len(0), NULL);
 	zassert_equal(1, zcbor_header_len(23), NULL);
@@ -916,7 +916,7 @@ void test_header_len(void)
 }
 
 
-void test_compare_strings(void)
+ZTEST(zcbor_unit_tests, test_compare_strings)
 {
 	const uint8_t hello[] = "hello";
 	const uint8_t hello2[] = "hello";
@@ -968,27 +968,4 @@ void test_compare_strings(void)
 	zassert_false(zcbor_compare_strings(&test_str9_NULL, &test_str5_long2), NULL);
 }
 
-
-void test_main(void)
-{
-	ztest_test_suite(zcbor_unit_tests,
-			 ztest_unit_test(test_int64),
-			 ztest_unit_test(test_uint64),
-			 ztest_unit_test(test_size),
-			 ztest_unit_test(test_size64),
-			 ztest_unit_test(test_string_macros),
-			 ztest_unit_test(test_stop_on_error),
-			 ztest_unit_test(test_string_macros),
-			 ztest_unit_test(test_fragments),
-			 ztest_unit_test(test_validate_fragments),
-			 ztest_unit_test(test_bstr_cbor_fragments),
-			 ztest_unit_test(test_canonical_list),
-			 ztest_unit_test(test_int),
-			 ztest_unit_test(test_uint),
-			 ztest_unit_test(test_encode_int_0),
-			 ztest_unit_test(test_simple),
-			 ztest_unit_test(test_header_len),
-			 ztest_unit_test(test_compare_strings)
-	);
-	ztest_run_test_suite(zcbor_unit_tests);
-}
+ZTEST_SUITE(zcbor_unit_tests, NULL, NULL, NULL, NULL, NULL);

@@ -36,7 +36,7 @@ uint8_t test_vector1[] = {
 static struct SUIT_Outer_Wrapper outerwrapper1;
 static struct SUIT_Command_Sequence sequence;
 
-void test_5(void)
+ZTEST(cbor_decode_test2, test_5)
 {
 	struct SUIT_Manifest *manifest;
 	size_t decode_len;
@@ -186,10 +186,4 @@ void test_5(void)
 			.len, decode_len, NULL);
 }
 
-void test_main(void)
-{
-	ztest_test_suite(cbor_decode_test2,
-			 ztest_unit_test(test_5)
-	);
-	ztest_run_test_suite(cbor_decode_test2);
-}
+ZTEST_SUITE(cbor_decode_test2, NULL, NULL, NULL, NULL, NULL);

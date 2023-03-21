@@ -100,7 +100,7 @@ static struct OuterWrapper outerwrapper = {0};
 static struct SUIT_Outer_Wrapper outerwrapper4 = {0};
 
 // Example 9.1 from draft-moran-suit-manifest-03
-void test_1(void)
+ZTEST(cbor_decode_test, test_1)
 {
 	size_t decode_len;
 	uint8_t expected_tag[] = {
@@ -148,7 +148,7 @@ void test_1(void)
 }
 
 // Example 9.3 from draft-moran-suit-manifest-03
-void test_2(void)
+ZTEST(cbor_decode_test, test_2)
 {
 	size_t decode_len;
 	memset(&outerwrapper, 0, sizeof(struct OuterWrapper));
@@ -198,7 +198,7 @@ void test_2(void)
 }
 
 // Example 1 from draft-moran-suit-manifest-04
-void test_3(void)
+ZTEST(cbor_decode_test, test_3)
 {
 	size_t decode_len;
 	char expected_uri[] = "http://example.com/file.bin";
@@ -365,12 +365,4 @@ zassert_equal(_SUIT_Parameters_SUIT_Parameter_URI_List,
 }
 
 
-void test_main(void)
-{
-	ztest_test_suite(cbor_decode_test,
-			 ztest_unit_test(test_1),
-			 ztest_unit_test(test_2),
-			 ztest_unit_test(test_3)
-	);
-	ztest_run_test_suite(cbor_decode_test);
-}
+ZTEST_SUITE(cbor_decode_test, NULL, NULL, NULL, NULL, NULL);

@@ -8,17 +8,9 @@
 
 #include <zephyr/ztest.h>
 
-void test_skip(void)
+ZTEST(zcbor_unit_tests3, test_skip)
 {
 	printk("Skip on VERBOSE builds because of print output volume.\n");
-}
-
-void test_main(void)
-{
-	ztest_test_suite(zcbor_unit_tests,
-			 ztest_unit_test(test_skip)
-	);
-	ztest_run_test_suite(zcbor_unit_tests);
 }
 
 #else /* ZCBOR_VERBOSE */
@@ -42,7 +34,7 @@ extern uint8_t _binary_fp_bytes_decode_bin_start[];
 extern uint8_t _binary_fp_bytes_decode_bin_end[];
 extern uint8_t _binary_fp_bytes_decode_bin_size[];
 
-void test_float16_decode(void)
+ZTEST(zcbor_unit_tests3, test_float16_decode)
 {
 #ifdef ZCBOR_BIG_ENDIAN
 	float *fps = ((float *)_binary_fp_bytes_decode_bin_start) + 0x10000;
@@ -186,7 +178,7 @@ static void do_test_nan(uint32_t i)
 }
 
 
-void test_float16_encode(void)
+ZTEST(zcbor_unit_tests3, test_float16_encode)
 {
 	zassert_equal((size_t)&_binary_fp_bytes_encode_bin_size, 31742 * 4 * 2, NULL);
 	printk("\n");
@@ -205,14 +197,6 @@ void test_float16_encode(void)
 	}
 }
 
-
-void test_main(void)
-{
-	ztest_test_suite(zcbor_unit_tests,
-			 ztest_unit_test(test_float16_decode),
-			 ztest_unit_test(test_float16_encode)
-	);
-	ztest_run_test_suite(zcbor_unit_tests);
-}
-
 #endif /* ZCBOR_VERBOSE */
+
+ZTEST_SUITE(zcbor_unit_tests3, NULL, NULL, NULL, NULL, NULL);

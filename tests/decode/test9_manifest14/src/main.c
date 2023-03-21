@@ -14,7 +14,7 @@
 #include <example0.h>
 
 
-void test_suit14_ex0_auth(void)
+ZTEST(cbor_decode_test9, test_suit14_ex0_auth)
 {
 	struct SUIT_Envelope envelope;
 	struct SUIT_Digest *digest;
@@ -73,7 +73,7 @@ void test_suit14_ex0_auth(void)
 
 
 /* Check the common sequence. */
-void test_suit14_ex0_common_sequence(void)
+ZTEST(cbor_decode_test9, test_suit14_ex0_common_sequence)
 {
 	struct SUIT_Envelope envelope;
 	struct SUIT_Manifest manifest;
@@ -189,7 +189,7 @@ void test_suit14_ex0_common_sequence(void)
  * This should work fine because SUIT_Common_Sequence is a subset of
  * SUIT_Command_Sequence.
  */
-void test_suit14_ex0_common_sequence_as_command_sequence(void)
+ZTEST(cbor_decode_test9, test_suit14_ex0_common_sequence_as_command_sequence)
 {
 	struct SUIT_Envelope envelope;
 	struct SUIT_Manifest manifest;
@@ -305,7 +305,7 @@ void test_suit14_ex0_common_sequence_as_command_sequence(void)
 		condition->_SUIT_Condition___suit_condition_class_identifier__SUIT_Rep_Policy, NULL);
 }
 
-void test_suit14_ex0_validate_run(void)
+ZTEST(cbor_decode_test9, test_suit14_ex0_validate_run)
 {
 	struct SUIT_Envelope envelope;
 	struct SUIT_Manifest manifest;
@@ -361,13 +361,4 @@ void test_suit14_ex0_validate_run(void)
 
 }
 
-void test_main(void)
-{
-	ztest_test_suite(cbor_decode_test9,
-			 ztest_unit_test(test_suit14_ex0_auth),
-			 ztest_unit_test(test_suit14_ex0_common_sequence),
-			 ztest_unit_test(test_suit14_ex0_common_sequence_as_command_sequence),
-			 ztest_unit_test(test_suit14_ex0_validate_run)
-	);
-	ztest_run_test_suite(cbor_decode_test9);
-}
+ZTEST_SUITE(cbor_decode_test9, NULL, NULL, NULL, NULL, NULL);

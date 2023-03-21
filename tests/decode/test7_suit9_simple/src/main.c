@@ -92,7 +92,7 @@ uint8_t test_vector5[] = {
 static struct SUIT_Envelope envelope1;
 static struct SUIT_Manifest manifest;
 
-void test_suit9_simple2(void)
+ZTEST(cbor_decode_test7, test_suit9_simple2)
 {
 	int res;
 
@@ -112,7 +112,7 @@ void test_suit9_simple2(void)
 }
 
 
-void test_suit9_simple5(void)
+ZTEST(cbor_decode_test7, test_suit9_simple5)
 {
 	int res;
 
@@ -131,11 +131,4 @@ void test_suit9_simple5(void)
 	zassert_equal(ZCBOR_SUCCESS, res, "manifest decoding failed.");
 }
 
-void test_main(void)
-{
-	ztest_test_suite(cbor_decode_test7,
-			 ztest_unit_test(test_suit9_simple2),
-			 ztest_unit_test(test_suit9_simple5)
-	);
-	ztest_run_test_suite(cbor_decode_test7);
-}
+ZTEST_SUITE(cbor_decode_test7, NULL, NULL, NULL, NULL, NULL);
