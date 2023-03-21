@@ -410,6 +410,10 @@ bool zcbor_compare_strings(const struct zcbor_string *str1,
  */
 size_t zcbor_header_len(size_t num_elems);
 
+/** Find whether the state is at the end of a list or map.
+ */
+bool zcbor_array_at_end(zcbor_state_t *state);
+
 
 #ifdef __cplusplus
 }
