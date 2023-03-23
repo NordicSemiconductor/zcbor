@@ -45,34 +45,34 @@ bool zcbor_uint_decode(zcbor_state_t *state, void *result_uint, size_t uint_size
 
 /** The following applies to all _expect() functions that don't have docs.
  *
- * @param[inout] state   The current state of the decoding.
- * @param[in]    result  The expected value.
+ * @param[inout] state     The current state of the decoding.
+ * @param[in]    expected  The expected value.
  *
  * @retval true   If the result was decoded correctly and has the expected value.
  * @retval false  If the decoding failed or the result doesn't have the
  *                expected value.
  */
 /** Consume and expect a pint/nint with a certain value. */
-bool zcbor_int32_expect(zcbor_state_t *state, int32_t result);
-bool zcbor_int64_expect(zcbor_state_t *state, int64_t result);
-bool zcbor_uint32_expect(zcbor_state_t *state, uint32_t result);
-bool zcbor_uint64_expect(zcbor_state_t *state, uint64_t result);
-bool zcbor_size_expect(zcbor_state_t *state, size_t result);
+bool zcbor_int32_expect(zcbor_state_t *state, int32_t expected);
+bool zcbor_int64_expect(zcbor_state_t *state, int64_t expected);
+bool zcbor_uint32_expect(zcbor_state_t *state, uint32_t expected);
+bool zcbor_uint64_expect(zcbor_state_t *state, uint64_t expected);
+bool zcbor_size_expect(zcbor_state_t *state, size_t expected);
 
 /** Consume and expect a pint/nint with a certain value, within a union.
  *
  * Calls @ref zcbor_union_elem_code then @ref zcbor_[u]int[32|64]_expect.
  */
-bool zcbor_int32_expect_union(zcbor_state_t *state, int32_t result);
-bool zcbor_int64_expect_union(zcbor_state_t *state, int64_t result);
-bool zcbor_uint32_expect_union(zcbor_state_t *state, uint32_t result);
-bool zcbor_uint64_expect_union(zcbor_state_t *state, uint64_t result);
+bool zcbor_int32_expect_union(zcbor_state_t *state, int32_t expected);
+bool zcbor_int64_expect_union(zcbor_state_t *state, int64_t expected);
+bool zcbor_uint32_expect_union(zcbor_state_t *state, uint32_t expected);
+bool zcbor_uint64_expect_union(zcbor_state_t *state, uint64_t expected);
 
 /** Decode and consume a bstr/tstr */
 bool zcbor_bstr_decode(zcbor_state_t *state, struct zcbor_string *result);
-bool zcbor_bstr_expect(zcbor_state_t *state, struct zcbor_string *result);
+bool zcbor_bstr_expect(zcbor_state_t *state, struct zcbor_string *expected);
 bool zcbor_tstr_decode(zcbor_state_t *state, struct zcbor_string *result);
-bool zcbor_tstr_expect(zcbor_state_t *state, struct zcbor_string *result);
+bool zcbor_tstr_expect(zcbor_state_t *state, struct zcbor_string *expected);
 
 /** Consume and expect a bstr/tstr with the value of the provided string literal.
  *
@@ -129,31 +129,31 @@ static inline bool zcbor_tstr_expect_ptr(zcbor_state_t *state, char const *ptr, 
 
 /** Decode and consume a tag. */
 bool zcbor_tag_decode(zcbor_state_t *state, uint32_t *result);
-bool zcbor_tag_expect(zcbor_state_t *state, uint32_t result);
+bool zcbor_tag_expect(zcbor_state_t *state, uint32_t expected);
 
 /** Decode and consume a simple value. */
 bool zcbor_simple_decode(zcbor_state_t *state, uint8_t *result);
-bool zcbor_simple_expect(zcbor_state_t *state, uint8_t result);
+bool zcbor_simple_expect(zcbor_state_t *state, uint8_t expected);
 
 /** Decode and consume a boolean simple value. */
 bool zcbor_bool_decode(zcbor_state_t *state, bool *result);
-bool zcbor_bool_expect(zcbor_state_t *state, bool result);
+bool zcbor_bool_expect(zcbor_state_t *state, bool expected);
 
 /** Decode and consume an IEEE754 float */
 bool zcbor_float16_decode(zcbor_state_t *state, float *result);
-bool zcbor_float16_expect(zcbor_state_t *state, float result);
+bool zcbor_float16_expect(zcbor_state_t *state, float expected);
 bool zcbor_float16_bytes_decode(zcbor_state_t *state, uint16_t *result);
-bool zcbor_float16_bytes_expect(zcbor_state_t *state, uint16_t result);
+bool zcbor_float16_bytes_expect(zcbor_state_t *state, uint16_t expected);
 bool zcbor_float16_32_decode(zcbor_state_t *state, float *result);
-bool zcbor_float16_32_expect(zcbor_state_t *state, float result);
+bool zcbor_float16_32_expect(zcbor_state_t *state, float expected);
 bool zcbor_float32_decode(zcbor_state_t *state, float *result);
-bool zcbor_float32_expect(zcbor_state_t *state, float result);
+bool zcbor_float32_expect(zcbor_state_t *state, float expected);
 bool zcbor_float32_64_decode(zcbor_state_t *state, double *result);
-bool zcbor_float32_64_expect(zcbor_state_t *state, double result);
+bool zcbor_float32_64_expect(zcbor_state_t *state, double expected);
 bool zcbor_float64_decode(zcbor_state_t *state, double *result);
-bool zcbor_float64_expect(zcbor_state_t *state, double result);
+bool zcbor_float64_expect(zcbor_state_t *state, double expected);
 bool zcbor_float_decode(zcbor_state_t *state, double *result);
-bool zcbor_float_expect(zcbor_state_t *state, double result);
+bool zcbor_float_expect(zcbor_state_t *state, double expected);
 
 /** Consume and expect a "nil"/"undefined" simple value.
  *
