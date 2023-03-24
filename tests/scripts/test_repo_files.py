@@ -135,14 +135,15 @@ class TestDocs(TestCase):
     def __init__(self, *args, **kwargs):
         """Overridden to get base URL for relative links from remote tracking branch."""
         super(TestDocs, self).__init__(*args, **kwargs)
-        remote_tracking = run(['git', 'rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{u}'],
-                              capture_output=True).stdout.strip()
+        remote_tr_args = ['git', 'rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{u}']
+        remote_tracking = run(remote_tr_args, capture_output=True).stdout.decode('utf-8').strip()
 
         if remote_tracking:
-            remote, remote_branch = tuple(remote_tracking.split(b'/'))
-            repo_url = check_output(['git', 'remote', 'get-url', remote]).strip().strip(b'.git')
-            if b"github.com" in repo_url:
-                self.base_url = (repo_url + b'/tree/' + remote_branch + b'/').decode('utf-8')
+            remote, remote_branch = remote_tracking.split('/')
+            repo_url_args = ['git', 'remote', 'get-url', remote]
+            repo_url = check_output(repo_url_args).decode('utf-8').strip().strip('.git')
+            if 'github.com' in repo_url:
+                self.base_url = (repo_url + '/tree/' + remote_branch + '/')
             else:
                 # The URL is not in github.com, so we are not sure it is constructed correctly.
                 self.base_url = None
