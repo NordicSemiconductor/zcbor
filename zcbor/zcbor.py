@@ -3141,7 +3141,7 @@ def write_data(args, cddl, cbor_str):
         f.write(cddl.str_to_c_code(cbor_str, args.c_code_var_name, args.c_code_columns))
     elif out_file_format == "cborhex":
         f = sys.stdout if args.output == "-" else open(args.output, "w")
-        f.write(sub(r"(.{1,64})", r"\1 ", cbor_str.hex()))  # Add newlines every 64 chars
+        f.write(sub(r"(.{1,64})", r"\1\n", cbor_str.hex()))  # Add newlines every 64 chars
     else:
         f = sys.stdout.buffer if args.output == "-" else open(args.output, "wb")
         f.write(cbor_str)
