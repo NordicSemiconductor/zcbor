@@ -84,6 +84,10 @@ do { \
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #endif
 
+#ifndef MAX
+#define MAX(a, b) (((a) < (b)) ? (b) : (a))
+#endif
+
 #ifndef ZCBOR_ARRAY_SIZE
 #define ZCBOR_ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 #endif
