@@ -84,9 +84,20 @@ do { \
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #endif
 
+#ifndef MAX
+#define MAX(a, b) (((a) < (b)) ? (b) : (a))
+#endif
+
 #ifndef ZCBOR_ARRAY_SIZE
 #define ZCBOR_ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 #endif
+
+/* Endian-dependent offset of smaller integer in a bigger one. */
+#ifdef ZCBOR_BIG_ENDIAN
+#define ZCBOR_ECPY_OFFS(dst_len, src_len) ((dst_len) - (src_len))
+#else
+#define ZCBOR_ECPY_OFFS(dst_len, src_len) (0)
+#endif /* ZCBOR_BIG_ENDIAN */
 
 #if SIZE_MAX <= UINT64_MAX
 /** The ZCBOR_SUPPORTS_SIZE_T will be defined if processing of size_t type variables directly

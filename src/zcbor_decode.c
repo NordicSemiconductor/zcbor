@@ -16,7 +16,9 @@
  */
 static size_t additional_len(uint8_t additional)
 {
-	if (ZCBOR_VALUE_IS_1_BYTE <= additional && additional <= ZCBOR_VALUE_IS_8_BYTES) {
+	if (additional <= ZCBOR_VALUE_IN_HEADER) {
+		return 0;
+	} else if (ZCBOR_VALUE_IS_1_BYTE <= additional && additional <= ZCBOR_VALUE_IS_8_BYTES) {
 		/* 24 => 1
 		 * 25 => 2
 		 * 26 => 4
@@ -24,17 +26,8 @@ static size_t additional_len(uint8_t additional)
 		 */
 		return 1U << (additional - ZCBOR_VALUE_IS_1_BYTE);
 	}
-	return 0;
+	return 0xF;
 }
-
-
-#define FAIL_AND_DECR_IF(expr, err) \
-do {\
-	if (expr) { \
-		(state->payload)--; \
-		ZCBOR_ERR(err); \
-	} \
-} while(0)
 
 
 static bool initial_checks(zcbor_state_t *state)
@@ -94,6 +87,18 @@ do { \
 } while(0)
 
 
+static void endian_copy(uint8_t *dst, const uint8_t *src, size_t src_len)
+{
+#ifdef ZCBOR_BIG_ENDIAN
+	memcpy(dst, src, src_len);
+#else
+	for (size_t i = 0; i < src_len; i++) {
+		dst[i] = src[src_len - 1 - i];
+	}
+#endif /* ZCBOR_BIG_ENDIAN */
+}
+
+
 /** Get a single value.
  *
  * @details @p ppayload must point to the header byte. This function will
@@ -117,43 +122,31 @@ static bool value_extract(zcbor_state_t *state,
 {
 	zcbor_trace();
 	zcbor_assert_state(result_len != 0, "0-length result not supported.\r\n");
+	zcbor_assert_state(result_len <= 8, "result sizes above 8 bytes not supported.\r\n");
 	zcbor_assert_state(result != NULL, NULL);
 
 	INITIAL_CHECKS();
 	ZCBOR_ERR_IF((state->elem_count == 0), ZCBOR_ERR_LOW_ELEM_COUNT);
 
-	uint8_t *u8_result  = (uint8_t *)result;
 	uint8_t additional = ZCBOR_ADDITIONAL(*state->payload);
+	size_t len = additional_len(additional);
+	uint8_t *result_offs = (uint8_t *)result + ZCBOR_ECPY_OFFS(result_len, MAX(1, len));
 
-	state->payload_bak = state->payload;
-	(state->payload)++;
+	ZCBOR_ERR_IF(additional > ZCBOR_VALUE_IS_8_BYTES, ZCBOR_ERR_ADDITIONAL_INVAL);
+	ZCBOR_ERR_IF(len > result_len, ZCBOR_ERR_INT_SIZE);
+	ZCBOR_ERR_IF((state->payload + len + 1) > state->payload_end,
+		ZCBOR_ERR_NO_PAYLOAD);
 
 	memset(result, 0, result_len);
-	if (additional <= ZCBOR_VALUE_IN_HEADER) {
-#ifdef ZCBOR_BIG_ENDIAN
-		u8_result[result_len - 1] = additional;
-#else
-		u8_result[0] = additional;
-#endif /* ZCBOR_BIG_ENDIAN */
+
+	if (len == 0) {
+		*result_offs = additional;
 	} else {
-		size_t len = additional_len(additional);
-
-		FAIL_AND_DECR_IF(len > result_len, ZCBOR_ERR_INT_SIZE);
-		FAIL_AND_DECR_IF(len == 0, ZCBOR_ERR_ADDITIONAL_INVAL); // additional_len() did not recognize the additional value.
-		FAIL_AND_DECR_IF((state->payload + len) > state->payload_end,
-			ZCBOR_ERR_NO_PAYLOAD);
-
-#ifdef ZCBOR_BIG_ENDIAN
-		memcpy(&u8_result[result_len - len], state->payload, len);
-#else
-		for (size_t i = 0; i < len; i++) {
-			u8_result[i] = (state->payload)[len - i - 1];
-		}
-#endif /* ZCBOR_BIG_ENDIAN */
-
-		(state->payload) += len;
+		endian_copy(result_offs, state->payload + 1, len);
 	}
 
+	state->payload_bak = state->payload;
+	(state->payload) += len + 1;
 	(state->elem_count)--;
 	return true;
 }
