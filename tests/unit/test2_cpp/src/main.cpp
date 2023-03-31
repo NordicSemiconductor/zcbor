@@ -44,8 +44,8 @@ int main(void)
 	zcbor_size_encode(state_e, &nine);
 	zcbor_bstr_put_lit(state_e, "Hello");
 	zcbor_tstr_put_lit(state_e, "World");
-	zcbor_tag_encode(state_e, 9);
-	zcbor_tag_encode(state_e, 10);
+	zcbor_tag_put(state_e, 9);
+	zcbor_tag_put(state_e, 10);
 	zcbor_bool_put(state_e, true);
 	zcbor_bool_encode(state_e, &false_);
 	zcbor_float32_put(state_e, 10.5);

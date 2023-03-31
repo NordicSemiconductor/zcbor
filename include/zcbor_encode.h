@@ -98,8 +98,12 @@ bool zcbor_tstr_encode_ptr(zcbor_state_t *state, const char *ptr, size_t len);
 #define zcbor_tstr_put_arr(state, string) \
 	zcbor_tstr_encode_ptr(state, string, sizeof(string))
 
-/** Encode a tag. Must be called before encoding the value being tagged. */
-bool zcbor_tag_encode(zcbor_state_t *state, uint32_t tag);
+/** Encode a tag. Must be called before encoding the value being tagged.
+ *  Note that zcbor_tag_put() is the new zcbor_tag_encode(), and
+ *  zcbor_tag_encode()'s argument was changed to be a pointer.
+*/
+bool zcbor_tag_put(zcbor_state_t *state, uint32_t tag);
+bool zcbor_tag_encode(zcbor_state_t *state, uint32_t *tag);
 
 /** Encode a simple value. */
 bool zcbor_simple_encode(zcbor_state_t *state, uint8_t *input);

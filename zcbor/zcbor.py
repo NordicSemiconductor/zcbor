@@ -2349,7 +2349,7 @@ class CodeGenerator(CddlXcoder):
         return self.xcode_single_func_prim()
 
     def xcode_tags(self):
-        return [f"zcbor_tag_{self.mode if (self.mode == 'encode') else 'expect'}(state, {tag})"
+        return [f"zcbor_tag_{'put' if (self.mode == 'encode') else 'expect'}(state, {tag})"
                 for tag in self.tags]
 
     # Appends ULL or LL if a value exceeding 32-bits is used
