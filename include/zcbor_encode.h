@@ -259,15 +259,6 @@ bool zcbor_multi_encode_minmax(size_t min_encode, size_t max_encode, const size_
 		zcbor_encoder_t encoder, zcbor_state_t *state, const void *input,
 		size_t input_len);
 
-/** Runs @p encoder on @p state and @p input if @p present is true.
- *
- * Calls @ref zcbor_multi_encode under the hood.
- */
-bool zcbor_present_encode(const bool *present,
-		zcbor_encoder_t encoder,
-		zcbor_state_t *state,
-		const void *input);
-
 /** See @ref zcbor_new_state() */
 void zcbor_new_encode_state(zcbor_state_t *state_array, size_t n_states,
 		uint8_t *payload, size_t payload_len, size_t elem_count);

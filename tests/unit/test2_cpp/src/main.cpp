@@ -61,8 +61,7 @@ int main(void)
 	zcbor_map_end_encode(state_e, 0);
 	zcbor_list_end_encode(state_e, 1);
 	zcbor_multi_encode(1, (zcbor_encoder_t *)zcbor_int32_put, state_e, (void*)14, 0);
-	zcbor_multi_encode_minmax(1, 1, &one, (zcbor_encoder_t *)zcbor_int32_put, state_e, (void*)15, 0);
-	bool ret = zcbor_present_encode(&one_b, (zcbor_encoder_t *)zcbor_int32_put, state_e, (void*)16);
+	bool ret = zcbor_multi_encode_minmax(1, 1, &one, (zcbor_encoder_t *)zcbor_int32_put, state_e, (void*)15, 0);
 
 	if (!ret) {
 		printk("Encode error: %d\r\n", zcbor_peek_error(state_e));
@@ -99,8 +98,7 @@ int main(void)
 	zcbor_map_end_decode(state_d);
 	zcbor_list_end_decode(state_d);
 	zcbor_multi_decode(1, 1, &one, (zcbor_decoder_t *)zcbor_int32_expect, state_d, (void*)14, 0);
-	zcbor_int32_expect(state_d, 15);
-	ret = zcbor_present_decode(&one_b, (zcbor_decoder_t *)zcbor_int32_expect, state_d, (void*)16);
+	ret = zcbor_present_decode(&one_b, (zcbor_decoder_t *)zcbor_int32_expect, state_d, (void*)15);
 
 	if (!ret) {
 		printk("Decode error: %d\r\n", zcbor_peek_error(state_d));
