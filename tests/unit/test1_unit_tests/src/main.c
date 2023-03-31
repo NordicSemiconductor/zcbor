@@ -247,7 +247,8 @@ ZTEST(zcbor_unit_tests, test_stop_on_error)
 	zassert_false(zcbor_size_encode(state_e, &(size_t){9}), NULL);
 	zassert_false(zcbor_bstr_put_lit(state_e, "Hello"), NULL);
 	zassert_false(zcbor_tstr_put_lit(state_e, "World"), NULL);
-	zassert_false(zcbor_tag_encode(state_e, 9), NULL);
+	zassert_false(zcbor_tag_put(state_e, 9), NULL);
+	zassert_false(zcbor_tag_encode(state_e, &(uint32_t){10}));
 	zassert_false(zcbor_bool_put(state_e, true), NULL);
 	zassert_false(zcbor_bool_encode(state_e, &(bool){false}), NULL);
 	zassert_false(zcbor_float32_put(state_e, 10.5), NULL);
@@ -286,8 +287,8 @@ ZTEST(zcbor_unit_tests, test_stop_on_error)
 	zassert_true(zcbor_size_encode(state_e, &(size_t){9}), NULL);
 	zassert_true(zcbor_bstr_put_lit(state_e, "Hello"), NULL);
 	zassert_true(zcbor_tstr_put_lit(state_e, "World"), NULL);
-	zassert_true(zcbor_tag_encode(state_e, 9), NULL);
-	zassert_true(zcbor_tag_encode(state_e, 10), NULL);
+	zassert_true(zcbor_tag_put(state_e, 9), NULL);
+	zassert_true(zcbor_tag_encode(state_e, &(uint32_t){10}));
 	zassert_true(zcbor_bool_put(state_e, true), NULL);
 	zassert_true(zcbor_bool_encode(state_e, &(bool){false}), NULL);
 	zassert_true(zcbor_float32_put(state_e, 10.5), NULL);
@@ -1020,9 +1021,9 @@ ZTEST(zcbor_unit_tests, test_any_skip)
 	zassert_equal(state_d->payload, state_e->payload, NULL);
 	zassert_equal(state_d->elem_count, --exp_elem_count, NULL);
 
-	zassert_true(zcbor_tag_encode(state_e, 1), NULL);
-	zassert_true(zcbor_tag_encode(state_e, 200), NULL);
-	zassert_true(zcbor_tag_encode(state_e, 3000), NULL);
+	zassert_true(zcbor_tag_put(state_e, 1), NULL);
+	zassert_true(zcbor_tag_put(state_e, 200), NULL);
+	zassert_true(zcbor_tag_put(state_e, 3000), NULL);
 	zassert_true(zcbor_map_start_encode(state_e, 6), NULL);
 	zassert_true(zcbor_uint32_put(state_e, 10), NULL);
 	zassert_true(zcbor_int64_put(state_e, -10000000000000), NULL);

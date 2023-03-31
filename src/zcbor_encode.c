@@ -661,7 +661,7 @@ bool zcbor_float16_bytes_put(zcbor_state_t *state, uint16_t input)
 }
 
 
-bool zcbor_tag_encode(zcbor_state_t *state, uint32_t tag)
+bool zcbor_tag_put(zcbor_state_t *state, uint32_t tag)
 {
 	if (!value_encode(state, ZCBOR_MAJOR_TYPE_TAG, &tag, sizeof(tag))) {
 		ZCBOR_FAIL();
@@ -669,6 +669,12 @@ bool zcbor_tag_encode(zcbor_state_t *state, uint32_t tag)
 	state->elem_count--;
 
 	return true;
+}
+
+
+bool zcbor_tag_encode(zcbor_state_t *state, uint32_t *tag)
+{
+	return zcbor_tag_put(state, *tag);
 }
 
 
