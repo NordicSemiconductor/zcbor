@@ -2130,8 +2130,9 @@ class CodeGenerator(CddlXcoder):
     def repeated_xcode_func_name(self):
         return f"{self.mode}_repeated_{self.var_name(with_prefix=True)}"
 
-    def single_func_prim_name(self, union_int=None):
+    def single_func_prim_name(self, union_int=None, ptr_result=False):
         """Function name for xcoding this type, when it is a primitive type"""
+        ptr_variant = ptr_result and self.type in ["UINT", "INT", "NINT", "FLOAT", "BOOL"]
         func_prefix = self.single_func_prim_prefix()
         if self.mode == "decode":
             if self.type == "ANY":
@@ -2139,15 +2140,17 @@ class CodeGenerator(CddlXcoder):
             elif not self.is_unambiguous_value():
                 func = f"{func_prefix}_decode"
             elif not union_int:
-                func = f"{func_prefix}_expect"
+                func = f"{func_prefix}_{'pexpect' if ptr_variant else 'expect'}"
             elif union_int == "EXPECT":
+                assert not ptr_variant, \
+                       "Programmer error: invalid use of expect_union."
                 func = f"{func_prefix}_expect_union"
             elif union_int == "DROP":
                 return None
         else:
             if self.type == "ANY":
                 func = "zcbor_nil_put"
-            elif (not self.is_unambiguous_value()) or self.type in ["TSTR", "BSTR"]:
+            elif (not self.is_unambiguous_value()) or self.type in ["TSTR", "BSTR"] or ptr_variant:
                 func = f"{func_prefix}_encode"
             else:
                 func = f"{func_prefix}_put"
@@ -2164,7 +2167,7 @@ class CodeGenerator(CddlXcoder):
         if self.type == "OTHER":
             return self.my_types[self.value].single_func(access, union_int)
 
-        func_name = self.single_func_prim_name(union_int)
+        func_name = self.single_func_prim_name(union_int, ptr_result=ptr_result)
         if func_name is None:
             return (None, None)
 
@@ -2177,7 +2180,7 @@ class CodeGenerator(CddlXcoder):
         elif self.type in ["UINT", "INT", "NINT", "FLOAT", "BOOL"]:
             # Make False and True lower case
             value = str(self.value).lower() if self.type == "BOOL" else str(self.value)
-            arg = ("(void *) " if ptr_result else "") + value
+            arg = (f"&({self.val_type_name()}){{{value}}}" if ptr_result else value)
         else:
             assert False, "Should not come here."
 

@@ -2073,4 +2073,34 @@ ZTEST(cbor_decode_test5, test_invalid_identifiers)
 }
 
 
+ZTEST(cbor_decode_test5, test_uint64_list)
+{
+	uint8_t uint64_list_payload1[] = {LIST(8),
+		0x10,
+		0x18, 0x20,
+		0x19, 0x12, 0x34,
+		0x1a, 0x12, 0x34, 0x56, 0x78,
+		0x1b, 0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0,
+		0x3b, 0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0,
+		0x1b, 0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef,
+		0x3b, 0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xee,
+		END
+	};
+
+	struct Uint64List result;
+	size_t num_decode;
+
+	zassert_equal(ZCBOR_SUCCESS, cbor_decode_Uint64List(uint64_list_payload1,
+		sizeof(uint64_list_payload1), &result, &num_decode), NULL);
+	zassert_equal(sizeof(uint64_list_payload1), num_decode, NULL);
+
+	zassert_equal(5, result.uint64_count, NULL);
+	zassert_equal(0x10, result.uint64[0], NULL);
+	zassert_equal(0x20, result.uint64[1], NULL);
+	zassert_equal(0x1234, result.uint64[2], NULL);
+	zassert_equal(0x12345678, result.uint64[3], NULL);
+	zassert_equal(0x123456789abcdef0, result.uint64[4], NULL);
+}
+
+
 ZTEST_SUITE(cbor_decode_test5, NULL, NULL, NULL, NULL, NULL);

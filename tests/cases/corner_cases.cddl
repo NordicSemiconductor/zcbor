@@ -247,3 +247,10 @@ InvalidIdentifiers = [
 	? Ø: 2,
 	? "{[a-z]}",
 ]
+
+Uint64List = [
+	* uint64: uint .size 8,
+	? nint64: nint .size 8,
+	? uint64_lit: 0x0123456789abcdef,
+	* nint64_lit: -0x0123456789abcdef,
+]
