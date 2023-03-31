@@ -2448,12 +2448,22 @@ class CodeGenerator(CddlXcoder):
     # key, cbor, and repetitions.
     def full_xcode(self, union_int=None):
         if self.present_var_condition():
-            func, *arguments = self.repeated_single_func(ptr_result=True)
-            return (
-                f"zcbor_present_{self.mode}(&(%s), (zcbor_{self.mode}r_t *)%s, %s)" %
-                (self.present_var_access(),
-                 func,
-                 xcode_args(*arguments),))
+            if self.mode == "encode":
+                func, *arguments = self.repeated_single_func(ptr_result=False)
+                return f"(!{self.present_var_access()} || {func}({xcode_args(*arguments)}))"
+            else:
+                assert self.mode == "decode", \
+                    f"This code needs self.mode to be 'decode', not {self.mode}."
+                if not self.repeated_single_func_impl_condition():
+                    decode_str = self.repeated_xcode(union_int)
+                    assert "zcbor_" in decode_str, \
+                        """Must be a direct call to zcbor to guarantee that payload and elem_count"
+are cleaned up after a failure."""
+                    return f"({self.present_var_access()} = {self.repeated_xcode(union_int)}, 1)"
+                func, *arguments = self.repeated_single_func(ptr_result=True)
+                return (
+                    f"zcbor_present_decode(&(%s), (zcbor_decoder_t *)%s, %s)" %
+                    (self.present_var_access(), func, xcode_args(*arguments),))
         elif self.count_var_condition():
             func, *arguments = self.repeated_single_func(ptr_result=True)
             minmax = "_minmax" if self.mode == "encode" else ""

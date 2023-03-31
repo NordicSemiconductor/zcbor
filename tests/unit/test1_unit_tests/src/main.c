@@ -264,7 +264,6 @@ ZTEST(zcbor_unit_tests, test_stop_on_error)
 	zassert_false(zcbor_list_end_encode(state_e, 1), NULL);
 	zassert_false(zcbor_multi_encode(1, (zcbor_encoder_t *)zcbor_int32_put, state_e, (void*)14, 0), NULL);
 	zassert_false(zcbor_multi_encode_minmax(1, 1, &(size_t){1}, (zcbor_encoder_t *)zcbor_int32_put, state_e, (void*)15, 0), NULL);
-	zassert_false(zcbor_present_encode(&(bool){true}, (zcbor_encoder_t *)zcbor_int32_put, state_e, (void*)16), NULL);
 
 
 	zassert_mem_equal(&state_backup, state_e, sizeof(state_backup), NULL);
@@ -305,7 +304,6 @@ ZTEST(zcbor_unit_tests, test_stop_on_error)
 	zassert_true(zcbor_list_end_encode(state_e, 1), NULL);
 	zassert_true(zcbor_multi_encode(1, (zcbor_encoder_t *)zcbor_int32_put, state_e, (void*)14, 0), NULL);
 	zassert_true(zcbor_multi_encode_minmax(1, 1, &(size_t){1}, (zcbor_encoder_t *)zcbor_int32_put, state_e, (void*)15, 0), NULL);
-	zassert_true(zcbor_present_encode(&(bool){true}, (zcbor_encoder_t *)zcbor_int32_put, state_e, (void*)16), NULL);
 
 	ZCBOR_STATE_D(state_d, 3, payload, sizeof(payload), 30);
 	state_d->constant_state->stop_on_error = true;
@@ -347,8 +345,7 @@ ZTEST(zcbor_unit_tests, test_stop_on_error)
 	zassert_false(zcbor_map_end_decode(state_d), NULL);
 	zassert_false(zcbor_list_end_decode(state_d), NULL);
 	zassert_false(zcbor_multi_decode(1, 1, &(size_t){1}, (zcbor_decoder_t *)zcbor_int32_expect, state_d, (void*)14, 0), NULL);
-	zassert_false(zcbor_int32_expect(state_d, 15), NULL);
-	zassert_false(zcbor_present_decode(&(bool){true}, (zcbor_decoder_t *)zcbor_int32_expect, state_d, (void*)16), NULL);
+	zassert_false(zcbor_present_decode(&(bool){true}, (zcbor_decoder_t *)zcbor_int32_expect, state_d, (void*)15), NULL);
 
 	zassert_mem_equal(&state_backup, state_d, sizeof(state_backup), NULL);
 	zassert_mem_equal(&constant_state_backup, state_d->constant_state, sizeof(constant_state_backup), NULL);
@@ -389,8 +386,7 @@ ZTEST(zcbor_unit_tests, test_stop_on_error)
 	zassert_true(zcbor_map_end_decode(state_d), NULL);
 	zassert_true(zcbor_list_end_decode(state_d), NULL);
 	zassert_true(zcbor_multi_decode(1, 1, &(size_t){1}, (zcbor_decoder_t *)zcbor_int32_expect, state_d, (void*)14, 0), NULL);
-	zassert_true(zcbor_int32_expect(state_d, 15), NULL);
-	zassert_true(zcbor_present_decode(&(bool){1}, (zcbor_decoder_t *)zcbor_int32_expect, state_d, (void*)16), NULL);
+	zassert_true(zcbor_present_decode(&(bool){1}, (zcbor_decoder_t *)zcbor_int32_expect, state_d, (void*)15), NULL);
 
 	/* Everything has been decoded. */
 	zassert_equal(state_e->payload, state_d->payload, NULL);

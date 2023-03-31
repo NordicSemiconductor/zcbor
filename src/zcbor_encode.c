@@ -706,15 +706,6 @@ bool zcbor_multi_encode(size_t num_encode,
 }
 
 
-bool zcbor_present_encode(const bool *present,
-		zcbor_encoder_t encoder,
-		zcbor_state_t *state,
-		const void *input)
-{
-	return zcbor_multi_encode(!!*present, encoder, state, input, 0);
-}
-
-
 void zcbor_new_encode_state(zcbor_state_t *state_array, size_t n_states,
 		uint8_t *payload, size_t payload_len, size_t elem_count)
 {
