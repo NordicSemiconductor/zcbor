@@ -292,10 +292,14 @@ int zcbor_entry_function(const uint8_t *payload, size_t payload_len,
 	uint_fast32_t n_states, uint_fast32_t elem_count);
 
 #ifdef ZCBOR_STOP_ON_ERROR
-/** Check stored error and fail if present, but only if stop_on_error is true. */
+/** Check stored error and fail if present, but only if stop_on_error is true.
+ *
+ * @retval true   No error found
+ * @retval false  An error was found
+ */
 static inline bool zcbor_check_error(const zcbor_state_t *state)
 {
-	struct zcbor_state_constant  *cs = state->constant_state;
+	struct zcbor_state_constant *cs = state->constant_state;
 	return !(cs && cs->stop_on_error && cs->error);
 }
 #endif
