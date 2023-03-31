@@ -23,27 +23,61 @@ extern "C" {
  */
 
 
-/** The following applies to all single-value decode functions that don't have docs.
+/** See @ref zcbor_new_state() */
+void zcbor_new_decode_state(zcbor_state_t *state_array, size_t n_states,
+		const uint8_t *payload, size_t payload_len, size_t elem_count);
+
+/** Convenience macro for declaring and initializing a decoding state with backups.
  *
- * @param[inout] state   The current state of the decoding.
- * @param[out]   result  Where to place the decoded value.
+ *  This gives you a state variable named @p name. The variable functions like
+ *  a pointer.
+ *
+ *  @param[in]  name          The name of the new state variable.
+ *  @param[in]  num_backups   The number of backup slots to keep in the state.
+ *  @param[in]  payload       The payload to work on.
+ *  @param[in]  payload_size  The size (in bytes) of @p payload.
+ *  @param[in]  elem_count    The starting elem_count (typically 1).
+ */
+#define ZCBOR_STATE_D(name, num_backups, payload, payload_size, elem_count) \
+zcbor_state_t name[((num_backups) + 2)]; \
+do { \
+	zcbor_new_decode_state(name, ZCBOR_ARRAY_SIZE(name), payload, payload_size, elem_count); \
+} while(0)
+
+
+/** The following applies to all _decode() functions listed directly below.
+ *
+ * @param[inout] state        The current state of the decoding.
+ * @param[out]   result       Where to place the decoded value.
+ * @param[in]    result_size  (if present) Size in bytes of the memory at @p result
  *
  * @retval true   If the value was decoded correctly.
  * @retval false  If the value has the wrong type, the payload overflowed, the
  *                element count was exhausted, or the value was larger than can
  *                fit in the result variable.
+ *                Use zcbor_peek_error() to see the error code.
  */
+bool zcbor_int32_decode(zcbor_state_t *state, int32_t *result); /* pint/nint */
+bool zcbor_int64_decode(zcbor_state_t *state, int64_t *result); /* pint/nint */
+bool zcbor_uint32_decode(zcbor_state_t *state, uint32_t *result); /* pint */
+bool zcbor_uint64_decode(zcbor_state_t *state, uint64_t *result); /* pint */
+bool zcbor_size_decode(zcbor_state_t *state, size_t *result); /* pint */
+bool zcbor_int_decode(zcbor_state_t *state, void *result, size_t result_size); /* pint/nint */
+bool zcbor_uint_decode(zcbor_state_t *state, void *result, size_t result_size); /* pint */
+bool zcbor_bstr_decode(zcbor_state_t *state, struct zcbor_string *result); /* bstr */
+bool zcbor_tstr_decode(zcbor_state_t *state, struct zcbor_string *result); /* tstr */
+bool zcbor_tag_decode(zcbor_state_t *state, uint32_t *result);  /* CBOR tag */
+bool zcbor_simple_decode(zcbor_state_t *state, uint8_t *result); /* CBOR simple value */
+bool zcbor_bool_decode(zcbor_state_t *state, bool *result); /* boolean CBOR simple value */
+bool zcbor_float16_decode(zcbor_state_t *state, float *result); /* IEEE754 float16 */
+bool zcbor_float16_bytes_decode(zcbor_state_t *state, uint16_t *result); /* IEEE754 float16 raw bytes */
+bool zcbor_float16_32_decode(zcbor_state_t *state, float *result); /* IEEE754 float16 or float32 */
+bool zcbor_float32_decode(zcbor_state_t *state, float *result); /* IEEE754 float32 */
+bool zcbor_float32_64_decode(zcbor_state_t *state, double *result); /* IEEE754 float32 or float64 */
+bool zcbor_float64_decode(zcbor_state_t *state, double *result); /* IEEE754 float64 */
+bool zcbor_float_decode(zcbor_state_t *state, double *result); /* IEEE754 float16, float32, or float64 */
 
-/** Decode and consume a pint/nint. */
-bool zcbor_int32_decode(zcbor_state_t *state, int32_t *result);
-bool zcbor_int64_decode(zcbor_state_t *state, int64_t *result);
-bool zcbor_uint32_decode(zcbor_state_t *state, uint32_t *result);
-bool zcbor_uint64_decode(zcbor_state_t *state, uint64_t *result);
-bool zcbor_size_decode(zcbor_state_t *state, size_t *result);
-bool zcbor_int_decode(zcbor_state_t *state, void *result_int, size_t int_size);
-bool zcbor_uint_decode(zcbor_state_t *state, void *result_uint, size_t uint_size);
-
-/** The following applies to all _expect() functions that don't have docs.
+/** The following applies to all _expect() functions listed directly below.
  *
  * @param[inout] state     The current state of the decoding.
  * @param[in]    expected  The expected value.
@@ -51,13 +85,27 @@ bool zcbor_uint_decode(zcbor_state_t *state, void *result_uint, size_t uint_size
  * @retval true   If the result was decoded correctly and has the expected value.
  * @retval false  If the decoding failed or the result doesn't have the
  *                expected value.
+ *                Use zcbor_peek_error() to see the error code.
  */
-/** Consume and expect a pint/nint with a certain value. */
-bool zcbor_int32_expect(zcbor_state_t *state, int32_t expected);
-bool zcbor_int64_expect(zcbor_state_t *state, int64_t expected);
-bool zcbor_uint32_expect(zcbor_state_t *state, uint32_t expected);
-bool zcbor_uint64_expect(zcbor_state_t *state, uint64_t expected);
-bool zcbor_size_expect(zcbor_state_t *state, size_t expected);
+bool zcbor_int32_expect(zcbor_state_t *state, int32_t expected); /* pint/nint */
+bool zcbor_int64_expect(zcbor_state_t *state, int64_t expected); /* pint/nint */
+bool zcbor_uint32_expect(zcbor_state_t *state, uint32_t expected); /* pint */
+bool zcbor_uint64_expect(zcbor_state_t *state, uint64_t expected); /* pint */
+bool zcbor_size_expect(zcbor_state_t *state, size_t expected); /* pint */
+bool zcbor_bstr_expect(zcbor_state_t *state, struct zcbor_string *expected); /* bstr */
+bool zcbor_tstr_expect(zcbor_state_t *state, struct zcbor_string *expected); /* tstr */
+bool zcbor_tag_expect(zcbor_state_t *state, uint32_t expected); /* CBOR tag */
+bool zcbor_simple_expect(zcbor_state_t *state, uint8_t expected); /* CBOR simple value */
+bool zcbor_bool_expect(zcbor_state_t *state, bool expected); /* boolean CBOR simple value */
+bool zcbor_nil_expect(zcbor_state_t *state, void *unused); /* 'nil' CBOR simple value */
+bool zcbor_undefined_expect(zcbor_state_t *state, void *unused); /* 'undefined' CBOR simple value */
+bool zcbor_float16_expect(zcbor_state_t *state, float expected); /* IEEE754 float16 */
+bool zcbor_float16_bytes_expect(zcbor_state_t *state, uint16_t expected); /* IEEE754 float16 raw bytes */
+bool zcbor_float16_32_expect(zcbor_state_t *state, float expected); /* IEEE754 float16 or float32 */
+bool zcbor_float32_expect(zcbor_state_t *state, float expected); /* IEEE754 float32 */
+bool zcbor_float32_64_expect(zcbor_state_t *state, double expected); /* IEEE754 float32 or float64 */
+bool zcbor_float64_expect(zcbor_state_t *state, double expected); /* IEEE754 float64 */
+bool zcbor_float_expect(zcbor_state_t *state, double expected); /* IEEE754 float16, float32, or float64 */
 
 /** Consume and expect a pint/nint with a certain value, within a union.
  *
@@ -67,159 +115,6 @@ bool zcbor_int32_expect_union(zcbor_state_t *state, int32_t expected);
 bool zcbor_int64_expect_union(zcbor_state_t *state, int64_t expected);
 bool zcbor_uint32_expect_union(zcbor_state_t *state, uint32_t expected);
 bool zcbor_uint64_expect_union(zcbor_state_t *state, uint64_t expected);
-
-/** Decode and consume a bstr/tstr */
-bool zcbor_bstr_decode(zcbor_state_t *state, struct zcbor_string *result);
-bool zcbor_bstr_expect(zcbor_state_t *state, struct zcbor_string *expected);
-bool zcbor_tstr_decode(zcbor_state_t *state, struct zcbor_string *result);
-bool zcbor_tstr_expect(zcbor_state_t *state, struct zcbor_string *expected);
-
-/** Consume and expect a bstr/tstr with the value of the provided string literal.
- *
- * @param[inout] state   The current state of the encoding.
- * @param[in]    string  The value to expect. A pointer to the string.
- * @param[in]    len     The length of the string pointed to by @p string.
- */
-bool zcbor_bstr_expect_ptr(zcbor_state_t *state, char const *ptr, size_t len);
-bool zcbor_tstr_expect_ptr(zcbor_state_t *state, char const *ptr, size_t len);
-
-
-/** Consume and expect a bstr/tstr with the value of the provided string literal.
- *
- * @param[inout] state   The current state of the encoding.
- * @param[in]    string  The value to expect. A string literal, e.g. "Foo", so
- *                       that sizeof(string) - 1 is the length of the string.
- */
-#define zcbor_bstr_expect_lit(state, string) \
-		zcbor_bstr_expect_ptr(state, string, sizeof(string) - 1)
-#define zcbor_tstr_expect_lit(state, string) \
-		zcbor_tstr_expect_ptr(state, string, sizeof(string) - 1)
-
-/** Consume and expect a bstr/tstr with the value of the provided null-terminated string.
- *
- * @param[inout] state   The current state of the encoding.
- * @param[in]    string  The value to expect. Must be a null-terminated string,
- *                       so that strlen can be used.
- */
-#define zcbor_bstr_expect_term(state, string) \
-		zcbor_bstr_expect_ptr(state, string, strlen(string))
-#define zcbor_tstr_expect_term(state, string) \
-		zcbor_tstr_expect_ptr(state, string, strlen(string))
-
-/** Consume and expect a bstr/tstr with the value of the provided char array literal.
- *
- * @param[inout] state   The current state of the encoding.
- * @param[in]    string  The value to expect. An array literal, e.g. {'F', 'o', 'o'},
- *                       so that sizeof(string) is the length of the string.
- */
-#define zcbor_bstr_expect_arr(state, string) \
-		zcbor_bstr_expect_ptr(state, string, (sizeof(string)))
-#define zcbor_tstr_expect_arr(state, string) \
-		zcbor_tstr_expect_ptr(state, string, (sizeof(string)))
-
-/** Decode and consume a tag. */
-bool zcbor_tag_decode(zcbor_state_t *state, uint32_t *result);
-bool zcbor_tag_expect(zcbor_state_t *state, uint32_t expected);
-
-/** Decode and consume a simple value. */
-bool zcbor_simple_decode(zcbor_state_t *state, uint8_t *result);
-bool zcbor_simple_expect(zcbor_state_t *state, uint8_t expected);
-
-/** Decode and consume a boolean simple value. */
-bool zcbor_bool_decode(zcbor_state_t *state, bool *result);
-bool zcbor_bool_expect(zcbor_state_t *state, bool expected);
-
-/** Decode and consume an IEEE754 float */
-bool zcbor_float16_decode(zcbor_state_t *state, float *result);
-bool zcbor_float16_expect(zcbor_state_t *state, float expected);
-bool zcbor_float16_bytes_decode(zcbor_state_t *state, uint16_t *result);
-bool zcbor_float16_bytes_expect(zcbor_state_t *state, uint16_t expected);
-bool zcbor_float16_32_decode(zcbor_state_t *state, float *result);
-bool zcbor_float16_32_expect(zcbor_state_t *state, float expected);
-bool zcbor_float32_decode(zcbor_state_t *state, float *result);
-bool zcbor_float32_expect(zcbor_state_t *state, float expected);
-bool zcbor_float32_64_decode(zcbor_state_t *state, double *result);
-bool zcbor_float32_64_expect(zcbor_state_t *state, double expected);
-bool zcbor_float64_decode(zcbor_state_t *state, double *result);
-bool zcbor_float64_expect(zcbor_state_t *state, double expected);
-bool zcbor_float_decode(zcbor_state_t *state, double *result);
-bool zcbor_float_expect(zcbor_state_t *state, double expected);
-
-/** Consume and expect a "nil"/"undefined" simple value.
- *
- * @param[inout] state   The current state of the encoding.
- * @param[in]    unused  Unused parameter to maintain signature parity with
- *                       @ref zcbor_decoder_t.
- */
-bool zcbor_nil_expect(zcbor_state_t *state, void *unused);
-bool zcbor_undefined_expect(zcbor_state_t *state, void *unused);
-
-/** Skip a single element, regardless of type and value.
- *
- * @param[inout] state   The current state of the encoding.
- * @param[in]    unused  Unused parameter to maintain signature parity with
- *                       @ref zcbor_decoder_t.
- */
-bool zcbor_any_skip(zcbor_state_t *state, void *unused);
-
-/** Decode and consume a bstr header.
- *
- * The rest of the string can be decoded as CBOR.
- * A state backup is created to keep track of the element count.
- * Call @ref zcbor_bstr_end_decode when done decoding the contents of the bstr.
- *
- * @retval true   Header decoded correctly
- * @retval false  Header decoded incorrectly, or backup failed.
- */
-bool zcbor_bstr_start_decode(zcbor_state_t *state, struct zcbor_string *result);
-
-/** Finalize decoding a CBOR-encoded bstr.
- *
- * Restore element count from backup.
- */
-bool zcbor_bstr_end_decode(zcbor_state_t *state);
-
-/** Start decoding a bstr/tstr, even if the payload contains only part of it.
- *
- * This must be followed by a call to @ref zcbor_update_state, which can be
- * followed by a call to @ref zcbor_next_fragment. Do not call this function
- * again on subsequent fragments of the same string.
- *
- * This consumes the remaining payload as long as it belongs to the string.
- */
-bool zcbor_bstr_decode_fragment(zcbor_state_t *state, struct zcbor_string_fragment *result);
-bool zcbor_tstr_decode_fragment(zcbor_state_t *state, struct zcbor_string_fragment *result);
-
-/** Extract the next fragment of a string.
- *
- * Use this function to extract all but the first fragment.
- */
-void zcbor_next_fragment(zcbor_state_t *state,
-	struct zcbor_string_fragment *prev_fragment,
-	struct zcbor_string_fragment *result);
-
-/** Decode and consume a bstr header, assuming the payload does not contain the whole bstr.
- *
- * The rest of the string can be decoded as CBOR.
- * A state backup is created to keep track of the element count.
- * Call @ref zcbor_update_state followed by @ref zcbor_bstr_next_fragment when
- * the current payload has been exhausted.
- * Call @ref zcbor_bstr_end_decode when done decoding the contents of the bstr.
- */
-bool zcbor_bstr_start_decode_fragment(zcbor_state_t *state,
-	struct zcbor_string_fragment *result);
-
-/** Start decoding the next fragment of a string.
- *
- * Use this function to extract all but the first fragment of a CBOR-encoded
- * bstr.
- */
-void zcbor_bstr_next_fragment(zcbor_state_t *state,
-	struct zcbor_string_fragment *prev_fragment,
-	struct zcbor_string_fragment *result);
-
-/** Can be used on any fragment to tell if it is the final fragment of the string. */
-bool zcbor_is_last_fragment(const struct zcbor_string_fragment *fragment);
 
 /** Decode and consume a list/map header.
  *
@@ -248,6 +143,18 @@ bool zcbor_map_start_decode(zcbor_state_t *state);
 bool zcbor_list_end_decode(zcbor_state_t *state);
 bool zcbor_map_end_decode(zcbor_state_t *state);
 bool zcbor_list_map_end_force_decode(zcbor_state_t *state);
+
+/** Skip a single element, regardless of type and value.
+ *
+ * This means if the element is a map or list, this function will recursively
+ * skip all its contents.
+ * This function will also skip any tags preceeding the element.
+ *
+ * @param[inout] state   The current state of the decoding.
+ * @param[in]    unused  Unused parameter to maintain signature parity with
+ *                       @ref zcbor_decoder_t.
+ */
+bool zcbor_any_skip(zcbor_state_t *state, void *unused);
 
 /** Decode 0 or more elements with the same type and constraints.
  *
@@ -320,26 +227,95 @@ bool zcbor_present_decode(bool *present,
 		zcbor_state_t *state,
 		void *result);
 
-/** See @ref zcbor_new_state() */
-void zcbor_new_decode_state(zcbor_state_t *state_array, size_t n_states,
-		const uint8_t *payload, size_t payload_len, size_t elem_count);
 
-/** Convenience macro for declaring and initializing a state with backups.
+/** Supplementary string (bstr/tstr) decoding functions: */
+
+/** Consume and expect a bstr/tstr with the value of the provided char/uint8_t array.
  *
- *  This gives you a state variable named @p name. The variable functions like
- *  a pointer.
- *
- *  @param[in]  name          The name of the new state variable.
- *  @param[in]  num_backups   The number of backup slots to keep in the state.
- *  @param[in]  payload       The payload to work on.
- *  @param[in]  payload_size  The size (in bytes) of @p payload.
- *  @param[in]  elem_count    The starting elem_count (typically 1).
+ * @param[inout] state  The current state of the decoding.
+ * @param[in]    str    The value to expect. A pointer to the string/array.
+ *                      _term() uses strlen(), so @p str must be null-terminated.
+ *                      _lit() uses sizeof()-1, so @p str must be a (null-terminated) string literal.
+ *                      _arr() uses sizeof(), so @p str must be a uint8_t array (not null-terminated).
+ * @param[in]    len    (if present) The length of the string pointed to by @p str
  */
-#define ZCBOR_STATE_D(name, num_backups, payload, payload_size, elem_count) \
-zcbor_state_t name[((num_backups) + 2)]; \
-do { \
-	zcbor_new_decode_state(name, ZCBOR_ARRAY_SIZE(name), payload, payload_size, elem_count); \
-} while(0)
+bool zcbor_bstr_expect_ptr(zcbor_state_t *state, char const *ptr, size_t len);
+bool zcbor_tstr_expect_ptr(zcbor_state_t *state, char const *ptr, size_t len);
+bool zcbor_bstr_expect_term(zcbor_state_t *state, char const *str);
+bool zcbor_tstr_expect_term(zcbor_state_t *state, char const *str);
+#define zcbor_bstr_expect_lit(state, str) zcbor_bstr_expect_ptr(state, str, sizeof(str) - 1)
+#define zcbor_tstr_expect_lit(state, str) zcbor_tstr_expect_ptr(state, str, sizeof(str) - 1)
+#define zcbor_bstr_expect_arr(state, str) zcbor_bstr_expect_ptr(state, str, sizeof(str))
+#define zcbor_tstr_expect_arr(state, str) zcbor_tstr_expect_ptr(state, str, sizeof(str))
+
+/** Decode and consume a bstr header.
+ *
+ * The rest of the string can be decoded as CBOR.
+ * A state backup is created to keep track of the element count.
+ * Call @ref zcbor_bstr_end_decode when done decoding the contents of the bstr.
+ *
+ * @param[inout] state   The current state of the decoding.
+ * @param[out]   result  The resulting string, for reference. The string should be decoded via
+ *                       functions from this API since state is pointing to the start of the string,
+ *                       not the end.
+ *
+ * @retval true   Header decoded correctly
+ * @retval false  Header decoded incorrectly, or backup failed, or payload is not large enough
+ *                to contain the contents of the string. Use @ref zcbor_bstr_start_decode_fragment
+ *                for decoding fragmented payloads.
+ */
+bool zcbor_bstr_start_decode(zcbor_state_t *state, struct zcbor_string *result);
+
+/** Finalize decoding a CBOR-encoded bstr.
+ *
+ * Restore element count from backup.
+ */
+bool zcbor_bstr_end_decode(zcbor_state_t *state);
+
+
+/** Supplementary string (bstr/tstr) decoding functions for fragmented payloads: */
+
+/** Start decoding a bstr/tstr, even if the payload contains only part of it.
+ *
+ * This must be followed by a call to @ref zcbor_update_state, which can be
+ * followed by a call to @ref zcbor_next_fragment. Do not call this function
+ * again on subsequent fragments of the same string.
+ *
+ * This consumes the remaining payload as long as it belongs to the string.
+ */
+bool zcbor_bstr_decode_fragment(zcbor_state_t *state, struct zcbor_string_fragment *result);
+bool zcbor_tstr_decode_fragment(zcbor_state_t *state, struct zcbor_string_fragment *result);
+
+/** Extract the next fragment of a string.
+ *
+ * Use this function to extract all but the first fragment.
+ */
+void zcbor_next_fragment(zcbor_state_t *state,
+	struct zcbor_string_fragment *prev_fragment,
+	struct zcbor_string_fragment *result);
+
+/** Decode and consume a bstr header, assuming the payload does not contain the whole bstr.
+ *
+ * The rest of the string can be decoded as CBOR.
+ * A state backup is created to keep track of the element count.
+ * Call @ref zcbor_update_state followed by @ref zcbor_bstr_next_fragment when
+ * the current payload has been exhausted.
+ * Call @ref zcbor_bstr_end_decode when done decoding the contents of the bstr.
+ */
+bool zcbor_bstr_start_decode_fragment(zcbor_state_t *state,
+	struct zcbor_string_fragment *result);
+
+/** Start decoding the next fragment of a string.
+ *
+ * Use this function to extract all but the first fragment of a CBOR-encoded
+ * bstr.
+ */
+void zcbor_bstr_next_fragment(zcbor_state_t *state,
+	struct zcbor_string_fragment *prev_fragment,
+	struct zcbor_string_fragment *result);
+
+/** Can be used on any fragment to tell if it is the final fragment of the string. */
+bool zcbor_is_last_fragment(const struct zcbor_string_fragment *fragment);
 
 #ifdef __cplusplus
 }

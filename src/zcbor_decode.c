@@ -159,12 +159,12 @@ static bool value_extract(zcbor_state_t *state,
 }
 
 
-bool zcbor_int_decode(zcbor_state_t *state, void *result_int, size_t int_size)
+bool zcbor_int_decode(zcbor_state_t *state, void *result, size_t result_size)
 {
 	INITIAL_CHECKS();
 	zcbor_major_type_t major_type = ZCBOR_MAJOR_TYPE(*state->payload);
-	uint8_t *result_uint8 = (uint8_t *)result_int;
-	int8_t *result_int8 = (int8_t *)result_int;
+	uint8_t *result_uint8 = (uint8_t *)result;
+	int8_t *result_int8 = (int8_t *)result;
 
 	if (major_type != ZCBOR_MAJOR_TYPE_PINT
 		&& major_type != ZCBOR_MAJOR_TYPE_NINT) {
@@ -172,14 +172,14 @@ bool zcbor_int_decode(zcbor_state_t *state, void *result_int, size_t int_size)
 		ZCBOR_ERR(ZCBOR_ERR_WRONG_TYPE);
 	}
 
-	if (!value_extract(state, result_int, int_size)) {
+	if (!value_extract(state, result, result_size)) {
 		ZCBOR_FAIL();
 	}
 
 #ifdef CONFIG_BIG_ENDIAN
 	if (result_int8[0] < 0) {
 #else
-	if (result_int8[int_size - 1] < 0) {
+	if (result_int8[result_size - 1] < 0) {
 #endif
 		/* Value is too large to fit in a signed integer. */
 		ERR_RESTORE(ZCBOR_ERR_INT_SIZE);
@@ -187,7 +187,7 @@ bool zcbor_int_decode(zcbor_state_t *state, void *result_int, size_t int_size)
 
 	if (major_type == ZCBOR_MAJOR_TYPE_NINT) {
 		/* Convert from CBOR's representation by flipping all bits. */
-		for (unsigned int i = 0; i < int_size; i++) {
+		for (unsigned int i = 0; i < result_size; i++) {
 			result_uint8[i] = (uint8_t)~result_uint8[i];
 		}
 	}
@@ -208,12 +208,12 @@ bool zcbor_int64_decode(zcbor_state_t *state, int64_t *result)
 }
 
 
-bool zcbor_uint_decode(zcbor_state_t *state, void *result_uint, size_t uint_size)
+bool zcbor_uint_decode(zcbor_state_t *state, void *result, size_t result_size)
 {
 	INITIAL_CHECKS_WITH_TYPE(ZCBOR_MAJOR_TYPE_PINT);
 
-	if (!value_extract(state, result_uint, uint_size)) {
-		zcbor_print("uint with size %d failed.\r\n", uint_size);
+	if (!value_extract(state, result, result_size)) {
+		zcbor_print("uint with size %d failed.\r\n", result_size);
 		ZCBOR_FAIL();
 	}
 	return true;
@@ -544,12 +544,14 @@ bool zcbor_tstr_expect(zcbor_state_t *state, struct zcbor_string *expected)
 	return str_expect(state, expected, ZCBOR_MAJOR_TYPE_TSTR);
 }
 
+
 bool zcbor_bstr_expect_ptr(zcbor_state_t *state, char const *ptr, size_t len)
 {
 	struct zcbor_string zs = { .value = (const uint8_t *)ptr, .len = len };
 
 	return zcbor_bstr_expect(state, &zs);
 }
+
 
 bool zcbor_tstr_expect_ptr(zcbor_state_t *state, char const *ptr, size_t len)
 {
@@ -558,6 +560,17 @@ bool zcbor_tstr_expect_ptr(zcbor_state_t *state, char const *ptr, size_t len)
 	return zcbor_tstr_expect(state, &zs);
 }
 
+
+bool zcbor_bstr_expect_term(zcbor_state_t *state, char const *string)
+{
+	return zcbor_bstr_expect_ptr(state, string, strlen(string));
+}
+
+
+bool zcbor_tstr_expect_term(zcbor_state_t *state, char const *string)
+{
+	return zcbor_tstr_expect_ptr(state, string, strlen(string));
+}
 
 
 static bool list_map_start_decode(zcbor_state_t *state,

@@ -352,19 +352,31 @@ bool zcbor_tstr_encode(zcbor_state_t *state, const struct zcbor_string *input)
 }
 
 
-bool zcbor_bstr_encode_ptr(zcbor_state_t *state, const char *ptr, size_t len)
+bool zcbor_bstr_encode_ptr(zcbor_state_t *state, const char *str, size_t len)
 {
-	const struct zcbor_string zs = { .value = (const uint8_t *)ptr, .len = len };
+	const struct zcbor_string zs = { .value = (const uint8_t *)str, .len = len };
 
 	return zcbor_bstr_encode(state, &zs);
 }
 
 
-bool zcbor_tstr_encode_ptr(zcbor_state_t *state, const char *ptr, size_t len)
+bool zcbor_tstr_encode_ptr(zcbor_state_t *state, const char *str, size_t len)
 {
-	const struct zcbor_string zs = { .value = (const uint8_t *)ptr, .len = len };
+	const struct zcbor_string zs = { .value = (const uint8_t *)str, .len = len };
 
 	return zcbor_tstr_encode(state, &zs);
+}
+
+
+bool zcbor_bstr_put_term(zcbor_state_t *state, char const *str)
+{
+	return zcbor_bstr_encode_ptr(state, str, strlen(str));
+}
+
+
+bool zcbor_tstr_put_term(zcbor_state_t *state, char const *str)
+{
+	return zcbor_tstr_encode_ptr(state, str, strlen(str));
 }
 
 
@@ -694,13 +706,9 @@ bool zcbor_tag_encode(zcbor_state_t *state, uint32_t *tag)
 }
 
 
-bool zcbor_multi_encode_minmax(size_t min_encode,
-		size_t max_encode,
-		const size_t *num_encode,
-		zcbor_encoder_t encoder,
-		zcbor_state_t *state,
-		const void *input,
-		size_t result_len)
+bool zcbor_multi_encode_minmax(size_t min_encode, size_t max_encode,
+		const size_t *num_encode, zcbor_encoder_t encoder,
+		zcbor_state_t *state, const void *input, size_t result_len)
 {
 
 	if ((*num_encode >= min_encode) && (*num_encode <= max_encode)) {
@@ -711,11 +719,8 @@ bool zcbor_multi_encode_minmax(size_t min_encode,
 }
 
 
-bool zcbor_multi_encode(size_t num_encode,
-		zcbor_encoder_t encoder,
-		zcbor_state_t *state,
-		const void *input,
-		size_t result_len)
+bool zcbor_multi_encode(const size_t num_encode, zcbor_encoder_t encoder,
+		zcbor_state_t *state, const void *input, size_t result_len)
 {
 	ZCBOR_CHECK_ERROR();
 	for (size_t i = 0; i < num_encode; i++) {
