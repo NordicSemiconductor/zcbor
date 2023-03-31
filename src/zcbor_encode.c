@@ -352,6 +352,22 @@ bool zcbor_tstr_encode(zcbor_state_t *state, const struct zcbor_string *input)
 }
 
 
+bool zcbor_bstr_encode_ptr(zcbor_state_t *state, const char *ptr, size_t len)
+{
+	const struct zcbor_string zs = { .value = (const uint8_t *)ptr, .len = len };
+
+	return zcbor_bstr_encode(state, &zs);
+}
+
+
+bool zcbor_tstr_encode_ptr(zcbor_state_t *state, const char *ptr, size_t len)
+{
+	const struct zcbor_string zs = { .value = (const uint8_t *)ptr, .len = len };
+
+	return zcbor_tstr_encode(state, &zs);
+}
+
+
 static bool list_map_start_encode(zcbor_state_t *state, size_t max_num,
 		zcbor_major_type_t major_type)
 {
