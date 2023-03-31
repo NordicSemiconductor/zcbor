@@ -77,7 +77,7 @@ bool zcbor_float32_64_decode(zcbor_state_t *state, double *result); /* IEEE754 f
 bool zcbor_float64_decode(zcbor_state_t *state, double *result); /* IEEE754 float64 */
 bool zcbor_float_decode(zcbor_state_t *state, double *result); /* IEEE754 float16, float32, or float64 */
 
-/** The following applies to all _expect() functions listed directly below.
+/** The following applies to all _expect() and _pexpect() functions listed directly below.
  *
  * @param[inout] state     The current state of the decoding.
  * @param[in]    expected  The expected value.
@@ -106,6 +106,24 @@ bool zcbor_float32_expect(zcbor_state_t *state, float expected); /* IEEE754 floa
 bool zcbor_float32_64_expect(zcbor_state_t *state, double expected); /* IEEE754 float32 or float64 */
 bool zcbor_float64_expect(zcbor_state_t *state, double expected); /* IEEE754 float64 */
 bool zcbor_float_expect(zcbor_state_t *state, double expected); /* IEEE754 float16, float32, or float64 */
+
+/** Like the _expect() functions but the value is passed through a pointer.
+ * (for use as a zcbor_decoder_t function) */
+bool zcbor_int32_pexpect(zcbor_state_t *state, int32_t *expected); /* pint/nint */
+bool zcbor_int64_pexpect(zcbor_state_t *state, int64_t *expected); /* pint/nint */
+bool zcbor_uint32_pexpect(zcbor_state_t *state, uint32_t *expected); /* pint */
+bool zcbor_uint64_pexpect(zcbor_state_t *state, uint64_t *expected); /* pint */
+bool zcbor_size_pexpect(zcbor_state_t *state, size_t *expected); /* pint */
+bool zcbor_tag_pexpect(zcbor_state_t *state, uint32_t *expected); /* CBOR tag */
+bool zcbor_simple_pexpect(zcbor_state_t *state, uint8_t *expected); /* CBOR simple value */
+bool zcbor_bool_pexpect(zcbor_state_t *state, bool *expected); /* boolean CBOR simple value */
+bool zcbor_float16_pexpect(zcbor_state_t *state, float *expected); /* IEEE754 float16 */
+bool zcbor_float16_bytes_pexpect(zcbor_state_t *state, uint16_t *expected); /* IEEE754 float16 raw bytes */
+bool zcbor_float16_32_pexpect(zcbor_state_t *state, float *expected); /* IEEE754 float16 or float32 */
+bool zcbor_float32_pexpect(zcbor_state_t *state, float *expected); /* IEEE754 float32 */
+bool zcbor_float32_64_pexpect(zcbor_state_t *state, double *expected); /* IEEE754 float32 or float64 */
+bool zcbor_float64_pexpect(zcbor_state_t *state, double *expected); /* IEEE754 float64 */
+bool zcbor_float_pexpect(zcbor_state_t *state, double *expected); /* IEEE754 float16, float32, or float64 */
 
 /** Consume and expect a pint/nint with a certain value, within a union.
  *
@@ -198,6 +216,8 @@ bool zcbor_any_skip(zcbor_state_t *state, void *unused);
  *                           The result pointer is moved @p result_len bytes for
  *                           each call to @p decoder, i.e. @p result refers to
  *                           an array of result variables.
+ *                           Should not be an _expect() function, use
+ *                           _pexpect() instead.
  * @param[out] result        Where to place the decoded values. Must be an array
  *                           of at least @p max_decode elements.
  * @param[in]  result_len    The length of each result variable. Must be the
