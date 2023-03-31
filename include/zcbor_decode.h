@@ -80,18 +80,8 @@ bool zcbor_tstr_expect(zcbor_state_t *state, struct zcbor_string *expected);
  * @param[in]    string  The value to expect. A pointer to the string.
  * @param[in]    len     The length of the string pointed to by @p string.
  */
-static inline bool zcbor_bstr_expect_ptr(zcbor_state_t *state, char const *ptr, size_t len)
-{
-	struct zcbor_string zs = { .value = (const uint8_t *)ptr, .len = len };
-
-	return zcbor_bstr_expect(state, &zs);
-}
-static inline bool zcbor_tstr_expect_ptr(zcbor_state_t *state, char const *ptr, size_t len)
-{
-	struct zcbor_string zs = { .value = (const uint8_t *)ptr, .len = len };
-
-	return zcbor_tstr_expect(state, &zs);
-}
+bool zcbor_bstr_expect_ptr(zcbor_state_t *state, char const *ptr, size_t len);
+bool zcbor_tstr_expect_ptr(zcbor_state_t *state, char const *ptr, size_t len);
 
 
 /** Consume and expect a bstr/tstr with the value of the provided string literal.

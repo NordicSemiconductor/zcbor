@@ -62,18 +62,8 @@ bool zcbor_tstr_encode(zcbor_state_t *state, const struct zcbor_string *input);
  * @param[in]    string  The value to encode. A pointer to the string
  * @param[in]    len     The length of the string pointed to by @p string.
  */
-static inline bool zcbor_bstr_encode_ptr(zcbor_state_t *state, const char *ptr, size_t len)
-{
-	const struct zcbor_string zs = { .value = (const uint8_t *)ptr, .len = len };
-
-	return zcbor_bstr_encode(state, &zs);
-}
-static inline bool zcbor_tstr_encode_ptr(zcbor_state_t *state, const char *ptr, size_t len)
-{
-	const struct zcbor_string zs = { .value = (const uint8_t *)ptr, .len = len };
-
-	return zcbor_tstr_encode(state, &zs);
-}
+bool zcbor_bstr_encode_ptr(zcbor_state_t *state, const char *ptr, size_t len);
+bool zcbor_tstr_encode_ptr(zcbor_state_t *state, const char *ptr, size_t len);
 
 /** Encode a string literal as a bstr/tstr.
  *
