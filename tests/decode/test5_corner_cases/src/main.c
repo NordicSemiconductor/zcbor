@@ -78,8 +78,9 @@ ZTEST(cbor_decode_test5, test_numbers2)
 {
 	size_t decode_len = 0xFFFFFFFF;
 	const uint8_t payload_numbers2[] = {
-		LIST(7),
+		LIST(8),
 			0x1A, 0x00, 0x12, 0x34, 0x56, // 0x123456
+			0x3A, 0x7F, 0xFF, 0xFF, 0xFF, // -0x80000000
 			0x1B, 0x01, 2, 3, 4, 5, 6, 7, 8, // 0x0102030405060708
 			0x1B, 0x11, 2, 3, 4, 5, 6, 7, 9, // 0x1102030405060709
 			0x00, // 0
@@ -89,8 +90,9 @@ ZTEST(cbor_decode_test5, test_numbers2)
 		END
 	};
 	const uint8_t payload_numbers2_1[] = {
-		LIST(7),
+		LIST(8),
 			0x1A, 0x00, 0x12, 0x34, 0x56, // 0x123456
+			0x1A, 0x7F, 0xFF, 0xFF, 0xFF, // 0x7FFFFFFF
 			0x3B, 0x01, 2, 3, 4, 5, 6, 7, 8, // -0x0102030405060709
 			0x1B, 0x11, 2, 3, 4, 5, 6, 7, 9, // 0x1102030405060709
 			0x1B, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, // 0xFFFFFFFFFFFFFFFF
@@ -100,8 +102,9 @@ ZTEST(cbor_decode_test5, test_numbers2)
 		END
 	};
 	const uint8_t payload_numbers2_inv2[] = {
-		LIST(7),
+		LIST(8),
 			0x1A, 0x00, 0x12, 0x34, 0x56, // 0x123456
+			0x1A, 0x7F, 0xFF, 0xFF, 0xFF, // 0x7FFFFFFF
 			0x1B, 0x01, 2, 3, 4, 5, 6, 7, 8, // 0x0102030405060708
 			0x1B, 0x11, 2, 3, 4, 5, 6, 7, 9, // 0x1102030405060709
 			0x1B, 0x11, 2, 3, 4, 5, 6, 7, 9, // 0x1102030405060709
@@ -111,8 +114,9 @@ ZTEST(cbor_decode_test5, test_numbers2)
 		END
 	};
 	const uint8_t payload_numbers2_inv3[] = {
-		LIST(7),
+		LIST(8),
 			0x1A, 0x00, 0x12, 0x34, 0x56, // 0x123456
+			0x1A, 0x7F, 0xFF, 0xFF, 0xFF, // 0x7FFFFFFF
 			0x1B, 0x01, 2, 3, 4, 5, 6, 7, 8, // 0x0102030405060708
 			0x1B, 0x11, 2, 3, 4, 5, 6, 7, 9, // 0x1102030405060709
 			0x1B, 0x11, 2, 3, 4, 5, 6, 7, 9, // 0x1102030405060709
@@ -122,8 +126,9 @@ ZTEST(cbor_decode_test5, test_numbers2)
 		END
 	};
 	const uint8_t payload_numbers2_inv4[] = {
-		LIST(7),
+		LIST(8),
 			0x1A, 0x00, 0x12, 0x34, 0x56, // 0x123456
+			0x1A, 0x7F, 0xFF, 0xFF, 0xFF, // 0x7FFFFFFF
 			0x1B, 0x01, 2, 3, 4, 5, 6, 7, 8, // 0x0102030405060708
 			0x1A, 0x00, 0x12, 0x34, 0x56, // 0x123456 INV
 			0x1B, 0x11, 2, 3, 4, 5, 6, 7, 9, // 0x1102030405060709
@@ -133,8 +138,9 @@ ZTEST(cbor_decode_test5, test_numbers2)
 		END
 	};
 	const uint8_t payload_numbers2_inv5[] = {
-		LIST(7),
+		LIST(8),
 			0x1A, 0x00, 0x12, 0x34, 0x56, // 0x123456
+			0x1A, 0x7F, 0xFF, 0xFF, 0xFF, // 0x7FFFFFFF
 			0x1B, 0x01, 2, 3, 4, 5, 6, 7, 8, // 0x0102030405060708
 			0x1B, 0x11, 2, 3, 4, 5, 6, 7, 9, // 0x1102030405060709
 			0x1B, 0x11, 2, 3, 4, 5, 6, 7, 9, // 0x1102030405060709
@@ -144,8 +150,9 @@ ZTEST(cbor_decode_test5, test_numbers2)
 		END
 	};
 	const uint8_t payload_numbers2_inv6[] = {
-		LIST(7),
+		LIST(8),
 			0x1A, 0x00, 0x12, 0x34, 0x56, // 0x123456
+			0x1A, 0x7F, 0xFF, 0xFF, 0xFF, // 0x7FFFFFFF
 			0x3B, 0x01, 2, 3, 4, 5, 6, 7, 8, // -0x0102030405060709
 			0x1B, 0x11, 2, 3, 4, 5, 6, 7, 9, // 0x1102030405060709
 			0x20, // -1 INV
@@ -155,8 +162,9 @@ ZTEST(cbor_decode_test5, test_numbers2)
 		END
 	};
 	const uint8_t payload_numbers2_inv7[] = {
-		LIST(7),
+		LIST(8),
 			0x1A, 0x00, 0x12, 0x34, 0x56, // 0x123456
+			0x1A, 0x7F, 0xFF, 0xFF, 0xFF, // 0x7FFFFFFF
 			0x1B, 0x01, 2, 3, 4, 5, 6, 7, 8, // 0x0102030405060708
 			0x1B, 0x11, 2, 3, 4, 5, 6, 7, 9, // 0x1102030405060709
 			0x00, // 0
@@ -165,27 +173,55 @@ ZTEST(cbor_decode_test5, test_numbers2)
 			0xD9, 0x04, 0xD3, 0x03, // #6.1235(3) INV
 		END
 	};
+	const uint8_t payload_numbers2_inv8[] = {
+		LIST(8),
+			0x1A, 0x00, 0x12, 0x34, 0x56, // 0x123456
+			0x3A, 0x80, 0x00, 0x00, 0x00, // -0x80000001 INV
+			0x1B, 0x01, 2, 3, 4, 5, 6, 7, 8, // 0x0102030405060708
+			0x1B, 0x11, 2, 3, 4, 5, 6, 7, 9, // 0x1102030405060709
+			0x00, // 0
+			0x3A, 0x80, 0x00, 0x00, 0x00, // -0x8000_0001
+			0x3A, 0x7F, 0xFF, 0xFF, 0xFF, // -0x8000_0000
+			0xD9, 0x04, 0xD2, 0x03, // #6.1234(3)
+		END
+	};
+	const uint8_t payload_numbers2_inv9[] = {
+		LIST(8),
+			0x1A, 0x00, 0x12, 0x34, 0x56, // 0x123456
+			0x1A, 0x80, 0x00, 0x00, 0x00, // 0x80000000 INV
+			0x1B, 0x01, 2, 3, 4, 5, 6, 7, 8, // 0x0102030405060708
+			0x1B, 0x11, 2, 3, 4, 5, 6, 7, 9, // 0x1102030405060709
+			0x00, // 0
+			0x3A, 0x80, 0x00, 0x00, 0x00, // -0x8000_0001
+			0x3A, 0x7F, 0xFF, 0xFF, 0xFF, // -0x8000_0000
+			0xD9, 0x04, 0xD2, 0x03, // #6.1234(3)
+		END
+	};
 	struct Numbers2 numbers2;
+	int ret;
 
 	zassert_equal(ZCBOR_SUCCESS, cbor_decode_Numbers2(payload_numbers2,
 		sizeof(payload_numbers2), &numbers2, &decode_len), NULL);
 
 	zassert_equal(0x123456, numbers2.threebytes, NULL);
+	zassert_equal(-0x80000000L, numbers2.int32, NULL);
 	zassert_equal(0x0102030405060708, numbers2.big_int, NULL);
 	zassert_equal(0x1102030405060709, numbers2.big_uint, NULL);
 	zassert_equal(0, numbers2.big_uint2, NULL);
 	zassert_equal(3, numbers2.tagged_int, NULL);
 
-	zassert_equal(ZCBOR_SUCCESS, cbor_decode_Numbers2(payload_numbers2_1,
-		sizeof(payload_numbers2_1), &numbers2, &decode_len), NULL);
+	ret = cbor_decode_Numbers2(payload_numbers2_1,
+		sizeof(payload_numbers2_1), &numbers2, &decode_len);
+	zassert_equal(ZCBOR_SUCCESS, ret, "%d\r\n", ret);
 
 	zassert_equal(0x123456, numbers2.threebytes, NULL);
+	zassert_equal(0x7FFFFFFFL, numbers2.int32, NULL);
 	zassert_equal(-0x0102030405060709, numbers2.big_int, NULL);
 	zassert_equal(0x1102030405060709, numbers2.big_uint, NULL);
 	zassert_equal(0xFFFFFFFFFFFFFFFF, numbers2.big_uint2, NULL);
 	zassert_equal(3, numbers2.tagged_int, NULL);
 
-	int ret = cbor_decode_Numbers2(payload_numbers2_inv2,
+	ret = cbor_decode_Numbers2(payload_numbers2_inv2,
 		sizeof(payload_numbers2_inv2), &numbers2, &decode_len);
 	zassert_equal(ZCBOR_ERR_WRONG_VALUE, ret, "%d\r\n", ret);
 
@@ -204,6 +240,15 @@ ZTEST(cbor_decode_test5, test_numbers2)
 
 	zassert_equal(ZCBOR_ERR_WRONG_VALUE, cbor_decode_Numbers2(payload_numbers2_inv7,
 		sizeof(payload_numbers2_inv7), &numbers2, &decode_len), NULL);
+
+	ret = cbor_decode_Numbers2(payload_numbers2_inv8,
+		sizeof(payload_numbers2_inv8), &numbers2, &decode_len);
+	zassert_equal(sizeof(numbers2.int32) == 4 ? ZCBOR_ERR_INT_SIZE : ZCBOR_ERR_WRONG_RANGE,
+		ret, "%d\r\n", ret);
+
+	zassert_equal(sizeof(numbers2.int32) == 4 ? ZCBOR_ERR_INT_SIZE : ZCBOR_ERR_WRONG_RANGE,
+		cbor_decode_Numbers2(payload_numbers2_inv9,
+		sizeof(payload_numbers2_inv9), &numbers2, &decode_len), NULL);
 }
 
 

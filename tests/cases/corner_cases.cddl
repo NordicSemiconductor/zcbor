@@ -21,6 +21,7 @@ MyInt = int
 
 Numbers2 = [
 	threebytes: uint .size 4,
+	int32: int .size 4,
 	big_int: int .size 8,
 	big_uint: uint .gt 0x100000000,
 	big_uint2: uint .size 8,

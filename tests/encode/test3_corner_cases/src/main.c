@@ -87,8 +87,9 @@ ZTEST(cbor_encode_test3, test_numbers)
 ZTEST(cbor_encode_test3, test_numbers2)
 {
 	const uint8_t exp_payload_numbers2[] = {
-		LIST(7),
+		LIST(8),
 			0x1A, 0x00, 0x12, 0x34, 0x56, // 0x123456
+			0x3A, 0x7F, 0xFF, 0xFF, 0xFF, // -0x8000_0000
 			0x1B, 0x01, 2, 3, 4, 5, 6, 7, 8, // 0x0102030405060708
 			0x1B, 0x11, 2, 3, 4, 5, 6, 7, 9, // 0x1102030405060709
 			0x00, // 0
@@ -99,6 +100,7 @@ ZTEST(cbor_encode_test3, test_numbers2)
 	};
 	struct Numbers2 numbers2 = {
 		.threebytes = 0x123456,
+		.int32 =  -0x80000000L,
 		.big_int = 0x0102030405060708,
 		.big_uint = 0x1102030405060709,
 		.big_uint2 = 0,
