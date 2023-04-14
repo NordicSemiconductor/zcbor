@@ -611,7 +611,7 @@ class CddlParser:
             if self.type == "UINT":
                 self.max_value = int(value - 1)
             if self.type in ["INT", "NINT"]:
-                self.min_value = int(-1 * (value >> 1) + 1)
+                self.min_value = int(-1 * (value >> 1))
             self.convert_min_max()
         elif self.type in ["BSTR", "TSTR", "FLOAT"]:
             self.set_size_range(size, size)
