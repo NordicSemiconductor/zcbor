@@ -4,6 +4,7 @@ on: [pull_request]
 
 env:
   ZEPHYR_SDK_VERSION: 0.16.0
+  ZEPHYR_REV: fec7881117836ab1c3ec035389a962cd06b476b0
 
 jobs:
   merge-test-1:

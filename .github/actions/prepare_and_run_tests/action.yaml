@@ -24,7 +24,12 @@ runs:
     - name: Clone zephyr
       shell: sh
       run: |
-        git clone --depth 1 https://github.com/zephyrproject-rtos/zephyr zephyr-clone
+        mkdir zephyr-clone
+        cd zephyr-clone
+        git init
+        git remote add origin https://github.com/zephyrproject-rtos/zephyr
+        git fetch origin $ZEPHYR_REV --depth=1
+        git reset --hard FETCH_HEAD
 
     - name: West init
       shell: sh
