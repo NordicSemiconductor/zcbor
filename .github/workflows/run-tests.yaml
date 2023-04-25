@@ -3,7 +3,7 @@ name: Run tests
 on: [pull_request]
 
 env:
-  ZEPHYR_SDK_VERSION: 0.15.2
+  ZEPHYR_SDK_VERSION: 0.16.0
 
 jobs:
   merge-test-1:
