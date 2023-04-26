@@ -769,7 +769,7 @@ bool zcbor_float16_bytes_expect(zcbor_state_t *state, uint16_t result)
 #define F16_EXPO_MSK 0x1F /* Bitmask for the exponent (right shifted by F16_EXPO_OFFS). */
 #define F16_MANTISSA_MSK 0x3FF /* Bitmask for the mantissa. */
 #define F16_MIN_EXPO 24 /* Negative exponent of the non-zero float16 value closest to 0 (2^-24) */
-#define F16_MIN (1.0 / (1 << F16_MIN_EXPO)) /* The non-zero float16 value closest to 0 (2^-24) */
+#define F16_MIN (1.0f / (1 << F16_MIN_EXPO)) /* The non-zero float16 value closest to 0 (2^-24) */
 #define F16_BIAS 15 /* The exponent bias of normalized float16 values. */
 
 /* Float32: */
@@ -793,7 +793,7 @@ bool zcbor_float16_decode(zcbor_state_t *state, float *result)
 
 	if ((expo == 0) && (mantissa != 0)) {
 		/* Subnormal float16 - convert to normalized float32 */
-		*result = ((float)mantissa * (float)F16_MIN) * (sign ? -1 : 1);
+		*result = ((float)mantissa * F16_MIN) * (sign ? -1 : 1);
 	} else {
 		/* Normalized / zero / Infinity / NaN */
 		uint32_t new_expo = (expo == 0 /* zero */) ? 0

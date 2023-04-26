@@ -568,8 +568,8 @@ bool zcbor_float16_encode(zcbor_state_t *state, const float *input)
 #define F16_MAX 65520 /* Lowest float32 value that rounds up to float16 infinity.
 		       * (65519.996 rounds to 65504) */
 #define F16_MIN_EXPO 24 /* Negative exponent of the non-zero float16 value closest to 0 (2^-24) */
-#define F16_MIN (1.0 / (1 << F16_MIN_EXPO)) /* The non-zero float16 value closest to 0 (2^-24) */
-#define F16_MIN_NORM (1.0 / (1 << 14)) /* The normalized float16 value closest to 0 (2^-14) */
+#define F16_MIN (1.0f / (1 << F16_MIN_EXPO)) /* The non-zero float16 value closest to 0 (2^-24) */
+#define F16_MIN_NORM (1.0f / (1 << 14)) /* The normalized float16 value closest to 0 (2^-14) */
 #define F16_BIAS 15 /* The exponent bias of normalized float16 values. */
 
 /* Float32: */
