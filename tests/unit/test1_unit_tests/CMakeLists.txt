@@ -25,5 +25,5 @@ zephyr_compile_definitions(ZCBOR_STOP_ON_ERROR)
 
 if (NOT VERBOSE AND CONFIG_MINIMAL_LIBC)
   # VERBOSE means including printk which doesn't build with these options.
-  target_compile_options(zcbor PRIVATE -Wpedantic -Wconversion -Wall -Wextra)
+  target_compile_options(zcbor PRIVATE -Wpedantic -Wconversion -Wall -Wextra -Wdouble-promotion)
 endif()

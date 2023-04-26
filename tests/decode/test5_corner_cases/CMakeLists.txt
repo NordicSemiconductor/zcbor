@@ -78,5 +78,5 @@ endif()
 
 if (NOT VERBOSE AND CONFIG_MINIMAL_LIBC)
   # VERBOSE means including printk which doesn't build with these options.
-  target_compile_options(corner_cases PRIVATE -Wpedantic -Wconversion)
+  target_compile_options(corner_cases PRIVATE -Wpedantic -Wconversion -Wdouble-promotion)
 endif()
