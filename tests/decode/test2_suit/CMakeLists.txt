@@ -38,5 +38,5 @@ target_link_libraries(app PRIVATE manifest2)
 
 if (NOT VERBOSE)
   # VERBOSE means including printk which doesn't build with these options.
-  target_compile_options(manifest2 PRIVATE -Wpedantic -Wconversion)
+  target_compile_options(manifest2 PRIVATE -Wpedantic -Wconversion -Wdouble-promotion)
 endif()
