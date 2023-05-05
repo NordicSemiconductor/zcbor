@@ -142,6 +142,9 @@ void zcbor_new_state(zcbor_state_t *state_array, size_t n_states,
 	state_array[0].decode_state.indefinite_length_array = false;
 #ifdef ZCBOR_MAP_SMART_SEARCH
 	state_array[0].decode_state.map_search_elem_state = flags;
+	if (flags == NULL) {
+		flags_bytes = 0;
+	}
 	state_array[0].decode_state.map_elem_count = 0;
 #else
 	state_array[0].decode_state.map_elems_processed = 0;
@@ -299,11 +302,33 @@ size_t zcbor_remaining_str_len(zcbor_state_t *state)
 }
 
 
-int zcbor_entry_function(const uint8_t *payload, size_t payload_len,
+int zcbor_entry_function_with_elem_states(const uint8_t *payload, size_t payload_len,
 	void *result, size_t *payload_len_out, zcbor_state_t *state, zcbor_decoder_t func,
-	size_t n_states, size_t elem_count)
+	size_t n_states, size_t elem_count, size_t n_elem_states)
 {
-	zcbor_new_state(state, n_states, payload, payload_len, elem_count, NULL, 0);
+	uint8_t *flags = NULL;
+	size_t n_elem_state_bytes = 0;
+
+#ifdef ZCBOR_MAP_SMART_SEARCH
+	if (n_elem_states > 0) {
+		if (n_states < (ZCBOR_FLAG_STATES(n_elem_states) + 3)) {
+			return ZCBOR_ERR_NO_FLAG_MEM;
+		}
+
+		size_t flag_state_index =
+			n_states - ZCBOR_FLAG_STATES(n_elem_states);
+		flags =	(uint8_t *)&state[flag_state_index];
+		n_states = flag_state_index;
+		n_elem_state_bytes = zcbor_flags_to_bytes(n_elem_states);
+	}
+#else
+	(void)n_elem_states;
+#endif
+
+	zcbor_new_state(state, n_states, payload, payload_len, elem_count, flags,
+			n_elem_state_bytes);
+
+	state->constant_state->manually_process_elem = true;
 
 	bool ret = func(state, result);
 
@@ -321,6 +346,13 @@ int zcbor_entry_function(const uint8_t *payload, size_t payload_len,
 	return ZCBOR_SUCCESS;
 }
 
+int zcbor_entry_function(const uint8_t *payload, size_t payload_len,
+	void *result, size_t *payload_len_out, zcbor_state_t *state, zcbor_decoder_t func,
+	size_t n_states, size_t elem_count)
+{
+	return zcbor_entry_function_with_elem_states(payload, payload_len, result, payload_len_out,
+		state, func, n_states, elem_count, 0);
+}
 
 /* Float16: */
 #define F16_SIGN_OFFS 15 /* Bit offset of the sign bit. */
