@@ -20,6 +20,7 @@
 #error "The type file was generated with a different default_max_qty than this file"
 #endif
 
+
 #define log_result(state, result, func) do { \
 	if (!result) { \
 		zcbor_trace_file(state); \
@@ -56,7 +57,7 @@ int cbor_encode_Pet(
 		const struct Pet *input,
 		size_t *payload_len_out)
 {
-	zcbor_state_t states[4];
+	zcbor_state_t states[4 + 0];
 
 	struct zcbor_state_init_params params = {
 		.states = states,
@@ -64,6 +65,7 @@ int cbor_encode_Pet(
 		.payload = payload,
 		.payload_len = payload_len,
 		.elem_count = 1,
+		.flags_bytes = 0.875,
 	};
 
 	int ret = zcbor_entry_func((zcbor_decoder_t *)encode_Pet, (void *)input, &params);
