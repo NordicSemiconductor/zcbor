@@ -21,3 +21,4 @@ target_include_directories(pet PUBLIC
     ${CMAKE_CURRENT_LIST_DIR}/../../include
     ${CMAKE_CURRENT_LIST_DIR}/include
     )
+target_compile_definitions(pet PUBLIC ZCBOR_MAP_SMART_SEARCH)

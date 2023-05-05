@@ -20,6 +20,7 @@
 #error "The type file was generated with a different default_max_qty than this file"
 #endif
 
+
 static bool encode_Pet(zcbor_state_t *state, const struct Pet *input);
 
 
@@ -53,8 +54,8 @@ int cbor_encode_Pet(
 		const struct Pet *input,
 		size_t *payload_len_out)
 {
-	zcbor_state_t states[4];
+	zcbor_state_t states[4 + 0];
 
 	return zcbor_entry_function(payload, payload_len, (void *)input, payload_len_out, states,
-		(zcbor_decoder_t *)encode_Pet, sizeof(states) / sizeof(zcbor_state_t), 1);
+		(zcbor_decoder_t *)encode_Pet, sizeof(states) / sizeof(zcbor_state_t), 1, 0);
 }

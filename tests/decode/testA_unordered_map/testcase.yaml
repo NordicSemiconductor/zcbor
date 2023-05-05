@@ -1,0 +1,4 @@
+tests:
+  zcbor.decode.testA_unordered_map:
+    platform_allow: native_posix native_posix_64 mps2_an521 qemu_malta_be
+    tags: zcbor decode unordered_map testA

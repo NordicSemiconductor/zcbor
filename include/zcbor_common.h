@@ -356,7 +356,7 @@ void zcbor_new_state(zcbor_state_t *state_array, size_t n_states,
  */
 int zcbor_entry_function(const uint8_t *payload, size_t payload_len,
 	void *result, size_t *payload_len_out, zcbor_state_t *state, zcbor_decoder_t func,
-	size_t n_states, size_t elem_count);
+	size_t n_states, size_t elem_count, size_t n_flags);
 
 #ifdef ZCBOR_STOP_ON_ERROR
 /** Check stored error and fail if present, but only if stop_on_error is true.
@@ -549,7 +549,7 @@ static inline size_t zcbor_flags_to_states(size_t num_flags)
 #define ZCBOR_FLAG_STATES(n_flags) zcbor_flags_to_states(n_flags)
 
 #else
-#define ZCBOR_FLAG_STATES(n_flags) 0
+#define ZCBOR_FLAG_STATES(n_flags) (n_flags * 0)
 #endif
 
 size_t strnlen(const char *, size_t);
