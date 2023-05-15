@@ -425,6 +425,22 @@ size_t zcbor_header_len(size_t num_elems);
  */
 bool zcbor_array_at_end(zcbor_state_t *state);
 
+/** Convert a float16 value to float32.
+ *
+ *  @param[in] input  The float16 value stored in a uint16_t.
+ *
+ *  @return  The resulting float32 value.
+ */
+float zcbor_float16_to_32(uint16_t input);
+
+/** Convert a float32 value to float16.
+ *
+ *  @param[in] input  The float32 value.
+ *
+ *  @return  The resulting float16 value as a uint16_t.
+ */
+uint16_t zcbor_float32_to_16(float input);
+
 
 #ifdef __cplusplus
 }
