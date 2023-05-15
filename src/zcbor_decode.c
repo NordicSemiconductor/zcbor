@@ -772,22 +772,6 @@ bool zcbor_float16_bytes_expect(zcbor_state_t *state, uint16_t expected)
 }
 
 
-/* Float16: */
-#define F16_SIGN_OFFS 15 /* Bit offset of the sign bit. */
-#define F16_EXPO_OFFS 10 /* Bit offset of the exponent. */
-#define F16_EXPO_MSK 0x1F /* Bitmask for the exponent (right shifted by F16_EXPO_OFFS). */
-#define F16_MANTISSA_MSK 0x3FF /* Bitmask for the mantissa. */
-#define F16_MIN_EXPO 24 /* Negative exponent of the non-zero float16 value closest to 0 (2^-24) */
-#define F16_MIN (1.0f / (1 << F16_MIN_EXPO)) /* The non-zero float16 value closest to 0 (2^-24) */
-#define F16_BIAS 15 /* The exponent bias of normalized float16 values. */
-
-/* Float32: */
-#define F32_SIGN_OFFS 31 /* Bit offset of the sign bit. */
-#define F32_EXPO_OFFS 23 /* Bit offset of the exponent. */
-#define F32_EXPO_MSK 0xFF /* Bitmask for the exponent (right shifted by F32_EXPO_OFFS). */
-#define F32_BIAS 127 /* The exponent bias of normalized float32 values. */
-
-
 bool zcbor_float16_decode(zcbor_state_t *state, float *result)
 {
 	uint16_t value16;
@@ -796,23 +780,7 @@ bool zcbor_float16_decode(zcbor_state_t *state, float *result)
 		ZCBOR_FAIL();
 	}
 
-	uint32_t sign = value16 >> F16_SIGN_OFFS;
-	uint32_t expo = (value16 >> F16_EXPO_OFFS) & F16_EXPO_MSK;
-	uint32_t mantissa = value16 & F16_MANTISSA_MSK;
-
-	if ((expo == 0) && (mantissa != 0)) {
-		/* Subnormal float16 - convert to normalized float32 */
-		*result = ((float)mantissa * F16_MIN) * (sign ? -1 : 1);
-	} else {
-		/* Normalized / zero / Infinity / NaN */
-		uint32_t new_expo = (expo == 0 /* zero */) ? 0
-			: (expo == F16_EXPO_MSK /* inf/NaN */) ? F32_EXPO_MSK
-				: (expo + (F32_BIAS - F16_BIAS));
-		uint32_t value32 = (sign << F32_SIGN_OFFS) | (new_expo << F32_EXPO_OFFS)
-			| (mantissa << (F32_EXPO_OFFS - F16_EXPO_OFFS));
-		memcpy(result, &value32, sizeof(*result));
-	}
-
+	*result = zcbor_float16_to_32(value16);
 	return true;
 }
 
