@@ -159,6 +159,11 @@ typedef enum
 	ZCBOR_MAJOR_TYPE_SIMPLE = 7, ///! Simple values and floats
 } zcbor_major_type_t;
 
+/** Extract the major type, i.e. the first 3 bits of the header byte. */
+#define ZCBOR_MAJOR_TYPE(header_byte) ((zcbor_major_type_t)(((header_byte) >> 5) & 0x7))
+
+/** Extract the additional info, i.e. the last 5 bits of the header byte. */
+#define ZCBOR_ADDITIONAL(header_byte) ((header_byte) & 0x1F)
 
 /** Convenience macro for failing out of a decoding/encoding function.
 */

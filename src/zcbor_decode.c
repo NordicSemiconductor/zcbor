@@ -27,12 +27,6 @@ static size_t additional_len(uint8_t additional)
 	return 0;
 }
 
-/** Extract the major type, i.e. the first 3 bits of the header byte. */
-#define MAJOR_TYPE(header_byte) ((zcbor_major_type_t)(((header_byte) >> 5) & 0x7))
-
-/** Extract the additional info, i.e. the last 5 bits of the header byte. */
-#define ADDITIONAL(header_byte) ((header_byte) & 0x1F)
-
 
 #define FAIL_AND_DECR_IF(expr, err) \
 do {\
@@ -56,7 +50,7 @@ static bool type_check(zcbor_state_t *state, zcbor_major_type_t exp_major_type)
 	if (!initial_checks(state)) {
 		ZCBOR_FAIL();
 	}
-	zcbor_major_type_t major_type = MAJOR_TYPE(*state->payload);
+	zcbor_major_type_t major_type = ZCBOR_MAJOR_TYPE(*state->payload);
 
 	if (major_type != exp_major_type) {
 		ZCBOR_ERR(ZCBOR_ERR_WRONG_TYPE);
@@ -129,7 +123,7 @@ static bool value_extract(zcbor_state_t *state,
 	ZCBOR_ERR_IF((state->elem_count == 0), ZCBOR_ERR_LOW_ELEM_COUNT);
 
 	uint8_t *u8_result  = (uint8_t *)result;
-	uint8_t additional = ADDITIONAL(*state->payload);
+	uint8_t additional = ZCBOR_ADDITIONAL(*state->payload);
 
 	state->payload_bak = state->payload;
 	(state->payload)++;
@@ -168,7 +162,7 @@ static bool value_extract(zcbor_state_t *state,
 bool zcbor_int_decode(zcbor_state_t *state, void *result_int, size_t int_size)
 {
 	INITIAL_CHECKS();
-	zcbor_major_type_t major_type = MAJOR_TYPE(*state->payload);
+	zcbor_major_type_t major_type = ZCBOR_MAJOR_TYPE(*state->payload);
 	uint8_t *result_uint8 = (uint8_t *)result_int;
 	int8_t *result_int8 = (int8_t *)result_int;
 
@@ -574,7 +568,7 @@ static bool list_map_start_decode(zcbor_state_t *state,
 
 	INITIAL_CHECKS_WITH_TYPE(exp_major_type);
 
-	if (ADDITIONAL(*state->payload) == ZCBOR_VALUE_IS_INDEFINITE_LENGTH) {
+	if (ZCBOR_ADDITIONAL(*state->payload) == ZCBOR_VALUE_IS_INDEFINITE_LENGTH) {
 		/* Indefinite length array. */
 		new_elem_count = ZCBOR_LARGE_ELEM_COUNT;
 		ZCBOR_ERR_IF(state->elem_count == 0, ZCBOR_ERR_LOW_ELEM_COUNT);
@@ -679,7 +673,7 @@ bool zcbor_simple_decode(zcbor_state_t *state, uint8_t *result)
 
 	/* Simple values must be 0-23 (additional is 0-23) or 24-255 (additional is 24).
 	 * Other additional values are not considered simple values. */
-	ZCBOR_ERR_IF(ADDITIONAL(*state->payload) > 24, ZCBOR_ERR_WRONG_TYPE);
+	ZCBOR_ERR_IF(ZCBOR_ADDITIONAL(*state->payload) > 24, ZCBOR_ERR_WRONG_TYPE);
 
 	if (!value_extract(state, result, sizeof(*result))) {
 		ZCBOR_FAIL();
@@ -746,7 +740,7 @@ bool zcbor_bool_expect(zcbor_state_t *state, bool expected)
 static bool float_check(zcbor_state_t *state, uint8_t additional_val)
 {
 	INITIAL_CHECKS_WITH_TYPE(ZCBOR_MAJOR_TYPE_SIMPLE);
-	ZCBOR_ERR_IF(ADDITIONAL(*state->payload) != additional_val, ZCBOR_ERR_FLOAT_SIZE);
+	ZCBOR_ERR_IF(ZCBOR_ADDITIONAL(*state->payload) != additional_val, ZCBOR_ERR_FLOAT_SIZE);
 	return true;
 }
 
@@ -976,8 +970,8 @@ bool zcbor_any_skip(zcbor_state_t *state, void *result)
 	(void)result;
 
 	INITIAL_CHECKS();
-	zcbor_major_type_t major_type = MAJOR_TYPE(*state->payload);
-	uint8_t additional = ADDITIONAL(*state->payload);
+	zcbor_major_type_t major_type = ZCBOR_MAJOR_TYPE(*state->payload);
+	uint8_t additional = ZCBOR_ADDITIONAL(*state->payload);
 	uint64_t value = 0; /* In case of indefinite_length_array. */
 	zcbor_state_t state_copy;
 
@@ -990,8 +984,8 @@ bool zcbor_any_skip(zcbor_state_t *state, void *result)
 			ZCBOR_FAIL();
 		}
 		ZCBOR_ERR_IF(state_copy.payload >= state_copy.payload_end, ZCBOR_ERR_NO_PAYLOAD);
-		major_type = MAJOR_TYPE(*state_copy.payload);
-		additional = ADDITIONAL(*state_copy.payload);
+		major_type = ZCBOR_MAJOR_TYPE(*state_copy.payload);
+		additional = ZCBOR_ADDITIONAL(*state_copy.payload);
 	}
 
 	const bool indefinite_length_array = ((additional == ZCBOR_VALUE_IS_INDEFINITE_LENGTH)
