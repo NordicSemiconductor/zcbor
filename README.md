@@ -207,13 +207,13 @@ Usage Example
 
 There are buildable examples in the [samples](samples) directory.
 
-To see how to use the C library directly, see the (hello_world)[samples/hello_world/src/main.c] sample, or the (pet)[samples/pet/src/main.c] sample (look for calls to functions prefixed with `zcbor_`).
+To see how to use the C library directly, see the [hello_world](samples/hello_world/src/main.c) sample, or the [pet](samples/pet/src/main.c) sample (look for calls to functions prefixed with `zcbor_`).
 
-To see how to use code generation, see the (pet)[samples/pet/src/main.c] sample.
+To see how to use code generation, see the [pet](samples/pet/src/main.c) sample.
 
-Look at the (CMakeLists.txt)[samples/pet/CMakeLists.txt] file to see how zcbor is invoked for code generation (and for conversion).
+Look at the [CMakeLists.txt](samples/pet/CMakeLists.txt) file to see how zcbor is invoked for code generation (and for conversion).
 
-To see how to do conversion, see the (pet)[samples/pet/CMakeLists.txt] sample.
+To see how to do conversion, see the [pet](samples/pet/CMakeLists.txt) sample.
 
 Below are some additional examples of how to invoke zcbor for code generation and for converting/validating
 
