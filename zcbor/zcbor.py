@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-from regex import match, search, sub, findall, S, M, fullmatch
+from regex import compile, S, M
 from pprint import pformat, pprint
 from os import path, linesep, makedirs
 from collections import defaultdict, namedtuple
@@ -26,6 +26,8 @@ import sys
 from site import USER_BASE
 from textwrap import wrap, indent
 
+
+regex_cache = {}
 indentation = "\t"
 newl_ind = "\n" + indentation
 
@@ -52,6 +54,13 @@ INT32_MIN = -0x80000000
 INT64_MIN = -0x8000000000000000
 
 
+def getrp(pattern, flags=0):
+    pattern_key = pattern if not flags else (pattern, flags)
+    if pattern_key not in regex_cache:
+        regex_cache[pattern_key] = compile(pattern, flags)
+    return regex_cache[pattern_key]
+
+
 def is_relative_to(path1, path2):
     try:
         path1.relative_to(path2)
@@ -64,7 +73,7 @@ def is_relative_to(path1, path2):
 if Path(__file__).name in sys.argv[0]:
     # Running the script directly in the repo.
     c_code_root = P_REPO_ROOT
-elif any((match(r"zcbor-.*\.egg", p) for p in P_SCRIPT.parts)):
+elif any((getrp(r"zcbor-.*\.egg").match(p) for p in P_SCRIPT.parts)):
     # Installed via setup.py install
     c_code_root = Path(P_SCRIPT.parent, "lib", "zcbor")
 elif is_relative_to(P_SCRIPT, (Path(sys.prefix, "local"))):
@@ -291,12 +300,11 @@ class CddlParser:
     # Strip CDDL comments (';') from the string.
     @staticmethod
     def strip_comments(instr):
-        comment_regex = r"\;.*?\n"
-        return sub(comment_regex, '', instr)
+        return getrp(r"\;.*?\n").sub('', instr)
 
     @staticmethod
     def resolve_backslashes(instr):
-        return sub(r"\\\n", " ", instr)
+        return getrp(r"\\\n").sub(" ", instr)
 
     # Returns a dict containing multiple typename=>string
     @classmethod
@@ -308,7 +316,7 @@ class CddlParser:
         result = defaultdict(lambda: "")
         types = [
             (key, value, slashes)
-            for (_1, key, slashes, value, _2) in findall(type_regex, instr, S | M)]
+            for (_1, key, slashes, value, _2) in getrp(type_regex, S | M).findall(instr)]
         for key, value, slashes in types:
             if slashes:
                 result[key] += slashes
@@ -587,7 +595,7 @@ class CddlParser:
 
         self.quantifier = quantifier
         for (reg, handler) in quantifier_mapping:
-            match_obj = match(reg, quantifier)
+            match_obj = getrp(reg).match(quantifier)
             if match_obj:
                 (self.min_qty, self.max_qty) = handler(match_obj)
                 if self.max_qty is None:
@@ -878,7 +886,7 @@ class CddlParser:
         while instr != '' and instr[0] != ',':
             match_obj = None
             for (reg, handler) in types:
-                match_obj = match(reg, instr)
+                match_obj = getrp(reg).match(instr)
                 if match_obj:
                     try:
                         match_str = match_obj.group("item")
@@ -890,7 +898,7 @@ class CddlParser:
                         raise Exception("Failed while parsing this: '%s'" % match_str) from e
                     self.match_str += match_str
                     old_len = len(instr)
-                    instr = sub(reg, '', instr, count=1).lstrip()
+                    instr = getrp(reg).sub('', instr, count=1).lstrip()
                     if old_len == len(instr):
                         raise Exception("empty match")
                     break
@@ -1628,7 +1636,7 @@ CBOR-formatted bstr, all elements must be bstrs. If not, it is a programmer erro
                 return CBORTag(obj["zcbor_tag"], self._from_yaml_obj(obj["zcbor_tag_val"]))
             retval = dict()
             for key, val in obj.items():
-                match = fullmatch(r"zcbor_keyval\d+", key)
+                match = getrp(r"zcbor_keyval\d+").fullmatch(key)
                 if match is not None:
                     new_key = self._from_yaml_obj(val["key"])
                     new_val = self._from_yaml_obj(val["val"])
@@ -2603,7 +2611,7 @@ Generated with a --default-max-qty of {self.default_max_qty}"""
         full_code = "".join([func_type[0] for func_type in mod_entry_types])
         for func_type in reversed(self.functions[mode]):
             func_name = func_type[1]
-            if func_type not in mod_entry_types and search(r"%s\W" % func_name, full_code):
+            if func_type not in mod_entry_types and getrp(r"%s\W" % func_name).search(full_code):
                 full_code += func_type[0]
                 out_types.append(func_type)
         return list(reversed(out_types))
@@ -2807,7 +2815,7 @@ def int_or_str(arg):
         return int(arg)
     except ValueError:
         # print(arg)
-        if match(r"\A\w+\Z", arg) is not None:
+        if getrp(r"\A\w+\Z").match(arg) is not None:
             return arg
     raise ArgumentTypeError(
         "Argument must be an integer or a string with only letters, numbers, or '_'.")
@@ -3151,7 +3159,7 @@ def write_data(args, cddl, cbor_str):
         f.write(cddl.str_to_c_code(cbor_str, args.c_code_var_name, args.c_code_columns))
     elif out_file_format == "cborhex":
         f = sys.stdout if args.output == "-" else open(args.output, "w")
-        f.write(sub(r"(.{1,64})", r"\1\n", cbor_str.hex()))  # Add newlines every 64 chars
+        f.write(getrp(r"(.{1,64})").sub(r"\1\n", cbor_str.hex()))  # Add newlines every 64 chars
     else:
         f = sys.stdout.buffer if args.output == "-" else open(args.output, "wb")
         f.write(cbor_str)
