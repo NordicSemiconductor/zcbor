@@ -21,13 +21,13 @@ static void print_pet(const struct Pet *pet)
 		printf("%02x", pet->birthday.value[i]);
 	}
 	switch (pet->species_choice) {
-	case Pet_species_cat:
+	case Pet_species_cat_c:
 		printf("\nSpecies: Cat\n\n");
 		return;
-	case Pet_species_dog:
+	case Pet_species_dog_c:
 		printf("\nSpecies: Dog\n\n");
 		return;
-	case Pet_species_other:
+	case Pet_species_other_c:
 		printf("\nSpecies: Other\n\n");
 		return;
 	}
@@ -101,7 +101,7 @@ static void get_pet3(void)
 	encoded_pet.names_count = 2;
 	encoded_pet.birthday.value = timestamp3;
 	encoded_pet.birthday.len = sizeof(timestamp3);
-	encoded_pet.species_choice = Pet_species_other;
+	encoded_pet.species_choice = Pet_species_other_c;
 
 	err = cbor_encode_Pet(pet3, sizeof(pet3), &encoded_pet, NULL);
 

@@ -53,7 +53,7 @@ ZTEST(cbor_decode_test2, test_5)
 						&outerwrapper1, &decode_len);
 	zassert_equal(ZCBOR_SUCCESS, res, "top-level decoding failed.");
 	zassert_equal(sizeof(test_vector1), decode_len, NULL);
-	zassert_equal(SUIT_Manifest_Wrapped_suit_manifest, outerwrapper1
+	zassert_equal(SUIT_Manifest_Wrapped_suit_manifest_c, outerwrapper1
 			.SUIT_Outer_Wrapper_SUIT_Manifest_Wrapped_m
 			.SUIT_Manifest_Wrapped_choice,
 			"wrong manifest variant");
@@ -157,7 +157,7 @@ ZTEST(cbor_decode_test2, test_5)
 			.SUIT_Command_Sequence_SUIT_Command_m_count,
 			"Should be one command (was %d).", sequence
 			.SUIT_Command_Sequence_SUIT_Command_m_count);
-	zassert_equal(SUIT_Command_SUIT_Directive_m, sequence
+	zassert_equal(SUIT_Command_SUIT_Directive_m_c, sequence
 			.SUIT_Command_Sequence_SUIT_Command_m[0]
 			.SUIT_Command_choice,
 			"Should be a directive.");

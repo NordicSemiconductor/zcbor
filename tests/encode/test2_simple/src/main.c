@@ -41,7 +41,7 @@ ZTEST(cbor_encode_test2, test_pet)
 		.names = {{.value = "foo", .len = 3}, {.value = "bar", .len = 3}},
 		.names_count = 2,
 		.birthday = {.value = (uint8_t[]){1,2,3,4,5,6,7,8}, .len = 8},
-		.species_choice = Pet_species_dog
+		.species_choice = Pet_species_dog_c
 	};
 	uint8_t exp_output[] = {
 		LIST(3),

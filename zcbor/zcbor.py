@@ -1250,12 +1250,12 @@ class CddlXcoder(CddlParser):
         return self.var_name() + "_choice"
 
     # Name of the enum entry for this element.
-    def enum_var_name(self, int_val=False):
-        if not int_val:
-            retval = self.var_name(with_prefix=True)
-        else:
-            retval = f"{self.var_name(with_prefix=True)} = {self.int_val()}"
-        return retval
+    def enum_var_name(self):
+        return self.var_name(with_prefix=True) + "_c"
+
+    # Enum entry for this element.
+    def enum_var(self, int_val=False):
+        return f"{self.enum_var_name()} = {self.int_val()}" if int_val else self.enum_var_name()
 
     # Full "path" of the "choice" variable for this element.
     def choice_var_access(self):
@@ -1778,7 +1778,7 @@ class CodeGenerator(CddlXcoder):
     # Declaration of the "choice" variable for this element.
     def anonymous_choice_var(self):
         var = self.enclose(
-            "enum", [val.enum_var_name(self.all_children_int_disambiguated())
+            "enum", [val.enum_var(self.all_children_int_disambiguated())
                      + "," for val in self.value])
         return var
 
