@@ -216,7 +216,7 @@ ZTEST(cbor_decode_test, test_3)
 		      .SUIT_Outer_Wrapper_suit_manifest_cbor
 		      .SUIT_Manifest_suit_install_present,
 		      "Expected install present");
-	zassert_equal(SUIT_Severable_Command_Sequence3_SUIT_Command_Sequence_bstr,
+	zassert_equal(SUIT_Severable_Command_Sequence3_SUIT_Command_Sequence_bstr_c,
 		      outerwrapper4
 		      .SUIT_Outer_Wrapper_suit_manifest_cbor
 		      .SUIT_Manifest_suit_install
@@ -231,7 +231,7 @@ ZTEST(cbor_decode_test, test_3)
 		      .SUIT_Severable_Command_Sequence3_SUIT_Command_Sequence_bstr_cbor
 		      .SUIT_Command_Sequence_SUIT_Command_m_count,
 		      "Expected x commands.");
-	zassert_equal(SUIT_Command_union_SUIT_Directive_m,
+	zassert_equal(SUIT_Command_union_SUIT_Directive_m_c,
 		      outerwrapper4
 		      .SUIT_Outer_Wrapper_suit_manifest_cbor
 		      .SUIT_Manifest_suit_install
@@ -240,7 +240,7 @@ ZTEST(cbor_decode_test, test_3)
 		      .SUIT_Command_Sequence_SUIT_Command_m[0]
 		      .SUIT_Command_union_choice,
 		      "Expected directive");
-	zassert_equal(SUIT_Directive_Set_Component_Index,
+	zassert_equal(SUIT_Directive_Set_Component_Index_c,
 		      outerwrapper4
 		      .SUIT_Outer_Wrapper_suit_manifest_cbor
 		      .SUIT_Manifest_suit_install
@@ -250,7 +250,7 @@ ZTEST(cbor_decode_test, test_3)
 		      .SUIT_Command_union_SUIT_Directive_m
 		      .SUIT_Directive_choice,
 		      "Expected Component_Index");
-	zassert_equal(SUIT_Directive_Set_Component_Index_uint,
+	zassert_equal(SUIT_Directive_Set_Component_Index_uint_c,
 		      outerwrapper4
 		      .SUIT_Outer_Wrapper_suit_manifest_cbor
 		      .SUIT_Manifest_suit_install
@@ -260,7 +260,7 @@ ZTEST(cbor_decode_test, test_3)
 		      .SUIT_Command_union_SUIT_Directive_m
 		      .SUIT_Directive_Set_Component_Index_choice,
 		      NULL);
-	zassert_equal(SUIT_Command_union_SUIT_Directive_m,
+	zassert_equal(SUIT_Command_union_SUIT_Directive_m_c,
 		      outerwrapper4
 		      .SUIT_Outer_Wrapper_suit_manifest_cbor
 		      .SUIT_Manifest_suit_install
@@ -269,7 +269,7 @@ ZTEST(cbor_decode_test, test_3)
 		      .SUIT_Command_Sequence_SUIT_Command_m[1]
 		      .SUIT_Command_union_choice,
 		      "Expected directive");
-	zassert_equal(SUIT_Directive_Set_Parameters,
+	zassert_equal(SUIT_Directive_Set_Parameters_c,
 		      outerwrapper4
 		      .SUIT_Outer_Wrapper_suit_manifest_cbor
 		      .SUIT_Manifest_suit_install
@@ -289,7 +289,7 @@ ZTEST(cbor_decode_test, test_3)
 		      .SUIT_Command_union_SUIT_Directive_m
 		      .SUIT_Directive_Set_Parameters_SUIT_Parameters_m_count,
 		      "Expected 1 parameter");
-zassert_equal(SUIT_Parameters_SUIT_Parameter_URI_List,
+zassert_equal(SUIT_Parameters_SUIT_Parameter_URI_List_c,
 		      outerwrapper4
 		      .SUIT_Outer_Wrapper_suit_manifest_cbor
 		      .SUIT_Manifest_suit_install
@@ -343,7 +343,7 @@ zassert_equal(SUIT_Parameters_SUIT_Parameter_URI_List,
 		      .SUIT_Prioritized_URI_uri.value,
 		      sizeof(expected_uri) - 1,
 		      "Expected example.com uri");
-	zassert_equal(SUIT_Command_union_SUIT_Directive_m,
+	zassert_equal(SUIT_Command_union_SUIT_Directive_m_c,
 		      outerwrapper4
 		      .SUIT_Outer_Wrapper_suit_manifest_cbor
 		      .SUIT_Manifest_suit_install
@@ -352,7 +352,7 @@ zassert_equal(SUIT_Parameters_SUIT_Parameter_URI_List,
 		      .SUIT_Command_Sequence_SUIT_Command_m[2]
 		      .SUIT_Command_union_choice,
 		      "Expected directive");
-	zassert_equal(SUIT_Directive_Fetch,
+	zassert_equal(SUIT_Directive_Fetch_c,
 		      outerwrapper4
 		      .SUIT_Outer_Wrapper_suit_manifest_cbor
 		      .SUIT_Manifest_suit_install

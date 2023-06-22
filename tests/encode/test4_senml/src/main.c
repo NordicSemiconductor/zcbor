@@ -44,7 +44,7 @@ ZTEST(cbor_encode_test4, test_senml)
 			.record_t_present = 1,
 			.record_union = {
 				.union_vb = true,
-				.record_union_choice = union_vb,
+				.record_union_choice = union_vb_c,
 			},
 			.record_union_present = 1,
 			.record_key_value_pair_m_count = 0,
