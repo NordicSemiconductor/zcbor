@@ -36,7 +36,7 @@ P_REPO_ROOT = Path(__file__).absolute().parents[1]
 VERSION_path = Path(P_SCRIPT, "VERSION")
 PRELUDE_path = Path(P_SCRIPT, "cddl", "prelude.cddl")
 
-__version__ = VERSION_path.read_text().strip()
+__version__ = VERSION_path.read_text(encoding="utf-8").strip()
 
 UINT8_MAX = 0xFF
 UINT16_MAX = 0xFFFF
@@ -3019,7 +3019,7 @@ entire declaration is a single line.''')
     args = parser.parse_args()
 
     if not args.no_prelude:
-        args.cddl.append(open(PRELUDE_path, 'r'))
+        args.cddl.append(open(PRELUDE_path, 'r', encoding="utf-8"))
 
     if hasattr(args, "decode") and not args.decode and not args.encode:
         parser.error("Please specify at least one of --decode or --encode.")

@@ -23,7 +23,7 @@ class VersionTest(TestCase):
         current_branch = Popen(['git', 'branch', '--show-current'],
                                stdout=PIPE).communicate()[0].decode("utf-8").strip()
         if not current_branch:
-            current_branch = p_HEAD_REF.read_text()
+            current_branch = p_HEAD_REF.read_text(encoding="utf-8")
         self.assertRegex(
             current_branch, r"release/\d+\.\d+\.\d+",
             "This test is meant to be run on a release branch on the form 'release/x.y.z'.")
@@ -33,10 +33,10 @@ class VersionTest(TestCase):
             version_number, r'\d+\.\d+\.(?!99)\d+',
             "Releases cannot have the x.y.99 development bugfix release number.")
         self.assertEqual(
-            version_number, p_VERSION.read_text(),
+            version_number, p_VERSION.read_text(encoding="utf-8"),
             f"{p_VERSION} has not been updated to the correct version number.")
         self.assertEqual(
-            p_release_notes.read_text().splitlines()[0],
+            p_release_notes.read_text(encoding="utf-8").splitlines()[0],
             r"# zcbor v. " + version_number + f" ({date.today():%Y-%m-%d})",
             f"{p_release_notes} has not been updated with the correct version number.")
 

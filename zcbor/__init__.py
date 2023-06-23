@@ -15,5 +15,5 @@ from .zcbor import (
 script_path = Path(__file__).absolute().parents[0]
 VERSION_path = Path(script_path, "VERSION")
 
-with open(VERSION_path, 'r') as f:
+with open(VERSION_path, 'r', encoding="utf-8") as f:
     __version__ = f.read()

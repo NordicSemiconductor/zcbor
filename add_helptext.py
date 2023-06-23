@@ -42,12 +42,12 @@ if __name__ == "__main__":
 ```
 """
 
-    with open(p_README, 'r') as f:
+    with open(p_README, 'r', encoding="utf-8") as f:
         readme_contents = f.read()
     new_readme_contents = sub(pattern + r'.*', output, readme_contents, flags=S)
     if len(argv) > 1 and argv[1] == "--check":
         if new_readme_contents != readme_contents:
             exit(9)
     else:
-        with open(p_README, 'w') as f:
+        with open(p_README, 'w', encoding="utf-8") as f:
             f.write(new_readme_contents)
