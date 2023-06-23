@@ -54,11 +54,11 @@ p_prelude = Path(p_root, 'zcbor', 'cddl', 'prelude.cddl')
 class TestManifest(TestCase):
     """Class for testing examples against CDDL for various versions of the SUIT manifest spec."""
     def decode_file(self, data_path, *cddl_paths):
-        data = bytes.fromhex(data_path.read_text().replace("\n", ""))
+        data = bytes.fromhex(data_path.read_text(encoding="utf-8").replace("\n", ""))
         self.decode_string(data, *cddl_paths)
 
     def decode_string(self, data_string, *cddl_paths):
-        cddl_str = " ".join((Path(p).read_text() for p in cddl_paths))
+        cddl_str = " ".join((Path(p).read_text(encoding="utf-8") for p in cddl_paths))
         self.my_types = zcbor.DataTranslator.from_cddl(cddl_str, 16).my_types
         cddl = self.my_types["SUIT_Envelope_Tagged"]
         self.decoded = cddl.decode_str(data_string)
@@ -200,7 +200,7 @@ def loads(string):
 class TestEx0Manifest14(TestManifest):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.key = VerifyingKey.from_pem(p_manifest14_pub.read_text())
+        self.key = VerifyingKey.from_pem(p_manifest14_pub.read_text(encoding="utf-8"))
 
     def do_test_authentication(self):
         self.assertEqual("COSE_Sign1_Tagged_m", self.decoded.suit_authentication_wrapper.SUIT_Authentication_Block_bstr[0].union_choice)
@@ -266,7 +266,7 @@ class TestEx1Manifest14(TestManifest):
         self.assertEqual(2, len(self.decoded.suit_manifest.suit_common.suit_common_sequence[0].suit_common_sequence.union[0].SUIT_Common_Commands_m.suit_directive_override_parameters_m_l.map[0]))
 
     def test_cbor_pen(self):
-        data = bytes.fromhex(p_test_vectors14[1].read_text().replace("\n", ""))
+        data = bytes.fromhex(p_test_vectors14[1].read_text(encoding="utf-8").replace("\n", ""))
         struct = loads(data)
         struct2 = loads(struct.value[3])  # manifest
         struct3 = loads(struct2[3])  # common sequence
@@ -283,7 +283,7 @@ class TestEx1Manifest14(TestManifest):
 
 class TestEx1InvManifest14(TestManifest):
     def test_inv0(self):
-        data = bytes.fromhex(p_test_vectors14[1].read_text().replace("\n", ""))
+        data = bytes.fromhex(p_test_vectors14[1].read_text(encoding="utf-8").replace("\n", ""))
         struct = loads(data)
         struct2 = loads(struct.value[2])  # authentication
         struct3 = loads(struct2[1])
@@ -299,7 +299,7 @@ class TestEx1InvManifest14(TestManifest):
             assert False, "Should have failed validation"
 
     def test_inv1(self):
-        data = bytes.fromhex(p_test_vectors14[1].read_text().replace("\n", ""))
+        data = bytes.fromhex(p_test_vectors14[1].read_text(encoding="utf-8").replace("\n", ""))
         struct = loads(data)
         struct2 = loads(struct.value[3])  # manifest
         struct2[1] += 1  # invalid manifest version
@@ -313,7 +313,7 @@ class TestEx1InvManifest14(TestManifest):
             assert False, "Should have failed validation"
 
     def test_inv2(self):
-        data = bytes.fromhex(p_test_vectors14[1].read_text().replace("\n", ""))
+        data = bytes.fromhex(p_test_vectors14[1].read_text(encoding="utf-8").replace("\n", ""))
         struct = loads(data)
         struct.value[23] = b''  # Invalid integrated payload key
         data = dumps(struct)
@@ -325,7 +325,7 @@ class TestEx1InvManifest14(TestManifest):
             assert False, "Should have failed validation"
 
     def test_inv3(self):
-        data = bytes.fromhex(p_test_vectors14[1].read_text().replace("\n", ""))
+        data = bytes.fromhex(p_test_vectors14[1].read_text(encoding="utf-8").replace("\n", ""))
         struct = loads(data)
         struct2 = loads(struct.value[3])  # manifest
         struct3 = loads(struct2[3])  # common sequence
@@ -410,7 +410,7 @@ class TestEx5Manifest14(TestManifest):
 
 class TestEx5InvManifest14(TestManifest):
     def test_invalid_rep_policy(self):
-        data = bytes.fromhex(p_test_vectors14[5].read_text().replace("\n", ""))
+        data = bytes.fromhex(p_test_vectors14[5].read_text(encoding="utf-8").replace("\n", ""))
         struct = loads(data)
         struct2 = loads(struct.value[3])  # manifest
         struct3 = loads(struct2[10])  # suit_validate
@@ -582,7 +582,7 @@ class TestCLI(PopenTest):
 
         self.maxDiff = None
 
-        with open(p_test_vectors12[n], 'r') as f:
+        with open(p_test_vectors12[n], 'r', encoding="utf-8") as f:
             self.assertEqual(sub(r"\W+", "", f.read()), sub(r"\W+", "", stdout4.decode("utf-8")))
 
     def test_0(self):
@@ -628,7 +628,7 @@ class TestCLI(PopenTest):
 
 class TestOptional(TestCase):
     def test_optional_0(self):
-        with open(p_optional, 'r') as f:
+        with open(p_optional, 'r', encoding="utf-8") as f:
             cddl_res = zcbor.DataTranslator.from_cddl(f.read(), 16)
         cddl = cddl_res.my_types['cfg']
         test_yaml = """
@@ -643,7 +643,7 @@ class TestOptional(TestCase):
 class TestUndefined(TestCase):
     def test_undefined_0(self):
         cddl_res = zcbor.DataTranslator.from_cddl(
-            p_prelude.read_text() + '\n' + p_corner_cases.read_text(), 16)
+            p_prelude.read_text(encoding="utf-8") + '\n' + p_corner_cases.read_text(encoding="utf-8"), 16)
         cddl = cddl_res.my_types['Simples']
         test_yaml = "[true, false, true, null, [zcbor_undefined]]"
 
@@ -657,7 +657,7 @@ class TestUndefined(TestCase):
 class TestFloat(TestCase):
     def test_float_0(self):
         cddl_res = zcbor.DataTranslator.from_cddl(
-            p_prelude.read_text() + '\n' + p_corner_cases.read_text(), 16)
+            p_prelude.read_text(encoding="utf-8") + '\n' + p_corner_cases.read_text(encoding="utf-8"), 16)
         cddl = cddl_res.my_types['Floats']
         test_yaml = f"[3.1415, 1234567.89, 0.000123, 3.1415, 2.71828, 5.0, {1/3}]"
 
@@ -679,20 +679,20 @@ class TestYamlCompatibility(PopenTest):
         self.popen_test(["zcbor", "validate", "-c", p_yaml_compat_cddl, "-i", p_yaml_compat_yaml, "-t", "Yaml_compatibility_example", "--yaml-compatibility"])
         stdout1, _ = self.popen_test(["zcbor", "convert", "-c", p_yaml_compat_cddl, "-i", p_yaml_compat_yaml, "-o", "-", "-t", "Yaml_compatibility_example", "--yaml-compatibility"])
         stdout2, _ = self.popen_test(["zcbor", "convert", "-c", p_yaml_compat_cddl, "-i", "-", "-o", "-", "--output-as", "yaml", "-t", "Yaml_compatibility_example", "--yaml-compatibility"], stdout1)
-        self.assertEqual(safe_load(stdout2), safe_load(p_yaml_compat_yaml.read_text()))
+        self.assertEqual(safe_load(stdout2), safe_load(p_yaml_compat_yaml.read_text(encoding="utf-8")))
 
 
 class TestIntmax(TestCase):
     def test_intmax1(self):
         cddl_res = zcbor.DataTranslator.from_cddl(
-            p_prelude.read_text() + '\n' + p_corner_cases.read_text(), 16)
+            p_prelude.read_text(encoding="utf-8") + '\n' + p_corner_cases.read_text(encoding="utf-8"), 16)
         cddl = cddl_res.my_types['Intmax1']
         test_yaml = f"[-128, 127, 255, -32768, 32767, 65535, -2147483648, 2147483647, 4294967295, -9223372036854775808, 9223372036854775807, 18446744073709551615]"
         decoded = cddl.decode_str_yaml(test_yaml)
 
     def test_intmax2(self):
         cddl_res = zcbor.DataTranslator.from_cddl(
-            p_prelude.read_text() + '\n' + p_corner_cases.read_text(), 16)
+            p_prelude.read_text(encoding="utf-8") + '\n' + p_corner_cases.read_text(encoding="utf-8"), 16)
         cddl = cddl_res.my_types['Intmax2']
         test_yaml1 = f"[-128, 0, -32768, 0, -2147483648, 0, -9223372036854775808, 0]"
         decoded = cddl.decode_str_yaml(test_yaml1)

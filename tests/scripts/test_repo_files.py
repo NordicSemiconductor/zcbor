@@ -70,7 +70,7 @@ class TestSamples(TestCase):
     def cmake_build_run(self, path, build_path):
         if build_path.exists():
             rmtree(build_path)
-        with open(path / 'README.md', 'r') as f:
+        with open(path / 'README.md', 'r', encoding="utf-8") as f:
             contents = f.read()
 
         to_build_patt = r'### To build:.*?```(?P<to_build>.*?)```'
@@ -102,12 +102,12 @@ class TestSamples(TestCase):
 
     def test_pet_regenerate(self):
         files = (list(p_pet_include.iterdir()) + list(p_pet_src.iterdir()) + [p_pet_cmake])
-        contents = "".join(p.read_text() for p in files)
+        contents = "".join(p.read_text(encoding="utf-8") for p in files)
         tmpdir = Path(mkdtemp())
         list(os.makedirs(tmpdir / f.relative_to(p_pet_sample).parent, exist_ok=True) for f in files)
         list(copy2(f, tmpdir / f.relative_to(p_pet_sample)) for f in files)
         self.popen_test(['cmake', p_pet_sample, "-DREGENERATE_ZCBOR=Y"], cwd=tmpdir)
-        new_contents = "".join(p.read_text() for p in files)
+        new_contents = "".join(p.read_text(encoding="utf-8") for p in files)
         list(copy2(tmpdir / f.relative_to(p_pet_sample), f) for f in files)
         rmtree(tmpdir)
         self.maxDiff = None
@@ -116,7 +116,7 @@ class TestSamples(TestCase):
     def test_pet_file_header(self):
         files = (list(p_pet_include.iterdir()) + list(p_pet_src.iterdir()) + [p_pet_cmake])
         for p in [f for f in files if "pet" in f.name]:
-            with p.open('r') as f:
+            with p.open('r', encoding="utf-8") as f:
                 f.readline()  # discard
                 self.assertEqual(
                     f.readline().strip(" *#\n"),
@@ -169,7 +169,7 @@ class TestDocs(TestCase):
         if self.base_url is None:
             raise SkipTest('This test requires the current branch to be pushed to Github.')
 
-        text = path.read_text()
+        text = path.read_text(encoding="utf-8")
         # Use .parent to test relative links (links to repo files):
         relative_path = str(path.relative_to(p_root).parent)
         relative_path = "" if relative_path == "." else relative_path + "/"
