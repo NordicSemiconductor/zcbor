@@ -2052,4 +2052,25 @@ ZTEST(cbor_decode_test5, test_intmax)
 	zassert_equal(result2.UINT_64, UINT64_MAX, NULL);
 }
 
+
+/* Test that zcbor generates variable names that don't contain unsupported characters. */
+ZTEST(cbor_decode_test5, test_invalid_identifiers)
+{
+	struct InvalidIdentifiers result;
+	uint8_t invalid_identifiers_payload1[] = {
+		LIST(3),
+		0x64, '1', 'o', 'n', 'e',
+		0x02, /* Ø */
+		0x67, '{', '[', 'a', '-', 'z', ']', '}',
+		END
+	};
+
+	zassert_equal(ZCBOR_SUCCESS, cbor_decode_InvalidIdentifiers(invalid_identifiers_payload1,
+		sizeof(invalid_identifiers_payload1), &result, NULL), NULL);
+	zassert_true(result._1one_tstr_present, NULL);
+	zassert_true(result.__present, NULL);
+	zassert_true(result.a_z_tstr_present, NULL);
+}
+
+
 ZTEST_SUITE(cbor_decode_test5, NULL, NULL, NULL, NULL, NULL);
