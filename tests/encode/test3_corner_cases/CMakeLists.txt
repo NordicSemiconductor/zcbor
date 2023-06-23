@@ -44,6 +44,7 @@ set(py_command
   UnionInt2
   Intmax1
   Intmax2
+  InvalidIdentifiers
   -e
   ${bit_arg}
   --short-names

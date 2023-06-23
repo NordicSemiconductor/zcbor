@@ -51,6 +51,7 @@ set(py_command
     UnionInt2
     Intmax1
     Intmax2
+    InvalidIdentifiers
   --decode
   --git-sha-header
   --short-names

@@ -366,16 +366,29 @@ class CddlParser:
                 if self.min_size and self.max_size else None)
             # Name an element by its type.
             or self.type.lower()).replace("-", "_"))
+
+        # Make the name compatible with C variable names
+        # (don't start with a digit, don't use accented letters or symbols other than '_')
+        name_regex = getrp(r'[a-zA-Z_][a-zA-Z\d_]*')
+        if name_regex.fullmatch(raw_name) is None:
+            latinized_name = getrp(r'[^a-zA-Z\d_]').sub("", raw_name)
+            if name_regex.fullmatch(latinized_name) is None:
+                # Add '_' if name starts with a digit or is empty after removing accented chars.
+                latinized_name = "_" + latinized_name
+            assert name_regex.fullmatch(latinized_name) is not None, \
+                f"Couldn't make '{raw_name}' valid. '{latinized_name}' is invalid."
+            return latinized_name
         return raw_name
 
     # Base name used for functions, variables, and typedefs.
     def get_base_name(self):
-        generated = self.generate_base_name()
-        return (self.base_name or generated).replace("-", "_")
+        if not self.base_name:
+            self.set_base_name(self.generate_base_name())
+        return self.base_name
 
     # Set an explicit base name for this element.
     def set_base_name(self, base_name):
-        self.base_name = base_name
+        self.base_name = base_name.replace("-", "_")
 
     def set_base_names(self):
         if self.cbor:
@@ -1300,9 +1313,10 @@ class DataTranslator(CddlXcoder):
                 new_line = True
         return out_str
 
-    # Override the id() function
+    # Override the id() function. If the name starts with an underscore, prepend an 'f',
+    # since namedtuple() doesn't support identifiers that start with an underscore.
     def id(self):
-        return self.generate_base_name().strip("_")
+        return getrp(r"\A_").sub("f_", self.generate_base_name())
 
     # Override the var_name()
     def var_name(self):
@@ -1777,10 +1791,8 @@ class CodeGenerator(CddlXcoder):
 
     # Declaration of the "choice" variable for this element.
     def anonymous_choice_var(self):
-        var = self.enclose(
-            "enum", [val.enum_var(self.all_children_int_disambiguated())
-                     + "," for val in self.value])
-        return var
+        int_vals = self.all_children_int_disambiguated()
+        return self.enclose("enum", [val.enum_var(int_vals) + "," for val in self.value])
 
     # Declaration of the "choice" variable for this element.
     def choice_var(self):

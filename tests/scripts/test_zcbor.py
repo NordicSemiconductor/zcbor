@@ -717,5 +717,17 @@ class TestIntmax(TestCase):
         self.assertEqual(decoded.UINT_64, 18446744073709551615)
 
 
+class TestInvalidIdentifiers(TestCase):
+    def test_invalid_identifiers0(self):
+        cddl_res = zcbor.DataTranslator.from_cddl(
+            p_prelude.read_text(encoding="utf-8") + '\n' + p_corner_cases.read_text(encoding="utf-8"), 16)
+        cddl = cddl_res.my_types['InvalidIdentifiers']
+        test_yaml = "['1one', 2, '{[a-z]}']"
+        decoded = cddl.decode_str_yaml(test_yaml)
+        self.assertTrue(decoded.f_1one_tstr)
+        self.assertTrue(decoded.f_)
+        self.assertTrue(decoded.a_z_tstr)
+
+
 if __name__ == "__main__":
     main()
