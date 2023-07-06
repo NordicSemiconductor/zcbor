@@ -34,12 +34,11 @@ if(NOT CONFIG_NATIVE_APPLICATION)
 endif()
 
 execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/include RESULT_VARIABLE err1)
-execute_process(COMMAND python3 ${CMAKE_CURRENT_LIST_DIR}/floats.py ${PROJECT_BINARY_DIR} decode RESULT_VARIABLE err2)
+execute_process(COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_LIST_DIR}/fp_bytes_decode.bin ${PROJECT_BINARY_DIR}/fp_bytes_decode.bin RESULT_VARIABLE err2) # copy before ld so symbol names are shorter.
 execute_process(COMMAND ${LD} ${LD_SIMULATION} -r -b binary -o fp_bytes_decode.o fp_bytes_decode.bin WORKING_DIRECTORY ${PROJECT_BINARY_DIR} RESULT_VARIABLE err3)
-
 target_link_libraries(app PRIVATE ${PROJECT_BINARY_DIR}/fp_bytes_decode.o)
 
-execute_process(COMMAND python3 ${CMAKE_CURRENT_LIST_DIR}/floats.py ${PROJECT_BINARY_DIR} encode RESULT_VARIABLE err4)
+execute_process(COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_LIST_DIR}/fp_bytes_encode.bin ${PROJECT_BINARY_DIR}/fp_bytes_encode.bin RESULT_VARIABLE err4) # copy before ld so symbol names are shorter.
 execute_process(COMMAND ${LD} ${LD_SIMULATION} -r -b binary -o fp_bytes_encode.o fp_bytes_encode.bin WORKING_DIRECTORY ${PROJECT_BINARY_DIR} RESULT_VARIABLE err5)
 
 target_link_libraries(app PRIVATE ${PROJECT_BINARY_DIR}/fp_bytes_encode.o)
