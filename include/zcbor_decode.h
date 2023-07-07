@@ -232,17 +232,19 @@ bool zcbor_present_decode(bool *present,
 
 /** Consume and expect a bstr/tstr with the value of the provided char/uint8_t array.
  *
- * @param[inout] state  The current state of the decoding.
- * @param[in]    str    The value to expect. A pointer to the string/array.
- *                      _term() uses strlen(), so @p str must be null-terminated.
- *                      _lit() uses sizeof()-1, so @p str must be a (null-terminated) string literal.
- *                      _arr() uses sizeof(), so @p str must be a uint8_t array (not null-terminated).
- * @param[in]    len    (if present) The length of the string pointed to by @p str
+ * @param[inout] state   The current state of the decoding.
+ * @param[in]    str     The value to expect. A pointer to the string/array.
+ *                       _term() uses strnlen(), so @p str must be null-terminated.
+ *                       _lit() uses sizeof()-1, so @p str must be a (null-terminated) string literal.
+ *                       _arr() uses sizeof(), so @p str must be a uint8_t array (not null-terminated).
+ * @param[in]    len     (if present) The length of the string pointed to by @p str
+ * @param[in]    maxlen  (if present) The maximum length of the string pointed to by @p str.
+ *                       This value is passed to strnlen.
  */
 bool zcbor_bstr_expect_ptr(zcbor_state_t *state, char const *ptr, size_t len);
 bool zcbor_tstr_expect_ptr(zcbor_state_t *state, char const *ptr, size_t len);
-bool zcbor_bstr_expect_term(zcbor_state_t *state, char const *str);
-bool zcbor_tstr_expect_term(zcbor_state_t *state, char const *str);
+bool zcbor_bstr_expect_term(zcbor_state_t *state, char const *str, size_t maxlen);
+bool zcbor_tstr_expect_term(zcbor_state_t *state, char const *str, size_t maxlen);
 #define zcbor_bstr_expect_lit(state, str) zcbor_bstr_expect_ptr(state, str, sizeof(str) - 1)
 #define zcbor_tstr_expect_lit(state, str) zcbor_tstr_expect_ptr(state, str, sizeof(str) - 1)
 #define zcbor_bstr_expect_arr(state, str) zcbor_bstr_expect_ptr(state, str, sizeof(str))

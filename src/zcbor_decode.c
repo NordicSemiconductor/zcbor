@@ -561,15 +561,15 @@ bool zcbor_tstr_expect_ptr(zcbor_state_t *state, char const *ptr, size_t len)
 }
 
 
-bool zcbor_bstr_expect_term(zcbor_state_t *state, char const *string)
+bool zcbor_bstr_expect_term(zcbor_state_t *state, char const *string, size_t maxlen)
 {
-	return zcbor_bstr_expect_ptr(state, string, strlen(string));
+	return zcbor_bstr_expect_ptr(state, string, strnlen(string, maxlen));
 }
 
 
-bool zcbor_tstr_expect_term(zcbor_state_t *state, char const *string)
+bool zcbor_tstr_expect_term(zcbor_state_t *state, char const *string, size_t maxlen)
 {
-	return zcbor_tstr_expect_ptr(state, string, strlen(string));
+	return zcbor_tstr_expect_ptr(state, string, strnlen(string, maxlen));
 }
 
 

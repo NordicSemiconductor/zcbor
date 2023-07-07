@@ -194,17 +194,19 @@ bool zcbor_multi_encode_minmax(size_t min_encode, size_t max_encode,
 
 /** Encode a char/uint8_t pointer as a bstr/tstr.
  *
- * @param[inout] state  The current state of the encoding.
- * @param[in]    str    The value to encode. A pointer to the string/array.
- *                      _term() uses strlen(), so @p str must be null-terminated.
- *                      _lit() uses sizeof()-1, so @p str must be a (null-terminated) string literal.
- *                      _arr() uses sizeof(), so @p str must be a uint8_t array (not null-terminated).
- * @param[in]    len    (if present) The length of the string pointed to by @p str
+ * @param[inout] state   The current state of the encoding.
+ * @param[in]    str     The value to encode. A pointer to the string/array.
+ *                       _term() uses strnlen(), so @p str must be null-terminated.
+ *                       _lit() uses sizeof()-1, so @p str must be a (null-terminated) string literal.
+ *                       _arr() uses sizeof(), so @p str must be a uint8_t array (not null-terminated).
+ * @param[in]    len     (if present) The length of the string pointed to by @p str
+ * @param[in]    maxlen  (if present) The maximum length of the string pointed to by @p str.
+ *                       This value is passed to strnlen.
  */
 bool zcbor_bstr_encode_ptr(zcbor_state_t *state, const char *str, size_t len);
 bool zcbor_tstr_encode_ptr(zcbor_state_t *state, const char *str, size_t len);
-bool zcbor_bstr_put_term(zcbor_state_t *state, char const *str);
-bool zcbor_tstr_put_term(zcbor_state_t *state, char const *str);
+bool zcbor_bstr_put_term(zcbor_state_t *state, char const *str, size_t maxlen);
+bool zcbor_tstr_put_term(zcbor_state_t *state, char const *str, size_t maxlen);
 #define zcbor_bstr_put_lit(state, str) zcbor_bstr_encode_ptr(state, str, sizeof(str) - 1)
 #define zcbor_tstr_put_lit(state, str) zcbor_tstr_encode_ptr(state, str, sizeof(str) - 1)
 #define zcbor_bstr_put_arr(state, str) zcbor_bstr_encode_ptr(state, str, sizeof(str))

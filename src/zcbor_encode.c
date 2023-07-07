@@ -368,15 +368,15 @@ bool zcbor_tstr_encode_ptr(zcbor_state_t *state, const char *str, size_t len)
 }
 
 
-bool zcbor_bstr_put_term(zcbor_state_t *state, char const *str)
+bool zcbor_bstr_put_term(zcbor_state_t *state, char const *str, size_t maxlen)
 {
-	return zcbor_bstr_encode_ptr(state, str, strlen(str));
+	return zcbor_bstr_encode_ptr(state, str, strnlen(str, maxlen));
 }
 
 
-bool zcbor_tstr_put_term(zcbor_state_t *state, char const *str)
+bool zcbor_tstr_put_term(zcbor_state_t *state, char const *str, size_t maxlen)
 {
-	return zcbor_tstr_encode_ptr(state, str, strlen(str));
+	return zcbor_tstr_encode_ptr(state, str, strnlen(str, maxlen));
 }
 
 
