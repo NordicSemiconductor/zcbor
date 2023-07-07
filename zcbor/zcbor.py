@@ -260,6 +260,9 @@ class CddlParser:
         self.base_stem = base_stem.replace("-", "_")
         self.short_names = short_names
 
+        if type(self) not in type(self).cddl_regexes:
+            self.cddl_regexes_init()
+
     @classmethod
     def from_cddl(cddl_class, cddl_string, default_max_qty, *args, **kwargs):
         my_types = dict()
@@ -756,28 +759,32 @@ class CddlParser:
         convert_val.min_qty = 1
         convert_val.base_name = None
 
-    # Parse from the beginning of instr (string) until a full element has been parsed. self will
-    # become that element. This function is recursive, so if a nested element
-    # ("MAP"/"LIST"/"UNION"/"GROUP") is encountered, this function will create new instances and add
-    # them to self.value as a list. Likewise, if a key or cbor definition is encountered, a new
-    # element will be created and assigned to self.key or self.cbor. When new elements are created,
-    # get_value() is called on those elements, via parse().
-    def get_value(self, instr):
+    # A dict with lists of regexes and their corresponding handlers.
+    # This is a dict in case multiple inheritors of CddlParser are used at once, in which case
+    # they may have slightly different handlers.
+    cddl_regexes = dict()
+
+    def cddl_regexes_init(self):
         match_uint = r"(0x[0-9a-fA-F]+|0o[0-7]+|0b[01]+|\d+)"
         match_int = r"(-?" + match_uint + ")"
         match_nint = r"(-" + match_uint + ")"
 
+        self_type = type(self)
+
         range_types = [
             (r'\[(?P<item>(?>[^[\]]+|(?R))*)\]',
-             lambda list_str: self.type_and_value("LIST", lambda: self.parse(list_str))),
+             lambda m_self, list_str: m_self.type_and_value(
+                 "LIST", lambda: m_self.parse(list_str))),
             (r'\((?P<item>(?>[^\(\)]+|(?R))*)\)',
-             lambda group_str: self.type_and_value("GROUP", lambda: self.parse(group_str))),
+             lambda m_self, group_str: m_self.type_and_value(
+                 "GROUP", lambda: m_self.parse(group_str))),
             (r'{(?P<item>(?>[^{}]+|(?R))*)}',
-             lambda map_str: self.type_and_value("MAP", lambda: self.parse(map_str))),
+             lambda m_self, map_str: m_self.type_and_value(
+                 "MAP", lambda: m_self.parse(map_str))),
             (r'\'(?P<item>.*?)(?<!\\)\'',
-             lambda string: self.type_and_value("BSTR", lambda: string)),
+             lambda m_self, string: m_self.type_and_value("BSTR", lambda: string)),
             (r'\"(?P<item>.*?)(?<!\\)\"',
-             lambda string: self.type_and_value("TSTR", lambda: string)),
+             lambda m_self, string: m_self.type_and_value("TSTR", lambda: string)),
         ]
         range_types_regex = '|'.join([regex for (regex, _) in range_types])
         for i in range(range_types_regex.count("item")):
@@ -787,113 +794,124 @@ class CddlParser:
         # important because it implements the operator precendence defined in the CDDL spec. Note
         # that some regexes are inserted afterwards because they involve a match of a concatenation
         # of all the initial regexes (with a '|' between each element).
-        types = range_types + [
+        self_type.cddl_regexes[self_type] = range_types + [
             (r'\/\/\s*(?P<item>.+?)(?=\/\/|\Z)',
-             lambda union_str: self.union_add_value(
-                 self.parse("(%s)" % union_str if ',' in union_str else union_str)[0],
+             lambda m_self, union_str: m_self.union_add_value(
+                 m_self.parse("(%s)" % union_str if ',' in union_str else union_str)[0],
                  doubleslash=True)),
             (r'(?P<item>[^\W\d][\w-]*)\s*:',
-             lambda key_str: self.set_key_or_label(key_str)),
+             self_type.set_key_or_label),
             (r'((\=\>)|:)',
-             lambda _: self.convert_to_key()),
+             lambda m_self, _: m_self.convert_to_key()),
             (r'([+*?])',
-             self.set_quantifier),
+             self_type.set_quantifier),
             (r'(' + match_uint + r'\*\*?' + match_uint + r'?)',
-             self.set_quantifier),
+             self_type.set_quantifier),
             (r'\/\s*(?P<item>((' + range_types_regex + r')|[^,\[\]{}()])+?)(?=\/|\Z|,)',
-             lambda union_str: self.union_add_value(self.parse(union_str)[0])),
+             lambda m_self, union_str: m_self.union_add_value(
+                 m_self.parse(union_str)[0])),
             (r'uint(?![\w-])',
-             lambda _: self.type_and_value("UINT", lambda: None)),
+             lambda m_self, _: m_self.type_and_value("UINT", lambda: None)),
             (r'nint(?![\w-])',
-             lambda _: self.type_and_value("NINT", lambda: None)),
+             lambda m_self, _: m_self.type_and_value("NINT", lambda: None)),
             (r'int(?![\w-])',
-             lambda _: self.type_and_value("INT", lambda: None)),
+             lambda m_self, _: m_self.type_and_value("INT", lambda: None)),
             (r'float(?![\w-])',
-             lambda _: self.type_and_value("FLOAT", lambda: None)),
+             lambda m_self, _: m_self.type_and_value("FLOAT", lambda: None)),
             (r'float16(?![\w-])',
-             lambda _: self.type_value_size("FLOAT", lambda: None, 2)),
+             lambda m_self, _: m_self.type_value_size("FLOAT", lambda: None, 2)),
             (r'float16-32(?![\w-])',
-             lambda _: self.type_value_size_range("FLOAT", lambda: None, 2, 4)),
+             lambda m_self, _: m_self.type_value_size_range("FLOAT", lambda: None, 2, 4)),
             (r'float32(?![\w-])',
-             lambda _: self.type_value_size("FLOAT", lambda: None, 4)),
+             lambda m_self, _: m_self.type_value_size("FLOAT", lambda: None, 4)),
             (r'float32-64(?![\w-])',
-             lambda _: self.type_value_size_range("FLOAT", lambda: None, 4, 8)),
+             lambda m_self, _: m_self.type_value_size_range("FLOAT", lambda: None, 4, 8)),
             (r'float64(?![\w-])',
-             lambda _: self.type_value_size("FLOAT", lambda: None, 8)),
+             lambda m_self, _: m_self.type_value_size("FLOAT", lambda: None, 8)),
             (r'\-?\d*\.\d+',
-             lambda num: self.type_and_value("FLOAT", lambda: float(num))),
+             lambda m_self, num: m_self.type_and_value("FLOAT", lambda: float(num))),
             (match_uint + r'\.\.' + match_uint,
-             lambda _range: self.type_and_range(
+             lambda m_self, _range: m_self.type_and_range(
                  "UINT", *map(lambda num: int(num, 0), _range.split("..")))),
             (match_nint + r'\.\.' + match_uint,
-             lambda _range: self.type_and_range(
+             lambda m_self, _range: m_self.type_and_range(
                  "INT", *map(lambda num: int(num, 0), _range.split("..")))),
             (match_nint + r'\.\.' + match_nint,
-             lambda _range: self.type_and_range(
+             lambda m_self, _range: m_self.type_and_range(
                  "NINT", *map(lambda num: int(num, 0), _range.split("..")))),
             (match_uint + r'\.\.\.' + match_uint,
-             lambda _range: self.type_and_range(
+             lambda m_self, _range: m_self.type_and_range(
                  "UINT", *map(lambda num: int(num, 0), _range.split("...")), inc_end=False)),
             (match_nint + r'\.\.\.' + match_uint,
-             lambda _range: self.type_and_range(
+             lambda m_self, _range: m_self.type_and_range(
                  "INT", *map(lambda num: int(num, 0), _range.split("...")), inc_end=False)),
             (match_nint + r'\.\.\.' + match_nint,
-             lambda _range: self.type_and_range(
+             lambda m_self, _range: m_self.type_and_range(
                  "NINT", *map(lambda num: int(num, 0), _range.split("...")), inc_end=False)),
             (match_nint,
-             lambda num: self.type_and_value("NINT", lambda: int(num, 0))),
+             lambda m_self, num: m_self.type_and_value("NINT", lambda: int(num, 0))),
             (match_uint,
-             lambda num: self.type_and_value("UINT", lambda: int(num, 0))),
+             lambda m_self, num: m_self.type_and_value("UINT", lambda: int(num, 0))),
             (r'bstr(?!\w)',
-             lambda _: self.type_and_value("BSTR", lambda: None)),
+             lambda m_self, _: m_self.type_and_value("BSTR", lambda: None)),
             (r'tstr(?!\w)',
-             lambda _: self.type_and_value("TSTR", lambda: None)),
+             lambda m_self, _: m_self.type_and_value("TSTR", lambda: None)),
             (r'bool(?!\w)',
-             lambda _: self.type_and_value("BOOL", lambda: None)),
+             lambda m_self, _: m_self.type_and_value("BOOL", lambda: None)),
             (r'true(?!\w)',
-             lambda _: self.type_and_value("BOOL", lambda: True)),
+             lambda m_self, _: m_self.type_and_value("BOOL", lambda: True)),
             (r'false(?!\w)',
-             lambda _: self.type_and_value("BOOL", lambda: False)),
+             lambda m_self, _: m_self.type_and_value("BOOL", lambda: False)),
             (r'nil(?!\w)',
-             lambda _: self.type_and_value("NIL", lambda: None)),
+             lambda m_self, _: m_self.type_and_value("NIL", lambda: None)),
             (r'undefined(?!\w)',
-             lambda _: self.type_and_value("UNDEF", lambda: None)),
+             lambda m_self, _: m_self.type_and_value("UNDEF", lambda: None)),
             (r'any(?!\w)',
-             lambda _: self.type_and_value("ANY", lambda: None)),
+             lambda m_self, _: m_self.type_and_value("ANY", lambda: None)),
             (r'#6\.(?P<item>\d+)',
-             self.add_tag),
+             self_type.add_tag),
             (r'(\$?\$?[\w-]+)',
-             lambda other_str: self.type_and_value("OTHER", lambda: other_str)),
+             lambda m_self, other_str: m_self.type_and_value("OTHER", lambda: other_str)),
             (r'\.size \(?(?P<item>' + match_int + r'\.\.' + match_int + r')\)?',
-             lambda _range: self.set_size_range(*map(lambda num: int(num, 0), _range.split("..")))),
+             lambda m_self, _range: m_self.set_size_range(
+                 *map(lambda num: int(num, 0), _range.split("..")))),
             (r'\.size \(?(?P<item>' + match_int + r'\.\.\.' + match_int + r')\)?',
-             lambda _range: self.set_size_range(
+             lambda m_self, _range: m_self.set_size_range(
                  *map(lambda num: int(num, 0), _range.split("...")), inc_end=False)),
             (r'\.size \(?(?P<item>' + match_uint + r')\)?',
-             lambda size: self.set_size(int(size, 0))),
+             lambda m_self, size: m_self.set_size(int(size, 0))),
             (r'\.gt \(?(?P<item>' + match_int + r')\)?',
-             lambda minvalue: self.set_min_value(int(minvalue, 0) + 1)),
+             lambda m_self, minvalue: m_self.set_min_value(int(minvalue, 0) + 1)),
             (r'\.lt \(?(?P<item>' + match_int + r')\)?',
-             lambda maxvalue: self.set_max_value(int(maxvalue, 0) - 1)),
+             lambda m_self, maxvalue: m_self.set_max_value(int(maxvalue, 0) - 1)),
             (r'\.ge \(?(?P<item>' + match_int + r')\)?',
-             lambda minvalue: self.set_min_value(int(minvalue, 0))),
+             lambda m_self, minvalue: m_self.set_min_value(int(minvalue, 0))),
             (r'\.le \(?(?P<item>' + match_int + r')\)?',
-             lambda maxvalue: self.set_max_value(int(maxvalue, 0))),
+             lambda m_self, maxvalue: m_self.set_max_value(int(maxvalue, 0))),
             (r'\.eq \(?(?P<item>' + match_int + r')\)?',
-             lambda value: self.set_value(lambda: int(value, 0))),
+             lambda m_self, value: m_self.set_value(lambda: int(value, 0))),
             (r'\.eq \"(?P<item>.*?)(?<!\\)\"',
-             lambda value: self.set_value(lambda: value)),
+             lambda m_self, value: m_self.set_value(lambda: value)),
             (r'\.cbor (\((?P<item>(?>[^\(\)]+|(?1))*)\))',
-             lambda type_str: self.set_cbor(self.parse(type_str)[0], False)),
+             lambda m_self, type_str: m_self.set_cbor(m_self.parse(type_str)[0], False)),
             (r'\.cbor (?P<item>[^\s,]+)',
-             lambda type_str: self.set_cbor(self.parse(type_str)[0], False)),
+             lambda m_self, type_str: m_self.set_cbor(m_self.parse(type_str)[0], False)),
             (r'\.cborseq (\((?P<item>(?>[^\(\)]+|(?1))*)\))',
-             lambda type_str: self.set_cbor(self.parse(type_str)[0], True)),
+             lambda m_self, type_str: m_self.set_cbor(m_self.parse(type_str)[0], True)),
             (r'\.cborseq (?P<item>[^\s,]+)',
-             lambda type_str: self.set_cbor(self.parse(type_str)[0], True)),
+             lambda m_self, type_str: m_self.set_cbor(m_self.parse(type_str)[0], True)),
             (r'\.bits (?P<item>[\w-]+)',
-             lambda bits_str: self.set_bits(bits_str))
+             lambda m_self, bits_str: m_self.set_bits(bits_str))
         ]
+
+    # Parse from the beginning of instr (string) until a full element has been parsed. self will
+    # become that element. This function is recursive, so if a nested element
+    # ("MAP"/"LIST"/"UNION"/"GROUP") is encountered, this function will create new instances and add
+    # them to self.value as a list. Likewise, if a key or cbor definition is encountered, a new
+    # element will be created and assigned to self.key or self.cbor. When new elements are created,
+    # get_value() is called on those elements, via parse().
+    def get_value(self, instr):
+        types = type(self).cddl_regexes[type(self)]
 
         # Keep parsing until a comma, or to the end of the string.
         while instr != '' and instr[0] != ',':
@@ -906,7 +924,7 @@ class CddlParser:
                     except IndexError:
                         match_str = match_obj.group(0)
                     try:
-                        handler(match_str)
+                        handler(self, match_str)
                     except Exception as e:
                         raise Exception("Failed while parsing this: '%s'" % match_str) from e
                     self.match_str += match_str
