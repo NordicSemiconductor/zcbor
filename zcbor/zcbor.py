@@ -792,7 +792,7 @@ class CddlParser:
              lambda union_str: self.union_add_value(
                  self.parse("(%s)" % union_str if ',' in union_str else union_str)[0],
                  doubleslash=True)),
-            (r'(?P<item>[a-zA-Z][\w-]*)\s*:',
+            (r'(?P<item>[^\W\d][\w-]*)\s*:',
              lambda key_str: self.set_key_or_label(key_str)),
             (r'((\=\>)|:)',
              lambda _: self.convert_to_key()),
