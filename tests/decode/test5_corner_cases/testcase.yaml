@@ -10,10 +10,10 @@ tests:
     platform_allow: qemu_malta_be
     tags: zcbor decode test5
     extra_configs:
-      - CONFIG_NEWLIB_LIBC=y
+      - CONFIG_PICOLIBC=y
   zcbor.decode.test5_corner_cases.indefinite_length_arrays.be:
     platform_allow: qemu_malta_be
     tags: zcbor decode test5 indefinite
     extra_args: TEST_INDEFINITE_LENGTH_ARRAYS=1
     extra_configs:
-      - CONFIG_NEWLIB_LIBC=y
+      - CONFIG_PICOLIBC=y
