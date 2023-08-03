@@ -110,6 +110,7 @@ do { \
 
 struct zcbor_state_constant;
 
+/** The zcbor_state_t structure is used for both encoding and decoding. */
 typedef struct {
 union {
 	uint8_t *payload_mut;
@@ -126,12 +127,16 @@ union {
 	uint8_t const *payload_end; /**< The end of the payload. This will be
 	                                 checked against payload before
 	                                 processing each element. */
-	bool indefinite_length_array; /**< Is set to true if the decoder is currently
-	                                   decoding the contents of an indefinite-
-	                                   length array. */
 	bool payload_moved; /**< Is set to true while the state is stored as a backup
 	                         if @ref zcbor_update_state is called, since that function
 	                         updates the payload_end of all backed-up states. */
+
+/* This is the "decode state", the part of zcbor_state_t that is only used by zcbor_decode.c. */
+struct {
+	bool indefinite_length_array; /**< Is set to true if the decoder is currently
+	                                   decoding the contents of an indefinite-
+	                                   length array. */
+} decode_state;
 	struct zcbor_state_constant *constant_state; /**< The part of the state that is
 	                                                  not backed up and duplicated. */
 } zcbor_state_t;
@@ -230,6 +235,7 @@ do { \
 #define ZCBOR_FLAG_RESTORE 1UL ///! Restore from the backup. Overwrite the current state with the state from the backup.
 #define ZCBOR_FLAG_CONSUME 2UL ///! Consume the backup. Remove the backup from the stack of backups.
 #define ZCBOR_FLAG_KEEP_PAYLOAD 4UL ///! Keep the pre-restore payload after restoring.
+#define ZCBOR_FLAG_KEEP_DECODE_STATE 8UL ///! Keep the pre-restore decode state (everything only used for decoding)
 
 #define ZCBOR_SUCCESS 0
 #define ZCBOR_ERR_NO_BACKUP_MEM 1
@@ -246,6 +252,7 @@ do { \
 #define ZCBOR_ERR_WRONG_RANGE 12
 #define ZCBOR_ERR_ITERATIONS 13
 #define ZCBOR_ERR_ASSERTION 14
+#define ZCBOR_ERR_PAYLOAD_OUTDATED 15 ///! Because of a call to @ref zcbor_update_state
 #define ZCBOR_ERR_UNKNOWN 31
 
 /** The largest possible elem_count. */

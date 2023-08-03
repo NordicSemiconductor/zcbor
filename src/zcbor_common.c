@@ -45,10 +45,8 @@ bool zcbor_new_backup(zcbor_state_t *state, size_t new_elem_count)
 bool zcbor_process_backup(zcbor_state_t *state, uint32_t flags,
 		size_t max_elem_count)
 {
-	const uint8_t *payload = state->payload;
-	const size_t elem_count = state->elem_count;
-
 	ZCBOR_CHECK_ERROR();
+	zcbor_state_t local_copy = *state;
 
 	if (state->constant_state->current_backup == 0) {
 		zcbor_print("No backups available.\r\n");
@@ -63,7 +61,7 @@ bool zcbor_process_backup(zcbor_state_t *state, uint32_t flags,
 		if (!(flags & ZCBOR_FLAG_KEEP_PAYLOAD)) {
 			if (state->constant_state->backup_list[i].payload_moved) {
 				zcbor_print("Payload pointer out of date.\r\n");
-				ZCBOR_FAIL();
+				ZCBOR_ERR(ZCBOR_ERR_PAYLOAD_OUTDATED);
 			}
 		}
 		memcpy(state, &state->constant_state->backup_list[i],
@@ -74,14 +72,19 @@ bool zcbor_process_backup(zcbor_state_t *state, uint32_t flags,
 		state->constant_state->current_backup--;
 	}
 
-	if (elem_count > max_elem_count) {
+	if (local_copy.elem_count > max_elem_count) {
 		zcbor_print("elem_count: %" PRIuFAST32 " (expected max %" PRIuFAST32 ")\r\n",
-			elem_count, max_elem_count);
+			local_copy.elem_count, max_elem_count);
 		ZCBOR_ERR(ZCBOR_ERR_HIGH_ELEM_COUNT);
 	}
 
 	if (flags & ZCBOR_FLAG_KEEP_PAYLOAD) {
-		state->payload = payload;
+		state->payload = local_copy.payload;
+	}
+
+	if (flags & ZCBOR_FLAG_KEEP_DECODE_STATE) {
+		/* Copy decode state */
+		state->decode_state = local_copy.decode_state;
 	}
 
 	return true;
@@ -129,11 +132,11 @@ void zcbor_new_state(zcbor_state_t *state_array, size_t n_states,
 	state_array[0].payload = payload;
 	state_array[0].payload_end = payload + payload_len;
 	state_array[0].elem_count = elem_count;
-	state_array[0].indefinite_length_array = false;
 	state_array[0].payload_moved = false;
+	state_array[0].decode_state.indefinite_length_array = false;
 	state_array[0].constant_state = NULL;
 
-	if(n_states < 2) {
+	if (n_states < 2) {
 		return;
 	}
 
