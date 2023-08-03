@@ -621,7 +621,7 @@ static bool list_map_start_decode(zcbor_state_t *state,
 		FAIL_RESTORE();
 	}
 
-	state->indefinite_length_array = indefinite_length_array;
+	state->decode_state.indefinite_length_array = indefinite_length_array;
 
 	return true;
 }
@@ -637,7 +637,7 @@ bool zcbor_map_start_decode(zcbor_state_t *state)
 {
 	bool ret = list_map_start_decode(state, ZCBOR_MAJOR_TYPE_MAP);
 
-	if (ret && !state->indefinite_length_array) {
+	if (ret && !state->decode_state.indefinite_length_array) {
 		if (state->elem_count >= (ZCBOR_MAX_ELEM_COUNT / 2)) {
 			/* The new elem_count is too large. */
 			ERR_RESTORE(ZCBOR_ERR_INT_SIZE);
@@ -650,8 +650,8 @@ bool zcbor_map_start_decode(zcbor_state_t *state)
 
 bool zcbor_array_at_end(zcbor_state_t *state)
 {
-	return ((!state->indefinite_length_array && (state->elem_count == 0))
-		|| (state->indefinite_length_array
+	return ((!state->decode_state.indefinite_length_array && (state->elem_count == 0))
+		|| (state->decode_state.indefinite_length_array
 			&& (state->payload < state->payload_end)
 			&& (*state->payload == 0xFF)));
 }
@@ -671,12 +671,12 @@ static bool list_map_end_decode(zcbor_state_t *state)
 {
 	size_t max_elem_count = 0;
 
-	if (state->indefinite_length_array) {
+	if (state->decode_state.indefinite_length_array) {
 		if (!array_end_expect(state)) {
 			ZCBOR_FAIL();
 		}
 		max_elem_count = ZCBOR_MAX_ELEM_COUNT;
-		state->indefinite_length_array = false;
+		state->decode_state.indefinite_length_array = false;
 	}
 	if (!zcbor_process_backup(state,
 			ZCBOR_FLAG_RESTORE | ZCBOR_FLAG_CONSUME | ZCBOR_FLAG_KEEP_PAYLOAD,
@@ -1084,7 +1084,7 @@ bool zcbor_any_skip(zcbor_state_t *state, void *result)
 				value = ZCBOR_LARGE_ELEM_COUNT;
 			}
 			state_copy.elem_count = (size_t)value;
-			state_copy.indefinite_length_array = indefinite_length_array;
+			state_copy.decode_state.indefinite_length_array = indefinite_length_array;
 			while (!zcbor_array_at_end(&state_copy)) {
 				if (!zcbor_any_skip(&state_copy, NULL)) {
 					ZCBOR_FAIL();
