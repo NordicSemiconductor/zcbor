@@ -1065,7 +1065,7 @@ bool zcbor_any_skip(zcbor_state_t *state, void *result)
 		case ZCBOR_MAJOR_TYPE_BSTR:
 		case ZCBOR_MAJOR_TYPE_TSTR:
 			/* 'value' is the length of the BSTR or TSTR.
-			 * The cast to size_t is safe because value_extract() above
+			 * The subtraction is safe because value_extract() above
 			 * checks that payload_end is greater than payload. */
 			ZCBOR_ERR_IF(
 				value > (uint64_t)(state_copy.payload_end - state_copy.payload),
