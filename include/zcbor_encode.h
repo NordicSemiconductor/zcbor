@@ -16,6 +16,7 @@
 extern "C" {
 #endif
 
+
 /** The zcbor_encode library provides functions for encoding CBOR data elements.
  *
  * See The README for an introduction to CBOR, including the meaning of pint,

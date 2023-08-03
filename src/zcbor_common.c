@@ -269,7 +269,7 @@ int zcbor_entry_function(const uint8_t *payload, size_t payload_len,
 		int err = zcbor_pop_error(state);
 
 		err = (err == ZCBOR_SUCCESS) ? ZCBOR_ERR_UNKNOWN : err;
-		zcbor_print("Return error: %d\\r\\n", err);
+		zcbor_print("Return error: %d\r\n", err);
 		return err;
 	}
 
