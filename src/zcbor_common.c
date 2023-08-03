@@ -259,7 +259,7 @@ bool zcbor_array_at_end(zcbor_state_t *state)
 
 int zcbor_entry_function(const uint8_t *payload, size_t payload_len,
 	void *result, size_t *payload_len_out, zcbor_state_t *state, zcbor_decoder_t func,
-	uint_fast32_t n_states, uint_fast32_t elem_count)
+	size_t n_states, size_t elem_count)
 {
 	zcbor_new_state(state, n_states, payload, payload_len, elem_count);
 

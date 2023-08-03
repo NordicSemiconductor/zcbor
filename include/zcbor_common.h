@@ -42,7 +42,7 @@ struct zcbor_string_fragment {
 
 #ifdef ZCBOR_VERBOSE
 #include <zephyr/sys/printk.h>
-#define zcbor_trace() (printk("bytes left: %zu, byte: 0x%x, elem_count: 0x%" PRIxFAST32 ", err: %d, %s:%d\n",\
+#define zcbor_trace() (printk("bytes left: %zu, byte: 0x%x, elem_count: 0x%x, err: %d, %s:%d\n",\
 	(size_t)state->payload_end - (size_t)state->payload, *state->payload, state->elem_count, \
 	state->constant_state ? state->constant_state->error : 0, __FILE__, __LINE__))
 
@@ -238,11 +238,7 @@ do { \
 #define ZCBOR_ERR_UNKNOWN 31
 
 /** The largest possible elem_count. */
-#ifdef UINT_FAST32_MAX
-#define ZCBOR_MAX_ELEM_COUNT UINT_FAST32_MAX
-#else
-#define ZCBOR_MAX_ELEM_COUNT ((size_t)(-1L))
-#endif
+#define ZCBOR_MAX_ELEM_COUNT SIZE_MAX
 
 /** Initial value for elem_count for when it just needs to be large. */
 #define ZCBOR_LARGE_ELEM_COUNT (ZCBOR_MAX_ELEM_COUNT - 16)
@@ -294,7 +290,7 @@ void zcbor_new_state(zcbor_state_t *state_array, size_t n_states,
  */
 int zcbor_entry_function(const uint8_t *payload, size_t payload_len,
 	void *result, size_t *payload_len_out, zcbor_state_t *state, zcbor_decoder_t func,
-	uint_fast32_t n_states, uint_fast32_t elem_count);
+	size_t n_states, size_t elem_count);
 
 #ifdef ZCBOR_STOP_ON_ERROR
 /** Check stored error and fail if present, but only if stop_on_error is true.
