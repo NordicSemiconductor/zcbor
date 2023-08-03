@@ -771,7 +771,7 @@ class CddlParser:
             (r'\[(?P<item>(?>[^[\]]+|(?R))*)\]',
              lambda list_str: self.type_and_value("LIST", lambda: self.parse(list_str))),
             (r'\((?P<item>(?>[^\(\)]+|(?R))*)\)',
-             lambda group_str: self.type_and_value("GROUP", lambda:self.parse(group_str))),
+             lambda group_str: self.type_and_value("GROUP", lambda: self.parse(group_str))),
             (r'{(?P<item>(?>[^{}]+|(?R))*)}',
              lambda map_str: self.type_and_value("MAP", lambda: self.parse(map_str))),
             (r'\'(?P<item>.*?)(?<!\\)\'',
@@ -2604,7 +2604,7 @@ Generated with a --default-max-qty of {self.default_max_qty}"""
                     func_names[func_name] = funcType
                     out_types.append(funcType)
                 elif func_name in func_names.keys():
-                    assert func_names[func_name][0] == func_xcode,\
+                    assert func_names[func_name][0] == func_xcode, \
                         ("Two elements share the function name %s, but their implementations are "
                             + "not identical. Please change one or both names.\n\n%s\n\n%s") % \
                         (func_name, func_names[func_name][0], func_xcode)
