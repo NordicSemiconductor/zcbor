@@ -1067,4 +1067,46 @@ ZTEST(zcbor_unit_tests, test_any_skip)
 	zassert_equal(state_d->elem_count, --exp_elem_count, NULL);
 }
 
+
+ZTEST(zcbor_unit_tests, test_pexpect)
+{
+	uint8_t payload[100];
+	ZCBOR_STATE_E(state_e, 2, payload, sizeof(payload), 0);
+	ZCBOR_STATE_D(state_d, 2, payload, sizeof(payload), 20);
+
+	zassert_true(zcbor_int32_put(state_e, 1), NULL);
+	zassert_true(zcbor_int32_put(state_e, 2), NULL);
+	zassert_true(zcbor_int32_put(state_e, 3), NULL);
+	zassert_true(zcbor_int32_put(state_e, 4), NULL);
+	zassert_true(zcbor_int32_put(state_e, 5), NULL);
+	zassert_true(zcbor_tag_put(state_e, 6), NULL);
+	zassert_true(zcbor_simple_put(state_e, 7), NULL);
+	zassert_true(zcbor_bool_put(state_e, true), NULL);
+	zassert_true(zcbor_float16_bytes_put(state_e, 0x4800), NULL);
+	zassert_true(zcbor_float16_bytes_put(state_e, 0x4880), NULL);
+	zassert_true(zcbor_float32_put(state_e, 10.0), NULL);
+	zassert_true(zcbor_float32_put(state_e, 11.0), NULL);
+	zassert_true(zcbor_float32_put(state_e, 12.0), NULL);
+	zassert_true(zcbor_float64_put(state_e, 13.0), NULL);
+	zassert_true(zcbor_float64_put(state_e, 14.0), NULL);
+
+	zassert_true(zcbor_int32_pexpect(state_d, &(int32_t){1}), NULL);
+	zassert_true(zcbor_int64_pexpect(state_d, &(int64_t){2}), NULL);
+	zassert_true(zcbor_uint32_pexpect(state_d, &(uint32_t){3}), NULL);
+	zassert_true(zcbor_uint64_pexpect(state_d, &(uint64_t){4}), NULL);
+	zassert_true(zcbor_size_pexpect(state_d, &(size_t){5}), NULL);
+	zassert_true(zcbor_tag_pexpect(state_d, &(uint32_t){6}), NULL);
+	zassert_true(zcbor_simple_pexpect(state_d, &(uint8_t){7}), NULL);
+	zassert_true(zcbor_bool_pexpect(state_d, &(bool){true}), NULL);
+	zassert_true(zcbor_float16_pexpect(state_d, &(float){8.0}), NULL);
+	zassert_true(zcbor_float16_bytes_pexpect(state_d, &(uint16_t){0x4880}), NULL);
+	zassert_true(zcbor_float16_32_pexpect(state_d, &(float){10.0}), NULL);
+	zassert_true(zcbor_float32_pexpect(state_d, &(float){11.0}), NULL);
+	zassert_true(zcbor_float32_64_pexpect(state_d, &(double){12.0}), NULL);
+	zassert_true(zcbor_float64_pexpect(state_d, &(double){13.0}), NULL);
+	zassert_true(zcbor_float_pexpect(state_d, &(double){14.0}), NULL);
+
+}
+
+
 ZTEST_SUITE(zcbor_unit_tests, NULL, NULL, NULL, NULL, NULL);
