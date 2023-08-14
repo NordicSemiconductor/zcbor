@@ -385,3 +385,22 @@ uint16_t zcbor_float32_to_16(float input)
 
 	return value16;
 }
+
+
+/** Weak strnlen() implementation in case it is not available.
+ *
+ * This function is in the public domain, according to:
+ * https://github.com/arm-embedded/gcc-arm-none-eabi.debian/blob/master/src/libiberty/strnlen.c
+ */
+__attribute__((__weak__))
+size_t strnlen (const char *s, size_t maxlen)
+{
+	size_t i;
+
+	for (i = 0; i < maxlen; ++i) {
+		if (s[i] == '\0') {
+			break;
+		}
+	}
+	return i;
+}
