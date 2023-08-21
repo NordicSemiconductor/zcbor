@@ -110,7 +110,7 @@ do { \
  *          succeeds. If not, they are left unchanged.
  *
  *          CBOR values are always big-endian, so this function converts from
- *          big to little-endian if necessary (@ref CONFIG_BIG_ENDIAN).
+ *          big to little-endian if necessary (@ref ZCBOR_BIG_ENDIAN).
  */
 static bool value_extract(zcbor_state_t *state,
 		void *const result, size_t result_len)
@@ -130,11 +130,11 @@ static bool value_extract(zcbor_state_t *state,
 
 	memset(result, 0, result_len);
 	if (additional <= ZCBOR_VALUE_IN_HEADER) {
-#ifdef CONFIG_BIG_ENDIAN
+#ifdef ZCBOR_BIG_ENDIAN
 		u8_result[result_len - 1] = additional;
 #else
 		u8_result[0] = additional;
-#endif /* CONFIG_BIG_ENDIAN */
+#endif /* ZCBOR_BIG_ENDIAN */
 	} else {
 		size_t len = additional_len(additional);
 
@@ -143,13 +143,13 @@ static bool value_extract(zcbor_state_t *state,
 		FAIL_AND_DECR_IF((state->payload + len) > state->payload_end,
 			ZCBOR_ERR_NO_PAYLOAD);
 
-#ifdef CONFIG_BIG_ENDIAN
+#ifdef ZCBOR_BIG_ENDIAN
 		memcpy(&u8_result[result_len - len], state->payload, len);
 #else
 		for (size_t i = 0; i < len; i++) {
 			u8_result[i] = (state->payload)[len - i - 1];
 		}
-#endif /* CONFIG_BIG_ENDIAN */
+#endif /* ZCBOR_BIG_ENDIAN */
 
 		(state->payload) += len;
 	}
@@ -176,7 +176,7 @@ bool zcbor_int_decode(zcbor_state_t *state, void *result, size_t result_size)
 		ZCBOR_FAIL();
 	}
 
-#ifdef CONFIG_BIG_ENDIAN
+#ifdef ZCBOR_BIG_ENDIAN
 	if (result_int8[0] < 0) {
 #else
 	if (result_int8[result_size - 1] < 0) {
