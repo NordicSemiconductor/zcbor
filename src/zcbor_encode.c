@@ -75,14 +75,14 @@ static bool value_encode_len(zcbor_state_t *state, zcbor_major_type_t major_type
 	zcbor_trace();
 	state->payload_mut++;
 
-#ifdef CONFIG_BIG_ENDIAN
+#ifdef ZCBOR_BIG_ENDIAN
 	memcpy(state->payload_mut, u8_result, encoded_len);
 	state->payload_mut += encoded_len;
 #else
 	for (; encoded_len > 0; encoded_len--) {
 		*(state->payload_mut++) = u8_result[encoded_len - 1];
 	}
-#endif /* CONFIG_BIG_ENDIAN */
+#endif /* ZCBOR_BIG_ENDIAN */
 
 	state->elem_count++;
 	return true;
@@ -95,11 +95,11 @@ static size_t get_result_len(const void *const input, size_t max_result_len)
 	size_t len = max_result_len;
 
 	for (; len > 0; len--) {
-#ifdef CONFIG_BIG_ENDIAN
+#ifdef ZCBOR_BIG_ENDIAN
 		if (u8_result[max_result_len - len] != 0) {
 #else
 		if (u8_result[len - 1] != 0) {
-#endif /* CONFIG_BIG_ENDIAN */
+#endif /* ZCBOR_BIG_ENDIAN */
 			break;
 		}
 	}
@@ -112,7 +112,7 @@ static size_t get_result_len(const void *const input, size_t max_result_len)
 static const void *get_result(const void *const input, size_t max_result_len,
 	size_t result_len)
 {
-#ifdef CONFIG_BIG_ENDIAN
+#ifdef ZCBOR_BIG_ENDIAN
 	return &((uint8_t *)input)[max_result_len - (result_len ? result_len : 1)];
 #else
 	(void)max_result_len;
@@ -157,7 +157,7 @@ bool zcbor_int_encode(zcbor_state_t *state, const void *input_int, size_t int_si
 		ZCBOR_ERR(ZCBOR_ERR_INT_SIZE);
 	}
 
-#ifdef CONFIG_BIG_ENDIAN
+#ifdef ZCBOR_BIG_ENDIAN
 	if (input_int8[0] < 0) {
 #else
 	if (input_int8[int_size - 1] < 0) {

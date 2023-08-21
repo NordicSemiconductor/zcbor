@@ -116,7 +116,7 @@ extern uint8_t _binary_fp_bytes_encode_bin_size[];
 /* Return float16 results from fp_bytes_encode.bin */
 static uint16_t get_fp_bytes()
 {
-#ifdef CONFIG_BIG_ENDIAN
+#ifdef ZCBOR_BIG_ENDIAN
 	uint32_t *fps = ((uint32_t *)_binary_fp_bytes_encode_bin_start) + 31742;
 #else
 	uint32_t *fps = (uint32_t *)_binary_fp_bytes_encode_bin_start;
