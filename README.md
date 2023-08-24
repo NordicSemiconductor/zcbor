@@ -11,7 +11,7 @@ It can for example validate a YAML file against a schema and convert it into CBO
 The code generation part of the tool generates C code based on the given schema.
 The generated code performs CBOR encoding and decoding using the C library, while also validating the data against all the rules in the schema.
 
-The schema language used by zcbor is CDDL (Consise Data Definition Language) which is a powerful human-readable data description language defined in [IETF RFC 8610](https://datatracker.ietf.org/doc/rfc8610/).
+The schema language used by zcbor is CDDL (Concise Data Definition Language) which is a powerful human-readable data description language defined in [IETF RFC 8610](https://datatracker.ietf.org/doc/rfc8610/).
 
 
 Features
@@ -57,7 +57,7 @@ CBOR decoding/encoding library
 The CBOR library can be found in [include/](include) and [src/](src) and can be used directly, by including the files in your project.
 If using zcbor with Zephyr, the library will be available when the [CONFIG_ZCBOR](https://docs.zephyrproject.org/latest/kconfig.html#CONFIG_ZCBOR) config is enabled.
 
-The library is also used by generated code. See the the [Code generation](#code-generation) section for more info about code generation.
+The library is also used by generated code. See the [Code generation](#code-generation) section for more info about code generation.
 
 The C library is C++ compatible.
 
@@ -172,7 +172,7 @@ zcbor code <--decode or --encode or both> -c <CDDL description file(s)> -t <whic
 When you call this, zcbor reads the CDDL files and creates C struct types to match the types described in the CDDL.
 It then creates code that uses the C library to decode CBOR data into the structs, and/or encode CBOR from the data in the structs.
 Finally, it takes the "entry types" (`-t`) and creates a public API function for each of them.
-While doing these things, it will make a number of optimizations, e.g. inlining code for small types and removing ununsed functions.
+While doing these things, it will make a number of optimizations, e.g. inlining code for small types and removing unused functions.
 It outputs the generated code into header and source files and optionally creates a CMake file to build them.
 
 The `zcbor code` command reads one or more CDDL file(s) and generates some or all of these files:
@@ -303,7 +303,7 @@ Literals can be used instead of the base type names:
 Base types can also be restricted in other ways:
 
  - `.size`: Works for integers and strings. E.g. `Foo = uint .size 4` where Foo is a uint exactly 4 bytes long.
- - `.cbor`/`.cborseq`: E.g. `Foo = bstr .cbor Bar` where Foo is a bstr whose contents must be CBOR data decodeable as the Bar type.
+ - `.cbor`/`.cborseq`: E.g. `Foo = bstr .cbor Bar` where Foo is a bstr whose contents must be CBOR data decodable as the Bar type.
 
 An element can be repeated:
 
