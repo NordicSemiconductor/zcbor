@@ -417,7 +417,7 @@ bool zcbor_bstr_end_decode(zcbor_state_t *state)
 	ZCBOR_ERR_IF(state->payload != state->payload_end, ZCBOR_ERR_PAYLOAD_NOT_CONSUMED);
 
 	if (!zcbor_process_backup(state,
-			ZCBOR_FLAG_RESTORE | ZCBOR_FLAG_CONSUME | ZCBOR_FLAG_TRANSFER_PAYLOAD,
+			ZCBOR_FLAG_RESTORE | ZCBOR_FLAG_CONSUME | ZCBOR_FLAG_KEEP_PAYLOAD,
 			ZCBOR_MAX_ELEM_COUNT)) {
 		ZCBOR_FAIL();
 	}
@@ -677,7 +677,7 @@ static bool list_map_end_decode(zcbor_state_t *state)
 		state->indefinite_length_array = false;
 	}
 	if (!zcbor_process_backup(state,
-			ZCBOR_FLAG_RESTORE | ZCBOR_FLAG_CONSUME | ZCBOR_FLAG_TRANSFER_PAYLOAD,
+			ZCBOR_FLAG_RESTORE | ZCBOR_FLAG_CONSUME | ZCBOR_FLAG_KEEP_PAYLOAD,
 			max_elem_count)) {
 		ZCBOR_FAIL();
 	}
@@ -701,7 +701,7 @@ bool zcbor_map_end_decode(zcbor_state_t *state)
 bool zcbor_list_map_end_force_decode(zcbor_state_t *state)
 {
 	if (!zcbor_process_backup(state,
-			ZCBOR_FLAG_RESTORE | ZCBOR_FLAG_CONSUME | ZCBOR_FLAG_TRANSFER_PAYLOAD,
+			ZCBOR_FLAG_RESTORE | ZCBOR_FLAG_CONSUME | ZCBOR_FLAG_KEEP_PAYLOAD,
 			ZCBOR_MAX_ELEM_COUNT)) {
 		ZCBOR_FAIL();
 	}

@@ -218,7 +218,7 @@ do { \
 
 #define ZCBOR_FLAG_RESTORE 1UL ///! Restore from the backup. Overwrite the current state with the state from the backup.
 #define ZCBOR_FLAG_CONSUME 2UL ///! Consume the backup. Remove the backup from the stack of backups.
-#define ZCBOR_FLAG_TRANSFER_PAYLOAD 4UL ///! Keep the pre-restore payload after restoring.
+#define ZCBOR_FLAG_KEEP_PAYLOAD 4UL ///! Keep the pre-restore payload after restoring.
 
 #define ZCBOR_SUCCESS 0
 #define ZCBOR_ERR_NO_BACKUP_MEM 1
@@ -357,7 +357,7 @@ static inline bool zcbor_payload_at_end(const zcbor_state_t *state)
  *  This function also updates all backups to the new payload_end.
  *  This sets a flag so that @ref zcbor_process_backup fails if a backup is
  *  processed with the flag @ref ZCBOR_FLAG_RESTORE, but without the flag
- *  @ref ZCBOR_FLAG_TRANSFER_PAYLOAD since this would cause an invalid state.
+ *  @ref ZCBOR_FLAG_KEEP_PAYLOAD since this would cause an invalid state.
  *
  *  @param[inout]  state              The current state, will be updated with
  *                                    the new payload pointer.
