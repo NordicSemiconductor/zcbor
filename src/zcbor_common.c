@@ -60,7 +60,7 @@ bool zcbor_process_backup(zcbor_state_t *state, uint32_t flags,
 		 * 0th backup would be unused. */
 		size_t i = state->constant_state->current_backup - 1;
 
-		if (!(flags & ZCBOR_FLAG_TRANSFER_PAYLOAD)) {
+		if (!(flags & ZCBOR_FLAG_KEEP_PAYLOAD)) {
 			if (state->constant_state->backup_list[i].payload_moved) {
 				zcbor_print("Payload pointer out of date.\r\n");
 				ZCBOR_FAIL();
@@ -80,7 +80,7 @@ bool zcbor_process_backup(zcbor_state_t *state, uint32_t flags,
 		ZCBOR_ERR(ZCBOR_ERR_HIGH_ELEM_COUNT);
 	}
 
-	if (flags & ZCBOR_FLAG_TRANSFER_PAYLOAD) {
+	if (flags & ZCBOR_FLAG_KEEP_PAYLOAD) {
 		state->payload = payload;
 	}
 
