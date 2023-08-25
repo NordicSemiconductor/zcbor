@@ -422,10 +422,6 @@ bool zcbor_compare_strings(const struct zcbor_string *str1,
  */
 size_t zcbor_header_len(size_t num_elems);
 
-/** Find whether the state is at the end of a list or map.
- */
-bool zcbor_array_at_end(zcbor_state_t *state);
-
 /** Convert a float16 value to float32.
  *
  *  @param[in] input  The float16 value stored in a uint16_t.
