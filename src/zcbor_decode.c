@@ -655,6 +655,15 @@ bool zcbor_map_start_decode(zcbor_state_t *state)
 }
 
 
+bool zcbor_array_at_end(zcbor_state_t *state)
+{
+	return ((!state->indefinite_length_array && (state->elem_count == 0))
+		|| (state->indefinite_length_array
+			&& (state->payload < state->payload_end)
+			&& (*state->payload == 0xFF)));
+}
+
+
 static bool array_end_expect(zcbor_state_t *state)
 {
 	INITIAL_CHECKS();

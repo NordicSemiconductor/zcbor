@@ -248,15 +248,6 @@ size_t zcbor_header_len(size_t num_elems)
 }
 
 
-bool zcbor_array_at_end(zcbor_state_t *state)
-{
-	return ((!state->indefinite_length_array && (state->elem_count == 0))
-		|| (state->indefinite_length_array
-			&& (state->payload < state->payload_end)
-			&& (*state->payload == 0xFF)));
-}
-
-
 int zcbor_entry_function(const uint8_t *payload, size_t payload_len,
 	void *result, size_t *payload_len_out, zcbor_state_t *state, zcbor_decoder_t func,
 	uint_fast32_t n_states, uint_fast32_t elem_count)

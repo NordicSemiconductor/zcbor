@@ -162,6 +162,10 @@ bool zcbor_list_end_decode(zcbor_state_t *state);
 bool zcbor_map_end_decode(zcbor_state_t *state);
 bool zcbor_list_map_end_force_decode(zcbor_state_t *state);
 
+/** Find whether the state is at the end of a list or map.
+ */
+bool zcbor_array_at_end(zcbor_state_t *state);
+
 /** Skip a single element, regardless of type and value.
  *
  * This means if the element is a map or list, this function will recursively
