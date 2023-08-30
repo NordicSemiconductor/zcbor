@@ -20,7 +20,7 @@ from yaml import safe_load as yaml_load, dump as yaml_dump
 from json import loads as json_load, dumps as json_dump
 from io import BytesIO
 from subprocess import Popen, PIPE
-from pathlib import Path, PurePath
+from pathlib import Path, PurePath, PurePosixPath
 from shutil import copyfile
 import sys
 from site import USER_BASE
@@ -2779,7 +2779,8 @@ extern "C" {{
                                   *((Path(h.name).parent) for h in h_files.values()))))
 
         def relativify(p):
-            return "${CMAKE_CURRENT_LIST_DIR}/" + path.relpath(Path(p), cmake_dir)
+            return PurePosixPath(
+                Path("${CMAKE_CURRENT_LIST_DIR}") / path.relpath(Path(p), cmake_dir))
         return \
             f"""\
 #{self.render_file_header("#")}
@@ -2790,10 +2791,10 @@ target_sources({target_name} PRIVATE
     {relativify(Path(output_c_dir, "zcbor_decode.c"))}
     {relativify(Path(output_c_dir, "zcbor_encode.c"))}
     {relativify(Path(output_c_dir, "zcbor_common.c"))}
-    {(linesep + "    ").join(((relativify(c.name)) for c in c_files.values()))}
+    {(linesep + "    ").join(((str(relativify(c.name))) for c in c_files.values()))}
     )
 target_include_directories({target_name} PUBLIC
-    {(linesep + "    ").join(((relativify(f) for f in include_dirs)))}
+    {(linesep + "    ").join(((str(relativify(f)) for f in include_dirs)))}
     )
 """
 
