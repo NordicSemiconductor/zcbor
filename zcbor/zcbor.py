@@ -2586,11 +2586,12 @@ Generated with a --default-max-qty of {self.default_max_qty}"""
                     type_names[type_name] = type_def[0]
                     out_types.append(type_def)
                 else:
-                    assert (
-                        ''.join(type_names[type_name]) == ''.join(type_def[0])), \
-                        "Two elements share the type name %s, but their implementations are not " \
-                        + "identical. Please change one or both names. One of them is %s" \
-                        % (type_name, pformat(mtype.type_def()))
+                    assert (''.join(type_names[type_name]) == ''.join(type_def[0])), f"""
+Two elements share the type name {type_name}, but their implementations are not identical.
+Please change one or both names. They are
+{linesep.join(type_names[type_name])}
+and
+{linesep.join(type_def[0])}"""
         return out_types
 
     # Return a list of encoder/decoder functions for all defined types, with duplicate
