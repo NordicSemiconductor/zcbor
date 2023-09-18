@@ -52,23 +52,19 @@ static bool encode_header_byte(zcbor_state_t *state,
 }
 
 
-static size_t get_encoded_len(const void *const result, size_t result_len);
-
-
 /** Encode a single value.
  */
 static bool value_encode_len(zcbor_state_t *state, zcbor_major_type_t major_type,
 		const void *const result, size_t result_len)
 {
 	uint8_t *u8_result  = (uint8_t *)result;
-	size_t encoded_len = get_encoded_len(result, result_len);
 
-	if ((state->payload + 1 + encoded_len) > state->payload_end) {
+	if ((state->payload + 1 + result_len) > state->payload_end) {
 		ZCBOR_ERR(ZCBOR_ERR_NO_PAYLOAD);
 	}
 
 	if (!encode_header_byte(state, major_type,
-				get_additional(encoded_len, u8_result[0]))) {
+				get_additional(result_len, u8_result[0]))) {
 		ZCBOR_FAIL();
 	}
 	state->payload_mut--;
@@ -76,11 +72,11 @@ static bool value_encode_len(zcbor_state_t *state, zcbor_major_type_t major_type
 	state->payload_mut++;
 
 #ifdef ZCBOR_BIG_ENDIAN
-	memcpy(state->payload_mut, u8_result, encoded_len);
-	state->payload_mut += encoded_len;
+	memcpy(state->payload_mut, u8_result, result_len);
+	state->payload_mut += result_len;
 #else
-	for (; encoded_len > 0; encoded_len--) {
-		*(state->payload_mut++) = u8_result[encoded_len - 1];
+	for (; result_len > 0; result_len--) {
+		*(state->payload_mut++) = u8_result[result_len - 1];
 	}
 #endif /* ZCBOR_BIG_ENDIAN */
 
@@ -89,57 +85,17 @@ static bool value_encode_len(zcbor_state_t *state, zcbor_major_type_t major_type
 }
 
 
-static size_t get_result_len(const void *const input, size_t max_result_len)
-{
-	uint8_t *u8_result  = (uint8_t *)input;
-	size_t len = max_result_len;
-
-	for (; len > 0; len--) {
-#ifdef ZCBOR_BIG_ENDIAN
-		if (u8_result[max_result_len - len] != 0) {
-#else
-		if (u8_result[len - 1] != 0) {
-#endif /* ZCBOR_BIG_ENDIAN */
-			break;
-		}
-	}
-
-	/* Round up to nearest power of 2. */
-	return len <= 2 ? len : (uint8_t)(1 << log2ceil(len));
-}
-
-
-static const void *get_result(const void *const input, size_t max_result_len,
-	size_t result_len)
-{
-#ifdef ZCBOR_BIG_ENDIAN
-	return &((uint8_t *)input)[max_result_len - (result_len ? result_len : 1)];
-#else
-	(void)max_result_len;
-	(void)result_len;
-	return input;
-#endif
-}
-
-
-static size_t get_encoded_len(const void *const result, size_t result_len)
-{
-	const uint8_t *u8_result  = (const uint8_t *)result;
-
-	if ((result_len == 1) && (u8_result[0] <= ZCBOR_VALUE_IN_HEADER)) {
-		return 0;
-	}
-	return result_len;
-}
-
-
 static bool value_encode(zcbor_state_t *state, zcbor_major_type_t major_type,
 		const void *const input, size_t max_result_len)
 {
 	zcbor_assert_state(max_result_len != 0, "0-length result not supported.\r\n");
 
-	size_t result_len = get_result_len(input, max_result_len);
-	const void *const result = get_result(input, max_result_len, result_len);
+	size_t result_len = zcbor_header_len_ptr(input, max_result_len) - 1;
+	const void *result = input;
+
+#ifdef ZCBOR_BIG_ENDIAN
+	result = (uint8_t *)input + max_result_len - (result_len ? result_len : 1);
+#endif
 
 	return value_encode_len(state, major_type, result, result_len);
 }
@@ -255,8 +211,8 @@ bool zcbor_size_encode(zcbor_state_t *state, const size_t *input)
 static bool str_start_encode(zcbor_state_t *state,
 		const struct zcbor_string *input, zcbor_major_type_t major_type)
 {
-	if (input->value && ((get_result_len(&input->len, sizeof(input->len))
-			+ 1 + input->len + (size_t)state->payload)
+	if (input->value && ((zcbor_header_len_ptr(&input->len, sizeof(input->len))
+			+ input->len + (size_t)state->payload)
 			> (size_t)state->payload_end)) {
 		ZCBOR_ERR(ZCBOR_ERR_NO_PAYLOAD);
 	}
@@ -271,7 +227,7 @@ static bool str_start_encode(zcbor_state_t *state,
 static size_t remaining_str_len(zcbor_state_t *state)
 {
 	size_t max_len = (size_t)state->payload_end - (size_t)state->payload;
-	size_t result_len = get_result_len(&max_len, sizeof(max_len));
+	size_t result_len = zcbor_header_len_ptr(&max_len, sizeof(max_len)) - 1;
 
 	return max_len - result_len - 1;
 }
@@ -416,17 +372,6 @@ bool zcbor_map_start_encode(zcbor_state_t *state, size_t max_num)
 }
 
 
-#ifdef ZCBOR_CANONICAL
-static size_t get_encoded_len2(const void *const input, size_t max_result_len)
-{
-	size_t result_len = get_result_len(input, max_result_len);
-	const void *const result = get_result(input, max_result_len, result_len);
-
-	return get_encoded_len(result, result_len);
-}
-#endif
-
-
 static bool list_map_end_encode(zcbor_state_t *state, size_t max_num,
 			zcbor_major_type_t major_type)
 {
@@ -437,8 +382,8 @@ static bool list_map_end_encode(zcbor_state_t *state, size_t max_num,
 
 	const uint8_t *payload = state->payload;
 
-	size_t max_header_len = get_encoded_len2(&max_num, 4);
-	size_t header_len = get_encoded_len2(&list_count, 4);
+	size_t max_header_len = zcbor_header_len_ptr(&max_num, 4) - 1;
+	size_t header_len = zcbor_header_len_ptr(&list_count, 4) - 1;
 
 	if (!zcbor_process_backup(state, ZCBOR_FLAG_RESTORE | ZCBOR_FLAG_CONSUME, 0xFFFFFFFF)) {
 		ZCBOR_FAIL();
