@@ -7,3 +7,5 @@ tests:
   zcbor.unit.test1: {}
   zcbor.unit.test1.map_smart_search:
     extra_args: MAP_SMART_SEARCH=ON
+  zcbor.unit.test1.canonical:
+    extra_args: CANONICAL=ON

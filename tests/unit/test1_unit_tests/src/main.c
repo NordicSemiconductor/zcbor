@@ -1346,4 +1346,82 @@ ZTEST(zcbor_unit_tests, test_unordered_map)
 }
 
 
+ZTEST(zcbor_unit_tests, test_canonical_check)
+{
+	uint8_t payload[] = {
+		0xBF, /* Invalid map start */
+		0x9F, /* Invalid list start */
+		0x78, 0x00, /* invalid 0 */
+		0x78, 0x17, /* invalid 23 */
+		0x59, 0x00, 0x18, /* invalid 24 */
+		0x59, 0x00, 0xFF, /* invalid 255 */
+		0x3A, 0x00, 0x00, 0x01, 0x00, /* invalid 256 */
+		0x3A, 0x00, 0x00, 0xFF, 0xFF, /* invalid 65535 */
+		0x1B, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, /* invalid 65536 */
+		0x1B, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF, /* invalid 4294967295 */
+		0xFF, 0xFF,
+	};
+	ZCBOR_STATE_D(state_d, 2, payload, sizeof(payload), 20, 0);
+	uint64_t u64_result;
+	int64_t i64_result;
+	struct zcbor_string str_result;
+
+#ifdef ZCBOR_CANONICAL
+	#define CHECK_ERROR1(state) zassert_equal(ZCBOR_ERR_ADDITIONAL_INVAL, zcbor_pop_error(state), "err: %s\n", zcbor_error_str(zcbor_peek_error(state)))
+	#define CHECK_ERROR2(state) zassert_equal(ZCBOR_ERR_INVALID_VALUE_ENCODING, zcbor_pop_error(state), "err: %s\n", zcbor_error_str(zcbor_peek_error(state)))
+
+	zassert_false(zcbor_map_start_decode(state_d), NULL);
+	CHECK_ERROR1(state_d);
+	state_d->payload += 1;
+	zassert_false(zcbor_list_start_decode(state_d), NULL);
+	CHECK_ERROR1(state_d);
+	state_d->payload += 1;
+	zassert_false(zcbor_tstr_decode(state_d, &str_result), NULL);
+	CHECK_ERROR2(state_d);
+	state_d->payload += 2;
+	zassert_false(zcbor_tstr_decode(state_d, &str_result), NULL);
+	CHECK_ERROR2(state_d);
+	state_d->payload += 2;
+	zassert_false(zcbor_bstr_decode(state_d, &str_result), NULL);
+	CHECK_ERROR2(state_d);
+	state_d->payload += 3;
+	zassert_false(zcbor_bstr_decode(state_d, &str_result), NULL);
+	CHECK_ERROR2(state_d);
+	state_d->payload += 3;
+	zassert_false(zcbor_int64_decode(state_d, &i64_result), NULL);
+	CHECK_ERROR2(state_d);
+	state_d->payload += 5;
+	zassert_false(zcbor_int64_decode(state_d, &i64_result), NULL);
+	CHECK_ERROR2(state_d);
+	state_d->payload += 5;
+	zassert_false(zcbor_uint64_decode(state_d, &u64_result), NULL);
+	CHECK_ERROR2(state_d);
+	state_d->payload += 9;
+	zassert_false(zcbor_uint64_decode(state_d, &u64_result), NULL);
+	CHECK_ERROR2(state_d);
+	state_d->payload += 9;
+
+#else
+	#define CHECK_ERROR1(state) zassert_equal(ZCBOR_ERR_NO_PAYLOAD, zcbor_pop_error(state), "err: %s\n", zcbor_error_str(zcbor_peek_error(state)))
+
+	zassert_true(zcbor_map_start_decode(state_d), NULL);
+	zassert_true(zcbor_list_start_decode(state_d), NULL);
+	zassert_true(zcbor_tstr_decode(state_d, &str_result), NULL);
+	zassert_true(zcbor_tstr_decode(state_d, &str_result), NULL);
+	state_d->payload = state_d->payload_bak + 2; /* Reset since test vector doesn't contain the string value, just the header. */
+	zassert_true(zcbor_bstr_decode(state_d, &str_result), NULL);
+	state_d->payload = state_d->payload_bak + 3; /* Reset since test vector doesn't contain the string value, just the header. */
+	zassert_false(zcbor_bstr_decode(state_d, &str_result), NULL); /* Fails because payload isn't big enough. */
+	CHECK_ERROR1(state_d);
+	state_d->payload += 3;
+	zassert_true(zcbor_int64_decode(state_d, &i64_result), NULL);
+	zassert_true(zcbor_int64_decode(state_d, &i64_result), NULL);
+	zassert_true(zcbor_uint64_decode(state_d, &u64_result), NULL);
+	zassert_true(zcbor_uint64_decode(state_d, &u64_result), NULL);
+	zassert_true(zcbor_list_end_decode(state_d), NULL);
+	zassert_true(zcbor_map_end_decode(state_d), NULL);
+#endif
+}
+
+
 ZTEST_SUITE(zcbor_unit_tests, NULL, NULL, NULL, NULL, NULL);

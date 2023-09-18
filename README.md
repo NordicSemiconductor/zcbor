@@ -92,7 +92,7 @@ If using zcbor with Zephyr, use the [Kconfig options](https://github.com/zephyrp
 
 Name                      | Description
 ------------------------- | -----------
-`ZCBOR_CANONICAL`         | When encoding lists and maps, do not use indefinite length encoding. Enabling `ZCBOR_CANONICAL` increases code size and makes the encoding library more often use state backups.
+`ZCBOR_CANONICAL`         | Assume canonical encoding (AKA "deterministically encoded CBOR"). When encoding lists and maps, do not use indefinite length encoding. Enabling `ZCBOR_CANONICAL` increases code size and makes the encoding library more often use state backups. When decoding, ensure that the incoming data conforms to canonical encoding, i.e. no indefinite length encoding, and always using minimal length encoding (e.g. not using 16 bits to encode a value < 256). Note: the map ordering constraint in canonical encoding is not checked.
 `ZCBOR_VERBOSE`           | Print messages on encoding/decoding errors (`zcbor_print()`), and also a trace message (`zcbor_trace()`) for each decoded value, and in each generated function (when using code generation). Requires `printk` as found in Zephyr.
 `ZCBOR_ASSERTS`           | Enable asserts (`zcbor_assert()`). When they fail, the assert statements instruct the current function to return a `ZCBOR_ERR_ASSERTION` error. If `ZCBOR_VERBOSE` is enabled, a message is printed.
 `ZCBOR_STOP_ON_ERROR`     | Enable the `stop_on_error` functionality. This makes all functions abort their execution if called when an error has already happened.
