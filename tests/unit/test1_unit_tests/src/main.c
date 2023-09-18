@@ -907,16 +907,26 @@ ZTEST(zcbor_unit_tests, test_simple)
 ZTEST(zcbor_unit_tests, test_header_len)
 {
 	zassert_equal(1, zcbor_header_len(0), NULL);
+	zassert_equal(1, zcbor_header_len_ptr((uint8_t*)&(uint8_t){0}, 1), NULL);
 	zassert_equal(1, zcbor_header_len(23), NULL);
+	zassert_equal(1, zcbor_header_len_ptr((uint8_t*)&(uint8_t){23}, 1), NULL);
 	zassert_equal(2, zcbor_header_len(24), NULL);
+	zassert_equal(2, zcbor_header_len_ptr((uint8_t*)&(uint8_t){24}, 1), NULL);
 	zassert_equal(2, zcbor_header_len(0xFF), NULL);
+	zassert_equal(2, zcbor_header_len_ptr((uint8_t*)&(uint8_t){0xFF}, 1), NULL);
 	zassert_equal(3, zcbor_header_len(0x100), NULL);
+	zassert_equal(3, zcbor_header_len_ptr((uint8_t*)&(uint16_t){0x100}, 2), NULL);
 	zassert_equal(3, zcbor_header_len(0xFFFF), NULL);
+	zassert_equal(3, zcbor_header_len_ptr((uint8_t*)&(uint16_t){0xFFFF}, 2), NULL);
 	zassert_equal(5, zcbor_header_len(0x10000), NULL);
+	zassert_equal(5, zcbor_header_len_ptr((uint8_t*)&(uint32_t){0x10000}, 4), NULL);
 	zassert_equal(5, zcbor_header_len(0xFFFFFFFF), NULL);
+	zassert_equal(5, zcbor_header_len_ptr((uint8_t*)&(uint32_t){0xFFFFFFFF}, 4), NULL);
 #if SIZE_MAX >= 0x100000000ULL
 	zassert_equal(9, zcbor_header_len(0x100000000), NULL);
+	zassert_equal(9, zcbor_header_len_ptr((uint8_t*)&(uint64_t){0x100000000}, 8), NULL);
 	zassert_equal(9, zcbor_header_len(0xFFFFFFFFFFFFFFFF), NULL);
+	zassert_equal(9, zcbor_header_len_ptr((uint8_t*)&(uint64_t){0xFFFFFFFFFFFFFFFF}, 8), NULL);
 #endif
 }
 
