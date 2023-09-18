@@ -1023,12 +1023,14 @@ ZTEST(zcbor_unit_tests, test_any_skip)
 	size_t exp_elem_count = 10;
 
 	zassert_true(zcbor_uint32_put(state_e, 10), NULL);
-	zassert_true(zcbor_any_skip(state_d, NULL));
+	bool ret = zcbor_any_skip(state_d, NULL);
+	zassert_true(ret, "err: %d\n", zcbor_peek_error(state_d));
 	zassert_equal(state_d->payload, state_e->payload, NULL);
 	zassert_equal(state_d->elem_count, --exp_elem_count, NULL);
 
 	zassert_true(zcbor_int64_put(state_e, -10000000000000), NULL);
-	zassert_true(zcbor_any_skip(state_d, NULL));
+	ret = zcbor_any_skip(state_d, NULL);
+	zassert_true(ret, "err: %d\n", zcbor_peek_error(state_d));
 	zassert_equal(state_d->payload, state_e->payload, NULL);
 	zassert_equal(state_d->elem_count, --exp_elem_count, NULL);
 
@@ -1060,7 +1062,8 @@ ZTEST(zcbor_unit_tests, test_any_skip)
 	zassert_true(zcbor_bool_put(state_e, true), NULL);
 	zassert_true(zcbor_float64_put(state_e, 3.14), NULL);
 	zassert_true(zcbor_list_end_encode(state_e, 6), NULL);
-	zassert_true(zcbor_any_skip(state_d, NULL));
+	ret = zcbor_any_skip(state_d, NULL);
+	zassert_true(ret, "err: %d\n", zcbor_peek_error(state_d));
 	zassert_equal(state_d->payload, state_e->payload, NULL);
 	zassert_equal(state_d->elem_count, --exp_elem_count, NULL);
 
