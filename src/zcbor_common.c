@@ -232,19 +232,32 @@ bool zcbor_compare_strings(const struct zcbor_string *str1,
 }
 
 
-size_t zcbor_header_len(size_t num_elems)
+size_t zcbor_header_len(uint64_t value)
 {
-	if (num_elems <= ZCBOR_VALUE_IN_HEADER) {
+	if (value <= ZCBOR_VALUE_IN_HEADER) {
 		return 1;
-	} else if (num_elems <= 0xFF) {
+	} else if (value <= 0xFF) {
 		return 2;
-	} else if (num_elems <= 0xFFFF) {
+	} else if (value <= 0xFFFF) {
 		return 3;
-	} else if (num_elems <= 0xFFFFFFFF) {
+	} else if (value <= 0xFFFFFFFF) {
 		return 5;
 	} else {
 		return 9;
 	}
+}
+
+
+size_t zcbor_header_len_ptr(const void *const value, size_t value_len)
+{
+	uint64_t val64 = 0;
+
+	if (value_len > sizeof(val64)) {
+		return 0;
+	}
+
+	memcpy(((uint8_t*)&val64) + ZCBOR_ECPY_OFFS(sizeof(val64), value_len), value, value_len);
+	return zcbor_header_len(val64);
 }
 
 

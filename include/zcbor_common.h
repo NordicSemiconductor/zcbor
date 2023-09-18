@@ -427,7 +427,10 @@ bool zcbor_compare_strings(const struct zcbor_string *str1,
  *
  *  @return  The length of the header in bytes (1-9).
  */
-size_t zcbor_header_len(size_t num_elems);
+size_t zcbor_header_len(uint64_t value);
+
+/** Like @ref zcbor_header_len but for integer of any size <= 8. */
+size_t zcbor_header_len_ptr(const void *const value, size_t value_len);
 
 /** Convert a float16 value to float32.
  *
