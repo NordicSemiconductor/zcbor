@@ -282,6 +282,7 @@ do { \
 #define ZCBOR_ERR_ELEMS_NOT_PROCESSED 18
 #define ZCBOR_ERR_NOT_AT_END 19
 #define ZCBOR_ERR_MAP_FLAGS_NOT_AVAILABLE 20
+#define ZCBOR_ERR_INVALID_VALUE_ENCODING 21 ///! When ZCBOR_CANONICAL is defined, and the incoming data is not encoded with minimal length.
 #define ZCBOR_ERR_UNKNOWN 31
 
 /** The largest possible elem_count. */
