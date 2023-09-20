@@ -26,7 +26,7 @@ int main(void)
 	struct zcbor_string dummy_string;
 
 	ZCBOR_STATE_E(state_e, 3, payload, sizeof(payload), 0);
-	ZCBOR_STATE_D(state_d, 3, payload, sizeof(payload), 30);
+	ZCBOR_STATE_D(state_d, 3, payload, sizeof(payload), 30, 0);
 
 	state_e->constant_state->stop_on_error = true;
 	state_d->constant_state->stop_on_error = true;

@@ -882,7 +882,7 @@ ZTEST(cbor_decode_test5, test_empty_map)
 	const uint8_t payload4[] = {MAP(0), END MAP(0), END MAP(0), END};
 	size_t num_decode;
 
-	ZCBOR_STATE_D(state, 0, payload4, sizeof(payload4), 3);
+	ZCBOR_STATE_D(state, 0, payload4, sizeof(payload4), 3, 0);
 
 	zassert_equal(ZCBOR_SUCCESS, cbor_decode_EmptyMap(payload1, sizeof(payload1), NULL, NULL), NULL);
 #ifdef TEST_INDEFINITE_LENGTH_ARRAYS

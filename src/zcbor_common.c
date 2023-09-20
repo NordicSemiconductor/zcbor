@@ -127,13 +127,22 @@ bool zcbor_union_end_code(zcbor_state_t *state)
 }
 
 void zcbor_new_state(zcbor_state_t *state_array, size_t n_states,
-		const uint8_t *payload, size_t payload_len, size_t elem_count)
+		const uint8_t *payload, size_t payload_len, size_t elem_count,
+		uint8_t *flags, size_t flags_bytes)
 {
 	state_array[0].payload = payload;
 	state_array[0].payload_end = payload + payload_len;
 	state_array[0].elem_count = elem_count;
 	state_array[0].payload_moved = false;
 	state_array[0].decode_state.indefinite_length_array = false;
+#ifdef ZCBOR_MAP_SMART_SEARCH
+	state_array[0].decode_state.map_search_elem_state = flags;
+	state_array[0].decode_state.map_elem_count = 0;
+#else
+	state_array[0].decode_state.map_elems_processed = 0;
+	(void)flags;
+	(void)flags_bytes;
+#endif
 	state_array[0].constant_state = NULL;
 
 	if (n_states < 2) {
@@ -148,6 +157,10 @@ void zcbor_new_state(zcbor_state_t *state_array, size_t n_states,
 	state_array[0].constant_state->error = ZCBOR_SUCCESS;
 #ifdef ZCBOR_STOP_ON_ERROR
 	state_array[0].constant_state->stop_on_error = false;
+#endif
+	state_array[0].constant_state->manually_process_elem = false;
+#ifdef ZCBOR_MAP_SMART_SEARCH
+	state_array[0].constant_state->map_search_elem_state_end = flags + flags_bytes;
 #endif
 	if (n_states > 2) {
 		state_array[0].constant_state->backup_list = &state_array[1];
@@ -268,7 +281,7 @@ int zcbor_entry_function(const uint8_t *payload, size_t payload_len,
 	void *result, size_t *payload_len_out, zcbor_state_t *state, zcbor_decoder_t func,
 	size_t n_states, size_t elem_count)
 {
-	zcbor_new_state(state, n_states, payload, payload_len, elem_count);
+	zcbor_new_state(state, n_states, payload, payload_len, elem_count, NULL, 0);
 
 	bool ret = func(state, result);
 

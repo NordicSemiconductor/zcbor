@@ -25,7 +25,8 @@ extern "C" {
 
 /** See @ref zcbor_new_state() */
 void zcbor_new_decode_state(zcbor_state_t *state_array, size_t n_states,
-		const uint8_t *payload, size_t payload_len, size_t elem_count);
+		const uint8_t *payload, size_t payload_len, size_t elem_count,
+		uint8_t *elem_state, size_t elem_state_bytes);
 
 /** Convenience macro for declaring and initializing a decoding state with backups.
  *
@@ -37,11 +38,16 @@ void zcbor_new_decode_state(zcbor_state_t *state_array, size_t n_states,
  *  @param[in]  payload       The payload to work on.
  *  @param[in]  payload_size  The size (in bytes) of @p payload.
  *  @param[in]  elem_count    The starting elem_count (typically 1).
+ *  @param[in]  n_flags       For use if ZCBOR_MAP_SMART_SEARCH is enabled, ignored otherwise.
+ *                            The total number of unordered map search flags needed.
+ *                            I.e. the largest number of elements expected in an unordered map,
+ *                            including elements in nested unordered maps.
  */
-#define ZCBOR_STATE_D(name, num_backups, payload, payload_size, elem_count) \
-zcbor_state_t name[((num_backups) + 2)]; \
+#define ZCBOR_STATE_D(name, num_backups, payload, payload_size, elem_count, n_flags) \
+zcbor_state_t name[((num_backups) + 2 + ZCBOR_FLAG_STATES(n_flags))]; \
 do { \
-	zcbor_new_decode_state(name, ZCBOR_ARRAY_SIZE(name), payload, payload_size, elem_count); \
+	zcbor_new_decode_state(name, ZCBOR_ARRAY_SIZE(name), payload, payload_size, elem_count, \
+			(uint8_t *)&name[(num_backups) + 1], ZCBOR_FLAG_STATES(n_flags) * sizeof(zcbor_state_t)); \
 } while(0)
 
 
@@ -146,6 +152,93 @@ bool zcbor_uint64_expect_union(zcbor_state_t *state, uint64_t expected);
  */
 bool zcbor_list_start_decode(zcbor_state_t *state);
 bool zcbor_map_start_decode(zcbor_state_t *state);
+bool zcbor_unordered_map_start_decode(zcbor_state_t *state);
+
+/** Search for a key in a map.
+ *
+ * The CBOR spec allows elements (key-value pairs) in maps to appear in any order.
+ * This function should be used when the order of elements is unknown.
+ *
+ * This must only be used while inside a map that has been entered via
+ * @ref zcbor_unordered_map_start_decode. Use @ref zcbor_unordered_map_end_decode
+ * when leaving the map.
+ *
+ * This function searches for keys. When this function returns successfully,
+ * the @p state is pointing to the value corresponding to the found key.
+ * Therefore, to be able to call this function again, the value must first be
+ * decoded or skipped.
+ *
+ * When searching unordered maps, the found elements must be kept track of.
+ * By default, this function automatically keeps track, which means it keeps a
+ * running count of the number of found elements, which is checked when exiting
+ * the map. You can do this manually instead, see @ref zcbor_elem_processed and
+ * @ref manually_process_elem. If ZCBOR_MAP_SMART_SEARCH is defined, a flag is
+ * kept for each element, instead of a rolling count.
+ *
+ * @note Unless ZCBOR_MAP_SMART_SEARCH is defined,
+ *       elements are not individually marked as processed, so they may
+ *       be returned again in a subsequent call to this function, if it is
+ *       matched by the @p key_decoder of that call. Because of this, you should
+ *       only use this function when you know the @p key_decoder matches no more
+ *       than one of the keys. Typically this means all keys are known strings
+ *       or integers, i.e. the @p key_decoder is typically a _pexpect() function.
+ *
+ * When searching for strings, there are convenience functions available,
+ * see the zcbor_search_key_* functions.
+ *
+ * @param[in] key_decoder  A decoding function that will be tried against all
+ *                         keys in the map until it returns true, at which point
+ *                         @ref zcbor_unordered_map_search will return true.
+ *                         For example, a zcbor_*_pexpect() function.
+ * @param[inout] state  The current state of decoding. Must be currently decoding
+ *                      the contents of a map, and pointing to one (any) of the
+ *                      keys, not one of the values. If successful, the @p state
+ *                      will be pointing to the value corresponding to the
+ *                      matched key. If unsuccessful, the @p state will be
+ *                      unchanged.
+ * @param[inout] key_result  This will be passed as the second argument to the
+ *                           @p key_decoder.
+ *
+ * @retval true   If the key was found, i.e. @p key_decoder returned true.
+ * @retval false  If the key was not found after searching all map elements.
+ *                Or the map was pointing to a value (not a key).
+ *                Or an unexpected error happened while skipping elements or
+ *                jumping from the end of the map to the start.
+ */
+bool zcbor_unordered_map_search(zcbor_decoder_t key_decoder, zcbor_state_t *state, void *key_result);
+
+/** Find a specific bstr/tstr key as part of a map with unknown element order.
+ *
+ * Uses @ref zcbor_unordered_map_search under the hood. Please refer to those docs
+ * for the conditions under which this can be called.
+ * Refer to the docs for zcbor_(t|b)str_expect_* (e.g. @ref zcbor_bstr_expect_ptr)
+ * for parameter docs.
+ */
+bool zcbor_search_key_bstr_ptr(zcbor_state_t *state, char const *ptr, size_t len);
+bool zcbor_search_key_tstr_ptr(zcbor_state_t *state, char const *ptr, size_t len);
+bool zcbor_search_key_bstr_term(zcbor_state_t *state, char const *str, size_t maxlen);
+bool zcbor_search_key_tstr_term(zcbor_state_t *state, char const *str, size_t maxlen);
+#define zcbor_search_key_bstr_lit(state, str) zcbor_search_key_bstr_ptr(state, str, sizeof(str) - 1)
+#define zcbor_search_key_tstr_lit(state, str) zcbor_search_key_tstr_ptr(state, str, sizeof(str) - 1)
+#define zcbor_search_key_bstr_arr(state, str) zcbor_search_key_bstr_ptr(state, str, (sizeof(str)))
+#define zcbor_search_key_tstr_arr(state, str) zcbor_search_key_tstr_ptr(state, str, (sizeof(str)))
+
+/** (Optional) Call this function to mark an (unordered map) element as processed.
+ *
+ * @note This should not be called unless the @ref manually_process_elem flag is set.
+ *       By default, i.e. when @ref manually_process_elem is not set, this function is
+ *       called internally by @ref zcbor_unordered_map_search whenever a key is found.
+ *
+ * By default, this function increments the internal count @ref map_elems_processed.
+ *
+ * If ZCBOR_MAP_SMART_SEARCH is defined, this function instead clears a flag for the
+ * element (key-value pair) that is currently being processed, or that has just been
+ * processed, meaning the element won't be found again via @ref zcbor_unordered_map_search.
+ *
+ * @ref zcbor_unordered_map_end_decode will fail if @ref map_elems_processed does not
+ * match the number of elements in the map, or if any of the map element's flag is set.
+ */
+bool zcbor_elem_processed(zcbor_state_t *state);
 
 /** Finalize decoding a list/map
  *
@@ -155,11 +248,15 @@ bool zcbor_map_start_decode(zcbor_state_t *state);
  * Use @ref zcbor_list_map_end_force_decode to forcibly consume the backup if
  * something has gone wrong.
  *
+ * In all successful cases, the state is returned pointing to the byte/element
+ * after the list/map in the payload.
+ *
  * @retval true   Everything ok.
  * @retval false  Element count not correct.
  */
 bool zcbor_list_end_decode(zcbor_state_t *state);
 bool zcbor_map_end_decode(zcbor_state_t *state);
+bool zcbor_unordered_map_end_decode(zcbor_state_t *state);
 bool zcbor_list_map_end_force_decode(zcbor_state_t *state);
 
 /** Find whether the state is at the end of a list or map.

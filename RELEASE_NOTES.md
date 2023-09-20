@@ -10,8 +10,6 @@ Any new bugs, requests, or missing features should be reported as [Github issues
 Not all features outlined in the CDDL specs [RFC8610](https://datatracker.ietf.org/doc/html/rfc8610), [RFC9090](https://datatracker.ietf.org/doc/html/rfc9090), and [RFC9165](https://datatracker.ietf.org/doc/html/rfc9165) are supported by zcbor.
 The following is a list of limitations and missing features:
 
- * Map elements in data must appear in the same order as they appear in the CDDL.
- * C API doesn't support searching through a map.
  * Using `&()` to turn groups into choices (unions). `&()` is supported when used with `.bits`.
  * Representation Types (`#x.y`), except for tags (`#6.y(foo)`) which are supported.
  * Unwrapping (`~`)

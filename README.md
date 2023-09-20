@@ -76,7 +76,7 @@ Backups are needed for _encoding_ if there are any lists or maps *and* you are u
 ```c
 /** Initialize a decoding state (could include an array of backup states).
  *  After calling this, decode_state[0] is ready to be used with the decoding APIs. */
-ZCBOR_STATE_D(decode_state, n, payload, payload_len, elem_count);
+ZCBOR_STATE_D(decode_state, n, payload, payload_len, elem_count, n_flags);
 
 /** Initialize an encoding state (could include an array of backup states).
  *  After calling this, encode_state[0] is ready to be used with the encoding APIs. */
@@ -97,6 +97,7 @@ Name                      | Description
 `ZCBOR_ASSERTS`           | Enable asserts (`zcbor_assert()`). When they fail, the assert statements instruct the current function to return a `ZCBOR_ERR_ASSERTION` error. If `ZCBOR_VERBOSE` is enabled, a message is printed.
 `ZCBOR_STOP_ON_ERROR`     | Enable the `stop_on_error` functionality. This makes all functions abort their execution if called when an error has already happened.
 `ZCBOR_BIG_ENDIAN`        | All decoded values are returned as big-endian. The default is little-endian.
+`ZCBOR_MAP_SMART_SEARCH`  | Applies to decoding of unordered maps. When enabled, a flag is kept for each element in an array, ensuring it is not processed twice. If disabled, a count is kept for map as a whole. Enabling increases code size and memory usage, and requires the state variable to possess the memory necessary for the flags.
 
 
 Python script and module

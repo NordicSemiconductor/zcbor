@@ -57,7 +57,7 @@ ZTEST(zcbor_unit_tests3, test_float16_decode)
 		*(uint16_t *)&payload[1] = i_be;
 
 		float out;
-		ZCBOR_STATE_D(state_d, 0, payload, sizeof(payload), 1);
+		ZCBOR_STATE_D(state_d, 0, payload, sizeof(payload), 1, 0);
 		ZCBOR_STATE_E(state_e, 0, payload, sizeof(payload), 0);
 
 		zassert_true(zcbor_float16_decode(state_d, &out), NULL);

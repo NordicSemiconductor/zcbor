@@ -16,7 +16,7 @@ ZTEST(zcbor_unit_tests, test_int64)
 	int32_t int32;
 
 	ZCBOR_STATE_E(state_e, 0, payload, sizeof(payload), 0);
-	ZCBOR_STATE_D(state_d, 0, payload, sizeof(payload), 10);
+	ZCBOR_STATE_D(state_d, 0, payload, sizeof(payload), 10, 0);
 
 	zassert_true(zcbor_int64_put(state_e, 5), NULL);
 	zassert_false(zcbor_int64_expect(state_d, 4), NULL);
@@ -68,9 +68,9 @@ ZTEST(zcbor_unit_tests, test_uint64)
 	uint32_t uint32;
 
 	zcbor_state_t state_e;
-	zcbor_new_state(&state_e, 1, payload, sizeof(payload), 0);
+	zcbor_new_state(&state_e, 1, payload, sizeof(payload), 0, NULL, 0);
 	zcbor_state_t state_d;
-	zcbor_new_state(&state_d, 1, payload, sizeof(payload), 10);
+	zcbor_new_state(&state_d, 1, payload, sizeof(payload), 10, NULL, 0);
 
 	zassert_true(zcbor_uint64_put(&state_e, 5), NULL);
 	zassert_false(zcbor_uint64_expect(&state_d, 4), NULL);
@@ -101,9 +101,9 @@ ZTEST(zcbor_unit_tests, test_size)
 	size_t read;
 
 	zcbor_state_t state_e;
-	zcbor_new_state(&state_e, 1, payload, sizeof(payload), 0);
+	zcbor_new_state(&state_e, 1, payload, sizeof(payload), 0, NULL, 0);
 	zcbor_state_t state_d;
-	zcbor_new_state(&state_d, 1, payload, sizeof(payload), 10);
+	zcbor_new_state(&state_d, 1, payload, sizeof(payload), 10, NULL, 0);
 
 	zassert_true(zcbor_size_put(&state_e, 5), NULL);
 	zassert_false(zcbor_size_expect(&state_d, 4), NULL);
@@ -163,7 +163,7 @@ ZTEST(zcbor_unit_tests, test_size64)
 	}
 
 	ZCBOR_STATE_E(state_e, 0, large_payload, PAYL_SIZE, 0);
-	ZCBOR_STATE_D(state_d, 0, large_payload, PAYL_SIZE, 10);
+	ZCBOR_STATE_D(state_d, 0, large_payload, PAYL_SIZE, 10, 0);
 
 	zassert_true(zcbor_tstr_encode(state_e, &tstr), NULL);
 	zassert_false(zcbor_bstr_decode(state_d, &tstr_res), NULL);
@@ -195,7 +195,7 @@ ZTEST(zcbor_unit_tests, test_string_macros)
 	zassert_true(zcbor_tstr_put_term(state_e, "Hellooooo", 5), NULL); /* Check that strnlen cuts off at 5 */
 	zassert_true(zcbor_tstr_put_arr(state_e, world), NULL);
 
-	ZCBOR_STATE_D(state_d, 0, payload, sizeof(payload), 6);
+	ZCBOR_STATE_D(state_d, 0, payload, sizeof(payload), 6, 0);
 
 	zassert_false(zcbor_bstr_expect_lit(state_d, "Yello"), NULL);
 	zassert_false(zcbor_tstr_expect_lit(state_d, "Hello"), NULL);
@@ -255,7 +255,9 @@ ZTEST(zcbor_unit_tests, test_stop_on_error)
 	zassert_false(zcbor_bool_encode(state_e, &(bool){false}), NULL);
 	zassert_false(zcbor_float32_put(state_e, 10.5), NULL);
 	zassert_false(zcbor_float32_encode(state_e, &(float){11.6}), NULL);
+#ifndef ZCBOR_BIG_ENDIAN
 	zassert_false(zcbor_float64_put(state_e, 12.7), NULL);
+#endif
 	zassert_false(zcbor_float64_encode(state_e, &(double){13.8}), NULL);
 	zassert_false(zcbor_nil_put(state_e, NULL), NULL);
 	zassert_false(zcbor_undefined_put(state_e, NULL), NULL);
@@ -295,7 +297,9 @@ ZTEST(zcbor_unit_tests, test_stop_on_error)
 	zassert_true(zcbor_bool_encode(state_e, &(bool){false}), NULL);
 	zassert_true(zcbor_float32_put(state_e, 10.5), NULL);
 	zassert_true(zcbor_float32_encode(state_e, &(float){11.6}), NULL);
+#ifndef ZCBOR_BIG_ENDIAN
 	zassert_true(zcbor_float64_put(state_e, 12.7), NULL);
+#endif
 	zassert_true(zcbor_float64_encode(state_e, &(double){13.8}), NULL);
 	zassert_true(zcbor_nil_put(state_e, NULL), NULL);
 	zassert_true(zcbor_undefined_put(state_e, NULL), NULL);
@@ -308,7 +312,7 @@ ZTEST(zcbor_unit_tests, test_stop_on_error)
 	zassert_true(zcbor_multi_encode(1, (zcbor_encoder_t *)zcbor_int32_put, state_e, (void*)14, 0), NULL);
 	zassert_true(zcbor_multi_encode_minmax(1, 1, &(size_t){1}, (zcbor_encoder_t *)zcbor_int32_put, state_e, (void*)15, 0), NULL);
 
-	ZCBOR_STATE_D(state_d, 3, payload, sizeof(payload), 30);
+	ZCBOR_STATE_D(state_d, 3, payload, sizeof(payload), 30, 0);
 	state_d->constant_state->stop_on_error = true;
 
 	zassert_false(zcbor_int32_expect(state_d, 2), NULL);
@@ -408,8 +412,8 @@ ZTEST(zcbor_unit_tests, test_fragments)
 
 	zassert_true(zcbor_bstr_put_lit(state_e, "HelloWorld"), NULL);
 
-	ZCBOR_STATE_D(state_d, 0, payload, 8, 1);
-	ZCBOR_STATE_D(state_d2, 0, payload, sizeof(payload), 1);
+	ZCBOR_STATE_D(state_d, 0, payload, 8, 1, 0);
+	ZCBOR_STATE_D(state_d2, 0, payload, sizeof(payload), 1, 0);
 
 	zassert_true(zcbor_bstr_decode(state_d2, &output), NULL);
 	zassert_false(zcbor_payload_at_end(state_d2), NULL);
@@ -468,8 +472,8 @@ ZTEST(zcbor_unit_tests, test_validate_fragments)
 		"HelloWorldDHelloWorldEHelloWorldFHelloWorldGHelloWorldHHelloWorldI"),
 		NULL);
 
-	ZCBOR_STATE_D(state_d, 0, payload, 13, 1);
-	ZCBOR_STATE_D(state_d2, 0, payload, sizeof(payload), 1);
+	ZCBOR_STATE_D(state_d, 0, payload, 13, 1, 0);
+	ZCBOR_STATE_D(state_d2, 0, payload, sizeof(payload), 1, 0);
 
 	zassert_true(zcbor_bstr_decode(state_d2, &output), NULL);
 	zassert_true(zcbor_bstr_decode_fragment(state_d, &output_frags[0]), NULL);
@@ -589,8 +593,8 @@ ZTEST(zcbor_unit_tests, test_bstr_cbor_fragments)
 	zassert_true(zcbor_list_end_encode(state_e, 2), NULL); // 1 B
 	zassert_true(zcbor_bstr_end_encode(state_e, NULL), NULL); // 0 B
 
-	ZCBOR_STATE_D(state_d, 2, payload, 8, 1);
-	ZCBOR_STATE_D(state_d2, 0, payload, sizeof(payload), 1);
+	ZCBOR_STATE_D(state_d, 2, payload, 8, 1, 0);
+	ZCBOR_STATE_D(state_d2, 0, payload, sizeof(payload), 1, 0);
 
 #ifdef ZCBOR_CANONICAL
 	#define EXP_TOTAL_LEN 17
@@ -698,7 +702,7 @@ ZTEST(zcbor_unit_tests, test_int)
 {
 	uint8_t payload1[100];
 	ZCBOR_STATE_E(state_e, 1, payload1, sizeof(payload1), 0);
-	ZCBOR_STATE_D(state_d, 1, payload1, sizeof(payload1), 16);
+	ZCBOR_STATE_D(state_d, 1, payload1, sizeof(payload1), 16, 0);
 
 	/* Encode all numbers */
 	/* Arbitrary positive numbers in each size */
@@ -818,7 +822,7 @@ ZTEST(zcbor_unit_tests, test_uint)
 {
 	uint8_t payload1[100];
 	ZCBOR_STATE_E(state_e, 1, payload1, sizeof(payload1), 0);
-	ZCBOR_STATE_D(state_d, 1, payload1, sizeof(payload1), 16);
+	ZCBOR_STATE_D(state_d, 1, payload1, sizeof(payload1), 16, 0);
 
 	/* Encode all numbers */
 	/* Arbitrary positive numbers in each size */
@@ -869,7 +873,7 @@ ZTEST(zcbor_unit_tests, test_encode_int_0)
 	uint32_t values_32[2] = {0, UINT32_MAX};
 	uint64_t values_64[2] = {0, UINT64_MAX};
 	ZCBOR_STATE_E(state_e, 1, payload1, sizeof(payload1), 0);
-	ZCBOR_STATE_D(state_d, 1, payload1, sizeof(payload1), 16);
+	ZCBOR_STATE_D(state_d, 1, payload1, sizeof(payload1), 16, 0);
 
 	zassert_true(zcbor_uint32_put(state_e, values_32[0]));
 	zassert_true(zcbor_uint64_put(state_e, values_64[0]));
@@ -882,7 +886,7 @@ ZTEST(zcbor_unit_tests, test_simple)
 {
 	uint8_t payload1[100];
 	ZCBOR_STATE_E(state_e, 1, payload1, sizeof(payload1), 0);
-	ZCBOR_STATE_D(state_d, 1, payload1, sizeof(payload1), 16);
+	ZCBOR_STATE_D(state_d, 1, payload1, sizeof(payload1), 16, 0);
 	uint8_t simple1 = 0;
 	uint8_t simple2 = 2;
 
@@ -1015,7 +1019,7 @@ ZTEST(zcbor_unit_tests, test_any_skip)
 {
 	uint8_t payload[200];
 	ZCBOR_STATE_E(state_e, 1, payload, sizeof(payload), 0);
-	ZCBOR_STATE_D(state_d, 0, payload, sizeof(payload), 10);
+	ZCBOR_STATE_D(state_d, 0, payload, sizeof(payload), 10, 0);
 	size_t exp_elem_count = 10;
 
 	zassert_true(zcbor_uint32_put(state_e, 10), NULL);
@@ -1082,7 +1086,7 @@ ZTEST(zcbor_unit_tests, test_pexpect)
 {
 	uint8_t payload[100];
 	ZCBOR_STATE_E(state_e, 2, payload, sizeof(payload), 0);
-	ZCBOR_STATE_D(state_d, 2, payload, sizeof(payload), 20);
+	ZCBOR_STATE_D(state_d, 2, payload, sizeof(payload), 20, 0);
 
 	zassert_true(zcbor_int32_put(state_e, 1), NULL);
 	zassert_true(zcbor_int32_put(state_e, 2), NULL);
@@ -1116,6 +1120,226 @@ ZTEST(zcbor_unit_tests, test_pexpect)
 	zassert_true(zcbor_float64_pexpect(state_d, &(double){13.0}), NULL);
 	zassert_true(zcbor_float_pexpect(state_d, &(double){14.0}), NULL);
 
+}
+
+
+void decode_inner_map(zcbor_state_t *state, void *result)
+{
+	zassert_true(zcbor_unordered_map_start_decode(state), NULL);
+	zassert_true(zcbor_unordered_map_search((zcbor_decoder_t *)zcbor_bool_pexpect, state, &(bool){false}), NULL);
+	zassert_true(zcbor_undefined_expect(state, NULL), NULL);
+	zcbor_elem_processed(state);
+	zassert_true(zcbor_unordered_map_search((zcbor_decoder_t *)zcbor_tstr_expect, state, &(struct zcbor_string){"hello", 5}), NULL);
+	zassert_true(zcbor_tstr_expect(state, &(struct zcbor_string){"world", 5}), NULL);
+	zcbor_elem_processed(state);
+	bool ret = zcbor_unordered_map_end_decode(state);
+	zassert_true(ret, "err: %d\n", zcbor_peek_error(state));
+}
+
+
+ZTEST(zcbor_unit_tests, test_unordered_map)
+{
+	uint8_t payload[200];
+	ZCBOR_STATE_E(state_e, 2, payload, sizeof(payload), 0);
+	ZCBOR_STATE_D(state_d, 2, payload, sizeof(payload), 10, 40);
+	struct zcbor_string str_result1;
+	struct zcbor_string str_result2;
+	struct zcbor_string str_result3;
+	int32_t int_result1;
+	uint8_t const *start2, *start3, *start4;
+	bool ret;
+
+	zassert_true(zcbor_map_start_encode(state_e, 0), NULL);
+	zassert_true(zcbor_map_end_encode(state_e, 0), NULL);
+	start2 = state_e->payload;
+
+	zassert_true(zcbor_map_start_encode(state_e, 0), NULL);
+	zassert_true(zcbor_uint32_put(state_e, 1), NULL);
+	zassert_true(zcbor_uint32_put(state_e, 1), NULL);
+	zassert_true(zcbor_map_end_encode(state_e, 0), NULL);
+	start3 = state_e->payload;
+
+	zassert_true(zcbor_map_start_encode(state_e, 0), NULL);
+	zassert_true(zcbor_uint32_put(state_e, 1), NULL);
+	zassert_true(zcbor_uint32_put(state_e, 1), NULL);
+	zassert_true(zcbor_uint32_put(state_e, 2), NULL);
+	zassert_true(zcbor_uint32_put(state_e, 2), NULL);
+	zassert_true(zcbor_map_end_encode(state_e, 0), NULL);
+	start4 = state_e->payload;
+
+	ZCBOR_STATE_D(state_d2, 2, start3, start4 - start3, 10, 2);
+	ZCBOR_STATE_D(state_d3, 2, start3, start4 - start3, 10, 0); // No flags
+
+	zassert_true(zcbor_map_start_encode(state_e, 43), NULL);
+	zassert_true(zcbor_uint32_put(state_e, 1), NULL);
+	zassert_true(zcbor_tstr_put_lit(state_e, "hello"), NULL);
+	zassert_true(zcbor_int32_put(state_e, -1), NULL);
+	zassert_true(zcbor_tstr_put_lit(state_e, "world"), NULL);
+	zassert_true(zcbor_bool_put(state_e, true), NULL);
+	zassert_true(zcbor_tstr_put_lit(state_e, "foo"), NULL);
+
+	/* Nested map */
+	zassert_true(zcbor_tstr_put_lit(state_e, "bar"), NULL);
+	zassert_true(zcbor_map_start_encode(state_e, 0), NULL);
+	zassert_true(zcbor_tstr_put_lit(state_e, "hello"), NULL);
+	zassert_true(zcbor_tstr_put_lit(state_e, "world"), NULL);
+	zassert_true(zcbor_bool_put(state_e, false), NULL);
+	zassert_true(zcbor_undefined_put(state_e, NULL), NULL);
+	zassert_true(zcbor_map_end_encode(state_e, 0), NULL);
+	/* Nested map end */
+
+	for (int i = 2; i < 35; i++) {
+		zassert_true(zcbor_uint32_put(state_e, i), NULL);
+		zassert_true(zcbor_int32_put(state_e, -i), NULL);
+	}
+
+	zassert_true(zcbor_tstr_put_lit(state_e, "baz1"), NULL);
+	zassert_true(zcbor_nil_put(state_e, NULL), NULL);
+	zassert_true(zcbor_tstr_put_lit(state_e, "baz2"), NULL);
+	zassert_true(zcbor_nil_put(state_e, NULL), NULL);
+	zassert_true(zcbor_bstr_put_term(state_e, "baz3", 4), NULL);
+	zassert_true(zcbor_nil_put(state_e, NULL), NULL);
+	zassert_true(zcbor_bstr_put_term(state_e, "baz4", 4), NULL);
+	zassert_true(zcbor_nil_put(state_e, NULL), NULL);
+	zassert_true(zcbor_bstr_put_term(state_e, "baz5", 4), NULL);
+	zassert_true(zcbor_nil_put(state_e, NULL), NULL);
+	zassert_true(zcbor_map_end_encode(state_e, 43), NULL);
+
+
+	/* Test empty map */
+	zassert_true(zcbor_unordered_map_start_decode(state_d), NULL);
+	zassert_false(zcbor_unordered_map_search((zcbor_decoder_t *)zcbor_int32_pexpect, state_d, &(int32_t){2}), NULL);
+	zassert_equal(ZCBOR_ERR_ELEM_NOT_FOUND, zcbor_peek_error(state_d), "err: %d\n", zcbor_peek_error(state_d));
+	ret = zcbor_unordered_map_end_decode(state_d);
+	zassert_true(ret, "err: %d\n", zcbor_peek_error(state_d));
+	zassert_equal(start2, state_d->payload, NULL);
+
+	/* Test single entry map */
+	zassert_true(zcbor_unordered_map_start_decode(state_d), NULL);
+	ret = zcbor_unordered_map_search((zcbor_decoder_t *)zcbor_int32_pexpect, state_d, &(int32_t){1});
+	zassert_true(ret, "err: %d\n", zcbor_peek_error);
+	zassert_true(zcbor_int32_expect(state_d, 1), NULL);
+	ret = zcbor_unordered_map_end_decode(state_d);
+	zassert_true(ret, "err: %d\n", zcbor_peek_error(state_d));
+	zassert_equal(start3, state_d->payload, NULL);
+
+	/* Test that looping stops both if it starts at the very start and very end of the map.
+	 * Also test ZCBOR_ERR_MAP_MISALIGNED. */
+	zassert_true(zcbor_unordered_map_start_decode(state_d2), NULL);
+	zassert_false(zcbor_unordered_map_search((zcbor_decoder_t *)zcbor_int32_pexpect, state_d2, &(int32_t){3}), NULL);
+	ret = zcbor_unordered_map_search((zcbor_decoder_t *)zcbor_int32_pexpect, state_d2, &(int32_t){2});
+	zassert_true(ret, "err: %d\n", zcbor_peek_error(state_d2));
+	zassert_false(zcbor_unordered_map_search((zcbor_decoder_t *)zcbor_int32_pexpect, state_d2, &(int32_t){1}), NULL);
+	zassert_equal(zcbor_peek_error(state_d2), ZCBOR_ERR_MAP_MISALIGNED, NULL);
+	zassert_true(zcbor_int32_expect(state_d2, 2), NULL);
+	zassert_true(zcbor_array_at_end(state_d2), NULL);
+	zassert_false(zcbor_unordered_map_search((zcbor_decoder_t *)zcbor_int32_pexpect, state_d2, &(int32_t){3}), NULL);
+	zassert_true(zcbor_unordered_map_search((zcbor_decoder_t *)zcbor_int32_pexpect, state_d2, &(int32_t){1}), NULL);
+	zassert_true(zcbor_int32_expect(state_d2, 1), NULL);
+	ret = zcbor_unordered_map_end_decode(state_d2);
+	zassert_true(ret, NULL);
+
+	/* Test that state_d3 fails because of missing flags. */
+#ifdef ZCBOR_MAP_SMART_SEARCH
+#ifdef ZCBOR_CANONICAL
+	zassert_false(zcbor_unordered_map_start_decode(state_d3), NULL);
+#else
+	zassert_true(zcbor_unordered_map_start_decode(state_d3), NULL);
+	zassert_false(zcbor_unordered_map_search((zcbor_decoder_t *)zcbor_int32_pexpect, state_d3, &(int32_t){2}), NULL);
+#endif
+	zassert_equal(zcbor_peek_error(state_d3), ZCBOR_ERR_MAP_FLAGS_NOT_AVAILABLE, NULL);
+#endif
+
+	/* Test premature map end */
+	zassert_true(zcbor_unordered_map_start_decode(state_d), NULL);
+	ret = zcbor_unordered_map_end_decode(state_d);
+	zassert_false(ret, NULL);
+	zassert_equal(ZCBOR_ERR_ELEMS_NOT_PROCESSED, zcbor_peek_error(state_d), NULL);
+#ifndef ZCBOR_CANONICAL
+	zcbor_elem_processed(state_d); // Should do nothing because no elements have been discovered.
+#endif
+	zassert_true(zcbor_unordered_map_search((zcbor_decoder_t *)zcbor_int32_pexpect, state_d, &(int32_t){1}), NULL);
+	zassert_true(zcbor_int32_expect(state_d, 1), NULL);
+	ret = zcbor_unordered_map_end_decode(state_d);
+	zassert_false(ret, NULL);
+	zassert_equal(ZCBOR_ERR_ELEMS_NOT_PROCESSED, zcbor_peek_error(state_d), NULL);
+	/* Cause a restart of the map */
+	zassert_false(zcbor_unordered_map_search((zcbor_decoder_t *)zcbor_int32_pexpect, state_d, &(int32_t){3}), NULL);
+	ret = zcbor_unordered_map_end_decode(state_d);
+	zassert_false(ret, NULL);
+	zassert_equal(ZCBOR_ERR_ELEMS_NOT_PROCESSED, zcbor_peek_error(state_d), NULL);
+	zassert_true(zcbor_unordered_map_search((zcbor_decoder_t *)zcbor_int32_pexpect, state_d, &(int32_t){2}), NULL);
+	zassert_true(zcbor_int32_expect(state_d, 2), NULL);
+	ret = zcbor_unordered_map_end_decode(state_d);
+	zassert_true(ret, "err: %d\n", zcbor_peek_error(state_d));
+	zassert_equal(start4, state_d->payload, NULL);
+
+	/* Test a large map, including nesting. */
+	state_d->constant_state->manually_process_elem = true;
+	zassert_true(zcbor_unordered_map_start_decode(state_d), NULL);
+	ret = zcbor_unordered_map_search((zcbor_decoder_t *)zcbor_int32_pexpect, state_d, &(int32_t){-1});
+	zassert_true(ret, "err: %d\n", zcbor_peek_error(state_d));
+	zassert_true(zcbor_tstr_decode(state_d, &str_result1), NULL);
+	zcbor_elem_processed(state_d);
+
+	zassert_true(zcbor_unordered_map_search((zcbor_decoder_t *)zcbor_bool_pexpect, state_d, &(bool){true}), NULL);
+	zassert_true(zcbor_tstr_decode(state_d, &str_result2), NULL);
+	zcbor_elem_processed(state_d);
+	zassert_true(zcbor_unordered_map_search((zcbor_decoder_t *)zcbor_int32_pexpect, state_d, &(int32_t){2}), NULL);
+	zassert_true(zcbor_int32_decode(state_d, &int_result1), NULL);
+	zcbor_elem_processed(state_d);
+	zassert_true(zcbor_unordered_map_search((zcbor_decoder_t *)zcbor_int32_pexpect, state_d, &(int32_t){1}), NULL);
+	zassert_true(zcbor_tstr_decode(state_d, &str_result3), NULL);
+	zcbor_elem_processed(state_d);
+
+	char baz4[] = {'b', 'a', 'z', '4'};
+	char baz3[] = "baz3";
+	char baz2[] = {'b', 'a', 'z', '2'};
+	char baz1[] = "baz1";
+	ret = zcbor_search_key_bstr_lit(state_d, "baz5");
+	zassert_true(ret, "err: %d\n", zcbor_peek_error(state_d));
+	zassert_true(zcbor_nil_expect(state_d, NULL), NULL);
+	zcbor_elem_processed(state_d);
+	zassert_true(zcbor_search_key_bstr_arr(state_d, baz4), NULL);
+	zassert_true(zcbor_nil_expect(state_d, NULL), NULL);
+	zcbor_elem_processed(state_d);
+	zassert_true(zcbor_search_key_bstr_term(state_d, baz3, 6), NULL);
+	zassert_true(zcbor_nil_expect(state_d, NULL), NULL);
+	zcbor_elem_processed(state_d);
+	zassert_true(zcbor_search_key_tstr_arr(state_d, baz2), NULL);
+	zassert_true(zcbor_nil_expect(state_d, NULL), NULL);
+	zcbor_elem_processed(state_d);
+	zassert_true(zcbor_search_key_tstr_term(state_d, baz1, 6), NULL);
+	zassert_true(zcbor_nil_expect(state_d, NULL), NULL);
+	// Don't call zcbor_elem_processed() To check that we can find the element again.
+	zassert_true(zcbor_search_key_tstr_term(state_d, baz1, 6), NULL);
+	zassert_true(zcbor_nil_expect(state_d, NULL), NULL);
+	zcbor_elem_processed(state_d);
+	// Check whether we can find the element again when it has been marked as processed.
+#ifdef ZCBOR_MAP_SMART_SEARCH
+	zassert_false(zcbor_search_key_tstr_term(state_d, baz1, 6), NULL);
+#else
+	zassert_true(zcbor_search_key_tstr_term(state_d, baz1, 6), NULL);
+	zassert_true(zcbor_nil_expect(state_d, NULL), NULL);
+#endif
+
+	zassert_true(zcbor_search_key_tstr_lit(state_d, "bar"), NULL);
+	decode_inner_map(state_d, NULL);
+	zcbor_elem_processed(state_d);
+
+	for (size_t i = 34; i > 2; i--) {
+		zassert_true(zcbor_unordered_map_search((zcbor_decoder_t *)zcbor_int32_pexpect, state_d, &i), "i: %d, err: %d\n", i, zcbor_peek_error(state_d));
+		zassert_false(zcbor_int32_expect(state_d, i), NULL);
+		zassert_true(zcbor_int32_expect(state_d, -1 * i), NULL);
+		zcbor_elem_processed(state_d);
+	}
+	ret = zcbor_unordered_map_end_decode(state_d);
+	zassert_true(ret, "err: %d\n", zcbor_peek_error(state_d));
+
+	zassert_equal(int_result1, -2, NULL);
+	zassert_true(zcbor_compare_strings(&str_result1, &(struct zcbor_string){"world", 5}), "%s (len: %d)\n", &str_result1.value, str_result1.len);
+	zassert_true(zcbor_compare_strings(&str_result2, &(struct zcbor_string){"foo", 3}), NULL);
+	zassert_true(zcbor_compare_strings(&str_result3, &(struct zcbor_string){"hello", 5}), NULL);
 }
 
 
