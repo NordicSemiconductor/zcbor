@@ -27,7 +27,7 @@ void main(void)
 	}
 
 	/* Create zcbor state variable for decoding. */
-	ZCBOR_STATE_D(decoding_state, 0, cbor_payload, sizeof(cbor_payload), 1);
+	ZCBOR_STATE_D(decoding_state, 0, cbor_payload, sizeof(cbor_payload), 1, 0);
 
 	/* Decode the text string into the cbor_payload buffer */
 	success = zcbor_tstr_decode(decoding_state, &decoded_string);

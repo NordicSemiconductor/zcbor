@@ -659,5 +659,5 @@ bool zcbor_multi_encode(const size_t num_encode, zcbor_encoder_t encoder,
 void zcbor_new_encode_state(zcbor_state_t *state_array, size_t n_states,
 		uint8_t *payload, size_t payload_len, size_t elem_count)
 {
-	zcbor_new_state(state_array, n_states, payload, payload_len, elem_count);
+	zcbor_new_state(state_array, n_states, payload, payload_len, elem_count, NULL, 0);
 }

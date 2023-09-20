@@ -20,6 +20,10 @@ if (CONFIG_BIG_ENDIAN OR BIG_ENDIAN)
   zephyr_compile_definitions(ZCBOR_BIG_ENDIAN)
 endif()
 
+if (MAP_SMART_SEARCH)
+  zephyr_compile_definitions(ZCBOR_MAP_SMART_SEARCH)
+endif()
+
 zephyr_compile_options(-Werror)
 
 if (CONFIG_64BIT)

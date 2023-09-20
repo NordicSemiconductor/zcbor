@@ -483,9 +483,9 @@ ZTEST(cbor_decode_test3, test_serial1)
 {
 	struct Upload upload;
 	size_t decode_len;
-	bool ret = cbor_decode_Upload(serial_rec_input1,
+	int ret = cbor_decode_Upload(serial_rec_input1,
 			sizeof(serial_rec_input1), &upload, &decode_len);
-	zassert_equal(ZCBOR_SUCCESS, ret, "decoding failed.");
+	zassert_equal(ZCBOR_SUCCESS, ret, "decoding failed: %d.", ret);
 	zassert_equal(sizeof(serial_rec_input1), decode_len, NULL);
 
 	zassert_equal(5, upload.members_count,
@@ -507,9 +507,9 @@ ZTEST(cbor_decode_test3, test_serial2)
 {
 	struct Upload upload;
 	size_t decode_len;
-	bool ret = cbor_decode_Upload(serial_rec_input2,
+	int ret = cbor_decode_Upload(serial_rec_input2,
 			sizeof(serial_rec_input2), &upload, &decode_len);
-	zassert_equal(ZCBOR_SUCCESS, ret, "decoding failed.");
+	zassert_equal(ZCBOR_SUCCESS, ret, "decoding failed: %d.", ret);
 	zassert_equal(sizeof(serial_rec_input2), decode_len, NULL);
 
 	zassert_equal(5, upload.members_count,

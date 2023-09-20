@@ -136,6 +136,25 @@ struct {
 	bool indefinite_length_array; /**< Is set to true if the decoder is currently
 	                                   decoding the contents of an indefinite-
 	                                   length array. */
+	bool counting_map_elems; /**< Is set to true while the number of elements of the
+	                              current map are being counted. */
+#ifdef ZCBOR_MAP_SMART_SEARCH
+	uint8_t *map_search_elem_state; /**< Optional flags to use when searching unordered
+	                                     maps. If this is not NULL and map_elem_count
+	                                     is non-zero, this consists of one flag per element
+	                                     in the current map. The n-th bit can be set to 0
+	                                     to indicate that the n-th element in the
+	                                     map should not be searched. These are manipulated
+	                                     via zcbor_elem_processed() or
+	                                     zcbor_unordered_map_search(), and should not be
+	                                     manipulated directly. */
+#else
+	size_t map_elems_processed; /**< The number of elements of an unordered map
+	                                 that have been processed. */
+#endif
+	size_t map_elem_count; /**< Number of elements in the current unordered map.
+	                            This also serves as the number of bits (not bytes)
+	                            in the map_search_elem_state array (when applicable). */
 } decode_state;
 	struct zcbor_state_constant *constant_state; /**< The part of the state that is
 	                                                  not backed up and duplicated. */
@@ -148,6 +167,11 @@ struct zcbor_state_constant {
 	int error;
 #ifdef ZCBOR_STOP_ON_ERROR
 	bool stop_on_error;
+#endif
+	bool manually_process_elem; /**< Whether an (unordered map) element should be automatically
+	                                 marked as processed when found via @ref zcbor_search_map_key. */
+#ifdef ZCBOR_MAP_SMART_SEARCH
+	uint8_t *map_search_elem_state_end; /**< The end of the @ref map_search_elem_state buffer. */
 #endif
 };
 
@@ -253,13 +277,18 @@ do { \
 #define ZCBOR_ERR_ITERATIONS 13
 #define ZCBOR_ERR_ASSERTION 14
 #define ZCBOR_ERR_PAYLOAD_OUTDATED 15 ///! Because of a call to @ref zcbor_update_state
+#define ZCBOR_ERR_ELEM_NOT_FOUND 16
+#define ZCBOR_ERR_MAP_MISALIGNED 17
+#define ZCBOR_ERR_ELEMS_NOT_PROCESSED 18
+#define ZCBOR_ERR_NOT_AT_END 19
+#define ZCBOR_ERR_MAP_FLAGS_NOT_AVAILABLE 20
 #define ZCBOR_ERR_UNKNOWN 31
 
 /** The largest possible elem_count. */
 #define ZCBOR_MAX_ELEM_COUNT SIZE_MAX
 
 /** Initial value for elem_count for when it just needs to be large. */
-#define ZCBOR_LARGE_ELEM_COUNT (ZCBOR_MAX_ELEM_COUNT - 16)
+#define ZCBOR_LARGE_ELEM_COUNT (ZCBOR_MAX_ELEM_COUNT - 15)
 
 
 /** Take a backup of the current state. Overwrite the current elem_count. */
@@ -297,11 +326,13 @@ bool zcbor_union_end_code(zcbor_state_t *state);
  *  If there is no struct zcbor_state_constant (n_states == 1), error codes are
  *  not available.
  *  This means that you get a state with (n_states - 2) backups.
- *  payload, payload_len, and elem_count are used to initialize the first state.
- *  in the array, which is the state that can be passed to cbor functions.
+ *  payload, payload_len, elem_count, and elem_state are used to initialize the first state.
+ *  The elem_state is only needed for unordered maps, when ZCBOR_MAP_SMART_SEARCH is enabled.
+ *  It is ignored otherwise.
  */
 void zcbor_new_state(zcbor_state_t *state_array, size_t n_states,
-		const uint8_t *payload, size_t payload_len, size_t elem_count);
+		const uint8_t *payload, size_t payload_len, size_t elem_count,
+		uint8_t *elem_state, size_t elem_state_bytes);
 
 /** Do boilerplate entry function procedure.
  *  Initialize states, call function, and check the result.
@@ -459,6 +490,33 @@ float zcbor_float16_to_32(uint16_t input);
  */
 uint16_t zcbor_float32_to_16(float input);
 
+#ifdef ZCBOR_MAP_SMART_SEARCH
+static inline size_t zcbor_round_up(size_t x, size_t align)
+{
+	return (((x) + (align) - 1) / (align) * (align));
+}
+
+#define ZCBOR_BITS_PER_BYTE 8
+/** Calculate the number of bytes needed to hold @p num_flags 1 bit flags
+ */
+static inline size_t zcbor_flags_to_bytes(size_t num_flags)
+{
+	return zcbor_round_up(num_flags, ZCBOR_BITS_PER_BYTE) / ZCBOR_BITS_PER_BYTE;
+}
+
+/** Calculate the number of zcbor_state_t instances needed to hold @p num_flags 1 bit flags
+ */
+static inline size_t zcbor_flags_to_states(size_t num_flags)
+{
+	return zcbor_round_up(num_flags, sizeof(zcbor_state_t) * ZCBOR_BITS_PER_BYTE)
+			/ (sizeof(zcbor_state_t) * ZCBOR_BITS_PER_BYTE);
+}
+
+#define ZCBOR_FLAG_STATES(n_flags) zcbor_flags_to_states(n_flags)
+
+#else
+#define ZCBOR_FLAG_STATES(n_flags) 0
+#endif
 
 #ifdef __cplusplus
 }
