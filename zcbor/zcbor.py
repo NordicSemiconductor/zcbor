@@ -771,6 +771,8 @@ class CddlParser:
 
         self_type = type(self)
 
+        # The "range_types" match the contents of brackets i.e. (), [], and {},
+        # and strings, i.e. ' or "
         range_types = [
             (r'\[(?P<item>(?>[^[\]]+|(?R))*)\]',
              lambda m_self, list_str: m_self.type_and_value(
@@ -791,9 +793,8 @@ class CddlParser:
             range_types_regex = range_types_regex.replace("item", "it%dem" % i, 1)
 
         # The following regexes match different parts of the element. The order of the list is
-        # important because it implements the operator precendence defined in the CDDL spec. Note
-        # that some regexes are inserted afterwards because they involve a match of a concatenation
-        # of all the initial regexes (with a '|' between each element).
+        # important because it implements the operator precendence defined in the CDDL spec.
+        # The range_types are separate because they are reused in one of the other regexes.
         self_type.cddl_regexes[self_type] = range_types + [
             (r'\/\/\s*(?P<item>.+?)(?=\/\/|\Z)',
              lambda m_self, union_str: m_self.union_add_value(
