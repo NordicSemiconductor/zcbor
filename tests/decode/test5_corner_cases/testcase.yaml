@@ -1,19 +1,8 @@
 tests:
   zcbor.decode.test5_corner_cases:
-    platform_allow: native_posix native_posix_64 mps2_an521
+    platform_allow: native_posix native_posix_64 mps2_an521 qemu_malta_be
     tags: zcbor decode test5
   zcbor.decode.test5_corner_cases.indefinite_length_arrays:
-    platform_allow: native_posix native_posix_64 mps2_an521
+    platform_allow: native_posix native_posix_64 mps2_an521 qemu_malta_be
     tags: zcbor decode test5 indefinite
     extra_args: TEST_INDEFINITE_LENGTH_ARRAYS=1
-  zcbor.decode.test5_corner_cases.be:
-    platform_allow: qemu_malta_be
-    tags: zcbor decode test5
-    extra_configs:
-      - CONFIG_PICOLIBC=y
-  zcbor.decode.test5_corner_cases.indefinite_length_arrays.be:
-    platform_allow: qemu_malta_be
-    tags: zcbor decode test5 indefinite
-    extra_args: TEST_INDEFINITE_LENGTH_ARRAYS=1
-    extra_configs:
-      - CONFIG_PICOLIBC=y
