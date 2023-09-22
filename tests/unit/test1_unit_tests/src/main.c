@@ -255,9 +255,7 @@ ZTEST(zcbor_unit_tests, test_stop_on_error)
 	zassert_false(zcbor_bool_encode(state_e, &(bool){false}), NULL);
 	zassert_false(zcbor_float32_put(state_e, 10.5), NULL);
 	zassert_false(zcbor_float32_encode(state_e, &(float){11.6}), NULL);
-#ifndef ZCBOR_BIG_ENDIAN
 	zassert_false(zcbor_float64_put(state_e, 12.7), NULL);
-#endif
 	zassert_false(zcbor_float64_encode(state_e, &(double){13.8}), NULL);
 	zassert_false(zcbor_nil_put(state_e, NULL), NULL);
 	zassert_false(zcbor_undefined_put(state_e, NULL), NULL);
@@ -297,9 +295,7 @@ ZTEST(zcbor_unit_tests, test_stop_on_error)
 	zassert_true(zcbor_bool_encode(state_e, &(bool){false}), NULL);
 	zassert_true(zcbor_float32_put(state_e, 10.5), NULL);
 	zassert_true(zcbor_float32_encode(state_e, &(float){11.6}), NULL);
-#ifndef ZCBOR_BIG_ENDIAN
 	zassert_true(zcbor_float64_put(state_e, 12.7), NULL);
-#endif
 	zassert_true(zcbor_float64_encode(state_e, &(double){13.8}), NULL);
 	zassert_true(zcbor_nil_put(state_e, NULL), NULL);
 	zassert_true(zcbor_undefined_put(state_e, NULL), NULL);
@@ -339,9 +335,7 @@ ZTEST(zcbor_unit_tests, test_stop_on_error)
 	zassert_false(zcbor_bool_decode(state_d, &(bool){false}), NULL);
 	zassert_false(zcbor_float32_expect(state_d, 10.5), NULL);
 	zassert_false(zcbor_float32_decode(state_d, &(float){11.6}), NULL);
-#ifndef CONFIG_BOARD_QEMU_MALTA_BE
 	zassert_false(zcbor_float64_expect(state_d, 12.7), NULL);
-#endif
 	zassert_false(zcbor_float64_decode(state_d, &(double){13.8}), NULL);
 	zassert_false(zcbor_nil_expect(state_d, NULL), NULL);
 	zassert_false(zcbor_undefined_expect(state_d, NULL), NULL);
@@ -378,11 +372,7 @@ ZTEST(zcbor_unit_tests, test_stop_on_error)
 	zassert_true(zcbor_bool_decode(state_d, &(bool){false}), NULL);
 	zassert_true(zcbor_float32_expect(state_d, 10.5), NULL);
 	zassert_true(zcbor_float32_decode(state_d, &(float){11.6}), NULL);
-#ifdef CONFIG_BOARD_QEMU_MALTA_BE
-	zassert_true(zcbor_float64_decode(state_d, &(double){12.7}), NULL);
-#else
 	zassert_true(zcbor_float64_expect(state_d, 12.7), NULL);
-#endif
 	zassert_true(zcbor_float64_decode(state_d, &(double){13.8}), NULL);
 	zassert_true(zcbor_nil_expect(state_d, NULL), NULL);
 	zassert_true(zcbor_undefined_expect(state_d, NULL), NULL);
@@ -1119,7 +1109,6 @@ ZTEST(zcbor_unit_tests, test_pexpect)
 	zassert_true(zcbor_float32_64_pexpect(state_d, &(double){12.0}), NULL);
 	zassert_true(zcbor_float64_pexpect(state_d, &(double){13.0}), NULL);
 	zassert_true(zcbor_float_pexpect(state_d, &(double){14.0}), NULL);
-
 }
 
 
