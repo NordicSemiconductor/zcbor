@@ -930,7 +930,7 @@ bool zcbor_present_decode(uint_fast32_t *present,
 		zcbor_state_t *state,
 		void *result)
 {
-	uint_fast32_t num_decode;
+	uint_fast32_t num_decode = 0;
 	bool retval = zcbor_multi_decode(0, 1, &num_decode, decoder, state, result, 0);
 
 	zcbor_assert_state(retval, "zcbor_multi_decode should not fail with these parameters.\r\n");
