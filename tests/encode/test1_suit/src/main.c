@@ -244,7 +244,7 @@ void test_command_sequence(struct zcbor_string *sequence_str,
 		return;
 	}
 
-	zcbor_print("\r\ntest %s\r\n", name);
+	zcbor_log("\r\ntest %s\r\n", name);
 
 	memset(&sequence1, 0, sizeof(sequence1));
 	int res = cbor_decode_SUIT_Command_Sequence(sequence_str->value,
@@ -338,8 +338,8 @@ void test_manifest(const uint8_t *input, uint32_t len)
 	int res;
 	size_t out_len;
 
-	zcbor_print("test_vector at: 0x%zx\r\n", (size_t)input);
-	zcbor_print("test_vector end at: 0x%zx\r\n",
+	zcbor_log("test_vector at: 0x%zx\r\n", (size_t)input);
+	zcbor_log("test_vector end at: 0x%zx\r\n",
 				((size_t)input) + len);
 	res = cbor_decode_SUIT_Outer_Wrapper(input, len, &outerwrapper1, NULL);
 	zassert_equal(ZCBOR_SUCCESS, res, "top-level decoding failed.");

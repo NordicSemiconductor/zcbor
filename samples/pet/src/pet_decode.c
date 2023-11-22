@@ -26,7 +26,7 @@ static bool decode_Pet(zcbor_state_t *state, struct Pet *result);
 static bool decode_Pet(
 		zcbor_state_t *state, struct Pet *result)
 {
-	zcbor_print("%s\r\n", __func__);
+	zcbor_log("%s\r\n", __func__);
 
 	bool tmp_result = (((zcbor_list_start_decode(state) && ((((zcbor_list_start_decode(state) && ((zcbor_multi_decode(1, 3, &(*result).names_count, (zcbor_decoder_t *)zcbor_tstr_decode, state, (&(*result).names), sizeof(struct zcbor_string))) || (zcbor_list_map_end_force_decode(state), false)) && zcbor_list_end_decode(state)))
 	&& ((zcbor_bstr_decode(state, (&(*result).birthday)))

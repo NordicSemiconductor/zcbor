@@ -24,32 +24,32 @@ extern "C" {
 	(size_t)state->payload_end - (size_t)state->payload, *state->payload, state->elem_count, \
 	state->constant_state ? state->constant_state->error : 0, __FILE__, __LINE__))
 
-#define zcbor_print_assert(expr, ...) \
+#define zcbor_log_assert(expr, ...) \
 do { \
 	zcbor_do_print("ASSERTION \n  \"" #expr \
 		"\"\nfailed at %s:%d with message:\n  ", \
 		__FILE__, __LINE__); \
 	zcbor_do_print(__VA_ARGS__);\
 } while(0)
-#define zcbor_print(...) zcbor_do_print(__VA_ARGS__)
+#define zcbor_log(...) zcbor_do_print(__VA_ARGS__)
 #else
 #define zcbor_trace() ((void)state)
-#define zcbor_print_assert(...)
-#define zcbor_print(...)
+#define zcbor_log_assert(...)
+#define zcbor_log(...)
 #endif
 
 #ifdef ZCBOR_ASSERTS
 #define zcbor_assert(expr, ...) \
 do { \
 	if (!(expr)) { \
-		zcbor_print_assert(expr, __VA_ARGS__); \
+		zcbor_log_assert(expr, __VA_ARGS__); \
 		ZCBOR_FAIL(); \
 	} \
 } while(0)
 #define zcbor_assert_state(expr, ...) \
 do { \
 	if (!(expr)) { \
-		zcbor_print_assert(expr, __VA_ARGS__); \
+		zcbor_log_assert(expr, __VA_ARGS__); \
 		ZCBOR_ERR(ZCBOR_ERR_ASSERTION); \
 	} \
 } while(0)

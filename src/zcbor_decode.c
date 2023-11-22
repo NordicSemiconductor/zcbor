@@ -212,7 +212,7 @@ bool zcbor_uint_decode(zcbor_state_t *state, void *result, size_t result_size)
 	INITIAL_CHECKS_WITH_TYPE(ZCBOR_MAJOR_TYPE_PINT);
 
 	if (!value_extract(state, result, result_size)) {
-		zcbor_print("uint with size %d failed.\r\n", result_size);
+		zcbor_log("uint with size %d failed.\r\n", result_size);
 		ZCBOR_FAIL();
 	}
 	return true;
@@ -282,7 +282,7 @@ bool zcbor_int64_expect(zcbor_state_t *state, int64_t expected)
 	}
 
 	if (actual != expected) {
-		zcbor_print("%" PRIi64 " != %" PRIi64 "\r\n", actual, expected);
+		zcbor_log("%" PRIi64 " != %" PRIi64 "\r\n", actual, expected);
 		ERR_RESTORE(ZCBOR_ERR_WRONG_VALUE);
 	}
 	return true;
@@ -329,7 +329,7 @@ bool zcbor_uint64_expect(zcbor_state_t *state, uint64_t expected)
 		ZCBOR_FAIL();
 	}
 	if (actual != expected) {
-		zcbor_print("%" PRIu64 " != %" PRIu64 "\r\n", actual, expected);
+		zcbor_log("%" PRIu64 " != %" PRIu64 "\r\n", actual, expected);
 		ERR_RESTORE(ZCBOR_ERR_WRONG_VALUE);
 	}
 	return true;
@@ -381,7 +381,7 @@ static bool str_start_decode_with_overflow_check(zcbor_state_t *state,
 	/* Casting to size_t is safe since str_start_decode() checks that
 	 * payload_end is bigger that payload. */
 	if (result->len > (size_t)(state->payload_end - state->payload)) {
-		zcbor_print("error: 0x%zu > 0x%zu\r\n",
+		zcbor_log("error: 0x%zu > 0x%zu\r\n",
 			result->len,
 			(state->payload_end - state->payload));
 		ERR_RESTORE(ZCBOR_ERR_NO_PAYLOAD);
@@ -472,7 +472,7 @@ void zcbor_next_fragment(zcbor_state_t *state,
 	result->fragment.len = result->total_len - result->offset;
 
 	partition_fragment(state, result);
-	zcbor_print("New fragment length %zu\r\n", result->fragment.len);
+	zcbor_log("New fragment length %zu\r\n", result->fragment.len);
 
 	state->payload += result->fragment.len;
 }
@@ -488,7 +488,7 @@ void zcbor_bstr_next_fragment(zcbor_state_t *state,
 	result->fragment.len = result->total_len - result->offset;
 
 	partition_fragment(state, result);
-	zcbor_print("fragment length %zu\r\n", result->fragment.len);
+	zcbor_log("fragment length %zu\r\n", result->fragment.len);
 	state->payload_end = state->payload + result->fragment.len;
 }
 
@@ -838,7 +838,7 @@ static bool try_key(zcbor_state_t *state, void *key_result, zcbor_decoder_t key_
 		return false;
 	}
 
-	zcbor_print("Found element at index %d.\n", get_current_index(state, 1));
+	zcbor_log("Found element at index %d.\n", get_current_index(state, 1));
 	return true;
 }
 
@@ -979,7 +979,7 @@ bool zcbor_unordered_map_end_decode(zcbor_state_t *state)
 
 		for (size_t i = 0; i < zcbor_flags_to_bytes(state->decode_state.map_elem_count); i++) {
 			if (state->decode_state.map_search_elem_state[i] != 0) {
-				zcbor_print("unprocessed element(s) in map: [%d] = 0x%02x\n",
+				zcbor_log("unprocessed element(s) in map: [%d] = 0x%02x\n",
 						i, state->decode_state.map_search_elem_state[i]);
 				ZCBOR_ERR(ZCBOR_ERR_ELEMS_NOT_PROCESSED);
 			}
@@ -1031,7 +1031,7 @@ bool zcbor_simple_expect(zcbor_state_t *state, uint8_t expected)
 	}
 
 	if (actual != expected) {
-		zcbor_print("simple value %u != %u\r\n", actual, expected);
+		zcbor_log("simple value %u != %u\r\n", actual, expected);
 		ERR_RESTORE(ZCBOR_ERR_WRONG_VALUE);
 	}
 
@@ -1072,7 +1072,7 @@ bool zcbor_bool_decode(zcbor_state_t *state, bool *result)
 	}
 	*result = value;
 
-	zcbor_print("boolval: %u\r\n", *result);
+	zcbor_log("boolval: %u\r\n", *result);
 	return true;
 }
 
@@ -1456,11 +1456,11 @@ bool zcbor_multi_decode(size_t min_decode,
 			state->payload = payload_bak;
 			state->elem_count = elem_count_bak;
 			ZCBOR_ERR_IF(i < min_decode, ZCBOR_ERR_ITERATIONS);
-			zcbor_print("Found %" PRIuFAST32 " elements.\r\n", i);
+			zcbor_log("Found %" PRIuFAST32 " elements.\r\n", i);
 			return true;
 		}
 	}
-	zcbor_print("Found %" PRIuFAST32 " elements.\r\n", max_decode);
+	zcbor_log("Found %" PRIuFAST32 " elements.\r\n", max_decode);
 	*num_decode = max_decode;
 	return true;
 }

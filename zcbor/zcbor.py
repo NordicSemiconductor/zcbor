@@ -2625,7 +2625,7 @@ static bool {xcoder.func_name}(
             xcoder.type_name
             if struct_ptr_name(mode) in body else "void"} *{struct_ptr_name(mode)})
 {{
-	zcbor_print("%s\\r\\n", __func__);
+	zcbor_log("%s\\r\\n", __func__);
 	{"struct zcbor_string tmp_str;" if "tmp_str" in body else ""}
 	{"bool int_res;" if "int_res" in body else ""}
 
