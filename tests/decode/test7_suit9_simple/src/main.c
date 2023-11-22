@@ -96,8 +96,8 @@ ZTEST(cbor_decode_test7, test_suit9_simple2)
 {
 	int res;
 
-	zcbor_print("test_vector at: 0x%zx\r\n", (size_t)test_vector2);
-	zcbor_print("test_vector end at: 0x%zx\r\n",
+	zcbor_log("test_vector at: 0x%zx\r\n", (size_t)test_vector2);
+	zcbor_log("test_vector end at: 0x%zx\r\n",
 				((size_t)test_vector2) + sizeof(test_vector2));
 	memset(&envelope1, 0, sizeof(envelope1));
 	res = cbor_decode_SUIT_Envelope(test_vector2,
@@ -116,8 +116,8 @@ ZTEST(cbor_decode_test7, test_suit9_simple5)
 {
 	int res;
 
-	zcbor_print("test_vector at: 0x%zx\r\n", (size_t)test_vector5);
-	zcbor_print("test_vector end at: 0x%zx\r\n",
+	zcbor_log("test_vector at: 0x%zx\r\n", (size_t)test_vector5);
+	zcbor_log("test_vector end at: 0x%zx\r\n",
 				((size_t)test_vector5) + sizeof(test_vector5));
 	memset(&envelope1, 0, sizeof(envelope1));
 	res = cbor_decode_SUIT_Envelope(test_vector5,

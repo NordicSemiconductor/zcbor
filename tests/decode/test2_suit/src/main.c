@@ -45,8 +45,8 @@ ZTEST(cbor_decode_test2, test_5)
 	uint8_t expected_component1[] = {0x00, 0x34, 0x01};
 	int res;
 
-	zcbor_print("test_vector at: 0x%zu\r\n", (size_t)test_vector1);
-	zcbor_print("test_vector end at: 0x%zu\r\n",
+	zcbor_log("test_vector at: 0x%zu\r\n", (size_t)test_vector1);
+	zcbor_log("test_vector end at: 0x%zu\r\n",
 				((size_t)test_vector1) + sizeof(test_vector1));
 	memset(&outerwrapper1, 0, sizeof(outerwrapper1));
 	res = cbor_decode_SUIT_Outer_Wrapper(test_vector1, sizeof(test_vector1),
@@ -125,7 +125,7 @@ ZTEST(cbor_decode_test2, test_5)
 			sizeof(expected_component1),
 			"component elem 1 doesn't match.");
 
-	zcbor_print("\r\n");
+	zcbor_log("\r\n");
 	zassert_equal(1, manifest
 			->SUIT_Manifest_suit_common
 			.SUIT_Manifest_suit_common_cbor
@@ -166,7 +166,7 @@ ZTEST(cbor_decode_test2, test_5)
 			.SUIT_Command_SUIT_Directive_m
 			.suit_directive_set_parameters_m_l_map_SUIT_Parameters_m_count,
 			"Should be two vars (parameters).");
-	zcbor_print("\r\n");
+	zcbor_log("\r\n");
 
 	memset(&sequence, 0, sizeof(sequence));
 	res = cbor_decode_SUIT_Command_Sequence(

@@ -50,7 +50,7 @@ bool zcbor_process_backup(zcbor_state_t *state, uint32_t flags,
 	zcbor_state_t local_copy = *state;
 
 	if (state->constant_state->current_backup == 0) {
-		zcbor_print("No backups available.\r\n");
+		zcbor_log("No backups available.\r\n");
 		ZCBOR_ERR(ZCBOR_ERR_NO_BACKUP_ACTIVE);
 	}
 
@@ -61,7 +61,7 @@ bool zcbor_process_backup(zcbor_state_t *state, uint32_t flags,
 
 		if (!(flags & ZCBOR_FLAG_KEEP_PAYLOAD)) {
 			if (state->constant_state->backup_list[i].payload_moved) {
-				zcbor_print("Payload pointer out of date.\r\n");
+				zcbor_log("Payload pointer out of date.\r\n");
 				ZCBOR_ERR(ZCBOR_ERR_PAYLOAD_OUTDATED);
 			}
 		}
@@ -74,7 +74,7 @@ bool zcbor_process_backup(zcbor_state_t *state, uint32_t flags,
 	}
 
 	if (local_copy.elem_count > max_elem_count) {
-		zcbor_print("elem_count: %" PRIuFAST32 " (expected max %" PRIuFAST32 ")\r\n",
+		zcbor_log("elem_count: %" PRIuFAST32 " (expected max %" PRIuFAST32 ")\r\n",
 			local_copy.elem_count, max_elem_count);
 		ZCBOR_ERR(ZCBOR_ERR_HIGH_ELEM_COUNT);
 	}
@@ -290,7 +290,7 @@ int zcbor_entry_function(const uint8_t *payload, size_t payload_len,
 		int err = zcbor_pop_error(state);
 
 		err = (err == ZCBOR_SUCCESS) ? ZCBOR_ERR_UNKNOWN : err;
-		zcbor_print("Return error: %d\r\n", err);
+		zcbor_log("Return error: %d\r\n", err);
 		return err;
 	}
 

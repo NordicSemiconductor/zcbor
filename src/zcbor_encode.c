@@ -29,7 +29,7 @@ static uint8_t log2ceil(size_t val)
 		case 8: return 3;
 	}
 
-	zcbor_print("Should not come here.\r\n");
+	zcbor_log("Should not come here.\r\n");
 	return 0;
 }
 
@@ -141,7 +141,7 @@ bool zcbor_int_encode(zcbor_state_t *state, const void *input_int, size_t int_si
 bool zcbor_uint_encode(zcbor_state_t *state, const void *input_uint, size_t uint_size)
 {
 	if (!value_encode(state, ZCBOR_MAJOR_TYPE_PINT, input_uint, uint_size)) {
-		zcbor_print("uint with size %d failed.\r\n", uint_size);
+		zcbor_log("uint with size %d failed.\r\n", uint_size);
 		ZCBOR_FAIL();
 	}
 	return true;
@@ -390,14 +390,14 @@ static bool list_map_end_encode(zcbor_state_t *state, size_t max_num,
 		ZCBOR_FAIL();
 	}
 
-	zcbor_print("list_count: %" PRIuFAST32 "\r\n", list_count);
+	zcbor_log("list_count: %" PRIuFAST32 "\r\n", list_count);
 
 
 	/** If max_num is smaller than the actual number of encoded elements,
 	  * the value_encode() below will corrupt the data if the encoded
 	  * header is larger than the previously encoded header. */
 	if (header_len > max_header_len) {
-		zcbor_print("max_num too small.\r\n");
+		zcbor_log("max_num too small.\r\n");
 		ZCBOR_ERR(ZCBOR_ERR_HIGH_ELEM_COUNT);
 	}
 
@@ -456,7 +456,7 @@ bool zcbor_list_map_end_force_encode(zcbor_state_t *state)
 bool zcbor_simple_encode(zcbor_state_t *state, uint8_t *input)
 {
 	if (!value_encode(state, ZCBOR_MAJOR_TYPE_SIMPLE, input, sizeof(*input))) {
-		zcbor_print("Error encoding %u (0x%p)\r\n", *input, input);
+		zcbor_log("Error encoding %u (0x%p)\r\n", *input, input);
 		ZCBOR_FAIL();
 	}
 	return true;
@@ -597,7 +597,7 @@ bool zcbor_multi_encode(const size_t num_encode, zcbor_encoder_t encoder,
 			ZCBOR_FAIL();
 		}
 	}
-	zcbor_print("Encoded %" PRIuFAST32 " elements.\n", num_encode);
+	zcbor_log("Encoded %" PRIuFAST32 " elements.\n", num_encode);
 	return true;
 }
 
