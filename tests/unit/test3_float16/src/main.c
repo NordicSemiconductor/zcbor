@@ -64,8 +64,9 @@ ZTEST(zcbor_unit_tests3, test_float16_decode)
 		zassert_true(zcbor_float16_put(state_e, out));
 
 
+		uint16_t payload_ne = *(uint16_t *)&payload[1];
 #ifndef ZCBOR_BIG_ENDIAN
-		uint16_t payload_ne = switch_bytes(*(uint16_t *)&payload[1]);
+		payload_ne = switch_bytes(payload_ne);
 #endif
 
 		if (isnan(fps[i])) {
