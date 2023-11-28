@@ -10,7 +10,7 @@
 
 ZTEST(zcbor_unit_tests3, test_skip)
 {
-	printk("Skip on VERBOSE builds because of print output volume.\n");
+	printf("Skip on VERBOSE builds because of print output volume.\n");
 }
 
 #else /* ZCBOR_VERBOSE */
@@ -134,8 +134,8 @@ void print_percent(uint32_t i)
 {
 	if ((i % 0x800000) == 0) {
 		static const uint8_t move_cursor_up[] = {0x1b, 0x5b, 0x41, 0};
-		printk("%s", move_cursor_up);
-		printk("\r%d%%\n", (int)((double)(i) / 0x80000000 * 100));
+		printf("%s", move_cursor_up);
+		printf("\r%d%%\n", (int)((double)(i) / 0x80000000 * 100));
 	}
 }
 
@@ -182,7 +182,7 @@ static void do_test_nan(uint32_t i)
 ZTEST(zcbor_unit_tests3, test_float16_encode)
 {
 	zassert_equal((size_t)&_binary_fp_bytes_encode_bin_size, 31742 * 4 * 2, NULL);
-	printk("\n");
+	printf("\n");
 
 	for (uint32_t i = START_ZERO; i < START_NONZERO_FINITE; i++) {
 		do_test(i, 0);

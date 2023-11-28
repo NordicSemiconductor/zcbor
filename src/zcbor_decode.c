@@ -8,6 +8,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <string.h>
+#include <inttypes.h>
 #include "zcbor_decode.h"
 #include "zcbor_common.h"
 #include "zcbor_print.h"
@@ -124,7 +125,7 @@ static bool value_extract(zcbor_state_t *state,
 	zcbor_trace();
 	zcbor_assert_state(result_len != 0, "0-length result not supported.\r\n");
 	zcbor_assert_state(result_len <= 8, "result sizes above 8 bytes not supported.\r\n");
-	zcbor_assert_state(result != NULL, NULL);
+	zcbor_assert_state(result != NULL, "result cannot be NULL.\r\n");
 
 	INITIAL_CHECKS();
 	ZCBOR_ERR_IF((state->elem_count == 0), ZCBOR_ERR_LOW_ELEM_COUNT);
@@ -212,7 +213,7 @@ bool zcbor_uint_decode(zcbor_state_t *state, void *result, size_t result_size)
 	INITIAL_CHECKS_WITH_TYPE(ZCBOR_MAJOR_TYPE_PINT);
 
 	if (!value_extract(state, result, result_size)) {
-		zcbor_log("uint with size %d failed.\r\n", result_size);
+		zcbor_log("uint with size %zu failed.\r\n", result_size);
 		ZCBOR_FAIL();
 	}
 	return true;
@@ -838,7 +839,7 @@ static bool try_key(zcbor_state_t *state, void *key_result, zcbor_decoder_t key_
 		return false;
 	}
 
-	zcbor_log("Found element at index %d.\n", get_current_index(state, 1));
+	zcbor_log("Found element at index %zu.\n", get_current_index(state, 1));
 	return true;
 }
 
@@ -979,7 +980,7 @@ bool zcbor_unordered_map_end_decode(zcbor_state_t *state)
 
 		for (size_t i = 0; i < zcbor_flags_to_bytes(state->decode_state.map_elem_count); i++) {
 			if (state->decode_state.map_search_elem_state[i] != 0) {
-				zcbor_log("unprocessed element(s) in map: [%d] = 0x%02x\n",
+				zcbor_log("unprocessed element(s) in map: [%zu] = 0x%02x\n",
 						i, state->decode_state.map_search_elem_state[i]);
 				ZCBOR_ERR(ZCBOR_ERR_ELEMS_NOT_PROCESSED);
 			}
@@ -1456,11 +1457,11 @@ bool zcbor_multi_decode(size_t min_decode,
 			state->payload = payload_bak;
 			state->elem_count = elem_count_bak;
 			ZCBOR_ERR_IF(i < min_decode, ZCBOR_ERR_ITERATIONS);
-			zcbor_log("Found %" PRIuFAST32 " elements.\r\n", i);
+			zcbor_log("Found %zu elements.\r\n", i);
 			return true;
 		}
 	}
-	zcbor_log("Found %" PRIuFAST32 " elements.\r\n", max_decode);
+	zcbor_log("Found %zu elements.\r\n", max_decode);
 	*num_decode = max_decode;
 	return true;
 }

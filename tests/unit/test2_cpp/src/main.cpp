@@ -6,7 +6,7 @@
 
 #include <zcbor_decode.h>
 #include <zcbor_encode.h>
-#include <zephyr/sys/printk.h>
+#include <stdio.h>
 #include <pet_decode.h>
 
 int main(void)
@@ -64,7 +64,7 @@ int main(void)
 	bool ret = zcbor_multi_encode_minmax(1, 1, &one, (zcbor_encoder_t *)zcbor_int32_put, state_e, (void*)15, 0);
 
 	if (!ret) {
-		printk("Encode error: %d\r\n", zcbor_peek_error(state_e));
+		printf("Encode error: %d\r\n", zcbor_peek_error(state_e));
 		return 1;
 	}
 
@@ -101,7 +101,7 @@ int main(void)
 	ret = zcbor_present_decode(&one_b, (zcbor_decoder_t *)zcbor_int32_expect, state_d, (void*)15);
 
 	if (!ret) {
-		printk("Decode error: %d\r\n", zcbor_peek_error(state_d));
+		printf("Decode error: %d\r\n", zcbor_peek_error(state_d));
 		return 1;
 	}
 
@@ -114,11 +114,11 @@ int main(void)
 	int int_ret = cbor_decode_Pet(input, sizeof(input), &pet, NULL);
 
 	if (int_ret != ZCBOR_SUCCESS) {
-		printk("Decode error: %d\r\n", int_ret);
+		printf("Decode error: %d\r\n", int_ret);
 		return 1;
 	}
 
-	printk("Success!\r\n");
+	printf("Success!\r\n");
 
 	return 0;
 }

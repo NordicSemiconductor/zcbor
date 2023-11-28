@@ -74,7 +74,7 @@ bool zcbor_process_backup(zcbor_state_t *state, uint32_t flags,
 	}
 
 	if (local_copy.elem_count > max_elem_count) {
-		zcbor_log("elem_count: %" PRIuFAST32 " (expected max %" PRIuFAST32 ")\r\n",
+		zcbor_log("elem_count: %zu (expected max %zu)\r\n",
 			local_copy.elem_count, max_elem_count);
 		ZCBOR_ERR(ZCBOR_ERR_HIGH_ELEM_COUNT);
 	}
