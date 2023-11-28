@@ -177,7 +177,7 @@ ZTEST(zcbor_unit_tests, test_size64)
 #else
 ZTEST(zcbor_unit_tests, test_size64)
 {
-	printk("Skip on non-64-bit builds.\n");
+	printf("Skip on non-64-bit builds.\n");
 }
 #endif
 
@@ -662,7 +662,7 @@ ZTEST(zcbor_unit_tests, test_bstr_cbor_fragments)
 ZTEST(zcbor_unit_tests, test_canonical_list)
 {
 #ifndef ZCBOR_CANONICAL
-	printk("Skip on non-canonical builds.\n");
+	printf("Skip on non-canonical builds.\n");
 #else
 	uint8_t payload1[100];
 	uint8_t payload2[100];

@@ -46,7 +46,7 @@ static bool encode_header_byte(zcbor_state_t *state,
 	ZCBOR_CHECK_ERROR();
 	ZCBOR_CHECK_PAYLOAD();
 
-	zcbor_assert_state(additional < 32, NULL);
+	zcbor_assert_state(additional < 32, "Unsupported additional value: %d\r\n", additional);
 
 	*(state->payload_mut++) = (uint8_t)((major_type << 5) | (additional & 0x1F));
 	return true;
@@ -141,7 +141,7 @@ bool zcbor_int_encode(zcbor_state_t *state, const void *input_int, size_t int_si
 bool zcbor_uint_encode(zcbor_state_t *state, const void *input_uint, size_t uint_size)
 {
 	if (!value_encode(state, ZCBOR_MAJOR_TYPE_PINT, input_uint, uint_size)) {
-		zcbor_log("uint with size %d failed.\r\n", uint_size);
+		zcbor_log("uint with size %zu failed.\r\n", uint_size);
 		ZCBOR_FAIL();
 	}
 	return true;
@@ -390,7 +390,7 @@ static bool list_map_end_encode(zcbor_state_t *state, size_t max_num,
 		ZCBOR_FAIL();
 	}
 
-	zcbor_log("list_count: %" PRIuFAST32 "\r\n", list_count);
+	zcbor_log("list_count: %zu\r\n", list_count);
 
 
 	/** If max_num is smaller than the actual number of encoded elements,
@@ -597,7 +597,7 @@ bool zcbor_multi_encode(const size_t num_encode, zcbor_encoder_t encoder,
 			ZCBOR_FAIL();
 		}
 	}
-	zcbor_log("Encoded %" PRIuFAST32 " elements.\n", num_encode);
+	zcbor_log("Encoded %zu elements.\n", num_encode);
 	return true;
 }
 

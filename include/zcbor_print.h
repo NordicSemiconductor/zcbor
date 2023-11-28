@@ -13,8 +13,8 @@ extern "C" {
 #endif
 
 #ifndef ZCBOR_PRINT_FUNC
-#include <zephyr/sys/printk.h>
-#define zcbor_do_print(...) printk(__VA_ARGS__)
+#include <stdio.h>
+#define zcbor_do_print(...) printf(__VA_ARGS__)
 #else
 #define zcbor_do_print(...) ZCBOR_PRINT_FUNC(__VA_ARGS__)
 #endif
