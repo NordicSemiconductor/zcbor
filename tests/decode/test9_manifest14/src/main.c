@@ -10,7 +10,6 @@
 #else
 	#include "manifest14_decode.h"
 #endif
-#include "zcbor_debug.h" // Enables use of print functions when debugging tests.
 #include <example0.h>
 
 

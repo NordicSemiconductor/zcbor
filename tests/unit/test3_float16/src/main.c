@@ -18,7 +18,6 @@ ZTEST(zcbor_unit_tests3, test_skip)
 #include <zephyr/ztest.h>
 #include "zcbor_decode.h"
 #include "zcbor_encode.h"
-#include "zcbor_debug.h"
 
 #include <math.h>
 

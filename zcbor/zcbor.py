@@ -2664,6 +2664,7 @@ static bool {xcoder.func_name}(
 #include <string.h>
 #include "zcbor_{mode}.h"
 #include "{header_file_name}"
+#include "zcbor_print.h"
 
 #if DEFAULT_MAX_QTY != {self.default_max_qty}
 #error "The type file was generated with a different default_max_qty than this file"
@@ -3101,7 +3102,7 @@ def process_code(args):
         copyfile(Path(h_code_dir, "zcbor_encode.h"), Path(new_h_code_dir, "zcbor_encode.h"))
         copyfile(Path(h_code_dir, "zcbor_common.h"), Path(new_h_code_dir, "zcbor_common.h"))
         copyfile(Path(h_code_dir, "zcbor_tags.h"), Path(new_h_code_dir, "zcbor_tags.h"))
-        copyfile(Path(h_code_dir, "zcbor_debug.h"), Path(new_h_code_dir, "zcbor_debug.h"))
+        copyfile(Path(h_code_dir, "zcbor_print.h"), Path(new_h_code_dir, "zcbor_print.h"))
         c_code_dir = new_c_code_dir
         h_code_dir = new_h_code_dir
 

@@ -7,7 +7,6 @@
 #include <zephyr/ztest.h>
 #include <pet_encode.h>
 #include <zcbor_encode.h>
-#include <zcbor_debug.h> // Enables use of print functions when debugging tests.
 
 
 #define CONCAT_BYTE(a,b) a ## b
