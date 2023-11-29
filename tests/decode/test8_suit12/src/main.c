@@ -7,7 +7,6 @@
 
 #include <zephyr/ztest.h>
 #include "manifest12_decode.h"
-#include "zcbor_debug.h" // Enables use of print functions when debugging tests.
 
 /* Test vector discovered via fuzzing with AFL. */
 uint8_t crash_vector0[] = {

@@ -14,6 +14,7 @@
 #include <string.h>
 #include "zcbor_encode.h"
 #include "pet_encode.h"
+#include "zcbor_print.h"
 
 #if DEFAULT_MAX_QTY != 3
 #error "The type file was generated with a different default_max_qty than this file"

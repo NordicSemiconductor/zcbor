@@ -40,46 +40,6 @@ struct zcbor_string_fragment {
 /** Size to use in struct zcbor_string_fragment when the real size is unknown. */
 #define ZCBOR_STRING_FRAGMENT_UNKNOWN_LENGTH SIZE_MAX
 
-#ifdef ZCBOR_VERBOSE
-#include <zephyr/sys/printk.h>
-#define zcbor_trace() (printk("bytes left: %zu, byte: 0x%x, elem_count: 0x%x, err: %d, %s:%d\n",\
-	(size_t)state->payload_end - (size_t)state->payload, *state->payload, state->elem_count, \
-	state->constant_state ? state->constant_state->error : 0, __FILE__, __LINE__))
-
-#define zcbor_print_assert(expr, ...) \
-do { \
-	printk("ASSERTION \n  \"" #expr \
-		"\"\nfailed at %s:%d with message:\n  ", \
-		__FILE__, __LINE__); \
-	printk(__VA_ARGS__);\
-} while(0)
-#define zcbor_print(...) printk(__VA_ARGS__)
-#else
-#define zcbor_trace() ((void)state)
-#define zcbor_print_assert(...)
-#define zcbor_print(...)
-#endif
-
-#ifdef ZCBOR_ASSERTS
-#define zcbor_assert(expr, ...) \
-do { \
-	if (!(expr)) { \
-		zcbor_print_assert(expr, __VA_ARGS__); \
-		ZCBOR_FAIL(); \
-	} \
-} while(0)
-#define zcbor_assert_state(expr, ...) \
-do { \
-	if (!(expr)) { \
-		zcbor_print_assert(expr, __VA_ARGS__); \
-		ZCBOR_ERR(ZCBOR_ERR_ASSERTION); \
-	} \
-} while(0)
-#else
-#define zcbor_assert(expr, ...)
-#define zcbor_assert_state(expr, ...)
-#endif
-
 #ifndef MIN
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #endif

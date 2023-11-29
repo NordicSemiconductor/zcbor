@@ -6,7 +6,7 @@
 
 #include <zephyr/ztest.h>
 #include "manifest2_decode.h"
-#include "zcbor_debug.h" // Enables use of print functions when debugging tests.
+#include "zcbor_print.h"
 
 
 /* draft-ietf-suit-manifest-02 Example 0 */

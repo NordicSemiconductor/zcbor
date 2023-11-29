@@ -10,6 +10,7 @@
 #include <string.h>
 #include "zcbor_decode.h"
 #include "zcbor_common.h"
+#include "zcbor_print.h"
 
 
 /** Return value length from additional value.

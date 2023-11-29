@@ -6,7 +6,6 @@
 
 #include <zephyr/ztest.h>
 #include "senml_encode.h"
-#include "zcbor_debug.h" // Enables use of print functions when debugging tests.
 
 
 

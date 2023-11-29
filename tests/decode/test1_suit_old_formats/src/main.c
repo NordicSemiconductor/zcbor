@@ -7,7 +7,6 @@
 #include <zephyr/ztest.h>
 #include "manifest-moran3_decode.h"
 #include "manifest-moran4_decode.h"
-#include "zcbor_debug.h" // Enables use of print functions when debugging tests.
 
 
 uint8_t test_vector2[] = {
