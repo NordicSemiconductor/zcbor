@@ -11,14 +11,14 @@ runs:
       shell: sh
       run: |
         pip3 install -U pip
-        pip3 install -U setuptools
+        pip3 install -U build
         pip3 install -U -r scripts/requirements.txt
 
     - name: Install zcbor package
       if: ${{ inputs.zcbor_package == 'bdist_wheel' }}
       shell: sh
       run: |
-        python3 setup.py sdist bdist_wheel
+        python3 -m build
         pip3 install dist/zcbor-*.tar.gz
         pip3 uninstall -y zcbor
         pip3 install dist/zcbor-*.whl
@@ -27,10 +27,10 @@ runs:
       if: ${{ inputs.zcbor_package == 'setup_install' }}
       shell: sh
       run: |
-        python3 setup.py install
+        pip3 install .
 
     - name: Install zcbor package
       if: ${{ inputs.zcbor_package == 'setup_develop' }}
       shell: sh
       run: |
-        python3 setup.py develop
+        pip3 install -e .

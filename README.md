@@ -443,8 +443,8 @@ options:
   -c CDDL, --cddl CDDL  Path to one or more input CDDL file(s). Passing
                         multiple files is equivalent to concatenating them.
   --no-prelude          Exclude the standard CDDL prelude from the build. The
-                        prelude can be viewed at zcbor/cddl/prelude.cddl in
-                        the repo, or together with the script.
+                        prelude can be viewed at zcbor/prelude.cddl in the
+                        repo, or together with the script.
   -v, --verbose         Print more information while parsing CDDL and
                         generating code.
   --default-max-qty DEFAULT_MAX_QTY, --dq DEFAULT_MAX_QTY
@@ -540,8 +540,8 @@ options:
   -c CDDL, --cddl CDDL  Path to one or more input CDDL file(s). Passing
                         multiple files is equivalent to concatenating them.
   --no-prelude          Exclude the standard CDDL prelude from the build. The
-                        prelude can be viewed at zcbor/cddl/prelude.cddl in
-                        the repo, or together with the script.
+                        prelude can be viewed at zcbor/prelude.cddl in the
+                        repo, or together with the script.
   -v, --verbose         Print more information while parsing CDDL and
                         generating code.
   -i INPUT, --input INPUT
@@ -593,8 +593,8 @@ options:
   -c CDDL, --cddl CDDL  Path to one or more input CDDL file(s). Passing
                         multiple files is equivalent to concatenating them.
   --no-prelude          Exclude the standard CDDL prelude from the build. The
-                        prelude can be viewed at zcbor/cddl/prelude.cddl in
-                        the repo, or together with the script.
+                        prelude can be viewed at zcbor/prelude.cddl in the
+                        repo, or together with the script.
   -v, --verbose         Print more information while parsing CDDL and
                         generating code.
   -i INPUT, --input INPUT
