@@ -10,7 +10,7 @@ from re import sub, S
 from pathlib import Path
 from sys import argv
 
-p_root = Path(__file__).absolute().parents[0]
+p_root = Path(__file__).absolute().parents[1]
 p_README = Path(p_root, 'README.md')
 
 pattern = r"""

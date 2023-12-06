@@ -25,10 +25,9 @@ p_tests = p_root / 'tests'
 p_readme = p_root / "README.md"
 p_architecture = p_root / "ARCHITECTURE.md"
 p_release_notes = p_root / "RELEASE_NOTES.md"
-p_init_py = p_root / 'zcbor' / '__init__.py'
+p_init_py = p_root / '__init__.py'
 p_zcbor_py = p_root / 'zcbor' / 'zcbor.py'
-p_setup_py = p_root / 'setup.py'
-p_add_helptext = p_root / 'add_helptext.py'
+p_add_helptext = p_root / 'scripts' / 'add_helptext.py'
 p_test_zcbor_py = p_tests / 'scripts' / 'test_zcbor.py'
 p_test_versions_py = p_tests / 'scripts' / 'test_versions.py'
 p_test_repo_files_py = p_tests / 'scripts' / 'test_repo_files.py'
@@ -51,7 +50,7 @@ class TestCodestyle(TestCase):
 
     def test_codestyle(self):
         """Run codestyle tests on all Python scripts in the repo."""
-        self.do_codestyle([p_init_py, p_setup_py, p_test_versions_py, p_test_repo_files_py])
+        self.do_codestyle([p_init_py, p_test_versions_py, p_test_repo_files_py, p_add_helptext])
         self.do_codestyle([p_zcbor_py], ignore=['W191', 'E101', 'W503'])
         self.do_codestyle([p_test_zcbor_py], ignore=['E402', 'E501', 'W503'])
 

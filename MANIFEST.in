@@ -1,1 +1,0 @@
-include LICENSE README.md scripts/requirements-base.txt zcbor/VERSION

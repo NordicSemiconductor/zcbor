@@ -22,7 +22,7 @@ try:
 except ImportError:
     print("""
 The zcbor package must be installed to run these tests.
-During development, install with `python3 setup.py develop` to install in a way
+During development, install with `pip3 install -e .` to install in a way
 that picks up changes in the files without having to reinstall.
 """)
     exit(1)
@@ -48,7 +48,7 @@ p_map_bstr_yaml = Path(p_tests, 'cases', 'map_bstr.yaml')
 p_yaml_compat_cddl = Path(p_tests, 'cases', 'yaml_compatibility.cddl')
 p_yaml_compat_yaml = Path(p_tests, 'cases', 'yaml_compatibility.yaml')
 p_README = Path(p_root, 'README.md')
-p_prelude = Path(p_root, 'zcbor', 'cddl', 'prelude.cddl')
+p_prelude = Path(p_root, 'zcbor', 'prelude.cddl')
 
 
 class TestManifest(TestCase):

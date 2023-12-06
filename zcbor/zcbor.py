@@ -25,18 +25,20 @@ from shutil import copyfile
 import sys
 from site import USER_BASE
 from textwrap import wrap, indent
-
+from importlib.metadata import version
 
 regex_cache = {}
 indentation = "\t"
 newl_ind = "\n" + indentation
 
-P_SCRIPT = Path(__file__).absolute().parent
-P_REPO_ROOT = Path(__file__).absolute().parents[1]
-VERSION_path = Path(P_SCRIPT, "VERSION")
-PRELUDE_path = Path(P_SCRIPT, "cddl", "prelude.cddl")
+SCRIPT_PATH = Path(__file__).absolute().parent
+PACKAGE_PATH = Path(__file__).absolute().parents[1]
+PRELUDE_PATH = SCRIPT_PATH / "prelude.cddl"
+VERSION_PATH = SCRIPT_PATH / "VERSION"
+C_SRC_PATH = PACKAGE_PATH / "src"
+C_INCLUDE_PATH = PACKAGE_PATH / "include"
 
-__version__ = VERSION_path.read_text(encoding="utf-8").strip()
+__version__ = VERSION_PATH.read_text(encoding="utf-8").strip()
 
 UINT8_MAX = 0xFF
 UINT16_MAX = 0xFFFF
@@ -59,35 +61,6 @@ def getrp(pattern, flags=0):
     if pattern_key not in regex_cache:
         regex_cache[pattern_key] = compile(pattern, flags)
     return regex_cache[pattern_key]
-
-
-def is_relative_to(path1, path2):
-    try:
-        path1.relative_to(path2)
-    except ValueError:
-        return False
-    return True
-
-
-# The root of the non-generated c code (<c_code_root>/src and <c_code_root>/include)
-if Path(__file__).name in sys.argv[0]:
-    # Running the script directly in the repo.
-    c_code_root = P_REPO_ROOT
-elif any((getrp(r"zcbor-.*\.egg").match(p) for p in P_SCRIPT.parts)):
-    # Installed via setup.py install
-    c_code_root = Path(P_SCRIPT.parent, "lib", "zcbor")
-elif is_relative_to(P_SCRIPT, (Path(sys.prefix, "local"))):
-    # Installed via pip as root.
-    c_code_root = Path(sys.prefix, "local", "lib", "zcbor")
-elif is_relative_to(P_SCRIPT, (Path(sys.prefix))):
-    # Installed via pip as root.
-    c_code_root = Path(sys.prefix, "lib", "zcbor")
-elif is_relative_to(P_SCRIPT, (Path(USER_BASE))):
-    # Installed via pip as user.
-    c_code_root = Path(USER_BASE, "lib", "zcbor")
-else:
-    # Don't know where the C code is. Assume we are in the repo.
-    c_code_root = P_REPO_ROOT
 
 
 # Size of "additional" field if num is encoded as int
@@ -2852,7 +2825,7 @@ concatenating them.""")
     parent_parser.add_argument(
         "--no-prelude", required=False, action="store_true", default=False,
         help=f"""Exclude the standard CDDL prelude from the build. The prelude can be viewed at
-{PRELUDE_path.relative_to(P_REPO_ROOT)} in the repo, or together with the script.""")
+{PRELUDE_PATH.relative_to(PACKAGE_PATH)} in the repo, or together with the script.""")
     parent_parser.add_argument(
         "-v", "--verbose", required=False, action="store_true", default=False,
         help="Print more information while parsing CDDL and generating code.")
@@ -3027,7 +3000,7 @@ entire declaration is a single line.''')
     args = parser.parse_args()
 
     if not args.no_prelude:
-        args.cddl.append(open(PRELUDE_path, 'r', encoding="utf-8"))
+        args.cddl.append(open(PRELUDE_PATH, 'r', encoding="utf-8"))
 
     if hasattr(args, "decode") and not args.decode and not args.encode:
         parser.error("Please specify at least one of --decode or --encode.")
@@ -3069,7 +3042,7 @@ def process_code(args):
         if "zcbor.py" in sys.argv[0]:
             git_args = ['git', 'rev-parse', '--verify', '--short', 'HEAD']
             git_sha = Popen(
-                git_args, cwd=P_REPO_ROOT, stdout=PIPE).communicate()[0].decode('utf-8').strip()
+                git_args, cwd=PACKAGE_PATH, stdout=PIPE).communicate()[0].decode('utf-8').strip()
         else:
             git_sha = __version__
 
@@ -3115,8 +3088,8 @@ def process_code(args):
                             file_header=args.file_header
                             )
 
-    c_code_dir = Path(c_code_root, "src")
-    h_code_dir = Path(c_code_root, "include")
+    c_code_dir = C_SRC_PATH
+    h_code_dir = C_INCLUDE_PATH
 
     if args.copy_sources:
         new_c_code_dir = out_c_parent
