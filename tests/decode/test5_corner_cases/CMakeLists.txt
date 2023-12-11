@@ -53,6 +53,7 @@ set(py_command
     Intmax2
     InvalidIdentifiers
     Uint64List
+    BstrSize
   --decode
   --git-sha-header
   --short-names

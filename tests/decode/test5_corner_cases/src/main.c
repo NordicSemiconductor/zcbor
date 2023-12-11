@@ -2103,4 +2103,24 @@ ZTEST(cbor_decode_test5, test_uint64_list)
 }
 
 
+ZTEST(cbor_decode_test5, test_bstr_size)
+{
+	uint8_t bstr_size_payload1[] = {MAP(1),
+		0x61, 's',
+		0x4c, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55,
+		0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb,
+		END
+	};
+
+	struct BstrSize result;
+	size_t num_decode;
+
+	zassert_equal(ZCBOR_SUCCESS, cbor_decode_BstrSize(bstr_size_payload1,
+		sizeof(bstr_size_payload1), &result, &num_decode), NULL);
+	zassert_equal(sizeof(bstr_size_payload1), num_decode, NULL);
+
+	zassert_equal(12, result.bstr12_m.s.len, NULL);
+}
+
+
 ZTEST_SUITE(cbor_decode_test5, NULL, NULL, NULL, NULL, NULL);
