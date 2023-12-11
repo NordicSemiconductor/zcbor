@@ -254,3 +254,8 @@ Uint64List = [
 	? uint64_lit: 0x0123456789abcdef,
 	* nint64_lit: -0x0123456789abcdef,
 ]
+
+BstrSize = {
+    bstr12,
+}
+bstr12 = ("s" : bstr .size 12)

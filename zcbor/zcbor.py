@@ -2389,7 +2389,8 @@ class CodeGenerator(CddlXcoder):
             if self.max_size is not None:
                 range_checks.append(f"({access}.len <= {self.max_size})")
         elif self.type == "OTHER":
-            range_checks.extend(self.my_types[self.value].range_checks(access))
+            if not self.my_types[self.value].single_func_impl_condition():
+                range_checks.extend(self.my_types[self.value].range_checks(access))
 
         if range_checks:
             range_checks[0] = "((" + range_checks[0]
