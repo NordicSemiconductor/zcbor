@@ -997,10 +997,17 @@ ZTEST(zcbor_unit_tests, test_error_str)
 	test_str(ZCBOR_ERR_WRONG_RANGE);
 	test_str(ZCBOR_ERR_ITERATIONS);
 	test_str(ZCBOR_ERR_ASSERTION);
+	test_str(ZCBOR_ERR_PAYLOAD_OUTDATED);
+	test_str(ZCBOR_ERR_ELEM_NOT_FOUND);
+	test_str(ZCBOR_ERR_MAP_MISALIGNED);
+	test_str(ZCBOR_ERR_ELEMS_NOT_PROCESSED);
+	test_str(ZCBOR_ERR_NOT_AT_END);
+	test_str(ZCBOR_ERR_MAP_FLAGS_NOT_AVAILABLE);
+	test_str(ZCBOR_ERR_INVALID_VALUE_ENCODING);
 	test_str(ZCBOR_ERR_UNKNOWN);
 	zassert_mem_equal(zcbor_error_str(-1), "ZCBOR_ERR_UNKNOWN", sizeof("ZCBOR_ERR_UNKNOWN"), NULL);
 	zassert_mem_equal(zcbor_error_str(-10), "ZCBOR_ERR_UNKNOWN", sizeof("ZCBOR_ERR_UNKNOWN"), NULL);
-	zassert_mem_equal(zcbor_error_str(ZCBOR_ERR_ASSERTION + 1), "ZCBOR_ERR_UNKNOWN", sizeof("ZCBOR_ERR_UNKNOWN"), NULL);
+	zassert_mem_equal(zcbor_error_str(ZCBOR_ERR_INVALID_VALUE_ENCODING + 1), "ZCBOR_ERR_UNKNOWN", sizeof("ZCBOR_ERR_UNKNOWN"), NULL);
 	zassert_mem_equal(zcbor_error_str(100000), "ZCBOR_ERR_UNKNOWN", sizeof("ZCBOR_ERR_UNKNOWN"), NULL);
 }
 
