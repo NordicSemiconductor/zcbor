@@ -8,26 +8,10 @@
 #include <pet_encode.h>
 #include <zcbor_encode.h>
 
-
-#define CONCAT_BYTE(a,b) a ## b
-
-/* LIST() adds a start byte for a list with 'num' elements.
- * MAP() does the same, but for a map.
- * END adds an end byte for the list/map.
- *
- * With ZCBOR_CANONICAL, the start byte contains the list, so no end byte is
- * needed. Without ZCBOR_CANONICAL, the start byte is the same no matter
- * the number of elements, so it needs an explicit end byte.
- */
 #ifndef ZCBOR_CANONICAL
-#define LIST(num) 0x9F
-#define MAP(num) 0xBF
-#define END 0xFF,
-#else
-#define LIST(num) CONCAT_BYTE(0x8, num)
-#define MAP(num) CONCAT_BYTE(0xA, num)
-#define END
+#define TEST_INDEFINITE_LENGTH_ARRAYS
 #endif
+#include <common_test.h>
 
 
 /* This test uses generated code to encode a 'Pet' instance. It populates the
