@@ -3,6 +3,7 @@ FILE(GLOB app_sources_cpp src/*.cpp)
 target_sources(app PRIVATE
   ${app_sources} ${app_sources_cpp}
   )
+target_include_directories(app PRIVATE ${CMAKE_CURRENT_LIST_DIR}/../include)
 
 if (VERBOSE)
   zephyr_compile_definitions(ZCBOR_VERBOSE)

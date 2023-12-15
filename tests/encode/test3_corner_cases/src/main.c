@@ -7,17 +7,10 @@
 #include <zephyr/ztest.h>
 #include "corner_cases_encode.h"
 
-#define CONCAT_BYTE(a,b) a ## b
-
 #ifndef ZCBOR_CANONICAL
-#define LIST(num) 0x9F
-#define MAP(num) 0xBF
-#define END 0xFF,
-#else
-#define LIST(num) CONCAT_BYTE(0x8, num)
-#define MAP(num) CONCAT_BYTE(0xA, num)
-#define END
+#define TEST_INDEFINITE_LENGTH_ARRAYS
 #endif
+#include <common_test.h>
 
 
 ZTEST(cbor_encode_test3, test_numbers)
@@ -1007,7 +1000,7 @@ ZTEST(cbor_encode_test3, test_value_range)
 
 	zassert_equal(ZCBOR_SUCCESS, cbor_encode_ValueRange(output, sizeof(output), &input1,
 				&out_len), NULL);
-	zassert_equal(sizeof(exp_payload_value_range1), out_len, NULL);
+	zassert_equal(sizeof(exp_payload_value_range1), out_len, "%d != %d\n", sizeof(exp_payload_value_range1), out_len);
 	zassert_mem_equal(exp_payload_value_range1, output, sizeof(exp_payload_value_range1), NULL);
 
 	zassert_equal(ZCBOR_SUCCESS, cbor_encode_ValueRange(output, sizeof(output), &input2,
