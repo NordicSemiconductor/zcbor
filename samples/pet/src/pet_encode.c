@@ -37,8 +37,12 @@ static bool encode_Pet(
 	: (((*input).species_choice == Pet_species_other_c) ? ((zcbor_uint32_put(state, (3))))
 	: false))))) || (zcbor_list_map_end_force_encode(state), false)) && zcbor_list_end_encode(state, 3))));
 
-	if (!tmp_result)
+	if (!tmp_result) {
 		zcbor_trace_file(state);
+		zcbor_log("%s error: %s\r\n", __func__, zcbor_error_str(zcbor_peek_error(state)));
+	} else {
+		zcbor_log("%s success\r\n", __func__);
+	}
 
 	return tmp_result;
 }
