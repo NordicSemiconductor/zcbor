@@ -2631,7 +2631,7 @@ static bool {xcoder.func_name}(
 	bool tmp_result = ({ body });
 
 	if (!tmp_result)
-		zcbor_trace();
+		zcbor_trace_file(state);
 
 	return tmp_result;
 }}""".replace("	\n", "")  # call replace() to remove empty lines.

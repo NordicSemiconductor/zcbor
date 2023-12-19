@@ -88,6 +88,8 @@ do { \
 	ZCBOR_FAIL(); \
 } while(0)
 
+#define PRINT_FUNC() zcbor_log("%s ", __func__);
+
 
 static void endian_copy(uint8_t *dst, const uint8_t *src, size_t src_len)
 {
@@ -122,7 +124,7 @@ static void endian_copy(uint8_t *dst, const uint8_t *src, size_t src_len)
 static bool value_extract(zcbor_state_t *state,
 		void *const result, size_t result_len)
 {
-	zcbor_trace();
+	zcbor_trace(state, "value_extract");
 	zcbor_assert_state(result_len != 0, "0-length result not supported.\r\n");
 	zcbor_assert_state(result_len <= 8, "result sizes above 8 bytes not supported.\r\n");
 	zcbor_assert_state(result != NULL, "result cannot be NULL.\r\n");
@@ -161,6 +163,7 @@ static bool value_extract(zcbor_state_t *state,
 
 bool zcbor_int_decode(zcbor_state_t *state, void *result, size_t result_size)
 {
+	PRINT_FUNC();
 	INITIAL_CHECKS();
 	zcbor_major_type_t major_type = ZCBOR_MAJOR_TYPE(*state->payload);
 	uint8_t *result_uint8 = (uint8_t *)result;
@@ -198,18 +201,21 @@ bool zcbor_int_decode(zcbor_state_t *state, void *result, size_t result_size)
 
 bool zcbor_int32_decode(zcbor_state_t *state, int32_t *result)
 {
+	PRINT_FUNC();
 	return zcbor_int_decode(state, result, sizeof(*result));
 }
 
 
 bool zcbor_int64_decode(zcbor_state_t *state, int64_t *result)
 {
+	PRINT_FUNC();
 	return zcbor_int_decode(state, result, sizeof(*result));
 }
 
 
 bool zcbor_uint_decode(zcbor_state_t *state, void *result, size_t result_size)
 {
+	PRINT_FUNC();
 	INITIAL_CHECKS_WITH_TYPE(ZCBOR_MAJOR_TYPE_PINT);
 
 	if (!value_extract(state, result, result_size)) {
@@ -222,12 +228,14 @@ bool zcbor_uint_decode(zcbor_state_t *state, void *result, size_t result_size)
 
 bool zcbor_uint32_decode(zcbor_state_t *state, uint32_t *result)
 {
+	PRINT_FUNC();
 	return zcbor_uint_decode(state, result, sizeof(*result));
 }
 
 
 bool zcbor_int32_expect_union(zcbor_state_t *state, int32_t result)
 {
+	PRINT_FUNC();
 	if (!zcbor_union_elem_code(state)) {
 		ZCBOR_FAIL();
 	}
@@ -237,6 +245,7 @@ bool zcbor_int32_expect_union(zcbor_state_t *state, int32_t result)
 
 bool zcbor_int64_expect_union(zcbor_state_t *state, int64_t result)
 {
+	PRINT_FUNC();
 	if (!zcbor_union_elem_code(state)) {
 		ZCBOR_FAIL();
 	}
@@ -246,6 +255,7 @@ bool zcbor_int64_expect_union(zcbor_state_t *state, int64_t result)
 
 bool zcbor_uint32_expect_union(zcbor_state_t *state, uint32_t result)
 {
+	PRINT_FUNC();
 	if (!zcbor_union_elem_code(state)) {
 		ZCBOR_FAIL();
 	}
@@ -255,6 +265,7 @@ bool zcbor_uint32_expect_union(zcbor_state_t *state, uint32_t result)
 
 bool zcbor_uint64_expect_union(zcbor_state_t *state, uint64_t result)
 {
+	PRINT_FUNC();
 	if (!zcbor_union_elem_code(state)) {
 		ZCBOR_FAIL();
 	}
@@ -264,18 +275,21 @@ bool zcbor_uint64_expect_union(zcbor_state_t *state, uint64_t result)
 
 bool zcbor_int32_expect(zcbor_state_t *state, int32_t expected)
 {
+	PRINT_FUNC();
 	return zcbor_int64_expect(state, expected);
 }
 
 
 bool zcbor_int32_pexpect(zcbor_state_t *state, int32_t *expected)
 {
+	PRINT_FUNC();
 	return zcbor_int32_expect(state, *expected);
 }
 
 
 bool zcbor_int64_expect(zcbor_state_t *state, int64_t expected)
 {
+	PRINT_FUNC();
 	int64_t actual;
 
 	if (!zcbor_int64_decode(state, &actual)) {
@@ -292,12 +306,14 @@ bool zcbor_int64_expect(zcbor_state_t *state, int64_t expected)
 
 bool zcbor_int64_pexpect(zcbor_state_t *state, int64_t *expected)
 {
+	PRINT_FUNC();
 	return zcbor_int64_expect(state, *expected);
 }
 
 
 bool zcbor_uint64_decode(zcbor_state_t *state, uint64_t *result)
 {
+	PRINT_FUNC();
 	return zcbor_uint_decode(state, result, sizeof(*result));
 }
 
@@ -305,6 +321,7 @@ bool zcbor_uint64_decode(zcbor_state_t *state, uint64_t *result)
 #ifdef ZCBOR_SUPPORTS_SIZE_T
 bool zcbor_size_decode(zcbor_state_t *state, size_t *result)
 {
+	PRINT_FUNC();
 	return zcbor_uint_decode(state, result, sizeof(*result));
 }
 #endif
@@ -312,18 +329,21 @@ bool zcbor_size_decode(zcbor_state_t *state, size_t *result)
 
 bool zcbor_uint32_expect(zcbor_state_t *state, uint32_t expected)
 {
+	PRINT_FUNC();
 	return zcbor_uint64_expect(state, expected);
 }
 
 
 bool zcbor_uint32_pexpect(zcbor_state_t *state, uint32_t *expected)
 {
+	PRINT_FUNC();
 	return zcbor_uint32_expect(state, *expected);
 }
 
 
 bool zcbor_uint64_expect(zcbor_state_t *state, uint64_t expected)
 {
+	PRINT_FUNC();
 	uint64_t actual;
 
 	if (!zcbor_uint64_decode(state, &actual)) {
@@ -339,6 +359,7 @@ bool zcbor_uint64_expect(zcbor_state_t *state, uint64_t expected)
 
 bool zcbor_uint64_pexpect(zcbor_state_t *state, uint64_t *expected)
 {
+	PRINT_FUNC();
 	return zcbor_uint64_expect(state, *expected);
 }
 
@@ -346,12 +367,14 @@ bool zcbor_uint64_pexpect(zcbor_state_t *state, uint64_t *expected)
 #ifdef ZCBOR_SUPPORTS_SIZE_T
 bool zcbor_size_expect(zcbor_state_t *state, size_t expected)
 {
+	PRINT_FUNC();
 	return zcbor_uint64_expect(state, expected);
 }
 
 
 bool zcbor_size_pexpect(zcbor_state_t *state, size_t *expected)
 {
+	PRINT_FUNC();
 	return zcbor_size_expect(state, *expected);
 }
 #endif
@@ -394,6 +417,7 @@ static bool str_start_decode_with_overflow_check(zcbor_state_t *state,
 
 bool zcbor_bstr_start_decode(zcbor_state_t *state, struct zcbor_string *result)
 {
+	PRINT_FUNC();
 	struct zcbor_string dummy;
 	if (result == NULL) {
 		result = &dummy;
@@ -438,6 +462,7 @@ static bool start_decode_fragment(zcbor_state_t *state,
 	struct zcbor_string_fragment *result,
 	zcbor_major_type_t exp_major_type)
 {
+	PRINT_FUNC();
 	if(!str_start_decode(state, &result->fragment, exp_major_type)) {
 		ZCBOR_FAIL();
 	}
@@ -453,6 +478,7 @@ static bool start_decode_fragment(zcbor_state_t *state,
 bool zcbor_bstr_start_decode_fragment(zcbor_state_t *state,
 	struct zcbor_string_fragment *result)
 {
+	PRINT_FUNC();
 	if (!start_decode_fragment(state, result, ZCBOR_MAJOR_TYPE_BSTR)) {
 		ZCBOR_FAIL();
 	}
@@ -541,42 +567,49 @@ static bool str_expect(zcbor_state_t *state, struct zcbor_string *result,
 
 bool zcbor_bstr_decode(zcbor_state_t *state, struct zcbor_string *result)
 {
+	PRINT_FUNC();
 	return str_decode(state, result, ZCBOR_MAJOR_TYPE_BSTR);
 }
 
 
 bool zcbor_bstr_decode_fragment(zcbor_state_t *state, struct zcbor_string_fragment *result)
 {
+	PRINT_FUNC();
 	return str_decode_fragment(state, result, ZCBOR_MAJOR_TYPE_BSTR);
 }
 
 
 bool zcbor_bstr_expect(zcbor_state_t *state, struct zcbor_string *expected)
 {
+	PRINT_FUNC();
 	return str_expect(state, expected, ZCBOR_MAJOR_TYPE_BSTR);
 }
 
 
 bool zcbor_tstr_decode(zcbor_state_t *state, struct zcbor_string *result)
 {
+	PRINT_FUNC();
 	return str_decode(state, result, ZCBOR_MAJOR_TYPE_TSTR);
 }
 
 
 bool zcbor_tstr_decode_fragment(zcbor_state_t *state, struct zcbor_string_fragment *result)
 {
+	PRINT_FUNC();
 	return str_decode_fragment(state, result, ZCBOR_MAJOR_TYPE_TSTR);
 }
 
 
 bool zcbor_tstr_expect(zcbor_state_t *state, struct zcbor_string *expected)
 {
+	PRINT_FUNC();
 	return str_expect(state, expected, ZCBOR_MAJOR_TYPE_TSTR);
 }
 
 
 bool zcbor_bstr_expect_ptr(zcbor_state_t *state, char const *ptr, size_t len)
 {
+	PRINT_FUNC();
 	struct zcbor_string zs = { .value = (const uint8_t *)ptr, .len = len };
 
 	return zcbor_bstr_expect(state, &zs);
@@ -585,6 +618,7 @@ bool zcbor_bstr_expect_ptr(zcbor_state_t *state, char const *ptr, size_t len)
 
 bool zcbor_tstr_expect_ptr(zcbor_state_t *state, char const *ptr, size_t len)
 {
+	PRINT_FUNC();
 	struct zcbor_string zs = { .value = (const uint8_t *)ptr, .len = len };
 
 	return zcbor_tstr_expect(state, &zs);
@@ -593,12 +627,14 @@ bool zcbor_tstr_expect_ptr(zcbor_state_t *state, char const *ptr, size_t len)
 
 bool zcbor_bstr_expect_term(zcbor_state_t *state, char const *string, size_t maxlen)
 {
+	PRINT_FUNC();
 	return zcbor_bstr_expect_ptr(state, string, strnlen(string, maxlen));
 }
 
 
 bool zcbor_tstr_expect_term(zcbor_state_t *state, char const *string, size_t maxlen)
 {
+	PRINT_FUNC();
 	return zcbor_tstr_expect_ptr(state, string, strnlen(string, maxlen));
 }
 
@@ -639,12 +675,14 @@ static bool list_map_start_decode(zcbor_state_t *state,
 
 bool zcbor_list_start_decode(zcbor_state_t *state)
 {
+	PRINT_FUNC();
 	return list_map_start_decode(state, ZCBOR_MAJOR_TYPE_LIST);
 }
 
 
 bool zcbor_map_start_decode(zcbor_state_t *state)
 {
+	PRINT_FUNC();
 	bool ret = list_map_start_decode(state, ZCBOR_MAJOR_TYPE_MAP);
 
 	if (ret && !state->decode_state.indefinite_length_array) {
@@ -680,6 +718,7 @@ static bool allocate_map_flags(zcbor_state_t *state, size_t elem_count);
 
 bool zcbor_unordered_map_start_decode(zcbor_state_t *state)
 {
+	PRINT_FUNC();
 	ZCBOR_FAIL_IF(!zcbor_map_start_decode(state));
 
 #ifdef ZCBOR_MAP_SMART_SEARCH
@@ -846,6 +885,7 @@ static bool try_key(zcbor_state_t *state, void *key_result, zcbor_decoder_t key_
 
 bool zcbor_unordered_map_search(zcbor_decoder_t key_decoder, zcbor_state_t *state, void *key_result)
 {
+	PRINT_FUNC();
 	/* elem_count cannot be odd since the map consists of key-value-pairs.
 	 * This might mean that this function was called while pointing at a value (instead
 	 * of a key). */
@@ -957,12 +997,14 @@ static bool list_map_end_decode(zcbor_state_t *state)
 
 bool zcbor_list_end_decode(zcbor_state_t *state)
 {
+	PRINT_FUNC();
 	return list_map_end_decode(state);
 }
 
 
 bool zcbor_map_end_decode(zcbor_state_t *state)
 {
+	PRINT_FUNC();
 	return list_map_end_decode(state);
 }
 
@@ -1010,6 +1052,8 @@ bool zcbor_list_map_end_force_decode(zcbor_state_t *state)
 
 bool zcbor_simple_decode(zcbor_state_t *state, uint8_t *result)
 {
+	PRINT_FUNC();
+	PRINT_FUNC();
 	INITIAL_CHECKS_WITH_TYPE(ZCBOR_MAJOR_TYPE_SIMPLE);
 
 	/* Simple values must be 0-23 (additional is 0-23) or 24-255 (additional is 24).
@@ -1025,6 +1069,7 @@ bool zcbor_simple_decode(zcbor_state_t *state, uint8_t *result)
 
 bool zcbor_simple_expect(zcbor_state_t *state, uint8_t expected)
 {
+	PRINT_FUNC();
 	uint8_t actual;
 
 	if (!zcbor_simple_decode(state, &actual)) {
@@ -1042,12 +1087,14 @@ bool zcbor_simple_expect(zcbor_state_t *state, uint8_t expected)
 
 bool zcbor_simple_pexpect(zcbor_state_t *state, uint8_t *expected)
 {
+	PRINT_FUNC();
 	return zcbor_simple_expect(state, *expected);
 }
 
 
 bool zcbor_nil_expect(zcbor_state_t *state, void *unused)
 {
+	PRINT_FUNC();
 	(void)unused;
 	return zcbor_simple_expect(state, 22);
 }
@@ -1055,6 +1102,7 @@ bool zcbor_nil_expect(zcbor_state_t *state, void *unused)
 
 bool zcbor_undefined_expect(zcbor_state_t *state, void *unused)
 {
+	PRINT_FUNC();
 	(void)unused;
 	return zcbor_simple_expect(state, 23);
 }
@@ -1062,6 +1110,7 @@ bool zcbor_undefined_expect(zcbor_state_t *state, void *unused)
 
 bool zcbor_bool_decode(zcbor_state_t *state, bool *result)
 {
+	PRINT_FUNC();
 	uint8_t value;
 
 	if (!zcbor_simple_decode(state, &value)) {
@@ -1080,12 +1129,14 @@ bool zcbor_bool_decode(zcbor_state_t *state, bool *result)
 
 bool zcbor_bool_expect(zcbor_state_t *state, bool expected)
 {
+	PRINT_FUNC();
 	return zcbor_simple_expect(state, (uint8_t)(!!expected) + ZCBOR_BOOL_TO_SIMPLE);
 }
 
 
 bool zcbor_bool_pexpect(zcbor_state_t *state, bool *expected)
 {
+	PRINT_FUNC();
 	return zcbor_bool_expect(state, *expected);
 }
 
@@ -1100,7 +1151,7 @@ static bool float_check(zcbor_state_t *state, uint8_t additional_val)
 
 bool zcbor_float16_bytes_decode(zcbor_state_t *state, uint16_t *result)
 {
-
+	PRINT_FUNC();
 	ZCBOR_FAIL_IF(!float_check(state, ZCBOR_VALUE_IS_2_BYTES));
 
 	if (!value_extract(state, result, sizeof(*result))) {
@@ -1113,6 +1164,7 @@ bool zcbor_float16_bytes_decode(zcbor_state_t *state, uint16_t *result)
 
 bool zcbor_float16_bytes_expect(zcbor_state_t *state, uint16_t expected)
 {
+	PRINT_FUNC();
 	uint16_t actual;
 
 	if (!zcbor_float16_bytes_decode(state, &actual)) {
@@ -1127,12 +1179,14 @@ bool zcbor_float16_bytes_expect(zcbor_state_t *state, uint16_t expected)
 
 bool zcbor_float16_bytes_pexpect(zcbor_state_t *state, uint16_t *expected)
 {
+	PRINT_FUNC();
 	return zcbor_float16_bytes_expect(state, *expected);
 }
 
 
 bool zcbor_float16_decode(zcbor_state_t *state, float *result)
 {
+	PRINT_FUNC();
 	uint16_t value16;
 
 	if (!zcbor_float16_bytes_decode(state, &value16)) {
@@ -1146,6 +1200,7 @@ bool zcbor_float16_decode(zcbor_state_t *state, float *result)
 
 bool zcbor_float16_expect(zcbor_state_t *state, float expected)
 {
+	PRINT_FUNC();
 	float actual;
 
 	if (!zcbor_float16_decode(state, &actual)) {
@@ -1160,12 +1215,14 @@ bool zcbor_float16_expect(zcbor_state_t *state, float expected)
 
 bool zcbor_float16_pexpect(zcbor_state_t *state, float *expected)
 {
+	PRINT_FUNC();
 	return zcbor_float16_expect(state, *expected);
 }
 
 
 bool zcbor_float32_decode(zcbor_state_t *state, float *result)
 {
+	PRINT_FUNC();
 	ZCBOR_FAIL_IF(!float_check(state, ZCBOR_VALUE_IS_4_BYTES));
 
 	if (!value_extract(state, result, sizeof(*result))) {
@@ -1178,6 +1235,7 @@ bool zcbor_float32_decode(zcbor_state_t *state, float *result)
 
 bool zcbor_float32_expect(zcbor_state_t *state, float expected)
 {
+	PRINT_FUNC();
 	float actual;
 
 	if (!zcbor_float32_decode(state, &actual)) {
@@ -1192,12 +1250,14 @@ bool zcbor_float32_expect(zcbor_state_t *state, float expected)
 
 bool zcbor_float32_pexpect(zcbor_state_t *state, float *expected)
 {
+	PRINT_FUNC();
 	return zcbor_float32_expect(state, *expected);
 }
 
 
 bool zcbor_float16_32_decode(zcbor_state_t *state, float *result)
 {
+	PRINT_FUNC();
 	if (zcbor_float16_decode(state, result)) {
 		/* Do nothing */
 	} else if (!zcbor_float32_decode(state, result)) {
@@ -1210,6 +1270,7 @@ bool zcbor_float16_32_decode(zcbor_state_t *state, float *result)
 
 bool zcbor_float16_32_expect(zcbor_state_t *state, float expected)
 {
+	PRINT_FUNC();
 	if (zcbor_float16_expect(state, expected)) {
 		/* Do nothing */
 	} else if (!zcbor_float32_expect(state, expected)) {
@@ -1222,12 +1283,14 @@ bool zcbor_float16_32_expect(zcbor_state_t *state, float expected)
 
 bool zcbor_float16_32_pexpect(zcbor_state_t *state, float *expected)
 {
+	PRINT_FUNC();
 	return zcbor_float16_32_expect(state, *expected);
 }
 
 
 bool zcbor_float64_decode(zcbor_state_t *state, double *result)
 {
+	PRINT_FUNC();
 	ZCBOR_FAIL_IF(!float_check(state, ZCBOR_VALUE_IS_8_BYTES));
 
 	if (!value_extract(state, result, sizeof(*result))) {
@@ -1240,6 +1303,7 @@ bool zcbor_float64_decode(zcbor_state_t *state, double *result)
 
 bool zcbor_float64_expect(zcbor_state_t *state, double expected)
 {
+	PRINT_FUNC();
 	double actual;
 
 	if (!zcbor_float64_decode(state, &actual)) {
@@ -1254,12 +1318,14 @@ bool zcbor_float64_expect(zcbor_state_t *state, double expected)
 
 bool zcbor_float64_pexpect(zcbor_state_t *state, double *expected)
 {
+	PRINT_FUNC();
 	return zcbor_float64_expect(state, *expected);
 }
 
 
 bool zcbor_float32_64_decode(zcbor_state_t *state, double *result)
 {
+	PRINT_FUNC();
 	float float_result;
 
 	if (zcbor_float32_decode(state, &float_result)) {
@@ -1274,6 +1340,7 @@ bool zcbor_float32_64_decode(zcbor_state_t *state, double *result)
 
 bool zcbor_float32_64_expect(zcbor_state_t *state, double expected)
 {
+	PRINT_FUNC();
 	if (zcbor_float64_expect(state, expected)) {
 		/* Do nothing */
 	} else if (!zcbor_float32_expect(state, (float)expected)) {
@@ -1286,12 +1353,14 @@ bool zcbor_float32_64_expect(zcbor_state_t *state, double expected)
 
 bool zcbor_float32_64_pexpect(zcbor_state_t *state, double *expected)
 {
+	PRINT_FUNC();
 	return zcbor_float32_64_expect(state, *expected);
 }
 
 
 bool zcbor_float_decode(zcbor_state_t *state, double *result)
 {
+	PRINT_FUNC();
 	float float_result;
 
 	if (zcbor_float16_decode(state, &float_result)) {
@@ -1308,6 +1377,7 @@ bool zcbor_float_decode(zcbor_state_t *state, double *result)
 
 bool zcbor_float_expect(zcbor_state_t *state, double expected)
 {
+	PRINT_FUNC();
 	if (zcbor_float16_expect(state, (float)expected)) {
 		/* Do nothing */
 	} else if (zcbor_float32_expect(state, (float)expected)) {
@@ -1322,12 +1392,14 @@ bool zcbor_float_expect(zcbor_state_t *state, double expected)
 
 bool zcbor_float_pexpect(zcbor_state_t *state, double *expected)
 {
+	PRINT_FUNC();
 	return zcbor_float_expect(state, *expected);
 }
 
 
 bool zcbor_any_skip(zcbor_state_t *state, void *result)
 {
+	PRINT_FUNC();
 	zcbor_assert_state(result == NULL,
 			"'any' type cannot be returned, only skipped.\r\n");
 	(void)result;
@@ -1408,6 +1480,7 @@ bool zcbor_any_skip(zcbor_state_t *state, void *result)
 
 bool zcbor_tag_decode(zcbor_state_t *state, uint32_t *result)
 {
+	PRINT_FUNC();
 	INITIAL_CHECKS_WITH_TYPE(ZCBOR_MAJOR_TYPE_TAG);
 
 	if (!value_extract(state, result, sizeof(*result))) {
@@ -1420,6 +1493,7 @@ bool zcbor_tag_decode(zcbor_state_t *state, uint32_t *result)
 
 bool zcbor_tag_expect(zcbor_state_t *state, uint32_t expected)
 {
+	PRINT_FUNC();
 	uint32_t actual;
 
 	if (!zcbor_tag_decode(state, &actual)) {
@@ -1434,6 +1508,7 @@ bool zcbor_tag_expect(zcbor_state_t *state, uint32_t expected)
 
 bool zcbor_tag_pexpect(zcbor_state_t *state, uint32_t *expected)
 {
+	PRINT_FUNC();
 	return zcbor_tag_expect(state, *expected);
 }
 
@@ -1446,6 +1521,7 @@ bool zcbor_multi_decode(size_t min_decode,
 		void *result,
 		size_t result_len)
 {
+	PRINT_FUNC();
 	ZCBOR_CHECK_ERROR();
 	for (size_t i = 0; i < max_decode; i++) {
 		uint8_t const *payload_bak = state->payload;
@@ -1472,6 +1548,7 @@ bool zcbor_present_decode(bool *present,
 		zcbor_state_t *state,
 		void *result)
 {
+	PRINT_FUNC();
 	size_t num_decode = 0;
 	bool retval = zcbor_multi_decode(0, 1, &num_decode, decoder, state, result, 0);
 

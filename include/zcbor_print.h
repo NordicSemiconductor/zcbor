@@ -20,9 +20,17 @@ extern "C" {
 #endif
 
 #ifdef ZCBOR_VERBOSE
-#define zcbor_trace() (zcbor_do_print("bytes left: %zu, byte: 0x%x, elem_count: 0x%zx, err: %d, %s:%d\n",\
+#define zcbor_trace_raw(state) (zcbor_do_print("rem: %zu, cur: 0x%x, ec: 0x%zx, err: %d",\
 	(size_t)state->payload_end - (size_t)state->payload, *state->payload, state->elem_count, \
-	state->constant_state ? state->constant_state->error : 0, __FILE__, __LINE__))
+	state->constant_state ? state->constant_state->error : 0))
+#define zcbor_trace(state, appendix) do { \
+	zcbor_trace_raw(state); \
+	zcbor_do_print(", %s\n", appendix); \
+} while(0)
+#define zcbor_trace_file(state) do { \
+	zcbor_trace_raw(state); \
+	zcbor_do_print(", %s:%d\n", __FILE__, __LINE__); \
+} while(0)
 
 #define zcbor_log_assert(expr, ...) \
 do { \
@@ -33,7 +41,8 @@ do { \
 } while(0)
 #define zcbor_log(...) zcbor_do_print(__VA_ARGS__)
 #else
-#define zcbor_trace() ((void)state)
+#define zcbor_trace(state, appendix)
+#define zcbor_trace_file(state) ((void)state)
 #define zcbor_log_assert(...)
 #define zcbor_log(...)
 #endif

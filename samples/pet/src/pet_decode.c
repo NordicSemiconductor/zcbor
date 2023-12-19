@@ -37,7 +37,7 @@ static bool decode_Pet(
 	|| (((*result).species_choice == Pet_species_other_c) && ((1)))) || (zcbor_error(state, ZCBOR_ERR_WRONG_VALUE), false)))))) || (zcbor_list_map_end_force_decode(state), false)) && zcbor_list_end_decode(state))));
 
 	if (!tmp_result)
-		zcbor_trace();
+		zcbor_trace_file(state);
 
 	return tmp_result;
 }

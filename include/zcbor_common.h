@@ -169,19 +169,22 @@ typedef enum
 */
 #define ZCBOR_FAIL() \
 do {\
-	zcbor_trace(); \
+	zcbor_log("ZCBOR_FAIL "); \
+	zcbor_trace_file(state); \
 	return false; \
 } while(0)
 
 #define ZCBOR_FAIL_IF(expr) \
 do {\
 	if (expr) { \
+		zcbor_log("ZCBOR_FAIL_IF(" #expr ") "); \
 		ZCBOR_FAIL(); \
 	} \
 } while(0)
 
 #define ZCBOR_ERR(err) \
 do { \
+	zcbor_log("ZCBOR_ERR(%d) ", err); \
 	zcbor_error(state, err); \
 	ZCBOR_FAIL(); \
 } while(0)
@@ -189,6 +192,7 @@ do { \
 #define ZCBOR_ERR_IF(expr, err) \
 do {\
 	if (expr) { \
+		zcbor_log("ZCBOR_ERR_IF(" #expr ", %d) ", err); \
 		ZCBOR_ERR(err); \
 	} \
 } while(0)

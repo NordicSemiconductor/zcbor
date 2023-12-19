@@ -39,6 +39,8 @@ bool zcbor_new_backup(zcbor_state_t *state, size_t new_elem_count)
 
 	state->elem_count = new_elem_count;
 
+	zcbor_log("New backup (level %zu)\n", i);
+
 	return true;
 }
 
@@ -54,11 +56,13 @@ bool zcbor_process_backup(zcbor_state_t *state, uint32_t flags,
 		ZCBOR_ERR(ZCBOR_ERR_NO_BACKUP_ACTIVE);
 	}
 
-	if (flags & ZCBOR_FLAG_RESTORE) {
-		/* use the backup at current_backup - 1, since otherwise, the
-		 * 0th backup would be unused. */
-		size_t i = state->constant_state->current_backup - 1;
+	/* use the backup at current_backup - 1, since otherwise, the
+		* 0th backup would be unused. */
+	size_t i = state->constant_state->current_backup - 1;
 
+	zcbor_log("Process backup (level %zu, flags 0x%x)\n", i, flags);
+
+	if (flags & ZCBOR_FLAG_RESTORE) {
 		if (!(flags & ZCBOR_FLAG_KEEP_PAYLOAD)) {
 			if (state->constant_state->backup_list[i].payload_moved) {
 				zcbor_log("Payload pointer out of date.\r\n");
