@@ -38,7 +38,7 @@ static bool encode_Pet(
 	: false))))) || (zcbor_list_map_end_force_encode(state), false)) && zcbor_list_end_encode(state, 3))));
 
 	if (!tmp_result)
-		zcbor_trace();
+		zcbor_trace_file(state);
 
 	return tmp_result;
 }

@@ -69,7 +69,7 @@ static bool value_encode_len(zcbor_state_t *state, zcbor_major_type_t major_type
 		ZCBOR_FAIL();
 	}
 	state->payload_mut--;
-	zcbor_trace();
+	zcbor_trace(state, "value_encode_len");
 	state->payload_mut++;
 
 #ifdef ZCBOR_BIG_ENDIAN
