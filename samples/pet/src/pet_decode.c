@@ -36,8 +36,12 @@ static bool decode_Pet(
 	|| (((*result).species_choice == Pet_species_dog_c) && ((1)))
 	|| (((*result).species_choice == Pet_species_other_c) && ((1)))) || (zcbor_error(state, ZCBOR_ERR_WRONG_VALUE), false)))))) || (zcbor_list_map_end_force_decode(state), false)) && zcbor_list_end_decode(state))));
 
-	if (!tmp_result)
+	if (!tmp_result) {
 		zcbor_trace_file(state);
+		zcbor_log("%s error: %s\r\n", __func__, zcbor_error_str(zcbor_peek_error(state)));
+	} else {
+		zcbor_log("%s success\r\n", __func__);
+	}
 
 	return tmp_result;
 }
