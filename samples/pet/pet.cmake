@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
-# Generated using zcbor version 0.7.99
+# Generated using zcbor version 0.8.0
 # https://github.com/NordicSemiconductor/zcbor
 # Generated with a --default-max-qty of 3
 #
