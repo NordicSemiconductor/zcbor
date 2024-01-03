@@ -3,8 +3,54 @@
 Any new bugs, requests, or missing features should be reported as [Github issues](https://github.com/NordicSemiconductor/zcbor/issues).
 
 ## Improvements:
+ * C library: Add support for searching for elements in a map.
+ * Overhaul zcbor logging/printing
+   * Refactor printing of errors from generated functions
+   * zcbor_print.h: Improve zcbor_trace() and other tracing
+   * zcbor_print.h: Move from printk to printf
+   * Rename zcbor_print() to zcbor_log()
+   * zcbor_print.h: Move printing code to a new file zcbor_print.h
+   * zcbor_debug.h: Add function for getting error string and printing it
+ * Performance improvements
+   * zcbor.py: Refactor the regex matching to fix label and remove all_types_regex
+   * zcbor.py: Merge regexes for pure types without values
+   * zcbor.py: Add a cache for compiled regex patterns
+   * zcbor.py: Don't regenerate the big list of regexes every call
+   * zcbor_encode: Simplify value_encode() by using the new zcbor_header_len
+   * zcbor_decode.c: Streamline value_extract
+   * zcbor_common: Refactor zcbor_header_len
+   * zcbor.py: Don't use zcbor_present_encode()
+   * zcbor_common: Add a zcbor_entry_function helper
+ * Code generation name improvements:
+   * zcbor.py: Make generated variable names C-compatible.
+   * zcbor.py: Change name of generated choice enum members to add a '_c'
+   * Avoid leading and trailing as well as repeated underscores
+ * API cleanup/improvements:
+   * include: Rearrange and improve zcbor_decode.h and zcbor_encode.h
+   * zcbor_encode: Change zcbor_tag_encode to take a pointer argument
+   * zcbor_common: Rename ZCBOR_FLAG_TRANSFER_PAYLOAD to ZCBOR_FLAG_KEEP_PAYLOAD
+   * zcbor_decode: Add _pexpect() functions
+ * Internal cleanup:
+   * zcbor_encode, zcbor_decode: Move inline functions from header files
+   * zcbor_decode.c: Move MAJOR_TYPE() and ADDITIONAL() macros to zcbor_common.h
+   * src: Abstract float16 conversion and move it to zcbor_common.c
+   * zcbor_common: Add ZCBOR_FLAG_KEEP_DECODE_STATE to zcbor_process_backup()
+   * Move zcbor_array_at_end() from zcbor_common to zcbor_decode
+ * Move from setup.py to pyproject.toml for creation of zcbor packages
+ * zcbor_decode: Add validation that data follows canonical CBOR rules
+ * zcbor.py: Change the label regex to accept non-latin characters
+ * C library: Change usage of strlen to use strnlen
 
 ## Bugfixes:
+ * zcbor.py: Fix range_checks for 'OTHER' type
+ * zcbor_decode.c: Fix "'num_decode' may be used uninitialized"
+ * zcbor.py: Generate cmake files with linux paths on Windows
+ * Remove references to uint_fast32_t
+ * Use ZCBOR_BIG_ENDIAN instead of CONFIG_BIG_ENDIAN
+ * zcbor.py: Fix cborhex generation so it generates newlines instead of spaces
+ * zcbor.py: Adjust the lower bound on negative numbers.
+ * zcbor_encode, zcbor_decode: fix double promotion warnings
+ * zcbor_print.h: Add missing errors to zcbor_error_str()
 
 ## Unsupported CDDL features
 Not all features outlined in the CDDL specs [RFC8610](https://datatracker.ietf.org/doc/html/rfc8610), [RFC9090](https://datatracker.ietf.org/doc/html/rfc9090), and [RFC9165](https://datatracker.ietf.org/doc/html/rfc9165) are supported by zcbor.
