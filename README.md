@@ -128,8 +128,6 @@ python3 <zcbor base>/zcbor/zcbor.py validate -c <CDDL description file> -t <whic
 python3 <zcbor base>/zcbor/zcbor.py convert -c <CDDL description file> -t <which CDDL type to expect> -i <input data file> -o <output data file>
 ```
 
-You can see an example of the conversions in [tests/cases/yaml_compatibility.yaml](tests/cases/yaml_compatibility.yaml) and its CDDL file [tests/cases/yaml_compatibility.cddl](tests/cases/yaml_compatibility.cddl).
-
 Importing zcbor in a Python script
 ----------------------------------
 
