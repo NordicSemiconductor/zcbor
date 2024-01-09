@@ -47,6 +47,7 @@ if __name__ == "__main__":
     new_readme_contents = sub(pattern + r'.*', output, readme_contents, flags=S)
     if len(argv) > 1 and argv[1] == "--check":
         if new_readme_contents != readme_contents:
+            print("Check failed")
             exit(9)
     else:
         with open(p_README, 'w', encoding="utf-8") as f:

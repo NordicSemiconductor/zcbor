@@ -28,6 +28,7 @@ p_release_notes = p_root / "RELEASE_NOTES.md"
 p_init_py = p_root / '__init__.py'
 p_zcbor_py = p_root / 'zcbor' / 'zcbor.py'
 p_add_helptext = p_root / 'scripts' / 'add_helptext.py'
+p_regenerate_samples = p_root / 'scripts' / 'regenerate_samples.py'
 p_test_zcbor_py = p_tests / 'scripts' / 'test_zcbor.py'
 p_test_versions_py = p_tests / 'scripts' / 'test_versions.py'
 p_test_repo_files_py = p_tests / 'scripts' / 'test_repo_files.py'
@@ -100,17 +101,10 @@ class TestSamples(TestCase):
         output = self.cmake_build_run(p_pet_sample, p_pet_build)
 
     def test_pet_regenerate(self):
-        files = (list(p_pet_include.iterdir()) + list(p_pet_src.iterdir()) + [p_pet_cmake])
-        contents = "".join(p.read_text(encoding="utf-8") for p in files)
-        tmpdir = Path(mkdtemp())
-        list(os.makedirs(tmpdir / f.relative_to(p_pet_sample).parent, exist_ok=True) for f in files)
-        list(copy2(f, tmpdir / f.relative_to(p_pet_sample)) for f in files)
-        self.popen_test(['cmake', p_pet_sample, "-DREGENERATE_ZCBOR=Y"], cwd=tmpdir)
-        new_contents = "".join(p.read_text(encoding="utf-8") for p in files)
-        list(copy2(tmpdir / f.relative_to(p_pet_sample), f) for f in files)
-        rmtree(tmpdir)
-        self.maxDiff = None
-        self.assertEqual(contents, new_contents)
+        """Check the zcbor-generated code for the "pet" sample"""
+        regenerate = Popen(["python3", p_regenerate_samples, "--check"])
+        regenerate.communicate()
+        self.assertEqual(0, regenerate.returncode)
 
     def test_pet_file_header(self):
         files = (list(p_pet_include.iterdir()) + list(p_pet_src.iterdir()) + [p_pet_cmake])
