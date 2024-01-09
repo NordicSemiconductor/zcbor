@@ -32,7 +32,7 @@ The two most important member variables in CddlParser are `self.value` and `self
  - `"NINT"` (#1)
  - `"BSTR"` (#2)
  - `"TSTR"` (#3)
- - `"FLOAT"` (#7.26 or #7.27)
+ - `"FLOAT"` (#7.25, #7.26 or #7.27)
  - `"BOOL"` (#7.20 or #7.21)
  - `"NIL"` (#7.22)
  - `"UNDEF"` (#7.23)
@@ -117,20 +117,15 @@ This class relies heavily on decoding libraries for CBOR/YAML/JSON:
 
 All three use the same internal representation of the decoded data, so it's trivial to convert between them.
 The representation for all three is 1-to-1 with the corresponding Python types, (list -> list, map -> dict, uint -> int, bstr -> bytes etc.).
-The only proprietary Python class used is `CBORTag` for CBOR tags.
+In addition, the following proprietary Python classes are used: `cbor2.CBORTag` for CBOR tags, `cbor2.undefined` for CBOR `undefined` values, and `cbor2.CBORSimpleValue` for CBOR simple values (#7.0 -> #7.255 excluding bools, nil, and undefined).
 
 One caveat is that CBOR supports more features than YAML/JSON, namely:
 
 - non-text map keys
-- bytes
+- byte strings
 - tags
 
-In YAML/JSON, these are converted to maps in the following way:
-
-- `{<key>: <value>}` => `{keyval<i>: {"key": <key>, "val": <value>}}` (i is an integer unique within this map)
-- `<bytestring>` => `{"bstr": "<hex representation of bytestring>"}` or
-- `<bytestring>` => `{"bstr": <CBOR decoding of bytestring>}` if `<bytestring>` is encodable as CBOR.
-- `<tag, value>` => `{"tag": <tag>, "val": <value>}` where `<tag>` is the actual tag (a number), and `<value>` is the tagged value (the following CBOR object).
+zcbor allows creating bespoke representations via `--yaml-compatibility`, see the README or CLI docs for more info.
 
 Finally, DataTranslator can also generate a separate internal representation using `namedtuple`s to allow browsing CBOR data by the names given in the CDDL.
 (This is more analogous to how the data is accessed in the C code.)
@@ -173,11 +168,12 @@ CodeRenderer
 ------------
 
 CodeRenderer is a standalone class that takes the result of the CodeGenerator class and constructs files.
-There are 3 files constructed:
+There are up to 4 files constructed:
 
 - The C file with the decoding/encoding functions.
 - The H file with the public API to some functions in the C file.
 - The H file with all the struct definitions (the type file). If both decoding and encoding files are generated for the same CDDL, they can share the same type file.
+- An optional cmake file for building the generated code together with the zcbor C libraries.
 
 CodeRenderer conducts some pruning and deduplication of the list of types and functions received from CodeGenerator.
 
