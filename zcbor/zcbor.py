@@ -1323,18 +1323,18 @@ class DataTranslator(CddlXcoder):
     # Return our expected python type as returned by cbor2.
     def _expected_type(self):
         return {
-            "UINT": lambda: int,
-            "INT": lambda: int,
-            "NINT": lambda: int,
-            "FLOAT": lambda: float,
-            "TSTR": lambda: str,
-            "BSTR": lambda: bytes,
-            "NIL": lambda: type(None),
-            "UNDEF": lambda: type(undefined),
+            "UINT": lambda: (int,),
+            "INT": lambda: (int,),
+            "NINT": lambda: (int,),
+            "FLOAT": lambda: (float,),
+            "TSTR": lambda: (str,),
+            "BSTR": lambda: (bytes,),
+            "NIL": lambda: (type(None),),
+            "UNDEF": lambda: (type(undefined),),
             "ANY": lambda: (int, float, str, bytes, type(None), type(undefined), bool, list, dict),
-            "BOOL": lambda: bool,
+            "BOOL": lambda: (bool,),
             "LIST": lambda: (tuple, list),
-            "MAP": lambda: dict,
+            "MAP": lambda: (dict,),
         }[self.type]()
 
     # Check that the decoded object has the correct type.
@@ -1342,8 +1342,8 @@ class DataTranslator(CddlXcoder):
         if self.type not in ["OTHER", "GROUP", "UNION"]:
             exp_type = self._expected_type()
             self._decode_assert(
-                isinstance(obj, exp_type),
-                f"{str(self)}: Wrong type of {str(obj)}, expected {str(exp_type)}")
+                type(obj) in exp_type,
+                f"{str(self)}: Wrong type ({type(obj)}) of {str(obj)}, expected {str(exp_type)}")
 
     # Check that the decode value conforms to the restrictions in the CDDL.
     def _check_value(self, obj):
