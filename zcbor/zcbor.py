@@ -1349,6 +1349,9 @@ class DataTranslator(CddlXcoder):
     def _check_value(self, obj):
         if self.type in ["UINT", "INT", "NINT", "FLOAT", "TSTR", "BSTR", "BOOL"] \
                 and self.value is not None:
+            value = self.value
+            if self.type == "BSTR":
+                value = self.value.encode("utf-8")
             self._decode_assert(
                 self.value == obj,
                 f"{obj} should have value {self.value} according to {self.var_name()}")
