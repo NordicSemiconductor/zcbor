@@ -61,6 +61,10 @@ jobs:
     - name: Checkout the code
       uses: actions/checkout@v3
 
+    - name: Read zcbor version
+      run: |
+        echo "ZCBOR_VERSION=$(cat zcbor/VERSION)" >> $env:GITHUB_ENV
+
     - name: Install west and dependencies
       run: |
         pip install -U pip
@@ -70,7 +74,7 @@ jobs:
     - name: Generate and install zcbor package
       run: |
         python build bdist_wheel
-        pip install dist/zcbor-0.8.99-py3-none-any.whl
+        pip install dist/zcbor-$env:ZCBOR_VERSION-py3-none-any.whl
         pip uninstall -y zcbor
         pip install -e .
 
@@ -113,6 +117,9 @@ jobs:
     steps:
     - name: Checkout the code
       uses: actions/checkout@v3
+
+    - name: Read zcbor version
+      run: echo "ZCBOR_VERSION=$(cat zcbor/VERSION)" >> $GITHUB_ENV
 
     - name: Install zcbor
       uses: ./.github/actions/install_zcbor
@@ -160,7 +167,7 @@ jobs:
     - name: Upload release files
       uses: actions/upload-artifact@v3
       with:
-        name: zcbor-release
+        name: zcbor-release-$ZCBOR_VERSION
         path: dist/*
 
   release-test-2:
