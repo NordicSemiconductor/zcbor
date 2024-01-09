@@ -101,7 +101,7 @@ static void zcbor_print_compare_strings_diff(const uint8_t *str1, const uint8_t 
 {
 	bool printed = false;
 	for (uint32_t i = 0; i <= size / 16; i++) {
-		if (memcmp(&str1[i*16], &str2[i*16], MIN(16, (size - i*16)) != 0)) {
+		if (memcmp(&str1[i*16], &str2[i*16], MIN(16, (size - i*16))) != 0) {
 			zcbor_do_print("line %d (char %d)\r\n", i, i*16);
 			zcbor_print_compare_lines(&str1[i*16], &str2[i*16],
 				MIN(16, (size - i*16)));

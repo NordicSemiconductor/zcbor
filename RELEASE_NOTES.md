@@ -51,6 +51,7 @@ Any new bugs, requests, or missing features should be reported as [Github issues
  * zcbor.py: Adjust the lower bound on negative numbers.
  * zcbor_encode, zcbor_decode: fix double promotion warnings
  * zcbor_print.h: Add missing errors to zcbor_error_str()
+ * zcbor_print.h: Fix memcmp expression
 
 ## Unsupported CDDL features
 Not all features outlined in the CDDL specs [RFC8610](https://datatracker.ietf.org/doc/html/rfc8610), [RFC9090](https://datatracker.ietf.org/doc/html/rfc9090), and [RFC9165](https://datatracker.ietf.org/doc/html/rfc9165) are supported by zcbor.
