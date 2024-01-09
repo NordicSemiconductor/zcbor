@@ -73,6 +73,11 @@ The `elem_count` member refers to the number of encoded objects in the current l
 Backups are needed for _decoding_ if there are any lists, maps, or CBOR-encoded strings (`zcbor_bstr_*_decode`) in the data.
 Backups are needed for _encoding_ if there are any lists or maps *and* you are using canonical encoding (`ZCBOR_CANONICAL`), or when using the `zcbor_bstr_*_encode` functions.
 
+`n_flags` is used when decoding maps where the order is unknown.
+It allows using the `zcbor_unordered_map_search()` function to search for elements.
+
+See the header files for more information.
+
 ```c
 /** Initialize a decoding state (could include an array of backup states).
  *  After calling this, decode_state[0] is ready to be used with the decoding APIs. */
