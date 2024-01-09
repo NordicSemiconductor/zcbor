@@ -129,10 +129,15 @@ jobs:
         sudo apt update
         sudo apt install -y afl++
 
+    - name: Run everything fuzz tests
+      working-directory: tests/fuzz
+      run: |
+        ./test-afl.sh 2400 64 everything
+
     - name: Run manifest12 fuzz tests
       working-directory: tests/fuzz
       run: |
-        ./test-afl.sh 3200 64 manifest12
+        ./test-afl.sh 800 64 manifest12
 
     - name: Run pet fuzz tests
       working-directory: tests/fuzz

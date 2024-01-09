@@ -68,6 +68,33 @@ elseif (${TEST_CASE} STREQUAL manifest12)
     include(${PROJECT_BINARY_DIR}/manifest12.cmake)
     target_link_libraries(fuzz_target PRIVATE manifest12)
 
+elseif (${TEST_CASE} STREQUAL everything)
+    execute_process(
+        COMMAND zcbor
+        code
+        -c ${CMAKE_CURRENT_LIST_DIR}/../cases/everything.cddl
+        --output-cmake ${PROJECT_BINARY_DIR}/everything.cmake
+        -t EverythingUnion
+        -d
+        )
+
+    foreach(n RANGE 0 1)
+        execute_process(
+        COMMAND python3 ${CMAKE_CURRENT_LIST_DIR}/../../zcbor/zcbor.py
+        convert
+        --cddl ${CMAKE_CURRENT_LIST_DIR}/../cases/everything.cddl
+        --input ${CMAKE_CURRENT_LIST_DIR}/../cases/everything_example${n}.yaml
+        --yaml-compatibility
+        -t EverythingUnion
+        --output ${PROJECT_BINARY_DIR}/fuzz_input/input${n}.cbor
+        --output-as cbor
+        )
+    endforeach()
+
+    target_sources(fuzz_target PRIVATE fuzz_everything.c)
+    include(${PROJECT_BINARY_DIR}/everything.cmake)
+    target_link_libraries(fuzz_target PRIVATE everything)
+
 else()
     message(FATAL_ERROR "Invalid test case")
 endif()

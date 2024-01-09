@@ -1,0 +1,25 @@
+- 1
+- 10
+- 16
+- -1
+- -2
+- -6
+- {zcbor_bstr: "001122334455667788"}
+- {zcbor_bstr: "666f6f"}
+- {zcbor_bstr: "332211"}
+- {zcbor_bstr: 42}
+- hello_world
+- bar
+- five5
+- {zcbor_keyval1: {key: 1, val: "one"}}
+- false
+- true
+- null
+- [zcbor_undefined]
+- 0.5
+- 3.140625
+- 0.51
+- 1.10004723072052
+- 2.71
+- -6.28
+- []

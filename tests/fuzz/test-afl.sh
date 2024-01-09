@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-echo "Usage: $0 <seconds to run> <bit width>"
+echo "Usage: $0 <seconds to run> <bit width> <test case>"
 
 # For convenience (use for extra checks):
 # export AFL_USE_ASAN=1

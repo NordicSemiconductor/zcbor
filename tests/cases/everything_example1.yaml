@@ -1,0 +1,32 @@
+- 0x1234567890
+- 10
+- 17
+- -0x9876543210
+- -2
+- -7
+- {zcbor_bstr: "00112233445566778899aabbccddeeffeeddccbbaa99887766554433221100"}
+- {zcbor_bstr: "666f6f"}
+- {zcbor_bstr: "123456"}
+- {zcbor_bstr: 0xffffffffff}
+- Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum
+- bar
+- ÆØÅ?/
+- {zcbor_keyval1: {key: 2, val: "two"}}
+- 0x80
+- 0x8000
+- 0x800000
+- 0x80000000
+- 0x8000000000
+- 0x800000000000
+- 0x80000000000000
+- false
+- true
+- null
+- [zcbor_undefined]
+- 1024.0
+- 3.140625
+- 65536.0
+- 1.10004723072052
+- 12345678987.654321
+- -6.28
+- {"hello": "world"}
