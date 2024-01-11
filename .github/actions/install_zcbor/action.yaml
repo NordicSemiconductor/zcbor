@@ -18,6 +18,7 @@ runs:
       if: ${{ inputs.zcbor_package == 'bdist_wheel' }}
       shell: sh
       run: |
+        set -e
         python3 -m build
         pip3 install dist/zcbor-*.tar.gz
         pip3 uninstall -y zcbor
