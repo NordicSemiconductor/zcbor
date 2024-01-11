@@ -1,6 +1,10 @@
 name: Run tests
 
-on: [pull_request]
+on:
+ pull_request: {}
+ schedule:
+  - cron: '* * * * 0' # every sunday
+
 
 env:
   ZEPHYR_SDK_VERSION: 0.16.4
@@ -182,7 +186,7 @@ jobs:
     - merge-test-2
     - merge-test-3
     - merge-test-4
-    if: "startswith(github.head_ref, 'release/')"
+    if: "github.event_name == 'schedule' || (github.event_name == 'pull_request' && startswith(github.head_ref, 'release/'))"
     steps:
     - name: Checkout the code
       uses: actions/checkout@v3
@@ -217,7 +221,7 @@ jobs:
     - merge-test-2
     - merge-test-3
     - merge-test-4
-    if: "startswith(github.head_ref, 'release/')"
+    if: "github.event_name == 'schedule' || (github.event_name == 'pull_request' && startswith(github.head_ref, 'release/'))"
     steps:
     - name: Checkout the code
       uses: actions/checkout@v3
