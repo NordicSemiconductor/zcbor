@@ -77,8 +77,9 @@ jobs:
 
     - name: Generate and install zcbor package
       run: |
-        python build bdist_wheel
-        pip install dist/zcbor-$env:ZCBOR_VERSION-py3-none-any.whl
+        $ErrorActionPreference="Stop"
+        python -m build; if($LastExitCode -ne 0) {Write-Error "$LastExitCode"};
+        pip install dist/zcbor-$env:ZCBOR_VERSION-py3-none-any.whl; if($LastExitCode -ne 0) {Write-Error "$LastExitCode"};
         pip uninstall -y zcbor
         pip install -e .
 
@@ -131,6 +132,7 @@ jobs:
     - name: Run python release tests
       working-directory: tests/scripts
       run: |
+        set -e
         echo -n ${{ github.head_ref }} > HEAD_REF
         python3 -m unittest test_versions
         rm HEAD_REF
