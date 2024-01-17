@@ -483,6 +483,8 @@ static inline size_t zcbor_flags_to_states(size_t num_flags)
 #define ZCBOR_FLAG_STATES(n_flags) 0
 #endif
 
+size_t strnlen(const char *, size_t);
+
 #ifdef __cplusplus
 }
 #endif
