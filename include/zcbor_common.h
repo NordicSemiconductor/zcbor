@@ -17,6 +17,24 @@
 extern "C" {
 #endif
 
+#ifndef STRINGIFY
+#define STRINGIFY(x) #x
+#endif
+
+#define ZCBOR_VERSION_MAJOR 0
+#define ZCBOR_VERSION_MINOR 8
+#define ZCBOR_VERSION_BUGFIX 99
+
+/** The version string with dots and not prefix. */
+#define ZCBOR_VERSION_STR   STRINGIFY(ZCBOR_VERSION_MAJOR) \
+			"." STRINGIFY(ZCBOR_VERSION_MINOR) \
+			"." STRINGIFY(ZCBOR_VERSION_BUGFIX)
+
+/** Monotonically increasing integer representing the version. */
+#define ZCBOR_VERSION    ((ZCBOR_VERSION_MAJOR << 24) \
+			+ (ZCBOR_VERSION_MINOR << 16) \
+			+ (ZCBOR_VERSION_BUGFIX << 8))
+
 /** Convenience type that allows pointing to strings directly inside the payload
  *  without the need to copy out.
  */
