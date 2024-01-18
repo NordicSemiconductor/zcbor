@@ -1420,4 +1420,18 @@ ZTEST(zcbor_unit_tests, test_canonical_check)
 }
 
 
+ZTEST(zcbor_unit_tests, test_zcbor_version)
+{
+	const char zcbor_version_str[] = ZCBOR_VERSION_STR;
+	const char zcbor_version_expected[] = TEST_ZCBOR_VERSION_STR;
+
+
+	zassert_mem_equal(zcbor_version_expected, zcbor_version_str, sizeof(zcbor_version_expected));
+	zassert_equal(TEST_ZCBOR_VERSION, ZCBOR_VERSION, NULL);
+	zassert_equal(TEST_ZCBOR_VERSION_MAJOR, ZCBOR_VERSION_MAJOR, NULL);
+	zassert_equal(TEST_ZCBOR_VERSION_MINOR, ZCBOR_VERSION_MINOR, NULL);
+	zassert_equal(TEST_ZCBOR_VERSION_BUGFIX, ZCBOR_VERSION_BUGFIX, NULL);
+}
+
+
 ZTEST_SUITE(zcbor_unit_tests, NULL, NULL, NULL, NULL, NULL);
