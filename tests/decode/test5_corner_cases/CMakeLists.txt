@@ -68,10 +68,9 @@ execute_process(
   COMMAND_ERROR_IS_FATAL ANY
 )
 
-add_library(corner_cases
-  ${PROJECT_BINARY_DIR}/src/corner_cases.c
-  ${PROJECT_BINARY_DIR}/src/zcbor_decode.c
-  ${PROJECT_BINARY_DIR}/src/zcbor_common.c)
+FILE(GLOB build_sources ${PROJECT_BINARY_DIR}/src/*.c)
+
+add_library(corner_cases ${build_sources})
 
 target_include_directories(corner_cases PUBLIC ${PROJECT_BINARY_DIR}/include)
 target_link_libraries(corner_cases PRIVATE zephyr_interface)

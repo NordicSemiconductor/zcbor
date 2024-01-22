@@ -50,11 +50,12 @@ execute_process(
 
 include(${PROJECT_BINARY_DIR}/pet.cmake)
 
+FILE(GLOB build_sources ${CMAKE_CURRENT_LIST_DIR}/../../../src/*.c)
+
 zephyr_include_directories(${PROJECT_BINARY_DIR}/include
   ${CMAKE_CURRENT_LIST_DIR}/../../../include)
 zephyr_sources(${PROJECT_BINARY_DIR}/src/serial/serial_recovery_decode.c
-  ${CMAKE_CURRENT_LIST_DIR}/../../../src/zcbor_decode.c
-  ${CMAKE_CURRENT_LIST_DIR}/../../../src/zcbor_common.c)
+  ${build_sources})
 
 target_link_libraries(pet PRIVATE zephyr_interface)
 target_link_libraries(app PRIVATE pet)
