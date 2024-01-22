@@ -122,7 +122,7 @@ static void endian_copy(uint8_t *dst, const uint8_t *src, size_t src_len)
  *          big to little-endian if necessary (@ref ZCBOR_BIG_ENDIAN).
  */
 static bool value_extract(zcbor_state_t *state,
-		void *const result, size_t result_len)
+		void *const result, size_t result_len, bool *indefinite_length_array)
 {
 	zcbor_trace(state, "value_extract");
 	zcbor_assert_state(result_len != 0, "0-length result not supported.\r\n");
@@ -133,25 +133,37 @@ static bool value_extract(zcbor_state_t *state,
 	ZCBOR_ERR_IF((state->elem_count == 0), ZCBOR_ERR_LOW_ELEM_COUNT);
 
 	uint8_t additional = ZCBOR_ADDITIONAL(*state->payload);
-	size_t len = additional_len(additional);
-	uint8_t *result_offs = (uint8_t *)result + ZCBOR_ECPY_OFFS(result_len, MAX(1, len));
+	size_t len = 0;
 
-	ZCBOR_ERR_IF(additional > ZCBOR_VALUE_IS_8_BYTES, ZCBOR_ERR_ADDITIONAL_INVAL);
-	ZCBOR_ERR_IF(len > result_len, ZCBOR_ERR_INT_SIZE);
-	ZCBOR_ERR_IF((state->payload + len + 1) > state->payload_end,
-		ZCBOR_ERR_NO_PAYLOAD);
+	(void)indefinite_length_array; /* For when ZCBOR_CANONICAL is defined */
 
-	memset(result, 0, result_len);
+#ifndef ZCBOR_CANONICAL
+	if ((additional == ZCBOR_VALUE_IS_INDEFINITE_LENGTH) && (indefinite_length_array != NULL)) {
+		/* Indefinite length array. */
+		*indefinite_length_array = true;
+	} else
+#endif
+	{
+		len = additional_len(additional);
+		uint8_t *result_offs = (uint8_t *)result + ZCBOR_ECPY_OFFS(result_len, MAX(1, len));
 
-	if (len == 0) {
-		*result_offs = additional;
-	} else {
-		endian_copy(result_offs, state->payload + 1, len);
+		ZCBOR_ERR_IF(additional > ZCBOR_VALUE_IS_8_BYTES, ZCBOR_ERR_ADDITIONAL_INVAL);
+		ZCBOR_ERR_IF(len > result_len, ZCBOR_ERR_INT_SIZE);
+		ZCBOR_ERR_IF((state->payload + len + 1) > state->payload_end,
+			ZCBOR_ERR_NO_PAYLOAD);
+
+		memset(result, 0, result_len);
+
+		if (len == 0) {
+			*result_offs = additional;
+		} else {
+			endian_copy(result_offs, state->payload + 1, len);
 
 #ifdef ZCBOR_CANONICAL
-		ZCBOR_ERR_IF((zcbor_header_len_ptr(result, result_len) != (len + 1)),
-			ZCBOR_ERR_INVALID_VALUE_ENCODING);
+			ZCBOR_ERR_IF((zcbor_header_len_ptr(result, result_len) != (len + 1)),
+				ZCBOR_ERR_INVALID_VALUE_ENCODING);
 #endif
+		}
 	}
 
 	state->payload_bak = state->payload;
@@ -175,7 +187,7 @@ bool zcbor_int_decode(zcbor_state_t *state, void *result, size_t result_size)
 		ZCBOR_ERR(ZCBOR_ERR_WRONG_TYPE);
 	}
 
-	if (!value_extract(state, result, result_size)) {
+	if (!value_extract(state, result, result_size, NULL)) {
 		ZCBOR_FAIL();
 	}
 
@@ -218,7 +230,7 @@ bool zcbor_uint_decode(zcbor_state_t *state, void *result, size_t result_size)
 	PRINT_FUNC();
 	INITIAL_CHECKS_WITH_TYPE(ZCBOR_MAJOR_TYPE_PINT);
 
-	if (!value_extract(state, result, result_size)) {
+	if (!value_extract(state, result, result_size, NULL)) {
 		zcbor_log("uint with size %zu failed.\r\n", result_size);
 		ZCBOR_FAIL();
 	}
@@ -385,7 +397,7 @@ static bool str_start_decode(zcbor_state_t *state,
 {
 	INITIAL_CHECKS_WITH_TYPE(exp_major_type);
 
-	if (!value_extract(state, &result->len, sizeof(result->len))) {
+	if (!value_extract(state, &result->len, sizeof(result->len), NULL)) {
 		ZCBOR_FAIL();
 	}
 
@@ -647,23 +659,12 @@ static bool list_map_start_decode(zcbor_state_t *state,
 
 	INITIAL_CHECKS_WITH_TYPE(exp_major_type);
 
-#ifndef ZCBOR_CANONICAL
-	if (ZCBOR_ADDITIONAL(*state->payload) == ZCBOR_VALUE_IS_INDEFINITE_LENGTH) {
-		/* Indefinite length array. */
-		new_elem_count = ZCBOR_LARGE_ELEM_COUNT;
-		ZCBOR_ERR_IF(state->elem_count == 0, ZCBOR_ERR_LOW_ELEM_COUNT);
-		indefinite_length_array = true;
-		state->payload_bak = state->payload++;
-		state->elem_count--;
-	} else
-#endif
-	{
-		if (!value_extract(state, &new_elem_count, sizeof(new_elem_count))) {
-			ZCBOR_FAIL();
-		}
+	if (!value_extract(state, &new_elem_count, sizeof(new_elem_count), &indefinite_length_array)) {
+		ZCBOR_FAIL();
 	}
 
-	if (!zcbor_new_backup(state, new_elem_count)) {
+	if (!zcbor_new_backup(state, indefinite_length_array
+				? ZCBOR_LARGE_ELEM_COUNT : new_elem_count)) {
 		FAIL_RESTORE();
 	}
 
@@ -1062,7 +1063,7 @@ bool zcbor_simple_decode(zcbor_state_t *state, uint8_t *result)
 	 * Other additional values are not considered simple values. */
 	ZCBOR_ERR_IF(ZCBOR_ADDITIONAL(*state->payload) > 24, ZCBOR_ERR_WRONG_TYPE);
 
-	if (!value_extract(state, result, sizeof(*result))) {
+	if (!value_extract(state, result, sizeof(*result), NULL)) {
 		ZCBOR_FAIL();
 	}
 	return true;
@@ -1156,7 +1157,7 @@ bool zcbor_float16_bytes_decode(zcbor_state_t *state, uint16_t *result)
 	PRINT_FUNC();
 	ZCBOR_FAIL_IF(!float_check(state, ZCBOR_VALUE_IS_2_BYTES));
 
-	if (!value_extract(state, result, sizeof(*result))) {
+	if (!value_extract(state, result, sizeof(*result), NULL)) {
 		ZCBOR_FAIL();
 	}
 
@@ -1227,7 +1228,7 @@ bool zcbor_float32_decode(zcbor_state_t *state, float *result)
 	PRINT_FUNC();
 	ZCBOR_FAIL_IF(!float_check(state, ZCBOR_VALUE_IS_4_BYTES));
 
-	if (!value_extract(state, result, sizeof(*result))) {
+	if (!value_extract(state, result, sizeof(*result), NULL)) {
 		ZCBOR_FAIL();
 	}
 
@@ -1295,7 +1296,7 @@ bool zcbor_float64_decode(zcbor_state_t *state, double *result)
 	PRINT_FUNC();
 	ZCBOR_FAIL_IF(!float_check(state, ZCBOR_VALUE_IS_8_BYTES));
 
-	if (!value_extract(state, result, sizeof(*result))) {
+	if (!value_extract(state, result, sizeof(*result), NULL)) {
 		ZCBOR_FAIL();
 	}
 
@@ -1425,14 +1426,14 @@ bool zcbor_any_skip(zcbor_state_t *state, void *result)
 		additional = ZCBOR_ADDITIONAL(*state_copy.payload);
 	}
 
+	bool indefinite_length_array = false;
+	bool *ila_ptr = &indefinite_length_array;
+
 #ifdef ZCBOR_CANONICAL
-	const bool indefinite_length_array = false;
-#else
-	const bool indefinite_length_array = ((additional == ZCBOR_VALUE_IS_INDEFINITE_LENGTH)
-		&& ((major_type == ZCBOR_MAJOR_TYPE_LIST) || (major_type == ZCBOR_MAJOR_TYPE_MAP)));
+	ila_ptr = NULL;
 #endif
 
-	if (!indefinite_length_array && !value_extract(&state_copy, &value, sizeof(value))) {
+	if (!value_extract(&state_copy, &value, sizeof(value), ila_ptr)) {
 		/* Can happen because of elem_count (or payload_end) */
 		ZCBOR_FAIL();
 	}
@@ -1454,7 +1455,6 @@ bool zcbor_any_skip(zcbor_state_t *state, void *result)
 			/* fallthrough */
 		case ZCBOR_MAJOR_TYPE_LIST:
 			if (indefinite_length_array) {
-				state_copy.payload++;
 				value = ZCBOR_LARGE_ELEM_COUNT;
 			}
 			state_copy.elem_count = (size_t)value;
@@ -1487,7 +1487,7 @@ bool zcbor_tag_decode(zcbor_state_t *state, uint32_t *result)
 	PRINT_FUNC();
 	INITIAL_CHECKS_WITH_TYPE(ZCBOR_MAJOR_TYPE_TAG);
 
-	if (!value_extract(state, result, sizeof(*result))) {
+	if (!value_extract(state, result, sizeof(*result), NULL)) {
 		ZCBOR_FAIL();
 	}
 	state->elem_count++;
