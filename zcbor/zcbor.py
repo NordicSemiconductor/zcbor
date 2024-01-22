@@ -2777,6 +2777,7 @@ target_sources({target_name} PRIVATE
     {relativify(Path(output_c_dir, "zcbor_decode.c"))}
     {relativify(Path(output_c_dir, "zcbor_encode.c"))}
     {relativify(Path(output_c_dir, "zcbor_common.c"))}
+    {relativify(Path(output_c_dir, "zcbor_print.c"))}
     {(linesep + "    ").join(((str(relativify(c.name))) for c in c_files.values()))}
     )
 target_include_directories({target_name} PUBLIC
@@ -3106,6 +3107,7 @@ def process_code(args):
         copyfile(Path(c_code_dir, "zcbor_decode.c"), Path(new_c_code_dir, "zcbor_decode.c"))
         copyfile(Path(c_code_dir, "zcbor_encode.c"), Path(new_c_code_dir, "zcbor_encode.c"))
         copyfile(Path(c_code_dir, "zcbor_common.c"), Path(new_c_code_dir, "zcbor_common.c"))
+        copyfile(Path(c_code_dir, "zcbor_print.c"), Path(new_c_code_dir, "zcbor_print.c"))
         copyfile(Path(h_code_dir, "zcbor_decode.h"), Path(new_h_code_dir, "zcbor_decode.h"))
         copyfile(Path(h_code_dir, "zcbor_encode.h"), Path(new_h_code_dir, "zcbor_encode.h"))
         copyfile(Path(h_code_dir, "zcbor_common.h"), Path(new_h_code_dir, "zcbor_common.h"))
