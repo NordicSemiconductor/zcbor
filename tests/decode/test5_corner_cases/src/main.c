@@ -8,6 +8,7 @@
 #include <math.h>
 #include <corner_cases.h>
 #include <zcbor_decode.h>
+#include <zcbor_print.h>
 
 #define CONCAT_BYTE(a,b) a ## b
 
@@ -2019,7 +2020,27 @@ ZTEST(cbor_decode_test5, test_intmax)
 		0x1B, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
 		END
 	};
+	uint8_t intmax3_payload1[] = {LIST(3),
+		0x18, 254,
+		0x19, 0xFF, 0xFE,
+		MAP(1),
+			0x38, 127,
+			0x58, 127,
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+		END
+		END
+	};
+
+
 	struct Intmax2 result2;
+	struct Intmax3 result3;
 	size_t num_decode;
 
 	zassert_equal(ZCBOR_SUCCESS, cbor_decode_Intmax1(intmax1_payload1,
@@ -2049,6 +2070,14 @@ ZTEST(cbor_decode_test5, test_intmax)
 	zassert_equal(result2.UINT_32, UINT32_MAX, NULL);
 	zassert_equal(result2.INT_64, INT64_MAX, NULL);
 	zassert_equal(result2.UINT_64, UINT64_MAX, NULL);
+
+	int res = cbor_decode_Intmax3(intmax3_payload1,
+		sizeof(intmax3_payload1), &result3, &num_decode);
+	zassert_equal(ZCBOR_SUCCESS, res, "%s\n", zcbor_error_str(res));
+	zassert_equal(sizeof(intmax3_payload1), num_decode, NULL);
+	zassert_equal(result3.union_choice, Intmax3_union_uint254_c, NULL);
+	zassert_equal(result3.Int, 65534, NULL);
+	zassert_equal(result3.nintbstr.len, 127, NULL);
 }
 
 

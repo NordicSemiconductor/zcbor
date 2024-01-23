@@ -242,6 +242,12 @@ Intmax2 = [
 	UINT_64: 0..18446744073709551615,
 ]
 
+Intmax3 = [
+	(254 / 255),
+	int .le 65535,
+	{-128 => bstr .size 127},
+]
+
 InvalidIdentifiers = [
 	? "1one",
 	? Ø: 2,
