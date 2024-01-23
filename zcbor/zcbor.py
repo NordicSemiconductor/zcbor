@@ -1212,11 +1212,17 @@ class CddlXcoder(CddlParser):
     def is_int_disambiguated(self):
         return self.int_val() is not None
 
-    def all_children_int_disambiguated(self):
+    def all_children_disambiguated(self, min_val, max_val):
         values = set(child.int_val() for child in self.value)
         retval = (len(values) == len(self.value)) and None not in values \
-            and max(values) <= INT32_MAX and min(values) >= INT32_MIN
+            and max(values) <= max_val and min(values) >= min_val
         return retval
+
+    def all_children_int_disambiguated(self):
+        return self.all_children_disambiguated(INT32_MIN, INT32_MAX)
+
+    def all_children_uint_disambiguated(self):
+        return self.all_children_disambiguated(0, INT32_MAX)
 
     # Name of the "present" variable for this element.
     def present_var_name(self):
@@ -2302,7 +2308,8 @@ class CodeGenerator(CddlXcoder):
                             child.full_xcode(union_int="DROP"))
                         for child in self.value])
                 bit_size = self.value[0].bit_size()
-                func = f"zcbor_int_{self.mode}"
+                func = f"zcbor_uint_{self.mode}" if self.all_children_uint_disambiguated() else \
+                       f"zcbor_int_{self.mode}"
                 return "((%s) && (%s))" % (
                     f"({func}(state, &{self.choice_var_access()}, "
                     + f"sizeof({self.choice_var_access()})))",
