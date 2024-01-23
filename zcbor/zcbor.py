@@ -9,6 +9,7 @@ from regex import compile, S, M
 from pprint import pformat, pprint
 from os import path, linesep, makedirs
 from collections import defaultdict, namedtuple
+from collections.abc import Hashable
 from typing import NamedTuple
 from argparse import ArgumentParser, ArgumentTypeError, RawDescriptionHelpFormatter, FileType
 from datetime import datetime
@@ -176,6 +177,30 @@ def ternary_if_chain(access, names, xcode_strings):
         xcode_strings[0],
         newl_ind,
         ternary_if_chain(access, names[1:], xcode_strings[1:]) if len(names) > 1 else "false")
+
+
+val_conversions = {
+    (2**64) - 1: "UINT64_MAX",
+    (2**63) - 1: "INT64_MAX",
+    (2**32) - 1: "UINT32_MAX",
+    (2**31) - 1: "INT32_MAX",
+    (2**16) - 1: "UINT16_MAX",
+    (2**15) - 1: "INT16_MAX",
+    (2**8) - 1: "UINT8_MAX",
+    (2**7) - 1: "INT8_MAX",
+    -(2**63): "INT64_MIN",
+    -(2**31): "INT32_MIN",
+    -(2**15): "INT16_MIN",
+    -(2**7): "INT8_MIN",
+}
+
+
+def val_to_str(val):
+    if isinstance(val, bool):
+        return str(val).lower()
+    elif isinstance(val, Hashable) and val in val_conversions:
+        return val_conversions[val]
+    return str(val)
 
 
 # Class for parsing CDDL. One instance represents one CBOR data item, with a few caveats:
@@ -520,7 +545,6 @@ class CddlParser:
                 self.size = sizeof(value)
                 self.set_min_value(value)
                 self.set_max_value(value)
-                self.convert_min_max()
         if self.type == "NINT":
             self.max_value = -1
 
@@ -592,9 +616,6 @@ class CddlParser:
                 return
         raise ValueError("invalid quantifier: %s" % quantifier)
 
-    def convert_min_max(self):
-        pass
-
     # Set the self.size of this element. This will also set the self.minValue and self.max_value of
     # UINT types.
     # For use during CDDL parsing.
@@ -609,7 +630,6 @@ class CddlParser:
                 self.max_value = int(value - 1)
             if self.type in ["INT", "NINT"]:
                 self.min_value = int(-1 * (value >> 1))
-            self.convert_min_max()
         elif self.type in ["BSTR", "TSTR", "FLOAT"]:
             self.set_size_range(size, size)
         else:
@@ -635,7 +655,6 @@ class CddlParser:
         if self.type == "UINT":
             self.minValue = 256**min(0, abs(min_size - 1)) if min_size else None
         self.min_size = min_size if min_size else None
-        self.convert_min_max()
 
     # Set self.max_size, and self.max_value if type is UINT.
     def set_max_size(self, max_size):
@@ -646,7 +665,6 @@ class CddlParser:
                     max_size)
             self.max_value = 256**max_size - 1
         self.max_size = max_size
-        self.convert_min_max()
 
     # Set the self.cbor of this element. For use during CDDL parsing.
     def set_cbor(self, cbor, cborseq):
@@ -1250,7 +1268,8 @@ class CddlXcoder(CddlParser):
 
     # Enum entry for this element.
     def enum_var(self, int_val=False):
-        return f"{self.enum_var_name()} = {self.int_val()}" if int_val else self.enum_var_name()
+        return f"{self.enum_var_name()} = {val_to_str(self.int_val())}" \
+               if int_val else self.enum_var_name()
 
     # Full "path" of the "choice" variable for this element.
     def choice_var_access(self):
@@ -1813,32 +1832,6 @@ class CodeGenerator(CddlXcoder):
     def enum_type_name(self):
         return "enum %s" % self.id()
 
-    def convert_min_max(self):
-        defines = {
-            (2**64) - 1: "UINT64_MAX",
-            (2**63) - 1: "INT64_MAX",
-            (2**32) - 1: "UINT32_MAX",
-            (2**31) - 1: "INT32_MAX",
-            (2**16) - 1: "UINT16_MAX",
-            (2**15) - 1: "INT16_MAX",
-            (2**8) - 1: "UINT8_MAX",
-            (2**7) - 1: "INT8_MAX",
-            -(2**63): "INT64_MIN",
-            -(2**31): "INT32_MIN",
-            -(2**15): "INT16_MIN",
-            -(2**7): "INT8_MIN",
-        }
-        if self.value in defines:
-            self.value = defines[self.value]
-        if self.min_value in defines:
-            self.min_value = defines[self.min_value]
-        if self.max_value in defines:
-            self.max_value = defines[self.max_value]
-        if self.min_size in defines:
-            self.min_size = defines[self.min_size]
-        if self.max_size in defines:
-            self.max_size = defines[self.max_size]
-
     # The bit width of the integers as represented in code.
     def bit_size(self):
         bit_size = None
@@ -2163,8 +2156,7 @@ class CodeGenerator(CddlXcoder):
         elif self.type in ["BSTR", "TSTR"]:
             arg = tmp_str_or_null(self.value)
         elif self.type in ["UINT", "INT", "NINT", "FLOAT", "BOOL"]:
-            # Make False and True lower case
-            value = str(self.value).lower() if self.type == "BOOL" else str(self.value)
+            value = val_to_str(self.value)
             arg = (f"&({self.val_type_name()}){{{value}}}" if ptr_result else value)
         else:
             assert False, "Should not come here."
@@ -2362,9 +2354,10 @@ class CodeGenerator(CddlXcoder):
                 for tag in self.tags]
 
     # Appends ULL or LL if a value exceeding 32-bits is used
-    def value_suffix(self, value):
-        if type(value) is str:
+    def value_suffix(self, value_str):
+        if not value_str.isdigit():
             return ""
+        value = int(value_str)
         if self.type == "INT" or self.type == "NINT":
             if value > INT32_MAX or value <= INT32_MIN:
                 return "LL"
@@ -2382,11 +2375,11 @@ class CodeGenerator(CddlXcoder):
 
         if self.type in ["INT", "UINT", "NINT", "FLOAT", "BOOL"]:
             if self.min_value is not None:
-                range_checks.append(f"({access} >= {self.min_value}"
-                                    f"{self.value_suffix(self.min_value)})")
+                range_checks.append(f"({access} >= {val_to_str(self.min_value)}"
+                                    f"{self.value_suffix(val_to_str(self.min_value))})")
             if self.max_value is not None:
-                range_checks.append(f"({access} <= {self.max_value}"
-                                    f"{self.value_suffix(self.max_value)})")
+                range_checks.append(f"({access} <= {val_to_str(self.max_value)}"
+                                    f"{self.value_suffix(val_to_str(self.max_value))})")
             if self.bits:
                 range_checks.append(
                     f"!({access} & ~("
@@ -2395,9 +2388,9 @@ class CodeGenerator(CddlXcoder):
                     + "))")
         elif self.type in ["BSTR", "TSTR"]:
             if self.min_size is not None:
-                range_checks.append(f"({access}.len >= {self.min_size})")
+                range_checks.append(f"({access}.len >= {val_to_str(self.min_size)})")
             if self.max_size is not None:
-                range_checks.append(f"({access}.len <= {self.max_size})")
+                range_checks.append(f"({access}.len <= {val_to_str(self.max_size)})")
         elif self.type == "OTHER":
             if not self.my_types[self.value].single_func_impl_condition():
                 range_checks.extend(self.my_types[self.value].range_checks(access))

@@ -51,6 +51,7 @@ set(py_command
     UnionInt2
     Intmax1
     Intmax2
+    Intmax3
     InvalidIdentifiers
     Uint64List
     BstrSize
