@@ -962,6 +962,7 @@ bool zcbor_search_key_tstr_term(zcbor_state_t *state, char const *str, size_t ma
 }
 
 
+#ifndef ZCBOR_CANONICAL
 static bool array_end_expect(zcbor_state_t *state)
 {
 	INITIAL_CHECKS();
@@ -970,6 +971,7 @@ static bool array_end_expect(zcbor_state_t *state)
 	state->payload++;
 	return true;
 }
+#endif
 
 
 static bool list_map_end_decode(zcbor_state_t *state)
@@ -1462,9 +1464,11 @@ bool zcbor_any_skip(zcbor_state_t *state, void *result)
 					ZCBOR_FAIL();
 				}
 			}
+#ifndef ZCBOR_CANONICAL
 			if (indefinite_length_array && !array_end_expect(&state_copy)) {
 				ZCBOR_FAIL();
 			}
+#endif
 			break;
 		default:
 			/* Do nothing */
