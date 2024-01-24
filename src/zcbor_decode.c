@@ -402,22 +402,40 @@ static bool str_start_decode(zcbor_state_t *state,
 	return true;
 }
 
+
+/**
+ * @brief Checks if there is a potential overflow when decoding a string.
+ *
+ * This function is used to check if the payload contains the whole string.
+ * The payload in the state must point to the start of the string payload, the
+ * length having already been extracted from the header via @ref value_extract or
+ * @ref str_start_decode.
+ *
+ * @param state The current state of the decoding.
+ * @param len   The decoded length of the string.
+ * @return      true if ok (no overflow), false otherwise.
+ */
+static bool str_overflow_check(zcbor_state_t *state, size_t len)
+{
+	/* Casting to size_t is safe since value_extract() checks that
+	 * payload_end is bigger that payload. */
+	if (len > (size_t)(state->payload_end - state->payload)) {
+		zcbor_log("error: 0x%zu > 0x%zu\r\n",
+			len,
+			(state->payload_end - state->payload));
+		ERR_RESTORE(ZCBOR_ERR_NO_PAYLOAD);
+	}
+	return true;
+}
+
+
 static bool str_start_decode_with_overflow_check(zcbor_state_t *state,
 		struct zcbor_string *result, zcbor_major_type_t exp_major_type)
 {
 	bool res = str_start_decode(state, result, exp_major_type);
 
-	if (!res) {
+	if (!res || !str_overflow_check(state, result->len)) {
 		ZCBOR_FAIL();
-	}
-
-	/* Casting to size_t is safe since str_start_decode() checks that
-	 * payload_end is bigger that payload. */
-	if (result->len > (size_t)(state->payload_end - state->payload)) {
-		zcbor_log("error: 0x%zu > 0x%zu\r\n",
-			result->len,
-			(state->payload_end - state->payload));
-		ERR_RESTORE(ZCBOR_ERR_NO_PAYLOAD);
 	}
 
 	return true;
@@ -1430,12 +1448,8 @@ bool zcbor_any_skip(zcbor_state_t *state, void *result)
 	switch (major_type) {
 		case ZCBOR_MAJOR_TYPE_BSTR:
 		case ZCBOR_MAJOR_TYPE_TSTR:
-			/* 'value' is the length of the BSTR or TSTR.
-			 * The subtraction is safe because value_extract() above
-			 * checks that payload_end is greater than payload. */
-			ZCBOR_ERR_IF(
-				value > (uint64_t)(state_copy.payload_end - state_copy.payload),
-				ZCBOR_ERR_NO_PAYLOAD);
+			/* 'value' is the length of the BSTR or TSTR. */
+			ZCBOR_FAIL_IF(!str_overflow_check(state, (size_t)value));
 			(state_copy.payload) += value;
 			break;
 		case ZCBOR_MAJOR_TYPE_MAP:
