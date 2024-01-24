@@ -236,6 +236,8 @@ do { \
 #define ZCBOR_VALUE_IS_INDEFINITE_LENGTH 31 ///! The list or map has indefinite length, and will instead be terminated by a 0xFF token.
 
 #define ZCBOR_BOOL_TO_SIMPLE ((uint8_t)20) ///! In CBOR, false/true have the values 20/21
+#define ZCBOR_NIL_VAL ((uint8_t)22)
+#define ZCBOR_UNDEF_VAL ((uint8_t)23)
 
 #define ZCBOR_FLAG_RESTORE 1UL ///! Restore from the backup. Overwrite the current state with the state from the backup.
 #define ZCBOR_FLAG_CONSUME 2UL ///! Consume the backup. Remove the backup from the stack of backups.

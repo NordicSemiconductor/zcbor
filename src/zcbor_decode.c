@@ -1098,7 +1098,7 @@ bool zcbor_nil_expect(zcbor_state_t *state, void *unused)
 {
 	PRINT_FUNC();
 	(void)unused;
-	return zcbor_simple_expect(state, 22);
+	return zcbor_simple_expect(state, ZCBOR_NIL_VAL);
 }
 
 
@@ -1106,7 +1106,7 @@ bool zcbor_undefined_expect(zcbor_state_t *state, void *unused)
 {
 	PRINT_FUNC();
 	(void)unused;
-	return zcbor_simple_expect(state, 23);
+	return zcbor_simple_expect(state, ZCBOR_UNDEF_VAL);
 }
 
 
