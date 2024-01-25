@@ -1,6 +1,6 @@
 tests:
   zcbor.unit.test2:
-    platform_allow: mps2_an521 qemu_malta_be
+    platform_allow: mps2/an521/cpu0 qemu_malta_be
     tags: zcbor unit cpp
 common: 
   harness: console
