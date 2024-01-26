@@ -1,4 +1,37 @@
-# zcbor v. 0.8.99
+# zcbor v. 0.8.1 (2024-01-26)
+
+Any new bugs, requests, or missing features should be reported as [Github issues](https://github.com/NordicSemiconductor/zcbor/issues).
+
+See also the [release notes for 0.8.0](#zcbor-v-080-2024-01-09) below.
+
+## Improvements:
+
+ * zcbor.py: Use zcbor_uint_decode() when decoding only positive enums
+ * zcbor_common.h: Add ZCBOR_VERSION macro
+
+## Bugfixes:
+
+ * zcbor_common.h: Add forward declaration for strnlen()
+ * zcbor.py: Fix conversion of UINT8_MAX to avoid script errors when using e.g. 255 in CDDL
+ * zcbor_print.h: Fix iterator type and print formats to avoid compiler warnings
+
+## Unsupported CDDL features
+Not all features outlined in the CDDL specs [RFC8610](https://datatracker.ietf.org/doc/html/rfc8610), [RFC9090](https://datatracker.ietf.org/doc/html/rfc9090), and [RFC9165](https://datatracker.ietf.org/doc/html/rfc9165) are supported by zcbor.
+The following is a list of limitations and missing features:
+
+ * Using `&()` to turn groups into choices (unions). `&()` is supported when used with `.bits`.
+ * Representation Types (`#x.y`), except for tags (`#6.y(foo)`) which are supported.
+ * Unwrapping (`~`)
+ * The control operators `.regexp`, `.ne`, `.default`, and `.within` from RFC8610.
+ * The control operators `.sdnv`, `.sdnvseq`, and `.oid` from RFC9090.
+ * The control operators `.plus`, `.cat`, `.det`, `.abnf`, `.abnfb`, and `.feature` from RFC9165.
+ * Generics (`foo<a, b>`).
+ * Using `:` for map keys.
+ * Cuts, either via `^` or implicitly via `:`.
+ * Most of the "Extended Diagnostic Notation" is unsupported.
+
+
+# zcbor v. 0.8.0 (2024-01-09)
 
 Any new bugs, requests, or missing features should be reported as [Github issues](https://github.com/NordicSemiconductor/zcbor/issues).
 
