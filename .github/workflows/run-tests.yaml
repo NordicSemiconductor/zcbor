@@ -3,7 +3,7 @@ name: Run tests
 on:
  pull_request: {}
  schedule:
-  - cron: '* * * * 0' # every sunday
+  - cron: '0 0 * * 0' # every sunday
 
 
 env:
