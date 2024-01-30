@@ -172,14 +172,36 @@ static bool value_extract(zcbor_state_t *state,
 	return true;
 }
 
+static int val_to_int(zcbor_major_type_t major_type, void *result, size_t result_size)
+{
+#ifdef ZCBOR_BIG_ENDIAN
+	int8_t msbyte = *(int8_t *)result;
+#else
+	int8_t msbyte = ((int8_t *)result)[result_size - 1];
+#endif
+	uint8_t *result_uint8 = (uint8_t *)result;
+
+	if ((result_size == 0) || (msbyte < 0)) {
+		/* Value is too large to fit in a signed integer. */
+		return ZCBOR_ERR_INT_SIZE;
+	}
+
+	if (major_type == ZCBOR_MAJOR_TYPE_NINT) {
+		/* Convert from CBOR's representation by flipping all bits. */
+		for (unsigned int i = 0; i < result_size; i++) {
+			result_uint8[i] = (uint8_t)~result_uint8[i];
+		}
+	}
+
+	return ZCBOR_SUCCESS;
+}
+
 
 bool zcbor_int_decode(zcbor_state_t *state, void *result, size_t result_size)
 {
 	PRINT_FUNC();
 	INITIAL_CHECKS();
 	zcbor_major_type_t major_type = ZCBOR_MAJOR_TYPE(*state->payload);
-	uint8_t *result_uint8 = (uint8_t *)result;
-	int8_t *result_int8 = (int8_t *)result;
 
 	if (major_type != ZCBOR_MAJOR_TYPE_PINT
 		&& major_type != ZCBOR_MAJOR_TYPE_NINT) {
@@ -191,20 +213,9 @@ bool zcbor_int_decode(zcbor_state_t *state, void *result, size_t result_size)
 		ZCBOR_FAIL();
 	}
 
-#ifdef ZCBOR_BIG_ENDIAN
-	if (result_int8[0] < 0) {
-#else
-	if (result_int8[result_size - 1] < 0) {
-#endif
-		/* Value is too large to fit in a signed integer. */
-		ERR_RESTORE(ZCBOR_ERR_INT_SIZE);
-	}
-
-	if (major_type == ZCBOR_MAJOR_TYPE_NINT) {
-		/* Convert from CBOR's representation by flipping all bits. */
-		for (unsigned int i = 0; i < result_size; i++) {
-			result_uint8[i] = (uint8_t)~result_uint8[i];
-		}
+	int err = val_to_int(major_type, result, result_size);
+	if (err != ZCBOR_SUCCESS) {
+		ERR_RESTORE(err);
 	}
 
 	return true;
