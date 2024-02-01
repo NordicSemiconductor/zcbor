@@ -73,7 +73,6 @@ bool zcbor_uint_decode(zcbor_state_t *state, void *result, size_t result_size); 
 bool zcbor_bstr_decode(zcbor_state_t *state, struct zcbor_string *result); /* bstr */
 bool zcbor_tstr_decode(zcbor_state_t *state, struct zcbor_string *result); /* tstr */
 bool zcbor_tag_decode(zcbor_state_t *state, uint32_t *result);  /* CBOR tag */
-bool zcbor_simple_decode(zcbor_state_t *state, uint8_t *result); /* CBOR simple value */
 bool zcbor_bool_decode(zcbor_state_t *state, bool *result); /* boolean CBOR simple value */
 bool zcbor_float16_decode(zcbor_state_t *state, float *result); /* IEEE754 float16 */
 bool zcbor_float16_bytes_decode(zcbor_state_t *state, uint16_t *result); /* IEEE754 float16 raw bytes */
@@ -101,7 +100,6 @@ bool zcbor_size_expect(zcbor_state_t *state, size_t expected); /* pint */
 bool zcbor_bstr_expect(zcbor_state_t *state, struct zcbor_string *expected); /* bstr */
 bool zcbor_tstr_expect(zcbor_state_t *state, struct zcbor_string *expected); /* tstr */
 bool zcbor_tag_expect(zcbor_state_t *state, uint32_t expected); /* CBOR tag */
-bool zcbor_simple_expect(zcbor_state_t *state, uint8_t expected); /* CBOR simple value */
 bool zcbor_bool_expect(zcbor_state_t *state, bool expected); /* boolean CBOR simple value */
 bool zcbor_nil_expect(zcbor_state_t *state, void *unused); /* 'nil' CBOR simple value */
 bool zcbor_undefined_expect(zcbor_state_t *state, void *unused); /* 'undefined' CBOR simple value */
@@ -121,7 +119,6 @@ bool zcbor_uint32_pexpect(zcbor_state_t *state, uint32_t *expected); /* pint */
 bool zcbor_uint64_pexpect(zcbor_state_t *state, uint64_t *expected); /* pint */
 bool zcbor_size_pexpect(zcbor_state_t *state, size_t *expected); /* pint */
 bool zcbor_tag_pexpect(zcbor_state_t *state, uint32_t *expected); /* CBOR tag */
-bool zcbor_simple_pexpect(zcbor_state_t *state, uint8_t *expected); /* CBOR simple value */
 bool zcbor_bool_pexpect(zcbor_state_t *state, bool *expected); /* boolean CBOR simple value */
 bool zcbor_float16_pexpect(zcbor_state_t *state, float *expected); /* IEEE754 float16 */
 bool zcbor_float16_bytes_pexpect(zcbor_state_t *state, uint16_t *expected); /* IEEE754 float16 raw bytes */
