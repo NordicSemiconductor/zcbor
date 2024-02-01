@@ -872,6 +872,12 @@ ZTEST(zcbor_unit_tests, test_encode_int_0)
 }
 
 
+bool zcbor_simple_put(zcbor_state_t *state, uint8_t input);
+bool zcbor_simple_encode(zcbor_state_t *state, uint8_t *input);
+bool zcbor_simple_expect(zcbor_state_t *state, uint8_t expected);
+bool zcbor_simple_pexpect(zcbor_state_t *state, uint8_t *expected);
+bool zcbor_simple_decode(zcbor_state_t *state, uint8_t *result);
+
 ZTEST(zcbor_unit_tests, test_simple)
 {
 	uint8_t payload1[100];
