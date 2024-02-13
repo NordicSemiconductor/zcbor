@@ -2143,7 +2143,7 @@ class CodeGenerator(CddlXcoder):
         assert self.type not in ["LIST", "MAP"], "Must have wrapper function for list or map."
 
         if self.type == "OTHER":
-            return self.my_types[self.value].single_func(access, union_int)
+            return self.my_types[self.value].single_func(access, union_int if self.my_types[self.value].type in ('UINT', 'NINT') else None)
 
         func_name = self.single_func_prim_name(union_int, ptr_result=ptr_result)
         if func_name is None:
