@@ -56,6 +56,7 @@ set(py_command
     Uint64List
     BstrSize
     MapUnionPrimAlias
+    Capitalization
   --decode
   --git-sha-header
   --short-names

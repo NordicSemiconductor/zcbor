@@ -280,3 +280,7 @@ m_nil = nil
 mm_nil = m_nil
 m_int = int
 m_6 = 6
+
+; Doesn't need test code, it's tested when the struct is built.
+Capitalization = [int, bool, float, uint, union: (nil / 0), true: true, false: false,
+		unsigned, if: bstr, sizeof: uint, long: bstr]
