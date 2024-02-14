@@ -607,7 +607,7 @@ ZTEST(cbor_encode_test3, test_map)
 	};
 
 	struct Map map1 = {
-		.union_choice = union_uint7uint_c,
+		.Union_choice = union_uint7uint_c,
 		.uint7uint = 1,
 		.twotothree_count = 2,
 		.twotothree = {
@@ -617,7 +617,7 @@ ZTEST(cbor_encode_test3, test_map)
 	};
 	struct Map map2 = {
 		.listkey = true,
-		.union_choice = union_uint7uint_c,
+		.Union_choice = union_uint7uint_c,
 		.uint7uint = 1,
 		.twotothree_count = 3,
 		.twotothree = {
@@ -627,7 +627,7 @@ ZTEST(cbor_encode_test3, test_map)
 		}
 	};
 	struct Map map3 = {
-		.union_choice = union_nintuint_c,
+		.Union_choice = union_nintuint_c,
 		.nintuint = 1,
 		.twotothree_count = 2,
 		.twotothree = {
@@ -1415,13 +1415,13 @@ ZTEST(cbor_encode_test3, test_union_int)
 	size_t num_encode;
 	uint8_t output[60];
 
-	input.union_choice = union_uint5_l_c;
+	input.Union_choice = union_uint5_l_c;
 	zassert_equal(ZCBOR_SUCCESS, cbor_encode_UnionInt2(output, sizeof(output),
 			&input, &num_encode), NULL);
 	zassert_equal(sizeof(exp_union_int_payload1), num_encode, NULL);
 	zassert_mem_equal(exp_union_int_payload1, output, num_encode, NULL);
 
-	input.union_choice = union_uint1000_l_c;
+	input.Union_choice = union_uint1000_l_c;
 	input.bstr.len = 16;
 	input.bstr.value = (uint8_t *)&"This is thousand";
 	zassert_equal(ZCBOR_SUCCESS, cbor_encode_UnionInt2(output, sizeof(output),
@@ -1429,7 +1429,7 @@ ZTEST(cbor_encode_test3, test_union_int)
 	zassert_equal(sizeof(exp_union_int_payload2), num_encode, NULL);
 	zassert_mem_equal(exp_union_int_payload2, output, num_encode, NULL);
 
-	input.union_choice = union_nint_l_c;
+	input.Union_choice = union_nint_l_c;
 	input.number_m.number_choice = number_int_c;
 	input.number_m.Int = 1;
 	zassert_equal(ZCBOR_SUCCESS, cbor_encode_UnionInt2(output, sizeof(output),
@@ -1437,7 +1437,7 @@ ZTEST(cbor_encode_test3, test_union_int)
 	zassert_equal(sizeof(exp_union_int_payload3), num_encode, NULL);
 	zassert_mem_equal(exp_union_int_payload3, output, num_encode, NULL);
 
-	input.union_choice = UnionInt2_union_Structure_One_m_c;
+	input.Union_choice = UnionInt2_union_Structure_One_m_c;
 	input.Structure_One_m.some_array.value = (uint8_t *)&"hi";
 	input.Structure_One_m.some_array.len = 2;
 	zassert_equal(ZCBOR_SUCCESS, cbor_encode_UnionInt2(output, sizeof(output),
@@ -1560,45 +1560,45 @@ ZTEST(cbor_encode_test3, test_map_union_prim_alias)
 	struct MapUnionPrimAlias input;
 	size_t num_encode;
 
-	input.union_choice = union_uint0_c;
+	input.Union_choice = union_uint0_c;
 	zassert_equal(ZCBOR_SUCCESS, cbor_encode_MapUnionPrimAlias(payload,
 		sizeof(payload), &input, &num_encode), NULL);
 	zassert_equal(num_encode, sizeof(exp_map_union_prim_alias_payload0));
 	zassert_mem_equal(exp_map_union_prim_alias_payload0, payload, num_encode);
 
-	input.union_choice = union_uint1int_c;
+	input.Union_choice = union_uint1int_c;
 	input.uint1int = 1;
 	zassert_equal(ZCBOR_SUCCESS, cbor_encode_MapUnionPrimAlias(payload,
 		sizeof(payload), &input, &num_encode), NULL);
 	zassert_equal(num_encode, sizeof(exp_map_union_prim_alias_payload1));
 	zassert_mem_equal(exp_map_union_prim_alias_payload1, payload, num_encode);
 
-	input.union_choice = union_uint2nil_c;
+	input.Union_choice = union_uint2nil_c;
 	zassert_equal(ZCBOR_SUCCESS, cbor_encode_MapUnionPrimAlias(payload,
 		sizeof(payload), &input, &num_encode), NULL);
 	zassert_equal(num_encode, sizeof(exp_map_union_prim_alias_payload2));
 	zassert_mem_equal(exp_map_union_prim_alias_payload2, payload, num_encode);
 
-	input.union_choice = union_m_nil_m_c;
+	input.Union_choice = union_m_nil_m_c;
 	zassert_equal(ZCBOR_SUCCESS, cbor_encode_MapUnionPrimAlias(payload,
 		sizeof(payload), &input, &num_encode), NULL);
 	zassert_equal(num_encode, sizeof(exp_map_union_prim_alias_payload3));
 	zassert_mem_equal(exp_map_union_prim_alias_payload3, payload, num_encode);
 
-	input.union_choice = union_mm_nil_m_c;
+	input.Union_choice = union_mm_nil_m_c;
 	zassert_equal(ZCBOR_SUCCESS, cbor_encode_MapUnionPrimAlias(payload,
 		sizeof(payload), &input, &num_encode), NULL);
 	zassert_equal(num_encode, sizeof(exp_map_union_prim_alias_payload4));
 	zassert_mem_equal(exp_map_union_prim_alias_payload4, payload, num_encode);
 
-	input.union_choice = union_m_int_m_c;
+	input.Union_choice = union_m_int_m_c;
 	input.m_int_m = 5;
 	zassert_equal(ZCBOR_SUCCESS, cbor_encode_MapUnionPrimAlias(payload,
 		sizeof(payload), &input, &num_encode), NULL);
 	zassert_equal(num_encode, sizeof(exp_map_union_prim_alias_payload5));
 	zassert_mem_equal(exp_map_union_prim_alias_payload5, payload, num_encode);
 
-	input.union_choice = union_m_6_m_c;
+	input.Union_choice = union_m_6_m_c;
 	zassert_equal(ZCBOR_SUCCESS, cbor_encode_MapUnionPrimAlias(payload,
 		sizeof(payload), &input, &num_encode), NULL);
 	zassert_equal(num_encode, sizeof(exp_map_union_prim_alias_payload6));
