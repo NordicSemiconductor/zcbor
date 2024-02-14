@@ -262,7 +262,8 @@ Uint64List = [
 ]
 
 BstrSize = {
-    bstr12,
+	bstr12,
+	check: ("c" => bstr .size 16 / bstr .size 0),
 }
 bstr12 = ("s" : bstr .size 12)
 
