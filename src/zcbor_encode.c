@@ -48,7 +48,9 @@ static bool encode_header_byte(zcbor_state_t *state,
 
 	zcbor_assert_state(additional < 32, "Unsupported additional value: %d\r\n", additional);
 
-	*(state->payload_mut++) = (uint8_t)((major_type << 5) | (additional & 0x1F));
+	*(state->payload_mut) = (uint8_t)((major_type << 5) | (additional & 0x1F));
+	zcbor_trace(state, "value_encode");
+	state->payload_mut++;
 	return true;
 }
 
@@ -68,9 +70,6 @@ static bool value_encode_len(zcbor_state_t *state, zcbor_major_type_t major_type
 				get_additional(result_len, u8_result[0]))) {
 		ZCBOR_FAIL();
 	}
-	state->payload_mut--;
-	zcbor_trace(state, "value_encode_len");
-	state->payload_mut++;
 
 #ifdef ZCBOR_BIG_ENDIAN
 	memcpy(state->payload_mut, u8_result, result_len);
