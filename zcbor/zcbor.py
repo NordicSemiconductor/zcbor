@@ -995,6 +995,21 @@ class CddlParser:
         return self.mrepr(False)
 
 
+c_keywords = [
+    "alignas", "alignof", "atomic_bool", "atomic_int", "auto", "bool", "break", "case", "char",
+    "complex", "const", "constexpr", "continue", "default", "do", "double", "else", "enum",
+    "extern", "false", "float", "for", "goto", "if", "imaginary", "inline", "int", "long",
+    "noreturn", "nullptr", "register", "restrict", "return", "short", "signed", "sizeof", "static",
+    "static_assert", "struct", "switch", "thread_local", "true", "typedef", "typeof",
+    "typeof_unqual", "union", "unsigned", "void", "volatile", "while"]
+
+
+c_keywords_underscore = [
+    "_Alignas", "_Alignof", "_Atomic", "_BitInt", "_Bool", "_Complex", "_Decimal128", "_Decimal32",
+    "_Decimal64", "_Generic", "_Imaginary", "_Noreturn", "_Pragma", "_Static_assert",
+    "_Thread_local"]
+
+
 class CddlXcoder(CddlParser):
 
     def __init__(self, *args, **kwargs):
@@ -1010,8 +1025,10 @@ class CddlXcoder(CddlParser):
     # Name of variables and enum members for this element.
     def var_name(self, with_prefix=False):
         name = self.id(with_prefix=with_prefix)
-        if name in ["int", "bool", "float"]:
+        if name in c_keywords:
             name = name.capitalize()
+        elif name in c_keywords_underscore:
+            name = "_" + name
         return name
 
     def skip_condition(self):
