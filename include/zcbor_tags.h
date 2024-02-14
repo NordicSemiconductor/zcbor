@@ -41,7 +41,7 @@ enum zcbor_tag {
 	ZCBOR_TAG_YANG_BITS =           42, ///! text string       [RFC9254]  YANG bits datatype; see Section 6.7.
 	ZCBOR_TAG_YANG_ENUM =           43, ///! text string       [RFC9254]  YANG enumeration datatype; see Section 6.6.
 	ZCBOR_TAG_YANG_IDENTITYREF =    44, ///! uint/tstr         [RFC9254]  YANG identityref datatype; see Section 6.10.
-	ZCBOR_TAG_YANK_INSTANCE_ID =    45, ///! uint/tstr/array   [RFC9254]  YANG instance-identifier datatype; see Section 6.13.
+	ZCBOR_TAG_YANG_INSTANCE_ID =    45, ///! uint/tstr/array   [RFC9254]  YANG instance-identifier datatype; see Section 6.13.
 	ZCBOR_TAG_SID =                 46, ///! uint              [RFC9254]  YANG Schema Item iDentifier (sid); see Section 3.2.
 	ZCBOR_TAG_IPV4 =                52, ///! bstr or array     [RFC9164]  IPv4
 	ZCBOR_TAG_IPV6 =                54, ///! bstr or array     [RFC9164]  IPv6
