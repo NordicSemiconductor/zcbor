@@ -333,6 +333,8 @@ class CddlParser:
 
     # Generate a (hopefully) unique and descriptive name
     def generate_base_name(self):
+        byte_multi = (8 if self.type in ["INT", "UINT", "NINT", "FLOAT"] else 1)
+
         # The first non-None entry is used:
         raw_name = ((
             # The label is the default if present:
@@ -360,11 +362,11 @@ class CddlParser:
             # Name a key value pair by its key (regardless of the key type)
             or ((self.key.generate_base_name() + self.type.lower()) if self.key else None)
             # Name an element by its minimum/maximum "size" (if the min == the max)
-            or (f"{self.type.lower()}{self.min_size * 8}"
-                if self.min_size and self.min_size == self.max_size else None)
+            or (f"{self.type.lower()}{self.min_size * byte_multi}"
+                if (self.min_size is not None) and self.min_size == self.max_size else None)
             # Name an element by its minimum/maximum "size" (if the min != the max)
-            or (f"{self.type.lower()}{self.min_size * 8}-{self.max_size * 8}"
-                if self.min_size and self.max_size else None)
+            or (f"{self.type.lower()}{self.min_size * byte_multi}-{self.max_size * byte_multi}"
+                if (self.min_size is not None) and (self.max_size is not None) else None)
             # Name an element by its type.
             or self.type.lower()).replace("-", "_"))
 
@@ -653,8 +655,8 @@ class CddlParser:
     # Set self.min_size, and self.minValue if type is UINT.
     def set_min_size(self, min_size):
         if self.type == "UINT":
-            self.minValue = 256**min(0, abs(min_size - 1)) if min_size else None
-        self.min_size = min_size if min_size else None
+            self.minValue = 256**min(0, abs(min_size - 1)) if min_size is not None else None
+        self.min_size = min_size if min_size is not None else None
 
     # Set self.max_size, and self.max_value if type is UINT.
     def set_max_size(self, max_size):
