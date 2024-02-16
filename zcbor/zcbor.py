@@ -1820,6 +1820,8 @@ class CodeGenerator(CddlXcoder):
         return decl
 
     def simple_func_condition(self):
+        if self.range_check_condition():
+            return True
         if self.single_func_impl_condition():
             return True
         if self.type == "OTHER" and self.my_types[self.value].simple_func_condition():
@@ -2318,8 +2320,7 @@ class CodeGenerator(CddlXcoder):
             # Reset state for all but the first child.
             for i in range(1, len(child_values)):
                 if ((not self.value[i].is_int_disambiguated())
-                        and (self.value[i].simple_func_condition()
-                             or self.value[i - 1].simple_func_condition())):
+                        and self.value[i - 1].simple_func_condition()):
                     child_values[i] = f"(zcbor_union_elem_code(state) && {child_values[i]})"
 
             return "(%s && (int_res = (%s), %s, int_res))" \
