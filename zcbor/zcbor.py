@@ -1326,7 +1326,8 @@ class DataTranslator(CddlXcoder):
     # Check a condition and raise a CddlValidationError if not.
     def _decode_assert(self, test, msg=""):
         if not test:
-            raise CddlValidationError(f"Data did not decode correctly {'('+msg+')' if msg else ''}")
+            raise CddlValidationError(
+                f"Data did not decode correctly {'(' + msg + ')' if msg else ''}")
 
     # Check that no unexpected tags are attached to this data. Return whether a tag was present.
     def _check_tag(self, obj):
@@ -2511,13 +2512,11 @@ are cleaned up after a failure."""
             yield XcoderTuple(xcode_body, self.xcode_func_name(), self.type_name())
 
     def public_xcode_func_sig(self):
-        type_name = self.type_name()
+        type_name = self.type_name() if struct_ptr_name(self.mode) in self.full_xcode() else "void"
         return f"""
 int cbor_{self.xcode_func_name()}(
 		{"const " if self.mode == "decode" else ""}uint8_t *payload, size_t payload_len,
-		{"" if self.mode == "decode" else "const "}{type_name
-            if struct_ptr_name(self.mode) in self.full_xcode() else "void"} *{
-            struct_ptr_name(self.mode)},
+		{"" if self.mode == "decode" else "const "}{type_name} *{struct_ptr_name(self.mode)},
 		{"size_t *payload_len_out"})"""
 
 
@@ -2633,7 +2632,7 @@ static bool {xcoder.func_name}(
 	{"struct zcbor_string tmp_str;" if "tmp_str" in body else ""}
 	{"bool int_res;" if "int_res" in body else ""}
 
-	bool tmp_result = ({ body });
+	bool tmp_result = ({body});
 
 	if (!tmp_result) {{
 		zcbor_trace_file(state);
@@ -2709,8 +2708,7 @@ extern "C" {{
 #error "The type file was generated with a different default_max_qty than this file"
 #endif
 
-{(linesep+linesep).join(
-    [f"{xcoder.public_xcode_func_sig()};" for xcoder in self.entry_types[mode]])}
+{(linesep * 2).join([f"{xcoder.public_xcode_func_sig()};" for xcoder in self.entry_types[mode]])}
 
 
 #ifdef __cplusplus
