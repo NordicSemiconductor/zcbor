@@ -55,6 +55,7 @@ set(py_command
     InvalidIdentifiers
     Uint64List
     BstrSize
+    MapUnionPrimAlias
   --decode
   --git-sha-header
   --short-names
