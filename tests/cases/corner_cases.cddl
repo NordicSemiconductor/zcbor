@@ -265,3 +265,18 @@ BstrSize = {
     bstr12,
 }
 bstr12 = ("s" : bstr .size 12)
+
+; found in https://github.com/NordicSemiconductor/zcbor/pull/398
+MapUnionPrimAlias = {
+	(0: 0) /
+	(1: int) /
+	(2: nil) /
+	(3: m_nil) /
+	(4: mm_nil) /
+	(5: m_int) /
+	(6: m_6)
+}
+m_nil = nil
+mm_nil = m_nil
+m_int = int
+m_6 = 6

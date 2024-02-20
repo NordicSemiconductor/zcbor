@@ -2405,11 +2405,12 @@ class CodeGenerator(CddlXcoder):
     # Return the full code needed to encode/decode this element, including children,
     # key and cbor, excluding repetitions.
     def repeated_xcode(self, union_int=None):
+        val_union_int = union_int if not self.key else None  # In maps, only pass union_int to key.
         range_checks = self.range_checks(self.val_access())
         xcoder = {
             "INT": self.xcode_single_func_prim,
-            "UINT": lambda: self.xcode_single_func_prim(union_int),
-            "NINT": lambda: self.xcode_single_func_prim(union_int),
+            "UINT": lambda: self.xcode_single_func_prim(val_union_int),
+            "NINT": lambda: self.xcode_single_func_prim(val_union_int),
             "FLOAT": self.xcode_single_func_prim,
             "BSTR": self.xcode_bstr,
             "TSTR": self.xcode_single_func_prim,
@@ -2419,9 +2420,9 @@ class CodeGenerator(CddlXcoder):
             "ANY": self.xcode_single_func_prim,
             "LIST": self.xcode_list,
             "MAP": self.xcode_list,
-            "GROUP": lambda: self.xcode_group(union_int),
+            "GROUP": lambda: self.xcode_group(val_union_int),
             "UNION": self.xcode_union,
-            "OTHER": lambda: self.xcode_single_func_prim(union_int),
+            "OTHER": lambda: self.xcode_single_func_prim(val_union_int),
         }[self.type]
         xcoders = []
         if self.key:

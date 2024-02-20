@@ -1551,4 +1551,66 @@ ZTEST(cbor_encode_test3, test_invalid_identifiers)
 }
 
 
+/** Regression test for a bug where some decoding functions were not called
+ *  because of the union_int optimization */
+ZTEST(cbor_encode_test3, test_map_union_prim_alias)
+{
+	uint8_t exp_map_union_prim_alias_payload0[] = {MAP(1), 0, 0, END};
+	uint8_t exp_map_union_prim_alias_payload1[] = {MAP(1), 1, 1, END};
+	uint8_t exp_map_union_prim_alias_payload2[] = {MAP(1), 2, 0xf6, END};
+	uint8_t exp_map_union_prim_alias_payload3[] = {MAP(1), 3, 0xf6, END};
+	uint8_t exp_map_union_prim_alias_payload4[] = {MAP(1), 4, 0xf6, END};
+	uint8_t exp_map_union_prim_alias_payload5[] = {MAP(1), 5, 5, END};
+	uint8_t exp_map_union_prim_alias_payload6[] = {MAP(1), 6, 6, END};
+	uint8_t payload[10];
+
+	struct MapUnionPrimAlias input;
+	size_t num_encode;
+
+	input.union_choice = union_uint0_c;
+	zassert_equal(ZCBOR_SUCCESS, cbor_encode_MapUnionPrimAlias(payload,
+		sizeof(payload), &input, &num_encode), NULL);
+	zassert_equal(num_encode, sizeof(exp_map_union_prim_alias_payload0));
+	zassert_mem_equal(exp_map_union_prim_alias_payload0, payload, num_encode);
+
+	input.union_choice = union_uint1int_c;
+	input.uint1int = 1;
+	zassert_equal(ZCBOR_SUCCESS, cbor_encode_MapUnionPrimAlias(payload,
+		sizeof(payload), &input, &num_encode), NULL);
+	zassert_equal(num_encode, sizeof(exp_map_union_prim_alias_payload1));
+	zassert_mem_equal(exp_map_union_prim_alias_payload1, payload, num_encode);
+
+	input.union_choice = union_uint2nil_c;
+	zassert_equal(ZCBOR_SUCCESS, cbor_encode_MapUnionPrimAlias(payload,
+		sizeof(payload), &input, &num_encode), NULL);
+	zassert_equal(num_encode, sizeof(exp_map_union_prim_alias_payload2));
+	zassert_mem_equal(exp_map_union_prim_alias_payload2, payload, num_encode);
+
+	input.union_choice = union_m_nil_m_c;
+	zassert_equal(ZCBOR_SUCCESS, cbor_encode_MapUnionPrimAlias(payload,
+		sizeof(payload), &input, &num_encode), NULL);
+	zassert_equal(num_encode, sizeof(exp_map_union_prim_alias_payload3));
+	zassert_mem_equal(exp_map_union_prim_alias_payload3, payload, num_encode);
+
+	input.union_choice = union_mm_nil_m_c;
+	zassert_equal(ZCBOR_SUCCESS, cbor_encode_MapUnionPrimAlias(payload,
+		sizeof(payload), &input, &num_encode), NULL);
+	zassert_equal(num_encode, sizeof(exp_map_union_prim_alias_payload4));
+	zassert_mem_equal(exp_map_union_prim_alias_payload4, payload, num_encode);
+
+	input.union_choice = union_m_int_m_c;
+	input.m_int_m = 5;
+	zassert_equal(ZCBOR_SUCCESS, cbor_encode_MapUnionPrimAlias(payload,
+		sizeof(payload), &input, &num_encode), NULL);
+	zassert_equal(num_encode, sizeof(exp_map_union_prim_alias_payload5));
+	zassert_mem_equal(exp_map_union_prim_alias_payload5, payload, num_encode);
+
+	input.union_choice = union_m_6_m_c;
+	zassert_equal(ZCBOR_SUCCESS, cbor_encode_MapUnionPrimAlias(payload,
+		sizeof(payload), &input, &num_encode), NULL);
+	zassert_equal(num_encode, sizeof(exp_map_union_prim_alias_payload6));
+	zassert_mem_equal(exp_map_union_prim_alias_payload6, payload, num_encode);
+}
+
+
 ZTEST_SUITE(cbor_encode_test3, NULL, NULL, NULL, NULL, NULL);
