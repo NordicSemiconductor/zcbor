@@ -647,17 +647,18 @@ static bool list_map_start_decode(zcbor_state_t *state,
 
 	INITIAL_CHECKS_WITH_TYPE(exp_major_type);
 
-#ifndef ZCBOR_CANONICAL
 	if (ZCBOR_ADDITIONAL(*state->payload) == ZCBOR_VALUE_IS_INDEFINITE_LENGTH) {
 		/* Indefinite length array. */
+#ifndef ZCBOR_CANONICAL
 		new_elem_count = ZCBOR_LARGE_ELEM_COUNT;
 		ZCBOR_ERR_IF(state->elem_count == 0, ZCBOR_ERR_LOW_ELEM_COUNT);
 		indefinite_length_array = true;
 		state->payload_bak = state->payload++;
 		state->elem_count--;
-	} else
+#else
+		ZCBOR_ERR(ZCBOR_ERR_INVALID_VALUE_ENCODING);
 #endif
-	{
+	} else {
 		if (!value_extract(state, &new_elem_count, sizeof(new_elem_count))) {
 			ZCBOR_FAIL();
 		}
@@ -820,6 +821,8 @@ static bool allocate_map_flags(zcbor_state_t *state, size_t old_flags)
 	size_t new_bytes = zcbor_flags_to_bytes(state->decode_state.map_elem_count);
 	size_t old_bytes = zcbor_flags_to_bytes(old_flags);
 	size_t extra_bytes = new_bytes - old_bytes;
+
+	ZCBOR_ERR_IF(!state->constant_state, ZCBOR_ERR_CONSTANT_STATE_MISSING);
 	const uint8_t *flags_end = state->constant_state->map_search_elem_state_end;
 
 	if (extra_bytes) {
@@ -914,7 +917,7 @@ bool zcbor_unordered_map_search(zcbor_decoder_t key_decoder, zcbor_state_t *stat
 		}
 
 		if (should_try_key(state) && try_key(state, key_result, key_decoder)) {
-			if (!state->constant_state->manually_process_elem) {
+			if (!ZCBOR_MANUALLY_PROCESS_ELEM(state)) {
 				ZCBOR_FAIL_IF(!zcbor_elem_processed(state));
 			}
 			return true;

@@ -1004,10 +1004,11 @@ ZTEST(zcbor_unit_tests, test_error_str)
 	test_str(ZCBOR_ERR_NOT_AT_END);
 	test_str(ZCBOR_ERR_MAP_FLAGS_NOT_AVAILABLE);
 	test_str(ZCBOR_ERR_INVALID_VALUE_ENCODING);
+	test_str(ZCBOR_ERR_CONSTANT_STATE_MISSING);
 	test_str(ZCBOR_ERR_UNKNOWN);
 	zassert_mem_equal(zcbor_error_str(-1), "ZCBOR_ERR_UNKNOWN", sizeof("ZCBOR_ERR_UNKNOWN"), NULL);
 	zassert_mem_equal(zcbor_error_str(-10), "ZCBOR_ERR_UNKNOWN", sizeof("ZCBOR_ERR_UNKNOWN"), NULL);
-	zassert_mem_equal(zcbor_error_str(ZCBOR_ERR_INVALID_VALUE_ENCODING + 1), "ZCBOR_ERR_UNKNOWN", sizeof("ZCBOR_ERR_UNKNOWN"), NULL);
+	zassert_mem_equal(zcbor_error_str(ZCBOR_ERR_CONSTANT_STATE_MISSING + 1), "ZCBOR_ERR_UNKNOWN", sizeof("ZCBOR_ERR_UNKNOWN"), NULL);
 	zassert_mem_equal(zcbor_error_str(100000), "ZCBOR_ERR_UNKNOWN", sizeof("ZCBOR_ERR_UNKNOWN"), NULL);
 }
 
@@ -1363,8 +1364,7 @@ ZTEST(zcbor_unit_tests, test_canonical_check)
 	struct zcbor_string str_result;
 
 #ifdef ZCBOR_CANONICAL
-	#define CHECK_ERROR1(state) zassert_equal(ZCBOR_ERR_ADDITIONAL_INVAL, zcbor_pop_error(state), "err: %s\n", zcbor_error_str(zcbor_peek_error(state)))
-	#define CHECK_ERROR2(state) zassert_equal(ZCBOR_ERR_INVALID_VALUE_ENCODING, zcbor_pop_error(state), "err: %s\n", zcbor_error_str(zcbor_peek_error(state)))
+	#define CHECK_ERROR1(state) zassert_equal(ZCBOR_ERR_INVALID_VALUE_ENCODING, zcbor_pop_error(state), "err: %s\n", zcbor_error_str(zcbor_peek_error(state)))
 
 	zassert_false(zcbor_map_start_decode(state_d), NULL);
 	CHECK_ERROR1(state_d);
@@ -1373,28 +1373,28 @@ ZTEST(zcbor_unit_tests, test_canonical_check)
 	CHECK_ERROR1(state_d);
 	state_d->payload += 1;
 	zassert_false(zcbor_tstr_decode(state_d, &str_result), NULL);
-	CHECK_ERROR2(state_d);
+	CHECK_ERROR1(state_d);
 	state_d->payload += 2;
 	zassert_false(zcbor_tstr_decode(state_d, &str_result), NULL);
-	CHECK_ERROR2(state_d);
+	CHECK_ERROR1(state_d);
 	state_d->payload += 2;
 	zassert_false(zcbor_bstr_decode(state_d, &str_result), NULL);
-	CHECK_ERROR2(state_d);
+	CHECK_ERROR1(state_d);
 	state_d->payload += 3;
 	zassert_false(zcbor_bstr_decode(state_d, &str_result), NULL);
-	CHECK_ERROR2(state_d);
+	CHECK_ERROR1(state_d);
 	state_d->payload += 3;
 	zassert_false(zcbor_int64_decode(state_d, &i64_result), NULL);
-	CHECK_ERROR2(state_d);
+	CHECK_ERROR1(state_d);
 	state_d->payload += 5;
 	zassert_false(zcbor_int64_decode(state_d, &i64_result), NULL);
-	CHECK_ERROR2(state_d);
+	CHECK_ERROR1(state_d);
 	state_d->payload += 5;
 	zassert_false(zcbor_uint64_decode(state_d, &u64_result), NULL);
-	CHECK_ERROR2(state_d);
+	CHECK_ERROR1(state_d);
 	state_d->payload += 9;
 	zassert_false(zcbor_uint64_decode(state_d, &u64_result), NULL);
-	CHECK_ERROR2(state_d);
+	CHECK_ERROR1(state_d);
 	state_d->payload += 9;
 
 #else
