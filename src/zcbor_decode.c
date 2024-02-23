@@ -148,10 +148,10 @@ static bool value_extract(zcbor_state_t *state,
 	} else {
 		endian_copy(result_offs, state->payload + 1, len);
 
-#ifdef ZCBOR_CANONICAL
-		ZCBOR_ERR_IF((zcbor_header_len_ptr(result, result_len) != (len + 1)),
-			ZCBOR_ERR_INVALID_VALUE_ENCODING);
-#endif
+		if (ZCBOR_ENFORCE_CANONICAL(state)) {
+			ZCBOR_ERR_IF((zcbor_header_len_ptr(result, result_len) != (len + 1)),
+				ZCBOR_ERR_INVALID_VALUE_ENCODING);
+		}
 	}
 
 	state->payload_bak = state->payload;
@@ -649,15 +649,13 @@ static bool list_map_start_decode(zcbor_state_t *state,
 
 	if (ZCBOR_ADDITIONAL(*state->payload) == ZCBOR_VALUE_IS_INDEFINITE_LENGTH) {
 		/* Indefinite length array. */
-#ifndef ZCBOR_CANONICAL
+		ZCBOR_ERR_IF(ZCBOR_ENFORCE_CANONICAL(state),
+			ZCBOR_ERR_INVALID_VALUE_ENCODING);
 		new_elem_count = ZCBOR_LARGE_ELEM_COUNT;
 		ZCBOR_ERR_IF(state->elem_count == 0, ZCBOR_ERR_LOW_ELEM_COUNT);
 		indefinite_length_array = true;
 		state->payload_bak = state->payload++;
 		state->elem_count--;
-#else
-		ZCBOR_ERR(ZCBOR_ERR_INVALID_VALUE_ENCODING);
-#endif
 	} else {
 		if (!value_extract(state, &new_elem_count, sizeof(new_elem_count))) {
 			ZCBOR_FAIL();
@@ -699,11 +697,8 @@ bool zcbor_map_start_decode(zcbor_state_t *state)
 
 bool zcbor_array_at_end(zcbor_state_t *state)
 {
-#ifdef ZCBOR_CANONICAL
-	const bool indefinite_length_array = false;
-#else
 	const bool indefinite_length_array = state->decode_state.indefinite_length_array;
-#endif
+
 	return ((!indefinite_length_array && (state->elem_count == 0))
 		|| (indefinite_length_array
 			&& (state->payload < state->payload_end)
@@ -979,7 +974,6 @@ static bool list_map_end_decode(zcbor_state_t *state)
 {
 	size_t max_elem_count = 0;
 
-#ifndef ZCBOR_CANONICAL
 	if (state->decode_state.indefinite_length_array) {
 		if (!array_end_expect(state)) {
 			ZCBOR_FAIL();
@@ -987,7 +981,6 @@ static bool list_map_end_decode(zcbor_state_t *state)
 		max_elem_count = ZCBOR_MAX_ELEM_COUNT;
 		state->decode_state.indefinite_length_array = false;
 	}
-#endif
 	if (!zcbor_process_backup(state,
 			ZCBOR_FLAG_RESTORE | ZCBOR_FLAG_CONSUME | ZCBOR_FLAG_KEEP_PAYLOAD,
 			max_elem_count)) {
@@ -1426,12 +1419,11 @@ bool zcbor_any_skip(zcbor_state_t *state, void *result)
 		additional = ZCBOR_ADDITIONAL(*state_copy.payload);
 	}
 
-#ifdef ZCBOR_CANONICAL
-	const bool indefinite_length_array = false;
-#else
 	const bool indefinite_length_array = ((additional == ZCBOR_VALUE_IS_INDEFINITE_LENGTH)
 		&& ((major_type == ZCBOR_MAJOR_TYPE_LIST) || (major_type == ZCBOR_MAJOR_TYPE_MAP)));
-#endif
+
+	ZCBOR_ERR_IF(ZCBOR_ENFORCE_CANONICAL(state) && indefinite_length_array,
+		ZCBOR_ERR_INVALID_VALUE_ENCODING);
 
 	if (!indefinite_length_array && !value_extract(&state_copy, &value, sizeof(value))) {
 		/* Can happen because of elem_count (or payload_end) */
