@@ -163,7 +163,7 @@ void zcbor_new_state(zcbor_state_t *state_array, size_t n_states,
 #ifdef ZCBOR_STOP_ON_ERROR
 	state_array[0].constant_state->stop_on_error = false;
 #endif
-	state_array[0].constant_state->manually_process_elem = false;
+	state_array[0].constant_state->manually_process_elem = ZCBOR_MANUALLY_PROCESS_ELEM_DEFAULT;
 #ifdef ZCBOR_MAP_SMART_SEARCH
 	state_array[0].constant_state->map_search_elem_state_end = flags + flags_bytes;
 #endif
