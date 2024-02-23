@@ -145,6 +145,8 @@ struct zcbor_state_constant {
 #ifdef ZCBOR_STOP_ON_ERROR
 	bool stop_on_error;
 #endif
+	bool enforce_canonical; /**< Fail when decoding if data is non-canonical.
+	                             The default/initial value follows ZCBOR_CANONICAL */
 	bool manually_process_elem; /**< Whether an (unordered map) element should be automatically
 	                                 marked as processed when found via @ref zcbor_search_map_key. */
 #ifdef ZCBOR_MAP_SMART_SEARCH
@@ -152,6 +154,14 @@ struct zcbor_state_constant {
 #endif
 };
 
+#ifdef ZCBOR_CANONICAL
+#define ZCBOR_ENFORCE_CANONICAL_DEFAULT true
+#else
+#define ZCBOR_ENFORCE_CANONICAL_DEFAULT false
+#endif
+
+#define ZCBOR_ENFORCE_CANONICAL(state) (state->constant_state \
+	? state->constant_state->enforce_canonical : ZCBOR_ENFORCE_CANONICAL_DEFAULT)
 
 #define ZCBOR_MANUALLY_PROCESS_ELEM_DEFAULT false
 
