@@ -19,6 +19,7 @@ set(py_command
   -e
   ${bit_arg}
   --short-names
+  --file-header ${CMAKE_CURRENT_LIST_DIR}/file_header_copyright.txt
   )
 
 execute_process(

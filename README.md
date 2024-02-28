@@ -522,7 +522,9 @@ options:
                         union members.
   --file-header FILE_HEADER
                         Header to be included in the comment at the top of
-                        generated C files, e.g. copyright.
+                        generated files, e.g. copyright. Can be a string or a
+                        path to a file. If interpreted as a path to an
+                        existing file, the file's contents will be used.
 
 ```
 

@@ -2942,8 +2942,9 @@ or layout, or disable this option. This might also make enum names different
 from the corresponding union members.""")
     code_parser.add_argument(
         "--file-header", required=False, type=str, default="",
-        help="Header to be included in the comment at the top of generated C files, e.g. copyright."
-    )
+        help="""Header to be included in the comment at the top of generated files, e.g. copyright.
+Can be a string or a path to a file. If interpreted as a path to an existing file,
+the file's contents will be used.""")
     code_parser.set_defaults(process=process_code)
 
     validate_parent_parser = ArgumentParser(add_help=False)
@@ -3034,6 +3035,9 @@ def process_code(args):
         modes.append("decode")
     if args.encode:
         modes.append("encode")
+
+    if args.file_header and Path(args.file_header).exists():
+        args.file_header = Path(args.file_header).read_text()
 
     print("Parsing files: " + ", ".join((c.name for c in args.cddl)))
 
