@@ -2764,8 +2764,12 @@ extern "C" {{
                                   *((Path(h.name).parent) for h in h_files.values()))))
 
         def relativify(p):
-            return PurePosixPath(
-                Path("${CMAKE_CURRENT_LIST_DIR}") / path.relpath(Path(p), cmake_dir))
+            try:
+                return PurePosixPath(
+                    Path("${CMAKE_CURRENT_LIST_DIR}") / path.relpath(Path(p), cmake_dir))
+            except ValueError:
+                # On Windows, the above will fail if the paths are on different drives.
+                return Path(p).absolute()
         return \
             f"""\
 #{self.render_file_header("#")}
