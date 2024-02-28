@@ -15,6 +15,9 @@ import cbor2
 from platform import python_version_tuple
 from sys import platform, exit
 from yaml import safe_load
+from tempfile import mkdtemp
+from shutil import rmtree
+from os import linesep
 
 
 try:
@@ -48,8 +51,10 @@ p_map_bstr_cddl = Path(p_cases, 'map_bstr.cddl')
 p_map_bstr_yaml = Path(p_cases, 'map_bstr.yaml')
 p_yaml_compat_cddl = Path(p_cases, 'yaml_compatibility.cddl')
 p_yaml_compat_yaml = Path(p_cases, 'yaml_compatibility.yaml')
+p_pet_cddl = Path(p_cases, 'pet.cddl')
 p_README = Path(p_root, 'README.md')
 p_prelude = Path(p_root, 'zcbor', 'prelude.cddl')
+p_VERSION = Path(p_root, 'zcbor', 'VERSION')
 
 
 class TestManifest(TestCase):
@@ -625,6 +630,47 @@ class TestCLI(PopenTest):
             b"error: Please specify both --output-c and --output-h "
             b"unless --output-cmake is specified.",
             stderr2)
+
+    def do_test_file_header(self, from_file=False):
+        tempd = Path(mkdtemp())
+        file_header = """Sample
+
+file header"""
+        if from_file:
+            (tempd / "file_header.txt").write_text(file_header, encoding="utf-8")
+            file_header_input = str(tempd / "file_header.txt")
+        else:
+            file_header_input = file_header
+
+        _, __ = self.popen_test(["zcbor", "code", "--cddl", str(p_pet_cddl), "-t", "Pet", "--output-cmake", str(tempd / "pet.cmake"), "-d", "-e", "--file-header", (file_header_input), "--dq", "5"], "")
+        exp_cmake_header = f"""#
+# Sample
+#
+# file header
+#
+# Generated using zcbor version {p_VERSION.read_text(encoding="utf-8")}
+# https://github.com/NordicSemiconductor/zcbor
+# Generated with a --default-max-qty of 5
+#""".splitlines()
+        exp_c_header = f"""/*
+ * Sample
+ *
+ * file header
+ *
+ * Generated using zcbor version {p_VERSION.read_text(encoding="utf-8")}
+ * https://github.com/NordicSemiconductor/zcbor
+ * Generated with a --default-max-qty of 5
+ */""".splitlines()
+        self.assertEqual(exp_cmake_header, (tempd / "pet.cmake").read_text(encoding="utf-8").splitlines()[:9])
+        for p in (tempd / "src" / "pet_decode.c", tempd / "src" / "pet_encode.c",
+                  tempd / "include" / "pet_decode.h", tempd / "include" / "pet_encode.h",
+                  tempd / "include" / "pet_types.h"):
+            self.assertEqual(exp_c_header, p.read_text(encoding="utf-8").splitlines()[:9])
+        rmtree(tempd)
+
+    def test_file_header(self):
+        self.do_test_file_header()
+        self.do_test_file_header(from_file=True)
 
 
 class TestOptional(TestCase):
