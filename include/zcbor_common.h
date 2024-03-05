@@ -145,12 +145,28 @@ struct zcbor_state_constant {
 #ifdef ZCBOR_STOP_ON_ERROR
 	bool stop_on_error;
 #endif
+	bool enforce_canonical; /**< Fail when decoding if data is non-canonical.
+	                             The default/initial value follows ZCBOR_CANONICAL */
 	bool manually_process_elem; /**< Whether an (unordered map) element should be automatically
 	                                 marked as processed when found via @ref zcbor_search_map_key. */
 #ifdef ZCBOR_MAP_SMART_SEARCH
 	uint8_t *map_search_elem_state_end; /**< The end of the @ref map_search_elem_state buffer. */
 #endif
 };
+
+#ifdef ZCBOR_CANONICAL
+#define ZCBOR_ENFORCE_CANONICAL_DEFAULT true
+#else
+#define ZCBOR_ENFORCE_CANONICAL_DEFAULT false
+#endif
+
+#define ZCBOR_ENFORCE_CANONICAL(state) (state->constant_state \
+	? state->constant_state->enforce_canonical : ZCBOR_ENFORCE_CANONICAL_DEFAULT)
+
+#define ZCBOR_MANUALLY_PROCESS_ELEM_DEFAULT false
+
+#define ZCBOR_MANUALLY_PROCESS_ELEM(state) (state->constant_state \
+	? state->constant_state->manually_process_elem : ZCBOR_MANUALLY_PROCESS_ELEM_DEFAULT)
 
 /** Function pointer type used with zcbor_multi_decode.
  *
@@ -263,7 +279,8 @@ do { \
 #define ZCBOR_ERR_ELEMS_NOT_PROCESSED 18
 #define ZCBOR_ERR_NOT_AT_END 19
 #define ZCBOR_ERR_MAP_FLAGS_NOT_AVAILABLE 20
-#define ZCBOR_ERR_INVALID_VALUE_ENCODING 21 ///! When ZCBOR_CANONICAL is defined, and the incoming data is not encoded with minimal length.
+#define ZCBOR_ERR_INVALID_VALUE_ENCODING 21 ///! When ZCBOR_CANONICAL is defined, and the incoming data is not encoded with minimal length, or uses indefinite length array.
+#define ZCBOR_ERR_CONSTANT_STATE_MISSING 22
 #define ZCBOR_ERR_UNKNOWN 31
 
 /** The largest possible elem_count. */
