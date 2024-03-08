@@ -2904,7 +2904,7 @@ extern "C" {{
                     Path("${CMAKE_CURRENT_LIST_DIR}") / path.relpath(Path(p), cmake_dir))
             except ValueError:
                 # On Windows, the above will fail if the paths are on different drives.
-                return Path(p).absolute()
+                return Path(p).absolute().as_posix()
         return \
             f"""\
 #{self.render_file_header("#")}
@@ -2967,7 +2967,7 @@ def parse_args():
     parent_parser = ArgumentParser(add_help=False)
 
     parent_parser.add_argument(
-        "-c", "--cddl", required=True, type=FileType('r'), action="append",
+        "-c", "--cddl", required=True, type=FileType('r', encoding='utf-8'), action="append",
         help="""Path to one or more input CDDL file(s). Passing multiple files is equivalent to
 concatenating them.""")
     parent_parser.add_argument(
@@ -3172,7 +3172,7 @@ def process_code(args):
         modes.append("encode")
 
     if args.file_header and Path(args.file_header).exists():
-        args.file_header = Path(args.file_header).read_text()
+        args.file_header = Path(args.file_header).read_text(encoding="utf-8")
 
     print("Parsing files: " + ", ".join((c.name for c in args.cddl)))
 
@@ -3198,9 +3198,9 @@ def process_code(args):
         else:
             git_sha = __version__
 
-    def create_and_open(path, mode='w'):
+    def create_and_open(path):
         Path(path).absolute().parent.mkdir(parents=True, exist_ok=True)
-        return Path(path).open(mode)
+        return Path(path).open('w', encoding='utf-8')
 
     if args.output_cmake:
         cmake_dir = Path(args.output_cmake).parent
@@ -3272,17 +3272,17 @@ def read_data(args, cddl):
     _, in_file_ext = path.splitext(args.input)
     in_file_format = args.input_as or in_file_ext.strip(".")
     if in_file_format in ["yaml", "yml"]:
-        f = sys.stdin if args.input == "-" else open(args.input, "r")
+        f = sys.stdin if args.input == "-" else open(args.input, "r", encoding="utf-8")
         cbor_str = cddl.from_yaml(f.read(), yaml_compat=args.yaml_compatibility)
     elif in_file_format == "json":
-        f = sys.stdin if args.input == "-" else open(args.input, "r")
+        f = sys.stdin if args.input == "-" else open(args.input, "r", encoding="utf-8")
         cbor_str = cddl.from_json(f.read(), yaml_compat=args.yaml_compatibility)
     elif in_file_format == "cborhex":
-        f = sys.stdin if args.input == "-" else open(args.input, "r")
+        f = sys.stdin if args.input == "-" else open(args.input, "r", encoding="utf-8")
         cbor_str = bytes.fromhex(f.read().replace("\n", ""))
         cddl.validate_str(cbor_str)
     else:
-        f = sys.stdin.buffer if args.input == "-" else open(args.input, "rb")
+        f = sys.stdin.buffer if args.input == "-" else open(args.input, "rb", encoding="utf-8")
         cbor_str = f.read()
         cddl.validate_str(cbor_str)
 
@@ -3293,18 +3293,18 @@ def write_data(args, cddl, cbor_str):
     _, out_file_ext = path.splitext(args.output)
     out_file_format = args.output_as or out_file_ext.strip(".")
     if out_file_format in ["yaml", "yml"]:
-        f = sys.stdout if args.output == "-" else open(args.output, "w")
+        f = sys.stdout if args.output == "-" else open(args.output, "w", encoding="utf-8")
         f.write(cddl.str_to_yaml(cbor_str, yaml_compat=args.yaml_compatibility))
     elif out_file_format == "json":
-        f = sys.stdout if args.output == "-" else open(args.output, "w")
+        f = sys.stdout if args.output == "-" else open(args.output, "w", encoding="utf-8")
         f.write(cddl.str_to_json(cbor_str, yaml_compat=args.yaml_compatibility))
     elif out_file_format in ["c", "h", "c_code"]:
-        f = sys.stdout if args.output == "-" else open(args.output, "w")
+        f = sys.stdout if args.output == "-" else open(args.output, "w", encoding="utf-8")
         assert args.c_code_var_name is not None, \
             "Must specify --c-code-var-name when outputting c code."
         f.write(cddl.str_to_c_code(cbor_str, args.c_code_var_name, args.c_code_columns))
     elif out_file_format == "cborhex":
-        f = sys.stdout if args.output == "-" else open(args.output, "w")
+        f = sys.stdout if args.output == "-" else open(args.output, "w", encoding="utf-8")
         f.write(getrp(r"(.{1,64})").sub(r"\1\n", cbor_str.hex()))  # Add newlines every 64 chars
     else:
         f = sys.stdout.buffer if args.output == "-" else open(args.output, "wb")
