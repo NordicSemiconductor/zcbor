@@ -17,7 +17,7 @@ jobs:
       matrix:
         platform: ["native_posix", "native_posix/native/64", "mps2/an521/cpu0"]
         asserts: ["", "-x VERBOSE=ON -x ASSERTS=ON"]
-    name: Merge tests 1 (${{ matrix.platform }}${{ matrix.asserts != '' && ' with asserts' || '' }})
+    name: Merge test 1 - Twister (Ubuntu) (${{ matrix.platform }}${{ matrix.asserts != '' && ' with asserts' || '' }})
     steps:
     - name: Checkout the code
       uses: actions/checkout@v4
@@ -32,12 +32,67 @@ jobs:
         zephyr_toolchain: ${{ matrix.platform == 'mps2/an521/cpu0' && 'zephyr' || 'host'}}
         zephyr_toolchain_arch: ${{ matrix.platform == 'mps2/an521/cpu0' && 'arm' || ''}}
 
+  merge-test-1-win:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        platform: ["mps2/an521/cpu0"]
+        asserts: [""]
+    name: Merge test 1 - Twister (Windows) (${{ matrix.platform }}${{ matrix.asserts != '' && ' with asserts' || '' }} - build only)
+    steps:
+    - name: Checkout the code
+      uses: actions/checkout@v4
+
+    - name: Checkout Zephyr
+      run: |
+        git init zephyr-clone
+        cd zephyr-clone
+        git remote add origin https://github.com/zephyrproject-rtos/zephyr
+        git fetch origin $env:ZEPHYR_REV --depth=1
+        git reset --hard FETCH_HEAD
+
+    - name: Install zcbor and pip dependencies
+      run: |
+        $ErrorActionPreference="Stop"
+        pip install -U -r scripts\requirements.txt -r zephyr-clone\scripts\requirements-base.txt -r zephyr-clone\scripts\requirements-build-test.txt -r zephyr-clone\scripts\requirements-run-test.txt; if($LastExitCode -ne 0) {Write-Error "$LastExitCode"};
+        pip install -e .
+
+    - name: Install ninja and 7zip
+      run: |
+        choco feature enable -n allowGlobalConfirmation
+        choco install ninja 7zip
+
+    - name: Run West
+      run: |
+        $ErrorActionPreference="Stop"
+        west init -l zephyr-clone; if($LastExitCode -ne 0) {Write-Error "$LastExitCode"};
+        west update cmsis
+
+    - name: Install Zephyr SDK (ARM)
+      run: |
+        $client = new-object System.Net.WebClient
+        $client.DownloadFile("https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v$env:ZEPHYR_SDK_VERSION/zephyr-sdk-${env:ZEPHYR_SDK_VERSION}_windows-x86_64_minimal.7z", "$pwd\zephyr-sdk-${env:ZEPHYR_SDK_VERSION}_windows-x86_64_minimal.7z")
+        7z x $pwd\zephyr-sdk-${env:ZEPHYR_SDK_VERSION}_windows-x86_64_minimal.7z
+        Rename-Item -Path zephyr-sdk-${env:ZEPHYR_SDK_VERSION} -NewName zephyr-sdk
+        cd zephyr-sdk
+        $client.DownloadFile("https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v$env:ZEPHYR_SDK_VERSION/toolchain_windows-x86_64_arm-zephyr-eabi.7z", "$pwd\toolchain_windows-x86_64_arm-zephyr-eabi.7z")
+        7z x $pwd\toolchain_windows-x86_64_arm-zephyr-eabi.7z
+
+    - name: Run Twister
+      shell: cmd
+      run: |
+        set ZEPHYR_BASE=%cd%\zephyr-clone
+        set ZEPHYR_TOOLCHAIN_VARIANT=zephyr
+        set ZEPHYR_SDK_INSTALL_DIR=%cd%\zephyr-sdk
+        python %ZEPHYR_BASE%\scripts\twister -i -v -T tests -W --timestamps --platform ${{ matrix.platform }} ${{ matrix.asserts }} --exclude-tag release --build-only
+
+
   merge-test-2:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
         python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
-    name: Merge tests 2 (Python ${{ matrix.python-version }})
+    name: Merge tests 2 - Python (${{ matrix.python-version }}) functional tests (Ubuntu)
     steps:
     - name: Checkout the code
       uses: actions/checkout@v4
@@ -58,9 +113,9 @@ jobs:
       run: |
         python3 -m unittest test_zcbor
 
-  merge-test-3:
+  merge-test-2-win:
     runs-on: windows-latest
-    name: Merge tests 3 (Windows)
+    name: Merge tests 2 - Python (${{ matrix.python-version }}) functional tests (Windows)
     steps:
     - name: Checkout the code
       uses: actions/checkout@v4
@@ -88,9 +143,9 @@ jobs:
       run: |
         python3 -m unittest test_zcbor
 
-  merge-test-4:
+  merge-test-3:
     runs-on: ubuntu-22.04
-    name: Merge tests 4 (Test repo files)
+    name: Merge tests 3 - Check repo files (Ubuntu)
     steps:
     - name: Checkout the code
       uses: actions/checkout@v4
@@ -112,12 +167,13 @@ jobs:
 
   release-test-1:
     runs-on: ubuntu-22.04
-    name: Release tests 1 (Fuzz)
+    name: Release tests 1 - Fuzz
     needs:
     - merge-test-1
+    - merge-test-1-win
     - merge-test-2
+    - merge-test-2-win
     - merge-test-3
-    - merge-test-4
     if: "startswith(github.head_ref, 'release/')"
     steps:
     - name: Checkout the code
@@ -185,9 +241,10 @@ jobs:
     name: Release tests 2 (Python ${{ matrix.python-version }}${{ matrix.asserts != '' && ' with asserts' || '' }})
     needs:
     - merge-test-1
+    - merge-test-1-win
     - merge-test-2
+    - merge-test-2-win
     - merge-test-3
-    - merge-test-4
     if: "github.event_name == 'schedule' || (github.event_name == 'pull_request' && startswith(github.head_ref, 'release/'))"
     steps:
     - name: Checkout the code
@@ -220,9 +277,10 @@ jobs:
     name: Release tests 3 (Python ${{ matrix.python-version }}${{ matrix.asserts != '' && ' with asserts' || '' }})
     needs:
     - merge-test-1
+    - merge-test-1-win
     - merge-test-2
+    - merge-test-2-win
     - merge-test-3
-    - merge-test-4
     if: "github.event_name == 'schedule' || (github.event_name == 'pull_request' && startswith(github.head_ref, 'release/'))"
     steps:
     - name: Checkout the code
