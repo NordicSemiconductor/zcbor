@@ -354,3 +354,10 @@ EmptyGroup = ()
 EmptyList = []
 
 EmptyContainer = [int, EmptyGroup, EmptyList, EmptyMap]
+
+SingleElemList = [
+    [tstr],
+    [[MyInt]],
+    [true],
+    {1: bstr},
+]
