@@ -280,3 +280,10 @@ m_nil = nil
 mm_nil = m_nil
 m_int = int
 m_6 = 6
+
+SingleElemList = [
+    [tstr],
+    [[MyInt]],
+    [true],
+    {1: bstr},
+]

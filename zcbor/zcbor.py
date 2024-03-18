@@ -1003,6 +1003,7 @@ class CddlXcoder(CddlParser):
         # The prefix used for C code accessing this element, i.e. the struct
         # hierarchy leading up to this element.
         self.accessPrefix = None
+        self.is_delegated = False
         # Used as a guard against endless recursion in self.dependsOn()
         self.dependsOnCall = False
         self.skipped = False
@@ -1026,6 +1027,7 @@ class CddlXcoder(CddlParser):
         return False
 
     def set_skipped(self, skipped):
+        was_set = self.skipped is not None
         if self.range_check_condition() \
            and self.repeated_single_func_impl_condition() \
            and not self.key:
@@ -1033,13 +1035,24 @@ class CddlXcoder(CddlParser):
         else:
             self.skipped = skipped
 
+    # Whether to use the C type of the first child as this type's C type
+    def delegate_type_condition(self):
+        ret = self.type in ["LIST", "MAP", "GROUP"]
+        return ret
+
+    def is_delegated_type(self):
+        return self.is_delegated
+
     # Recursively set the access prefix for this element and all its children.
-    def set_access_prefix(self, prefix):
+    def set_access_prefix(self, prefix, is_delegated=False):
         self.accessPrefix = prefix
+        self.is_delegated = is_delegated
         if self.type in ["LIST", "MAP", "GROUP", "UNION"]:
-            list(map(lambda child: child.set_access_prefix(self.var_access()),
+            list(map(lambda child: child.set_skipped(child.skip_condition()),
                      self.value))
-            list(map(lambda child: child.set_skipped(self.skip_condition()),
+            list(map(lambda child: child.set_access_prefix(
+                     self.var_access(), is_delegated=self.delegate_type_condition()
+                     or (is_delegated and self.skip_condition())),
                      self.value))
         elif self in self.my_types.values() and self.type != "OTHER":
             self.set_skipped(not self.multi_member())
@@ -1081,7 +1094,6 @@ class CddlXcoder(CddlParser):
         return self.access_append_delimiter(self.accessPrefix, '.', *suffix)
 
     # "Path" to this element's variable.
-    # If full is false, the path to the repeated part is returned.
     def var_access(self):
         if self.is_unambiguous():
             return "NULL"
@@ -1091,7 +1103,7 @@ class CddlXcoder(CddlParser):
     def val_access(self):
         if self.is_unambiguous_repeated():
             return "NULL"
-        if self.skip_condition():
+        elif self.skip_condition() or self.is_delegated_type():
             return self.var_access()
         return self.access_append(self.var_name())
 
@@ -1786,6 +1798,18 @@ class CodeGenerator(CddlXcoder):
     def init_args(self):
         return (self.mode, self.entry_type_names, self.default_bit_size, self.default_max_qty)
 
+    # Whether to use the C type of the first child as this type's C type
+    def delegate_type_condition(self):
+        ret = (self.type in ["LIST", "MAP", "GROUP"]
+               and not self.multi_var_condition()
+               and not self.multi_val_condition()
+               and not self.self_repeated_multi_var_condition()
+               and self in self.my_types.values())
+        return ret
+
+    def is_delegated_type(self):
+        return self.is_delegated
+
     # Declaration of the "present" variable for this element.
     def present_var(self):
         return ["bool %s;" % self.present_var_name()]
@@ -1955,7 +1979,10 @@ class CodeGenerator(CddlXcoder):
         var_type = self.var_type()
         multi_var = False
 
-        decl = self.add_var_name(var_type, anonymous=(self.type == "UNION"))
+        decl = []
+
+        if not self.skip_condition():
+            decl += self.add_var_name(var_type, anonymous=(self.type == "UNION"))
 
         if self.type in ["LIST", "MAP", "GROUP"]:
             decl += self.child_declarations()
