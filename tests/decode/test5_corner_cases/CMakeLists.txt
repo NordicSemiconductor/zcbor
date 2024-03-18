@@ -56,6 +56,7 @@ set(py_command
     MapUnionPrimAlias
     Keywords
     EmptyContainer
+    SingleElemList
   --decode
   --git-sha-header
   --short-names

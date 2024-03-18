@@ -47,6 +47,7 @@ set(py_command
   InvalidIdentifiers
   MapUnionPrimAlias
   EmptyContainer
+  SingleElemList
   -e
   ${bit_arg}
   --short-names

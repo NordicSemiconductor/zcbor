@@ -1622,4 +1622,31 @@ ZTEST(cbor_encode_test3, test_empty_group)
 }
 
 
+ZTEST(cbor_encode_test3, test_single_elem_list)
+{
+	uint8_t exp_single_elem_list_payload1[] = {LIST(4),
+		LIST(1), 0x61, 's', END
+		LIST(1), LIST(1), 0, END END
+		LIST(1), 0xf5, END
+		MAP(1), 1, 0x41, 0x02, END
+		END
+	};
+
+	struct SingleElemList input = {
+		.tstr.len = 1,
+		.tstr.value = &(uint8_t){'s'},
+		.MyInt_m = 0,
+		.uint1bstr.len = 1,
+		.uint1bstr.value = &(uint8_t){2},
+	};
+	size_t num_encode;
+	uint8_t payload[20];
+
+	zassert_equal(ZCBOR_SUCCESS, cbor_encode_SingleElemList(payload,
+		sizeof(payload), &input, &num_encode), NULL);
+	zassert_equal(num_encode, sizeof(exp_single_elem_list_payload1));
+	zassert_mem_equal(exp_single_elem_list_payload1, payload, num_encode);
+}
+
+
 ZTEST_SUITE(cbor_encode_test3, NULL, NULL, NULL, NULL, NULL);

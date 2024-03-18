@@ -2224,4 +2224,28 @@ ZTEST(cbor_decode_test5, test_empty_group)
 }
 
 
+ZTEST(cbor_decode_test5, test_single_elem_list)
+{
+	uint8_t single_elem_list_payload1[] = {LIST(4),
+		LIST(1), 0x61, 's', END
+		LIST(1), LIST(1), 0, END END
+		LIST(1), 0xf5, END
+		MAP(1), 1, 0x41, 0x02, END
+		END
+	};
+
+	struct SingleElemList result;
+	size_t num_decode;
+
+	zassert_equal(ZCBOR_SUCCESS, cbor_decode_SingleElemList(single_elem_list_payload1,
+		sizeof(single_elem_list_payload1), &result, &num_decode), NULL);
+	zassert_equal(sizeof(single_elem_list_payload1), num_decode, NULL);
+	zassert_equal(1, result.tstr.len);
+	zassert_equal('s', result.tstr.value[0]);
+	zassert_equal(0, result.MyInt_m);
+	zassert_equal(1, result.uint1bstr.len);
+	zassert_equal(2, result.uint1bstr.value[0]);
+}
+
+
 ZTEST_SUITE(cbor_decode_test5, NULL, NULL, NULL, NULL, NULL);
