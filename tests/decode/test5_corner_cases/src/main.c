@@ -2108,21 +2108,53 @@ ZTEST(cbor_decode_test5, test_uint64_list)
 
 ZTEST(cbor_decode_test5, test_bstr_size)
 {
-	uint8_t bstr_size_payload1[] = {MAP(1),
+	uint8_t bstr_size_payload1[] = {MAP(2),
 		0x61, 's',
 		0x4c, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55,
 		0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb,
+		0x61, 'c',
+		0x50, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
+		0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff,
+		END
+	};
+	uint8_t bstr_size_payload2[] = {MAP(2),
+		0x61, 's',
+		0x4c, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55,
+		0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb,
+		0x61, 'c',
+		0x40,
+		END
+	};
+	uint8_t bstr_size_payload_inv3[] = {MAP(2),
+		0x61, 's',
+		0x4c, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55,
+		0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb,
+		0x61, 'c',
+		0x41, 0x00,
 		END
 	};
 
 	struct BstrSize result;
 	size_t num_decode;
 
-	zassert_equal(ZCBOR_SUCCESS, cbor_decode_BstrSize(bstr_size_payload1,
-		sizeof(bstr_size_payload1), &result, &num_decode), NULL);
+	int ret = cbor_decode_BstrSize(bstr_size_payload1,
+		sizeof(bstr_size_payload1), &result, &num_decode);
+	zassert_equal(ZCBOR_SUCCESS, ret, "%s\n", zcbor_error_str(ret));
 	zassert_equal(sizeof(bstr_size_payload1), num_decode, NULL);
-
 	zassert_equal(12, result.bstr12_m.s.len, NULL);
+	zassert_equal(BstrSize_check_bstr16_c, result.check_choice);
+	zassert_equal(16, result.bstr16.len);
+
+	ret = cbor_decode_BstrSize(bstr_size_payload2,
+		sizeof(bstr_size_payload2), &result, &num_decode);
+	zassert_equal(ZCBOR_SUCCESS, ret, "%s\n", zcbor_error_str(ret));
+	zassert_equal(12, result.bstr12_m.s.len, NULL);
+	zassert_equal(BstrSize_check_bstr0_c, result.check_choice);
+	zassert_equal(0, result.bstr0.len);
+
+	ret = cbor_decode_BstrSize(bstr_size_payload_inv3,
+		sizeof(bstr_size_payload_inv3), &result, &num_decode);
+	zassert_equal(ZCBOR_ERR_WRONG_RANGE, ret, "%s\n", zcbor_error_str(ret));
 }
 
 
