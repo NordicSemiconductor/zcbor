@@ -2374,13 +2374,22 @@ class CodeGenerator(CddlXcoder):
 
         range_checks = []
 
+        # Remove unneeded checks when the bounds are (U)INT64_(MIN|MAX)
+        exc_vals = [UINT64_MAX, 0] if self.type == "UINT" else [INT64_MAX, INT64_MIN]
+        min_val = self.min_value if self.min_value not in exc_vals else None
+        max_val = self.max_value if self.max_value not in exc_vals else None
+
         if self.type in ["INT", "UINT", "NINT", "FLOAT", "BOOL"]:
-            if self.min_value is not None:
-                range_checks.append(f"({access} >= {val_to_str(self.min_value)}"
-                                    f"{self.value_suffix(val_to_str(self.min_value))})")
-            if self.max_value is not None:
-                range_checks.append(f"({access} <= {val_to_str(self.max_value)}"
-                                    f"{self.value_suffix(val_to_str(self.max_value))})")
+            if min_val is not None and min_val == max_val:
+                range_checks.append(f"({access} == {val_to_str(min_val)}"
+                                    f"{self.value_suffix(val_to_str(min_val))})")
+            else:
+                if min_val is not None:
+                    range_checks.append(f"({access} >= {val_to_str(min_val)}"
+                                        f"{self.value_suffix(val_to_str(min_val))})")
+                if max_val is not None:
+                    range_checks.append(f"({access} <= {val_to_str(max_val)}"
+                                        f"{self.value_suffix(val_to_str(max_val))})")
             if self.bits:
                 range_checks.append(
                     f"!({access} & ~("
@@ -2388,10 +2397,13 @@ class CodeGenerator(CddlXcoder):
                                  for c in self.my_control_groups[self.bits].value])
                     + "))")
         elif self.type in ["BSTR", "TSTR"]:
-            if self.min_size is not None:
-                range_checks.append(f"({access}.len >= {val_to_str(self.min_size)})")
-            if self.max_size is not None:
-                range_checks.append(f"({access}.len <= {val_to_str(self.max_size)})")
+            if self.min_size is not None and self.min_size == self.max_size:
+                range_checks.append(f"({access}.len == {val_to_str(self.min_size)})")
+            else:
+                if self.min_size is not None:
+                    range_checks.append(f"({access}.len >= {val_to_str(self.min_size)})")
+                if self.max_size is not None:
+                    range_checks.append(f"({access}.len <= {val_to_str(self.max_size)})")
         elif self.type == "OTHER":
             if not self.my_types[self.value].single_func_impl_condition():
                 range_checks.extend(self.my_types[self.value].range_checks(access))

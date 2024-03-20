@@ -30,8 +30,7 @@ static bool decode_Pet(
 
 	bool tmp_result = (((zcbor_list_start_decode(state) && ((((zcbor_list_start_decode(state) && ((zcbor_multi_decode(1, 3, &(*result).names_count, (zcbor_decoder_t *)zcbor_tstr_decode, state, (&(*result).names), sizeof(struct zcbor_string))) || (zcbor_list_map_end_force_decode(state), false)) && zcbor_list_end_decode(state)))
 	&& ((zcbor_bstr_decode(state, (&(*result).birthday)))
-	&& ((((((*result).birthday.len >= 8)
-	&& ((*result).birthday.len <= 8)) || (zcbor_error(state, ZCBOR_ERR_WRONG_RANGE), false))) || (zcbor_error(state, ZCBOR_ERR_WRONG_RANGE), false)))
+	&& ((((((*result).birthday.len == 8)) || (zcbor_error(state, ZCBOR_ERR_WRONG_RANGE), false))) || (zcbor_error(state, ZCBOR_ERR_WRONG_RANGE), false)))
 	&& ((((zcbor_uint_decode(state, &(*result).species_choice, sizeof((*result).species_choice)))) && ((((((*result).species_choice == Pet_species_cat_c) && ((1)))
 	|| (((*result).species_choice == Pet_species_dog_c) && ((1)))
 	|| (((*result).species_choice == Pet_species_other_c) && ((1)))) || (zcbor_error(state, ZCBOR_ERR_WRONG_VALUE), false)))))) || (zcbor_list_map_end_force_decode(state), false)) && zcbor_list_end_decode(state))));
