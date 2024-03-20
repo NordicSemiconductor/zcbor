@@ -65,7 +65,6 @@ bool zcbor_uint32_put(zcbor_state_t *state, uint32_t input); /* pint */
 bool zcbor_uint64_put(zcbor_state_t *state, uint64_t input); /* pint */
 bool zcbor_size_put(zcbor_state_t *state, size_t input); /* pint */
 bool zcbor_tag_put(zcbor_state_t *state, uint32_t tag); /* CBOR tag */
-bool zcbor_simple_put(zcbor_state_t *state, uint8_t input); /* CBOR simple value */
 bool zcbor_bool_put(zcbor_state_t *state, bool input); /* boolean CBOR simple value */
 bool zcbor_nil_put(zcbor_state_t *state, const void *unused); /* 'nil' CBOR simple value */
 bool zcbor_undefined_put(zcbor_state_t *state, const void *unused); /* 'undefined' CBOR simple value */
@@ -84,7 +83,6 @@ bool zcbor_uint_encode(zcbor_state_t *state, const void *input_uint, size_t uint
 bool zcbor_bstr_encode(zcbor_state_t *state, const struct zcbor_string *input); /* bstr */
 bool zcbor_tstr_encode(zcbor_state_t *state, const struct zcbor_string *input); /* tstr */
 bool zcbor_tag_encode(zcbor_state_t *state, uint32_t *tag); /* CBOR tag. Note that zcbor_tag_encode()'s argument was changed to be a pointer. See also zcbor_tag_put(). */
-bool zcbor_simple_encode(zcbor_state_t *state, uint8_t *input); /* CBOR simple value */
 bool zcbor_bool_encode(zcbor_state_t *state, const bool *input); /* boolean CBOR simple value */
 bool zcbor_float16_encode(zcbor_state_t *state, const float *input); /* IEEE754 float16 */
 bool zcbor_float16_bytes_encode(zcbor_state_t *state, const uint16_t *input); /* IEEE754 float16 raw bytes */
