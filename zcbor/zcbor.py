@@ -995,6 +995,13 @@ class CddlParser:
         return self.mrepr(False)
 
 
+c_keywords = [
+    "auto", "break", "case", "char", "const", "continue", "default", "do", "double", "else", "enum",
+    "extern", "float", "for", "goto", "if", "inline", "int", "long", "register", "restrict",
+    "return", "short", "signed", "sizeof", "static", "struct", "switch", "typedef", "typeof",
+    "union", "unsigned", "void", "volatile", "while", "true", "false", "bool"]
+
+
 class CddlXcoder(CddlParser):
 
     def __init__(self, *args, **kwargs):
@@ -1010,7 +1017,7 @@ class CddlXcoder(CddlParser):
     # Name of variables and enum members for this element.
     def var_name(self, with_prefix=False):
         name = self.id(with_prefix=with_prefix)
-        if name in ["int", "bool", "float"]:
+        if name in c_keywords:
             name = name.capitalize()
         return name
 
