@@ -6,8 +6,6 @@
 
 cmake_minimum_required(VERSION 3.13.1)
 
-set_property(GLOBAL PROPERTY CSTD c11) # To avoid issues with c99 and -Wpedantic
-
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(test5_corner_cases)
 include(../../cmake/test_template.cmake)
