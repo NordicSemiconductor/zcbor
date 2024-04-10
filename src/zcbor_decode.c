@@ -103,23 +103,38 @@ static void endian_copy(uint8_t *dst, const uint8_t *src, size_t src_len)
 }
 
 
-/** Get a single value.
+/** Get a single value. I.e. a number or simple value, or a list/map/string header.
  *
- * @details @p ppayload must point to the header byte. This function will
+ * @details @p state->payload must point to the header byte. This function will
  *          retrieve the value (either from within the additional info, or from
  *          the subsequent bytes) and return it in the result. The result can
- *          have arbitrary length.
+ *          have arbitrary length within 1-8 bytes.
  *
  *          The function will also validate
- *           - Min/max constraints on the value.
- *           - That @p payload doesn't overrun past @p payload_end.
- *           - That @p elem_count has not been exhausted.
+ *           - That @p state->payload doesn't overrun past @p state->payload_end.
+ *           - That @p state->elem_count has not been exhausted.
+ *           - That the value is encoded in a canonical way (if enforce_canonical
+ *             is enabled).
  *
- *          @p ppayload and @p elem_count are updated if the function
- *          succeeds. If not, they are left unchanged.
+ *          @p state->payload and @p state->elem_count are updated if the function
+ *          succeeds. If not, they are left unchanged. @p state->payload is updated
+ *          to point to the next byte after the value (for a list/map/tstr/bstr
+ *          this means the first byte of the list/string payload).
+ *          @p state->elem_count is decremented by one.
+ *
+ *          @p state->payload_bak is updated to point to the start of the value.
  *
  *          CBOR values are always big-endian, so this function converts from
  *          big to little-endian if necessary (@ref ZCBOR_BIG_ENDIAN).
+ *
+ * @param state[inout] The current state of the decoding.
+ * @param result[out]  Pointer to an integer where the result will be stored.
+ * @param result_len   The size of the result integer.
+ * @param indefinite_length_array[inout]
+ *                     As input: NULL if an indefinite length value is not expected.
+ *                     As output: Whether the value signifies an indefinite length array.
+ *
+ * @return             true if the value was successfully extracted, false otherwise.
  */
 static bool value_extract(zcbor_state_t *state,
 		void *const result, size_t result_len, bool *indefinite_length_array)
@@ -127,6 +142,7 @@ static bool value_extract(zcbor_state_t *state,
 	zcbor_trace(state, "value_extract");
 	zcbor_assert_state(result_len != 0, "0-length result not supported.\r\n");
 	zcbor_assert_state(result_len <= 8, "result sizes above 8 bytes not supported.\r\n");
+	zcbor_assert_state(state != NULL, "state cannot be NULL.\r\n");
 	zcbor_assert_state(result != NULL, "result cannot be NULL.\r\n");
 
 	INITIAL_CHECKS();
