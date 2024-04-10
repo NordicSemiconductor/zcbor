@@ -64,8 +64,8 @@ def getrp(pattern, flags=0):
     return regex_cache[pattern_key]
 
 
-# Size of "additional" field if num is encoded as int
 def sizeof(num):
+    """Size of "additional" field if num is encoded as int"""
     if num <= 23:
         return 0
     elif num <= UINT8_MAX:
@@ -80,14 +80,14 @@ def sizeof(num):
         raise ValueError("Number too large (more than 64 bits).")
 
 
-# Print only if verbose
 def verbose_print(verbose_flag, *things):
+    """Print only if verbose"""
     if verbose_flag:
         print(*things)
 
 
-# Pretty print only if verbose
 def verbose_pprint(verbose_flag, *things):
+    """Pretty print only if verbose"""
     if verbose_flag:
         pprint(*things)
 
@@ -95,8 +95,8 @@ def verbose_pprint(verbose_flag, *things):
 global_counter = 0
 
 
-# Retrieve a unique id.
 def counter(reset=False):
+    """Retrieve a unique id."""
     global global_counter
     if reset:
         global_counter = 0
@@ -105,9 +105,8 @@ def counter(reset=False):
     return global_counter
 
 
-# Replace an element in a list or tuple and return the list. For use in
-# lambdas.
 def list_replace_if_not_null(lst, i, r):
+    """Replace an element in a list or tuple and return the list."""
     if lst[i] == "NULL":
         return lst
     if isinstance(lst, tuple):
@@ -120,21 +119,24 @@ def list_replace_if_not_null(lst, i, r):
     return convert(lst)
 
 
-# Return a code snippet that assigns the value to a variable var_name and
-# returns pointer to the variable, or returns NULL if the value is None.
 def val_or_null(value, var_name):
+    """Return a code snippet that assigns to and the returns a variable
+
+    Return a code snippet that assigns the value to a variable var_name and
+    returns pointer to the variable, or returns NULL if the value is None.
+     """
     return "(%s = %d, &%s)" % (var_name, value, var_name) if value is not None else "NULL"
 
 
-# Assign the min_value variable.
 def tmp_str_or_null(value):
+    """Assign the min_value variable."""
     value_str = f'"{value}"' if value is not None else 'NULL'
     len_str = f"""sizeof({f'"{value}"'}) - 1, &tmp_str)"""
     return f"(tmp_str.value = (uint8_t *){value_str}, tmp_str.len = {len_str}"
 
 
-# Assign the max_value variable.
 def min_bool_or_null(value):
+    """Assign the max_value variable."""
     return f"(&(bool){{{int(value)}}})"
 
 
@@ -142,8 +144,8 @@ def deref_if_not_null(access):
     return access if access == "NULL" else "&" + access
 
 
-# Return an argument list for a function call to a encoder/decoder function.
 def xcode_args(res, *sargs):
+    """Return an argument list for a function call to a encoder/decoder function."""
     if len(sargs) > 0:
         return "state, %s, %s, %s" % (
             "&(%s)" % res if res != "NULL" else res, sargs[0], sargs[1])
@@ -152,9 +154,8 @@ def xcode_args(res, *sargs):
             "(%s)" % res if res != "NULL" else res)
 
 
-# Return the code that calls a encoder/decoder function with a given set of
-# arguments.
 def xcode_statement(func, *sargs, **kwargs):
+    """Return the code that calls a encoder/decoder function with a given arguments."""
     if func is None:
         return "1"
     return "(%s(%s))" % (func, xcode_args(*sargs, **kwargs))
@@ -203,11 +204,14 @@ def val_to_str(val):
     return str(val)
 
 
-# Class for parsing CDDL. One instance represents one CBOR data item, with a few caveats:
-#  - For repeated data, one instance represents all repetitions.
-#  - For "OTHER" types, one instance points to another type definition.
-#  - For "GROUP" and "UNION" types, there is no separate data item for the instance.
 class CddlParser:
+    """Class for parsing CDDL.
+
+    One instance represents one CBOR data item, with a few caveats:
+    - For repeated data, one instance represents all repetitions.
+    - For "OTHER" types, one instance points to another type definition.
+    - For "GROUP" and "UNION" types, there is no separate data item for the instance.
+    """
     def __init__(self, default_max_qty, my_types, my_control_groups, base_name=None,
                  short_names=False, base_stem=''):
         self.id_prefix = "temp_" + str(counter())
@@ -298,18 +302,18 @@ class CddlParser:
 
         return CddlTypes(my_types, my_control_groups)
 
-    # Strip CDDL comments (';') from the string.
     @staticmethod
     def strip_comments(instr):
+        """Strip CDDL comments (';') from the string."""
         return getrp(r"\;.*?\n").sub('', instr)
 
     @staticmethod
     def resolve_backslashes(instr):
         return getrp(r"\\\n").sub(" ", instr)
 
-    # Returns a dict containing multiple typename=>string
     @classmethod
     def get_types(cls, cddl_string):
+        """Returns a dict containing multiple typename=>string"""
         instr = cls.strip_comments(cddl_string)
         instr = cls.resolve_backslashes(instr)
         type_regex = \
@@ -331,8 +335,8 @@ class CddlParser:
 
     backslash_quotation_mark = r'\"'
 
-    # Generate a (hopefully) unique and descriptive name
     def generate_base_name(self):
+        """Generate a (hopefully) unique and descriptive name"""
         byte_multi = (8 if self.type in ["INT", "UINT", "NINT", "FLOAT"] else 1)
 
         # The first non-None entry is used:
@@ -383,14 +387,14 @@ class CddlParser:
             return latinized_name
         return raw_name
 
-    # Base name used for functions, variables, and typedefs.
     def get_base_name(self):
+        """Base name used for functions, variables, and typedefs."""
         if not self.base_name:
             self.set_base_name(self.generate_base_name())
         return self.base_name
 
-    # Set an explicit base name for this element.
     def set_base_name(self, base_name):
+        """Set an explicit base name for this element."""
         self.base_name = base_name.replace("-", "_")
 
     def set_base_names(self):
@@ -407,8 +411,8 @@ class CddlParser:
         if self.key:
             self.key.set_base_names()
 
-    # Add uniqueness to the base name.
     def id(self, with_prefix=True):
+        """Add uniqueness to the base name."""
         raw_name = self.get_base_name()
         if not with_prefix and self.short_names:
             return raw_name
@@ -443,8 +447,8 @@ class CddlParser:
         if self.key:
             self.key.set_id_prefix(self.child_base_id())
 
-    # Id to pass to children for them to use as basis for their id/base name.
     def child_base_id(self):
+        """Id to pass to children for them to use as basis for their id/base name."""
         return self.id()
 
     def get_id_num(self):
@@ -452,8 +456,8 @@ class CddlParser:
             self.id_num = counter()
         return self.id_num
 
-    # Human readable representation.
     def mrepr(self, newline):
+        """Human readable representation."""
         reprstr = ''
         if self.quantifier:
             reprstr += self.quantifier
@@ -516,9 +520,8 @@ class CddlParser:
     def set_max_value(self, max_value):
         self.max_value = max_value
 
-    # Set the self.type and self.value of this element. For use during CDDL
-    # parsing.
     def type_and_value(self, new_type, value_generator):
+        """Set the self.type and self.value of this element."""
         if self.type is not None:
             raise TypeError(
                 "Cannot have two values: %s, %s" %
@@ -550,9 +553,10 @@ class CddlParser:
         if self.type == "NINT":
             self.max_value = -1
 
-    # Set the self.type and self.minValue and self.max_value (or self.min_size and self.max_size
-    # depending on the type) of this element. For use during CDDL parsing.
     def type_and_range(self, new_type, min_val, max_val, inc_end=True):
+        """Set the self.type and self.minValue and self.max_value (or self.min_size and
+        self.max_size depending on the type) of this element. For use during CDDL parsing.
+        """
         if not inc_end:
             max_val -= 1
         if new_type not in ["INT", "UINT", "NINT"]:
@@ -575,27 +579,24 @@ class CddlParser:
         if new_type == "INT":
             self.set_size_range(None, max(sizeof(abs(max_val)), sizeof(abs(min_val))))
 
-    # Set the self.value and self.size of this element. For use during CDDL
-    # parsing.
     def type_value_size(self, new_type, value, size):
+        """Set the self.value and self.size of this element."""
         self.type_and_value(new_type, value)
         self.set_size(size)
 
-    # Set the self.value and self.min_size and self.max_size of this element.
-    # For use during CDDL parsing.
     def type_value_size_range(self, new_type, value, min_size, max_size):
+        """Set the self.value and self.min_size and self.max_size of this element."""
         self.type_and_value(new_type, value)
         self.set_size_range(min_size, max_size)
 
-    # Set the self.label of this element. For use during CDDL parsing.
     def set_label(self, label):
+        """Set the self.label of this element. For use during CDDL parsing."""
         if self.type is not None:
             raise TypeError("Cannot have label after value: " + label)
         self.label = label
 
-    # Set the self.quantifier, self.min_qty, and self.max_qty of this element. For
-    # use during CDDL parsing.
     def set_quantifier(self, quantifier):
+        """Set the self.quantifier, self.min_qty, and self.max_qty of this element"""
         if self.type is not None:
             raise TypeError(
                 "Cannot have quantifier after value: " + quantifier)
@@ -618,10 +619,11 @@ class CddlParser:
                 return
         raise ValueError("invalid quantifier: %s" % quantifier)
 
-    # Set the self.size of this element. This will also set the self.minValue and self.max_value of
-    # UINT types.
-    # For use during CDDL parsing.
     def set_size(self, size):
+        """Set the self.size of this element.
+
+        This will also set the self.minValue and self.max_value of UINT types.
+        """
         if self.type is None:
             raise TypeError("Cannot have size before value: " + str(size))
         elif self.type in ["INT", "UINT", "NINT"]:
@@ -637,10 +639,10 @@ class CddlParser:
         else:
             raise TypeError(".size cannot be applied to %s" % self.type)
 
-    # Set the self.minValue and self.max_value or self.min_size and self.max_size of this element
-    # based on what values can be contained within an integer of a certain size. For use during
-    # CDDL parsing.
     def set_size_range(self, min_size, max_size_in, inc_end=True):
+        """Set the self.minValue and self.max_value or self.min_size and self.max_size of this
+        element based on what values can be contained within an integer of a certain size.
+        """
         max_size = max_size_in if inc_end else max_size_in - 1
 
         if (min_size and min_size < 0 or max_size and max_size < 0) \
@@ -652,14 +654,14 @@ class CddlParser:
         self.set_min_size(min_size)
         self.set_max_size(max_size)
 
-    # Set self.min_size, and self.minValue if type is UINT.
     def set_min_size(self, min_size):
+        """Set self.min_size, and self.minValue if type is UINT."""
         if self.type == "UINT":
             self.minValue = 256**min(0, abs(min_size - 1)) if min_size is not None else None
         self.min_size = min_size if min_size is not None else None
 
-    # Set self.max_size, and self.max_value if type is UINT.
     def set_max_size(self, max_size):
+        """Set self.max_size, and self.max_value if type is UINT."""
         if self.type == "UINT" and max_size and self.max_value is None:
             if max_size > 8:
                 raise TypeError(
@@ -668,8 +670,8 @@ class CddlParser:
             self.max_value = 256**max_size - 1
         self.max_size = max_size
 
-    # Set the self.cbor of this element. For use during CDDL parsing.
     def set_cbor(self, cbor, cborseq):
+        """Set the self.cbor of this element. For use during CDDL parsing."""
         if self.type != "BSTR":
             raise TypeError(
                 "%s must be used with bstr." %
@@ -683,19 +685,21 @@ class CddlParser:
             raise TypeError(".bits must be used with bstr.")
         self.bits = bits
 
-    # Set the self.key of this element. For use during CDDL parsing.
     def set_key(self, key):
+        """Set the self.key of this element. For use during CDDL parsing."""
         if self.key is not None:
             raise TypeError("Cannot have two keys: " + key)
         if key.type == "GROUP":
             raise TypeError("A key cannot be a group because it might represent more than 1 type.")
         self.key = key
 
-    # Set the self.label OR self.key of this element. In the CDDL "foo: bar", foo can be either a
-    # label or a key depending on whether it is in a map. This code uses a slightly different method
-    # for choosing between label and key. If the string is recognized as a type, it is treated as a
-    # key. For use during CDDL parsing.
     def set_key_or_label(self, key_or_label):
+        """Set the self.label OR self.key of this element.
+
+        In the CDDL "foo: bar", foo can be either a label or a key depending on whether it is in a
+        map. This code uses a slightly different method for choosing between label and key.
+        If the string is recognized as a type, it is treated as a key. For use during CDDL parsing.
+        """
         if key_or_label in self.my_types:
             self.set_key(self.parse(key_or_label)[0])
             assert self.key.type == "OTHER", "This should only be able to produce an OTHER key."
@@ -707,10 +711,12 @@ class CddlParser:
     def add_tag(self, tag):
         self.tags.append(int(tag))
 
-    # Append to the self.value of this element. Used with the "UNION" type, which has
-    # a python list as self.value. The list represents the "children" of the
-    # type. For use during CDDL parsing.
     def union_add_value(self, value, doubleslash=False):
+        """Append to the self.value of this element.
+
+        Used with the "UNION" type, which has a python list as self.value. The list represents the
+        "children" of the type. For use during CDDL parsing.
+        """
         if self.type != "UNION":
             convert_val = copy(self)
             self.__init__(*self.init_args(), **self.init_kwargs())
@@ -882,13 +888,15 @@ class CddlParser:
              lambda m_self, bits_str: m_self.set_bits(bits_str))
         ]
 
-    # Parse from the beginning of instr (string) until a full element has been parsed. self will
-    # become that element. This function is recursive, so if a nested element
-    # ("MAP"/"LIST"/"UNION"/"GROUP") is encountered, this function will create new instances and add
-    # them to self.value as a list. Likewise, if a key or cbor definition is encountered, a new
-    # element will be created and assigned to self.key or self.cbor. When new elements are created,
-    # get_value() is called on those elements, via parse().
     def get_value(self, instr):
+        """Parse from the beginning of instr (string) until a full element has been parsed.
+
+        self will become that element. This function is recursive, so if a nested element
+        ("MAP"/"LIST"/"UNION"/"GROUP") is encountered, this function will create new instances and
+        add them to self.value as a list. Likewise, if a key or cbor definition is encountered, a
+        new element will be created and assigned to self.key or self.cbor. When new elements are
+        created, get_value() is called on those elements, via parse().
+        """
         types = type(self).cddl_regexes[type(self)]
 
         # Keep parsing until a comma, or to the end of the string.
@@ -922,18 +930,22 @@ class CddlParser:
         # Return the unparsed part of the string.
         return instr.strip()
 
-    # For checking whether this element has a key (i.e. to check that it is a valid "MAP" child).
-    # This must have some recursion since CDDL allows the key to be hidden
-    # behind layers of indirection.
     def elem_has_key(self):
+        """For checking whether this element has a key (i.e. that it is a valid "MAP" child)
+
+        This must have some recursion since CDDL allows the key to be hidden
+        behind layers of indirection.
+        """
         return self.key is not None\
             or (self.type == "OTHER" and self.my_types[self.value].elem_has_key())\
             or (self.type in ["GROUP", "UNION"]
                 and all(child.elem_has_key() for child in self.value))
 
-    # Function for performing validations that must be done after all parsing is complete. This is
-    # recursive, so it will post_validate all its children + key + cbor.
     def post_validate(self):
+        """Function for performing validations that must be done after all parsing is complete.
+
+        This is recursive, so it will post_validate all its children + key + cbor.
+        """
         # Validation of this element.
         if self.type in ["LIST", "MAP"]:
             none_keys = [child for child in self.value if not child.elem_has_key()]
@@ -983,8 +995,8 @@ class CddlParser:
             if c.type != "UINT" or c.value is None or c.value < 0:
                 raise TypeError("control group members must be literal positive integers.")
 
-    # Parses entire instr and returns a list of instances.
     def parse(self, instr):
+        """Parses entire instr and returns a list of instances."""
         instr = instr.strip()
         values = []
         while instr != '':
@@ -1024,8 +1036,8 @@ class CddlXcoder(CddlParser):
         self.dependsOnCall = False
         self.skipped = False
 
-    # Name of variables and enum members for this element.
     def var_name(self, with_prefix=False):
+        """Name of variables and enum members for this element."""
         name = self.id(with_prefix=with_prefix)
         if name in c_keywords:
             name = name.capitalize()
@@ -1052,8 +1064,8 @@ class CddlXcoder(CddlParser):
         else:
             self.skipped = skipped
 
-    # Recursively set the access prefix for this element and all its children.
     def set_access_prefix(self, prefix):
+        """Recursively set the access prefix for this element and all its children."""
         self.accessPrefix = prefix
         if self.type in ["LIST", "MAP", "GROUP", "UNION"]:
             list(map(lambda child: child.set_access_prefix(self.var_access()),
@@ -1067,8 +1079,8 @@ class CddlXcoder(CddlParser):
         if self.cbor_var_condition():
             self.cbor.set_access_prefix(self.var_access())
 
-    # Whether this type has multiple member variables.
     def multi_member(self):
+        """Whether this type has multiple member variables."""
         return self.multi_var_condition() or self.repeated_multi_var_condition()
 
     def is_unambiguous_value(self):
@@ -1087,27 +1099,30 @@ class CddlXcoder(CddlParser):
     def is_unambiguous(self):
         return (self.is_unambiguous_repeated() and (self.min_qty == self.max_qty))
 
-    # Create an access prefix based on an existing prefix, delimiter and a
-    # suffix.
     def access_append_delimiter(self, prefix, delimiter, *suffix):
+        """Create an access prefix based on an existing prefix, delimiter and a
+        suffix.
+        """
         assert prefix is not None, "No access prefix for %s" % self.var_name()
         return delimiter.join((prefix,) + suffix)
 
-    # Create an access prefix from this element's prefix, delimiter and a
-    # provided suffix.
     def access_append(self, *suffix):
+        """Create an access prefix from this element's prefix, delimiter and a
+        provided suffix.
+        """
         suffix = list(suffix)
         return self.access_append_delimiter(self.accessPrefix, '.', *suffix)
 
-    # "Path" to this element's variable.
-    # If full is false, the path to the repeated part is returned.
     def var_access(self):
+        """"Path" to this element's variable.
+        If full is false, the path to the repeated part is returned.
+        """
         if self.is_unambiguous():
             return "NULL"
         return self.access_append()
 
-    # "Path" to access this element's actual value variable.
     def val_access(self):
+        """"Path" to access this element's actual value variable."""
         if self.is_unambiguous_repeated():
             return "NULL"
         if self.skip_condition():
@@ -1119,35 +1134,35 @@ class CddlXcoder(CddlParser):
             return "NULL"
         return self.access_append(self.var_name())
 
-    # Whether to include a "present" variable for this element.
     def present_var_condition(self):
+        """Whether to include a "present" variable for this element."""
         return self.min_qty == 0 and isinstance(self.max_qty, int) and self.max_qty <= 1
 
-    # Whether to include a "count" variable for this element.
     def count_var_condition(self):
+        """Whether to include a "count" variable for this element."""
         return isinstance(self.max_qty, str) or self.max_qty > 1
 
-    # Whether to include a "cbor" variable for this element.
     def is_cbor(self):
+        """Whether to include a "cbor" variable for this element."""
         return (self.type not in ["NIL", "UNDEF", "ANY"]) \
             and ((self.type != "OTHER") or (self.my_types[self.value].is_cbor()))
 
-    # Whether to include a "cbor" variable for this element.
     def cbor_var_condition(self):
+        """Whether to include a "cbor" variable for this element."""
         return (self.cbor is not None) and self.cbor.is_cbor()
 
-    # Whether to include a "choice" variable for this element.
     def choice_var_condition(self):
+        """Whether to include a "choice" variable for this element."""
         return self.type == "UNION"
 
-    # Whether this specific type is a key.
     def reduced_key_var_condition(self):
+        """Whether this specific type is a key."""
         if self.key is not None:
             return True
         return False
 
-    # Whether to include a "key" variable for this element.
     def key_var_condition(self):
+        """Whether to include a "key" variable for this element."""
         if self.reduced_key_var_condition():
             return True
         if self.type == "OTHER" and self.my_types[self.value].key_var_condition():
@@ -1158,33 +1173,36 @@ class CddlXcoder(CddlParser):
             return True
         return False
 
-    # Whether this value adds any repeated elements by itself. I.e. excluding
-    # multiple elements from children.
     def self_repeated_multi_var_condition(self):
+        """Whether this value adds any repeated elements by itself. I.e. excluding
+        multiple elements from children.
+        """
         return (self.key_var_condition()
                 or self.cbor_var_condition()
                 or self.choice_var_condition())
 
-    # Whether this element's actual value has multiple members.
     def multi_val_condition(self):
+        """Whether this element's actual value has multiple members."""
         return (
             self.type in ["LIST", "MAP", "GROUP", "UNION"]
             and (len(self.value) > 1 or (len(self.value) == 1 and self.value[0].multi_member())))
 
-    # Whether any extra variables are to be included for this element for each
-    # repetition.
     def repeated_multi_var_condition(self):
+        """Whether any extra variables are to be included for this element for each
+        repetition.
+        """
         return self.self_repeated_multi_var_condition() or self.multi_val_condition()
 
-    # Whether any extra variables are to be included for this element outside
-    # of repetitions.
-    # Also, whether this element must involve a call to multi_xcode(), i.e. unless
-    # it's repeated exactly once.
     def multi_var_condition(self):
+        """Whether any extra variables are to be included for this element outside
+        of repetitions.
+        Also, whether this element must involve a call to multi_xcode(), i.e. unless
+        it's repeated exactly once.
+        """
         return self.present_var_condition() or self.count_var_condition()
 
-    # Whether this element needs a check (memcmp) for a string value.
     def range_check_condition(self):
+        """Whether this element needs a check (memcmp) for a string value."""
         if self.type == "OTHER":
             return self.my_types[self.value].range_check_condition()
         if self.type not in ["INT", "NINT", "UINT", "BSTR", "TSTR"]:
@@ -1201,21 +1219,21 @@ class CddlXcoder(CddlParser):
             return True
         return False
 
-    # Whether this element should have a typedef in the code.
     def type_def_condition(self):
+        """Whether this element should have a typedef in the code."""
         if self in self.my_types.values() and self.multi_member() and not self.is_unambiguous():
             return True
         return False
 
-    # Whether this type needs a typedef for its repeated part.
     def repeated_type_def_condition(self):
+        """Whether this type needs a typedef for its repeated part."""
         return (
             self.repeated_multi_var_condition()
             and self.multi_var_condition()
             and not self.is_unambiguous_repeated())
 
-    # Whether this element needs its own encoder/decoder function.
     def single_func_impl_condition(self):
+        """Whether this element needs its own encoder/decoder function."""
         return (
             False
             or self.reduced_key_var_condition()
@@ -1224,8 +1242,8 @@ class CddlXcoder(CddlParser):
             or self.type_def_condition()
             or (self.type in ["LIST", "MAP", "GROUP"] and len(self.value) != 0))
 
-    # Whether this element needs its own encoder/decoder function.
     def repeated_single_func_impl_condition(self):
+        """Whether this element needs its own encoder/decoder function."""
         return self.repeated_type_def_condition() \
             or (self.type in ["LIST", "MAP", "GROUP"] and self.multi_member()) \
             or (
@@ -1261,37 +1279,37 @@ class CddlXcoder(CddlParser):
     def all_children_uint_disambiguated(self):
         return self.all_children_disambiguated(0, INT32_MAX)
 
-    # Name of the "present" variable for this element.
     def present_var_name(self):
+        """Name of the "present" variable for this element."""
         return "%s_present" % (self.var_name())
 
-    # Full "path" of the "present" variable for this element.
     def present_var_access(self):
+        """Full "path" of the "present" variable for this element."""
         return self.access_append(self.present_var_name())
 
-    # Name of the "count" variable for this element.
     def count_var_name(self):
+        """Name of the "count" variable for this element."""
         return "%s_count" % (self.var_name())
 
-    # Full "path" of the "count" variable for this element.
     def count_var_access(self):
+        """Full "path" of the "count" variable for this element."""
         return self.access_append(self.count_var_name())
 
-    # Name of the "choice" variable for this element.
     def choice_var_name(self):
+        """Name of the "choice" variable for this element."""
         return self.var_name() + "_choice"
 
-    # Name of the enum entry for this element.
     def enum_var_name(self):
+        """Name of the enum entry for this element."""
         return self.var_name(with_prefix=True) + "_c"
 
-    # Enum entry for this element.
     def enum_var(self, int_val=False):
+        """Enum entry for this element."""
         return f"{self.enum_var_name()} = {val_to_str(self.int_val())}" \
                if int_val else self.enum_var_name()
 
-    # Full "path" of the "choice" variable for this element.
     def choice_var_access(self):
+        """Full "path" of the "choice" variable for this element."""
         return self.access_append(self.choice_var_name())
 
 
@@ -1299,20 +1317,24 @@ class CddlValidationError(Exception):
     pass
 
 
-# Subclass of tuple for holding key,value pairs. This is to make it possible to use isinstance() to
-# separate it from other tuples.
 class KeyTuple(tuple):
+    """Subclass of tuple for holding key,value pairs.
+
+    This is to make it possible to use isinstance() to separate it from other tuples."""
     def __new__(cls, *in_tuple):
         return super(KeyTuple, cls).__new__(cls, *in_tuple)
 
 
-# Convert data between CBOR, JSON and YAML, and validate against the provided CDDL.
-# Decode and validate CBOR into Python structures to be able to make Python scripts that manipulate
-# CBOR code.
 class DataTranslator(CddlXcoder):
-    # Format a Python object for printing by adding newlines and indentation.
+    """Convert data between CBOR, JSON and YAML, and validate against the provided CDDL.
+
+    Decode and validate CBOR into Python structures to be able to make Python scripts that
+    manipulate CBOR code.
+    """
+
     @staticmethod
     def format_obj(obj):
+        """Format a Python object for printing by adding newlines and indentation."""
         formatted = pformat(obj)
         out_str = ""
         indent = 0
@@ -1333,23 +1355,29 @@ class DataTranslator(CddlXcoder):
                 new_line = True
         return out_str
 
-    # Override the id() function. If the name starts with an underscore, prepend an 'f',
-    # since namedtuple() doesn't support identifiers that start with an underscore.
     def id(self):
+        """Override the id() function.
+
+        If the name starts with an underscore, prepend an 'f',
+        since namedtuple() doesn't support identifiers that start with an underscore.
+        """
         return getrp(r"\A_").sub("f_", self.generate_base_name())
 
-    # Override the var_name()
     def var_name(self):
+        """Override the var_name()"""
         return self.id()
 
-    # Check a condition and raise a CddlValidationError if not.
     def _decode_assert(self, test, msg=""):
+        """Check a condition and raise a CddlValidationError if not."""
         if not test:
             raise CddlValidationError(
                 f"Data did not decode correctly {'(' + msg + ')' if msg else ''}")
 
-    # Check that no unexpected tags are attached to this data. Return whether a tag was present.
     def _check_tag(self, obj):
+        """Check that no unexpected tags are attached to this data.
+
+        Return whether a tag was present.
+        """
         tags = copy(self.tags)  # All expected tags
         # Process all tags present in obj
         while isinstance(obj, CBORTag):
@@ -1365,8 +1393,8 @@ class DataTranslator(CddlXcoder):
         self._decode_assert(not tags, f"Expected tags ({tags}), but none present.")
         return obj
 
-    # Return our expected python type as returned by cbor2.
     def _expected_type(self):
+        """Return our expected python type as returned by cbor2."""
         return {
             "UINT": lambda: (int,),
             "INT": lambda: (int,),
@@ -1382,16 +1410,16 @@ class DataTranslator(CddlXcoder):
             "MAP": lambda: (dict,),
         }[self.type]()
 
-    # Check that the decoded object has the correct type.
     def _check_type(self, obj):
+        """Check that the decoded object has the correct type."""
         if self.type not in ["OTHER", "GROUP", "UNION"]:
             exp_type = self._expected_type()
             self._decode_assert(
                 type(obj) in exp_type,
                 f"{str(self)}: Wrong type ({type(obj)}) of {str(obj)}, expected {str(exp_type)}")
 
-    # Check that the decode value conforms to the restrictions in the CDDL.
     def _check_value(self, obj):
+        """Check that the decode value conforms to the restrictions in the CDDL."""
         if self.type in ["UINT", "INT", "NINT", "FLOAT", "TSTR", "BSTR", "BOOL"] \
                 and self.value is not None:
             value = self.value
@@ -1417,19 +1445,19 @@ class DataTranslator(CddlXcoder):
                 self._decode_assert(
                     len(obj) <= self.max_size, "Maximum length: " + str(self.max_size))
 
-    # Check that the object is not a KeyTuple since that means it hasn't been properly processed.
     def _check_key(self, obj):
+        """Check that the object is not a KeyTuple, which would mean it's not properly processed."""
         self._decode_assert(
             not isinstance(obj, KeyTuple), "Unexpected key found: (key,value)=" + str(obj))
 
-    # Recursively remove intermediate objects that have single members. Keep lists as is.
     def _flatten_obj(self, obj):
+        """Recursively remove intermediate objects that have single members. Keep lists as is."""
         if isinstance(obj, tuple) and len(obj) == 1:
             return self._flatten_obj(obj[0])
         return obj
 
-    # Return the contents of a list if it has a single member and it's name is the same as us.
     def _flatten_list(self, name, obj):
+        """Return the contents of a list if it has a single member and the same name as us."""
         if (isinstance(obj, list)
                 and len(obj) == 1
                 and (isinstance(obj[0], list) or isinstance(obj[0], tuple))
@@ -1438,9 +1466,11 @@ class DataTranslator(CddlXcoder):
             return [obj[0][0]]
         return obj
 
-    # Construct a namedtuple object from my_list. my_list contains tuples of name/value.
-    # Also, attempt to flatten redundant levels of abstraction.
     def _construct_obj(self, my_list):
+        """Construct a namedtuple object from my_list. my_list contains tuples of name/value.
+
+        Also, attempt to flatten redundant levels of abstraction.
+        """
         if my_list == []:
             return None
         names, values = tuple(zip(*my_list))
@@ -1451,8 +1481,11 @@ class DataTranslator(CddlXcoder):
             f"KeyTuple not processed: {values}"
         return namedtuple("_", names)(*values)
 
-    # Add construct obj and add it to my_list if relevant. Also, process any KeyTuples present.
     def _add_if(self, my_list, obj, expect_key=False, name=None):
+        """Add construct obj and add it to my_list if relevant.
+
+        Also, process any KeyTuples present.
+        """
         if expect_key and self.type == "OTHER" and self.key is None:
             self.my_types[self.value]._add_if(my_list, obj)
             return
@@ -1485,8 +1518,11 @@ CBOR-formatted bstr, all elements must be bstrs. If not, it is a programmer erro
                 return
         my_list.append((name or self.var_name(), obj))
 
-    # Throw CddlValidationError if iterator is not empty. This consumes one element if present.
     def _iter_is_empty(self, it):
+        """Throw CddlValidationError if iterator is not empty.
+
+        This consumes one element if present.
+        """
         try:
             val = next(it)
         except StopIteration:
@@ -1495,16 +1531,16 @@ CBOR-formatted bstr, all elements must be bstrs. If not, it is a programmer erro
             f"Iterator not consumed while parsing \n{self}\nRemaining elements:\n elem: "
             + "\n elem: ".join(str(elem) for elem in ([val] + list(it))))
 
-    # Get next element from iterator, throw CddlValidationError instead of StopIteration.
     def _iter_next(self, it):
+        """Get next element from iterator, throw CddlValidationError instead of StopIteration."""
         try:
             next_obj = next(it)
             return next_obj
         except StopIteration:
             raise CddlValidationError("Iterator empty")
 
-    # Decode single CDDL value, excluding repetitions
     def _decode_single_obj(self, obj):
+        """Decode single CDDL value, excluding repetitions"""
         self._check_key(obj)
         obj = self._check_tag(obj)
         self._check_type(obj)
@@ -1544,8 +1580,8 @@ CBOR-formatted bstr, all elements must be bstrs. If not, it is a programmer erro
             self._decode_assert(False, "No matches for union: " + str(self))
         assert False, "Unexpected type: " + self.type
 
-    # Decode key and value in the form of a KeyTuple
     def _handle_key(self, next_obj):
+        """Decode key and value in the form of a KeyTuple"""
         self._decode_assert(
             isinstance(next_obj, KeyTuple), f"Expected key: {self.key} value=" + pformat(next_obj))
         key, obj = next_obj
@@ -1554,9 +1590,11 @@ CBOR-formatted bstr, all elements must be bstrs. If not, it is a programmer erro
         res = KeyTuple((key_res if not self.key.is_unambiguous() else None, obj_res))
         return res
 
-    # Decode single CDDL value, excluding repetitions. May consume 0 to n CBOR objects via the
-    # iterator.
     def _decode_obj(self, it):
+        """Decode single CDDL value, excluding repetitions.
+
+        May consume 0 to n CBOR objects via the iterator.
+        """
         my_list = list()
         if self.key is not None:
             it, it_copy = tee(it)
@@ -1601,8 +1639,11 @@ CBOR-formatted bstr, all elements must be bstrs. If not, it is a programmer erro
             ret = (it, self._decode_single_obj(self._iter_next(it)))
         return ret
 
-    # Decode single CDDL value, with repetitions. May consume 0 to n CBOR objects via the iterator.
     def _decode_full(self, it):
+        """Decode single CDDL value, with repetitions.
+
+        May consume 0 to n CBOR objects via the iterator.
+        """
         if self.multi_var_condition():
             retvals = []
             for i in range(self.min_qty):
@@ -1621,8 +1662,8 @@ CBOR-formatted bstr, all elements must be bstrs. If not, it is a programmer erro
             ret = self._decode_obj(it)
             return ret
 
-    # CBOR object => python object
     def decode_obj(self, obj):
+        """CBOR object => python object"""
         it = iter([obj])
         try:
             _, decoded = self._decode_full(it)
@@ -1634,31 +1675,32 @@ CBOR-formatted bstr, all elements must be bstrs. If not, it is a programmer erro
             raise e
         return decoded
 
-    # YAML => python object
     def decode_str_yaml(self, yaml_str, yaml_compat=False):
+        """YAML => python object"""
         yaml_obj = yaml_load(yaml_str)
         obj = self._from_yaml_obj(yaml_obj) if yaml_compat else yaml_obj
         self.validate_obj(obj)
         return self.decode_obj(obj)
 
-    # CBOR bytestring => python object
     def decode_str(self, cbor_str):
+        """CBOR bytestring => python object"""
         cbor_obj = loads(cbor_str)
         return self.decode_obj(cbor_obj)
 
-    # Validate CBOR object against CDDL. Exception if not valid.
     def validate_obj(self, obj):
+        """Validate CBOR object against CDDL. Exception if not valid."""
         self.decode_obj(obj)
         return True
 
-    # Validate CBOR bytestring against CDDL. Exception if not valid.
     def validate_str(self, cbor_str):
+        """Validate CBOR bytestring against CDDL. Exception if not valid."""
         cbor_obj = loads(cbor_str)
         return self.validate_obj(cbor_obj)
 
-    # Convert object from YAML/JSON (with special dicts for bstr, tag etc) to CBOR object
-    # that cbor2 understands.
     def _from_yaml_obj(self, obj):
+        """Convert object from YAML/JSON (with special dicts for bstr, tag etc) to CBOR object
+        that cbor2 understands.
+        """
         if isinstance(obj, list):
             if len(obj) == 1 and obj[0] == "zcbor_undefined":
                 return undefined
@@ -1686,8 +1728,8 @@ CBOR-formatted bstr, all elements must be bstrs. If not, it is a programmer erro
             return retval
         return obj
 
-    # inverse of _from_yaml_obj
     def _to_yaml_obj(self, obj):
+        """inverse of _from_yaml_obj"""
         if isinstance(obj, list) or isinstance(obj, tuple):
             return [self._to_yaml_obj(elem) for elem in obj]
         elif isinstance(obj, dict):
@@ -1720,42 +1762,42 @@ CBOR-formatted bstr, all elements must be bstrs. If not, it is a programmer erro
         assert not isinstance(obj, bytes)
         return obj
 
-    # YAML str => CBOR bytestr
     def from_yaml(self, yaml_str, yaml_compat=False):
+        """YAML str => CBOR bytestr"""
         yaml_obj = yaml_load(yaml_str)
         obj = self._from_yaml_obj(yaml_obj) if yaml_compat else yaml_obj
         self.validate_obj(obj)
         return dumps(obj)
 
-    # CBOR object => YAML str
     def obj_to_yaml(self, obj, yaml_compat=False):
+        """CBOR object => YAML str"""
         self.validate_obj(obj)
         yaml_obj = self._to_yaml_obj(obj) if yaml_compat else obj
         return yaml_dump(yaml_obj)
 
-    # CBOR bytestring => YAML str
     def str_to_yaml(self, cbor_str, yaml_compat=False):
+        """CBOR bytestring => YAML str"""
         return self.obj_to_yaml(loads(cbor_str), yaml_compat=yaml_compat)
 
-    # JSON str => CBOR bytestr
     def from_json(self, json_str, yaml_compat=False):
+        """JSON str => CBOR bytestr"""
         json_obj = json_load(json_str)
         obj = self._from_yaml_obj(json_obj) if yaml_compat else json_obj
         self.validate_obj(obj)
         return dumps(obj)
 
-    # CBOR object => JSON str
     def obj_to_json(self, obj, yaml_compat=False):
+        """CBOR object => JSON str"""
         self.validate_obj(obj)
         json_obj = self._to_yaml_obj(obj) if yaml_compat else obj
         return json_dump(json_obj)
 
-    # CBOR bytestring => JSON str
     def str_to_json(self, cbor_str, yaml_compat=False):
+        """CBOR bytestring => JSON str"""
         return self.obj_to_json(loads(cbor_str), yaml_compat=yaml_compat)
 
-    # CBOR bytestring => C code (uint8_t array initialization)
     def str_to_c_code(self, cbor_str, var_name, columns=0):
+        """CBOR bytestring => C code (uint8_t array initialization)"""
         arr = ", ".join(f"0x{c:02x}" for c in cbor_str)
         if columns:
             arr = '\n' + indent("\n".join(wrap(arr, 6 * columns)), '\t') + '\n'
@@ -1773,9 +1815,9 @@ class CddlTypes(NamedTuple):
     my_control_groups: dict
 
 
-# Class for generating C code that encode/decodes CBOR and validates it according
-# to the CDDL.
 class CodeGenerator(CddlXcoder):
+    """Class for generating C code that encode/decodes CBOR and validates it according to the CDDL.
+    """
     def __init__(self, mode, entry_type_names, default_bit_size, *args, **kwargs):
         super(CodeGenerator, self).__init__(*args, **kwargs)
         self.mode = mode
@@ -1792,12 +1834,12 @@ class CodeGenerator(CddlXcoder):
 
         return cddl_res
 
-    # Whether this element (an OTHER) refers to an entry type.
     def is_entry_type(self):
+        """Whether this element (an OTHER) refers to an entry type."""
         return (self.type == "OTHER") and (self.value in self.entry_type_names)
 
-    # Whether to include a "cbor" variable for this element.
     def is_cbor(self):
+        """Whether to include a "cbor" variable for this element."""
         res = (self.type_name() is not None) and not self.is_entry_type() and (
             (self.type != "OTHER") or self.my_types[self.value].is_cbor())
         return res
@@ -1805,32 +1847,32 @@ class CodeGenerator(CddlXcoder):
     def init_args(self):
         return (self.mode, self.entry_type_names, self.default_bit_size, self.default_max_qty)
 
-    # Declaration of the "present" variable for this element.
     def present_var(self):
+        """Declaration of the "present" variable for this element."""
         return ["bool %s;" % self.present_var_name()]
 
-    # Declaration of the "count" variable for this element.
     def count_var(self):
+        """Declaration of the "count" variable for this element."""
         return ["size_t %s;" % self.count_var_name()]
 
-    # Declaration of the "choice" variable for this element.
     def anonymous_choice_var(self):
+        """Declaration of the "choice" variable for this element."""
         int_vals = self.all_children_int_disambiguated()
         return self.enclose("enum", [val.enum_var(int_vals) + "," for val in self.value])
 
-    # Declaration of the "choice" variable for this element.
     def choice_var(self):
+        """Declaration of the "choice" variable for this element."""
         var = self.anonymous_choice_var()
         var[-1] += f" {self.choice_var_name()};"
         return var
 
-    # Declaration of the variables of all children.
     def child_declarations(self):
+        """Declaration of the variables of all children."""
         decl = [line for child in self.value for line in child.full_declaration()]
         return decl
 
-    # Declaration of the variables of all children.
     def child_single_declarations(self):
+        """Declaration of the variables of all children."""
         decl = list()
         for child in self.value:
             if not child.is_unambiguous_repeated():
@@ -1847,15 +1889,15 @@ class CodeGenerator(CddlXcoder):
             return True
         return False
 
-    # Base name if this element needs to declare a type.
     def raw_type_name(self):
+        """Base name if this element needs to declare a type."""
         return "struct %s" % self.id()
 
     def enum_type_name(self):
         return "enum %s" % self.id()
 
-    # The bit width of the integers as represented in code.
     def bit_size(self):
+        """The bit width of the integers as represented in code."""
         bit_size = None
         if self.type in ["UINT", "INT", "NINT"]:
             assert self.default_bit_size in [32, 64], "The default_bit_size must be 32 or 64."
@@ -1889,8 +1931,8 @@ class CodeGenerator(CddlXcoder):
         else:
             raise TypeError("Floats must have 4 or 8 bytes of precision.")
 
-    # Name of the type of this element's actual value variable.
     def val_type_name(self):
+        """Name of the type of this element's actual value variable."""
         if self.multi_val_condition():
             return self.raw_type_name()
 
@@ -1916,10 +1958,12 @@ class CodeGenerator(CddlXcoder):
 
         return name
 
-    # Name of the type of for the repeated part of this element.
-    # I.e. the part that happens multiple times if the element has a quantifier.
-    # I.e. not including things like the "count" or "present" variable.
     def repeated_type_name(self):
+        """Name of the type for the repeated part of this element.
+
+        I.e. the part that happens multiple times if the element has a quantifier.
+        not including things like the "count" or "present" variable.
+        """
         if self.self_repeated_multi_var_condition():
             name = self.raw_type_name()
             if self.val_type_name() == name:
@@ -1928,17 +1972,19 @@ class CodeGenerator(CddlXcoder):
             name = self.val_type_name()
         return name
 
-    # Name of the type for this element.
     def type_name(self):
+        """Name of the type for this element."""
         if self.multi_var_condition():
             name = self.raw_type_name()
         else:
             name = self.repeated_type_name()
         return name
 
-    # Take a multi member type name and create a variable declaration. Make it an array if the
-    # element is repeated.
     def add_var_name(self, var_type, full=False, anonymous=False):
+        """Take a multi member type name and create a variable declaration.
+
+        Make it an array if the element is repeated.
+        """
         if var_type:
             assert (var_type[-1][-1] == "}" or len(var_type) == 1), \
                 f"Expected single var: {var_type!r}"
@@ -1948,28 +1994,28 @@ class CodeGenerator(CddlXcoder):
             var_type = add_semicolon(var_type)
         return var_type
 
-    # The type for this element as a member variable.
     def var_type(self):
+        """The type for this element as a member variable."""
         if not self.multi_val_condition() and self.val_type_name() is not None:
             return [self.val_type_name()]
         elif self.type == "UNION":
             return self.union_type()
         return []
 
-    # Enclose a list of declarations in a block (struct, union or enum).
     def enclose(self, ingress, declaration):
+        """Enclose a list of declarations in a block (struct, union or enum)."""
         if declaration:
             return [f"{ingress} {{"] + [indentation + line for line in declaration] + ["}"]
         else:
             return []
 
-    # Type declaration for unions.
     def union_type(self):
+        """Type declaration for unions."""
         declaration = self.enclose("union", self.child_single_declarations())
         return declaration
 
-    # Declaration of the repeated part of this element.
     def repeated_declaration(self):
+        """Declaration of the repeated part of this element."""
         if self.is_unambiguous_repeated():
             return []
 
@@ -1997,23 +2043,10 @@ class CodeGenerator(CddlXcoder):
             decl += cbor_var
             multi_var = cbor_var != []
 
-        # if self.type not in ["LIST", "MAP", "GROUP"] or len(self.value) <= 1:
-            # This assert isn't accurate for value lists with NIL, "UNDEF", or ANY
-            # members.
-            # assert multi_var == self.repeated_multi_var_condition(
-            # ), f"""assert {multi_var} == {self.repeated_multi_var_condition()}
-            # type: {self.type}
-            # decl {decl}
-            # self.key_var_condition() is {self.key_var_condition()}
-            # self.key is {self.key}
-            # self.key.full_declaration() is {self.key.full_declaration()}
-            # self.cbor_var_condition() is {self.cbor_var_condition()}
-            # self.choice_var_condition() is {self.choice_var_condition()}
-            # self.value is {self.value}"""
         return decl
 
-    # Declaration of the full type for this element.
     def full_declaration(self):
+        """Declaration of the full type for this element."""
         multi_var = False
 
         if self.is_unambiguous():
@@ -2043,10 +2076,13 @@ class CodeGenerator(CddlXcoder):
 
         return decl
 
-    # Return the type definition of this element. If there are multiple variables, wrap them in a
-    # struct so the function always returns a single type with no name. If full is False, only
-    # repeated part is used.
     def single_var_type(self, full=True):
+        """Return the type definition of this element.
+
+        If there are multiple variables, wrap them in a
+        struct so the function always returns a single type with no name. If full is False, only
+        repeated part is used.
+        """
         if full and self.multi_member():
             return self.enclose("struct", self.full_declaration())
         elif not full and self.repeated_multi_var_condition():
@@ -2054,9 +2090,8 @@ class CodeGenerator(CddlXcoder):
         else:
             return self.var_type()
 
-    # Return the type definition of this element, and all its children + key +
-    # cbor.
     def type_def(self):
+        """Return the type definition of this element, and all its children + key + cbor."""
         ret_val = []
         if self.type in ["LIST", "MAP", "GROUP", "UNION"]:
             ret_val.extend(
@@ -2122,12 +2157,12 @@ class CodeGenerator(CddlXcoder):
             "ANY": f"zcbor_any",
         }[self.type])
 
-    # Name of the encoder/decoder function for this element.
     def xcode_func_name(self):
+        """Name of the encoder/decoder function for this element."""
         return f"{self.mode}_{self.var_name(with_prefix=True)}"
 
-    # Name of the encoder/decoder function for the repeated part of this element.
     def repeated_xcode_func_name(self):
+        """Name of the encoder/decoder function for the repeated part of this element."""
         return f"{self.mode}_repeated_{self.var_name(with_prefix=True)}"
 
     def single_func_prim_name(self, union_int=None, ptr_result=False):
@@ -2157,9 +2192,10 @@ class CodeGenerator(CddlXcoder):
         return func
 
     def single_func_prim(self, access, union_int=None, ptr_result=False):
-        """Return the function name and arguments to call to encode/decode this element. Only used
-        when this element DOESN'T define its own encoder/decoder function (when it's a primitive
-        type, for which functions already exist, or when the function is defined elsewhere
+        """Return the function name and arguments to call to encode/decode this element.
+
+        Only used when this element DOESN'T define its own encoder/decoder function (when it's a
+        primitive type, for which functions already exist, or when the function is defined elsewhere
         ("OTHER"))
         """
         assert self.type not in ["LIST", "MAP"], "Must have wrapper function for list or map."
@@ -2195,16 +2231,17 @@ class CodeGenerator(CddlXcoder):
                 max_val = self.max_value
         return (func_name, arg)
 
-    # Return the function name and arguments to call to encode/decode this element.
     def single_func(self, access=None, union_int=None):
+        """Return the function name and arguments to call to encode/decode this element."""
         if self.single_func_impl_condition():
             return (self.xcode_func_name(), deref_if_not_null(access or self.var_access()))
         else:
             return self.single_func_prim(access or self.val_access(), union_int)
 
-    # Return the function name and arguments to call to encode/decode the repeated
-    # part of this element.
     def repeated_single_func(self, ptr_result=False):
+        """Return the function name and arguments to call to encode/decode the repeated
+        part of this element.
+        """
         if self.repeated_single_func_impl_condition():
             return (self.repeated_xcode_func_name(), deref_if_not_null(self.repeated_val_access()))
         else:
@@ -2227,9 +2264,11 @@ class CodeGenerator(CddlXcoder):
             total += 1
         return total
 
-    # Return a number indicating how many other elements this element depends on. Used putting
-    # functions and typedefs in the right order.
     def depends_on(self):
+        """Return a number indicating how many other elements this element depends on.
+
+        Used for putting functions and typedefs in the right order.
+        """
         ret_vals = [1]
 
         if not self.dependsOnCall:
@@ -2246,13 +2285,12 @@ class CodeGenerator(CddlXcoder):
 
         return max(ret_vals)
 
-    # Make a string from the list returned by single_func_prim()
     def xcode_single_func_prim(self, union_int=None):
+        """Make a string from the list returned by single_func_prim()"""
         return xcode_statement(*self.single_func_prim(self.val_access(), union_int))
 
-    # Recursively sum the total minimum and maximum element count for this
-    # element.
     def list_counts(self):
+        """Recursively sum the total minimum and maximum element count for this element."""
         retval = ({
             "INT": lambda: (self.min_qty, self.max_qty),
             "UINT": lambda: (self.min_qty, self.max_qty),
@@ -2277,8 +2315,8 @@ class CodeGenerator(CddlXcoder):
         }[self.type]())
         return retval
 
-    # Return the full code needed to encode/decode a "LIST" or "MAP" element with children.
     def xcode_list(self):
+        """Return the full code needed to encode/decode a "LIST" or "MAP" element with children."""
         start_func = f"zcbor_{self.type.lower()}_start_{self.mode}"
         end_func = f"zcbor_{self.type.lower()}_end_{self.mode}"
         end_func_force = f"zcbor_list_map_end_force_{self.mode}"
@@ -2303,15 +2341,15 @@ class CodeGenerator(CddlXcoder):
             f"{end_func}(state{count_arg})")
         return with_children if len(self.value) > 0 else without_children
 
-    # Return the full code needed to encode/decode a "GROUP" element's children.
     def xcode_group(self, union_int=None):
+        """Return the full code needed to encode/decode a "GROUP" element's children."""
         assert self.type in ["GROUP"], "Expected GROUP type."
         return "(%s)" % (newl_ind + "&& ").join(
             [self.value[0].full_xcode(union_int)]
             + [child.full_xcode() for child in self.value[1:]])
 
-    # Return the full code needed to encode/decode a "UNION" element's children.
     def xcode_union(self):
+        """Return the full code needed to encode/decode a "UNION" element's children."""
         assert self.type in ["UNION"], "Expected UNION type."
         if self.mode == "decode":
             if self.all_children_int_disambiguated():
@@ -2374,8 +2412,8 @@ class CodeGenerator(CddlXcoder):
         return [f"zcbor_tag_{'put' if (self.mode == 'encode') else 'expect'}(state, {tag})"
                 for tag in self.tags]
 
-    # Appends ULL or LL if a value exceeding 32-bits is used
     def value_suffix(self, value_str):
+        """Appends ULL or LL if a value exceeding 32-bits is used"""
         if not value_str.isdigit():
             return ""
         value = int(value_str)
@@ -2435,9 +2473,11 @@ class CodeGenerator(CddlXcoder):
 
         return range_checks
 
-    # Return the full code needed to encode/decode this element, including children,
-    # key and cbor, excluding repetitions.
     def repeated_xcode(self, union_int=None):
+        """Return the full code needed to encode/decode this element.
+
+        Including children, key and cbor, excluding repetitions.
+        """
         val_union_int = union_int if not self.key else None  # In maps, only pass union_int to key.
         range_checks = self.range_checks(self.val_access())
         xcoder = {
@@ -2474,16 +2514,18 @@ class CodeGenerator(CddlXcoder):
 
         return "(%s)" % ((newl_ind + "&& ").join(xcoders),)
 
-    # Code for the size of the repeated part of this element.
     def result_len(self):
+        """Code for the size of the repeated part of this element."""
         if self.repeated_type_name() is None or self.is_unambiguous_repeated():
             return "0"
         else:
             return "sizeof(%s)" % self.repeated_type_name()
 
-    # Return the full code needed to encode/decode this element, including children,
-    # key, cbor, and repetitions.
     def full_xcode(self, union_int=None):
+        """Return the full code needed to encode/decode this element.
+
+        Including children, key, cbor, and repetitions.
+        """
         if self.present_var_condition():
             if self.mode == "encode":
                 func, *arguments = self.repeated_single_func(ptr_result=False)
@@ -2516,13 +2558,14 @@ are cleaned up after a failure."""
         else:
             return self.repeated_xcode(union_int)
 
-    # Return the body of the encoder/decoder function for this element.
     def xcode(self):
+        """Return the body of the encoder/decoder function for this element."""
         return self.full_xcode()
 
-    # Recursively return a list of the bodies of the encoder/decoder functions for
-    # this element and its children + key + cbor.
     def xcoders(self):
+        """Recursively return a list of the bodies of the encoder/decoder functions for
+        this element and its children + key + cbor.
+        """
         if self.type in ["LIST", "MAP", "GROUP", "UNION"]:
             for child in self.value:
                 for xcoder in child.xcoders():
@@ -2586,9 +2629,10 @@ Generated with a --default-max-qty of {self.default_max_qty}"""
     def header_guard(self, file_name):
         return path.basename(file_name).replace(".", "_").replace("-", "_").upper() + "__"
 
-    # Return a list of typedefs for all defined types, with duplicate typedefs
-    # removed.
     def unique_types(self, mode):
+        """Return a list of typedefs for all defined types, with duplicate typedefs
+        removed.
+        """
         type_names = {}
         out_types = []
         for mtype in self.sorted_types[mode]:
@@ -2606,9 +2650,10 @@ and
 {linesep.join(type_def[0])}"""
         return out_types
 
-    # Return a list of encoder/decoder functions for all defined types, with duplicate
-    # functions removed.
     def unique_funcs(self, mode):
+        """Return a list of encoder/decoder functions for all defined types, with duplicate
+        functions removed.
+        """
         func_names = {}
         out_types = []
         for mtype in self.sorted_types[mode]:
@@ -2627,9 +2672,10 @@ and
 
         return out_types
 
-    # Return a list of encoder/decoder functions for all defined types, with unused
-    # functions removed.
     def used_funcs(self, mode):
+        """Return a list of encoder/decoder functions for all defined types, with unused
+        functions removed.
+        """
         mod_entry_types = [
             XcoderTuple(
                 func_type.xcode(),
@@ -2644,8 +2690,8 @@ and
                 out_types.append(func_type)
         return list(reversed(out_types))
 
-    # Render a single decoding function with signature and body.
     def render_forward_declaration(self, xcoder, mode):
+        """Render a single decoding function with signature and body."""
         return f"""
 static bool {xcoder.func_name}(zcbor_state_t *state, {"" if mode == "decode" else "const "}{
             xcoder.type_name
@@ -2676,8 +2722,8 @@ static bool {xcoder.func_name}(
 	return tmp_result;
 }}""".replace("	\n", "")  # call replace() to remove empty lines.
 
-    # Render a single entry function (API function) with signature and body.
     def render_entry_function(self, xcoder, mode):
+        """Render a single entry function (API function) with signature and body."""
         func_name, func_arg = (xcoder.xcode_func_name(), struct_ptr_name(mode))
         return f"""
 {xcoder.public_xcode_func_sig()}
@@ -2693,8 +2739,8 @@ static bool {xcoder.func_name}(
         lp = line_prefix
         return (f"\n{lp} " + self.file_header.replace("\n", f"\n{lp} ")).replace(" \n", "\n")
 
-    # Render the entire generated C file contents.
     def render_c_file(self, header_file_name, mode):
+        """Render the entire generated C file contents."""
         return f"""/*{self.render_file_header(" *")}
  */
 
@@ -2717,8 +2763,8 @@ static bool {xcoder.func_name}(
 {linesep.join([self.render_entry_function(xcoder, mode) for xcoder in self.entry_types[mode]])}
 """
 
-    # Render the entire generated header file contents.
     def render_h_file(self, type_def_file, header_guard, mode):
+        """Render the entire generated header file contents."""
         return \
             f"""/*{self.render_file_header(" *")}
  */
