@@ -58,6 +58,7 @@ INT64_MIN = -0x8000000000000000
 
 
 def getrp(pattern, flags=0):
+    """Get a compiled regex pattern from the cache. Add it to the cache if not present."""
     pattern_key = pattern if not flags else (pattern, flags)
     if pattern_key not in regex_cache:
         regex_cache[pattern_key] = compile(pattern, flags)
@@ -168,6 +169,7 @@ def add_semicolon(decl):
 
 
 def struct_ptr_name(mode):
+    """Return the name of the struct argument for a given mode."""
     return "result" if mode == "decode" else "input"
 
 
@@ -309,6 +311,7 @@ class CddlParser:
 
     @staticmethod
     def resolve_backslashes(instr):
+        """Replace escaped newlines with spaces."""
         return getrp(r"\\\n").sub(" ", instr)
 
     @classmethod
@@ -398,6 +401,7 @@ class CddlParser:
         self.base_name = base_name.replace("-", "_")
 
     def set_base_names(self):
+        """Recursively set the base names of this element's children, keys, and cbor elements."""
         if self.cbor:
             self.cbor.set_base_name(self.var_name().strip("_") + "_cbor")
         if self.key:
@@ -427,9 +431,11 @@ class CddlParser:
         return raw_name
 
     def init_args(self):
+        """Return the args that should be used to initialize a new instance of this class."""
         return (self.default_max_qty,)
 
     def init_kwargs(self):
+        """Return the kwargs that should be used to initialize a new instance of this class."""
         return {
             "my_types": self.my_types, "my_control_groups": self.my_control_groups,
             "short_names": self.short_names}
@@ -450,11 +456,6 @@ class CddlParser:
     def child_base_id(self):
         """Id to pass to children for them to use as basis for their id/base name."""
         return self.id()
-
-    def get_id_num(self):
-        if self.id_num is None:
-            self.id_num = counter()
-        return self.id_num
 
     def mrepr(self, newline):
         """Human readable representation."""
@@ -483,6 +484,7 @@ class CddlParser:
         return reprstr.replace('\n', '\n    ')
 
     def _flatten(self):
+        """Recursively flatten children, key, and cbor elements."""
         new_value = []
         if self.type in ["LIST", "MAP", "GROUP", "UNION"]:
             for child in self.value:
@@ -495,6 +497,7 @@ class CddlParser:
             self.cbor = self.cbor.flatten()[0]
 
     def flatten(self, allow_multi=False):
+        """Remove unneccessary abstractions, like single-element groups or unions."""
         self._flatten()
         if self.type == "OTHER" and self.is_socket and self.value not in self.my_types:
             return []
@@ -535,6 +538,9 @@ class CddlParser:
         self.set_value(value_generator)
 
     def set_value(self, value_generator):
+        """Set the value of this element.
+
+        value_generator must be a function that returns the value of the element."""
         value = value_generator()
         self.value = value
 
@@ -681,6 +687,7 @@ class CddlParser:
             self.cbor.max_qty = self.default_max_qty
 
     def set_bits(self, bits):
+        """Set the self.bits of this element. For use during CDDL parsing."""
         if self.type != "UINT":
             raise TypeError(".bits must be used with bstr.")
         self.bits = bits
@@ -741,6 +748,7 @@ class CddlParser:
         self.value.append(value)
 
     def convert_to_key(self):
+        """The current element is the key, so copy it to a new element and set the key to the new"""
         convert_val = copy(self)
         self.__init__(*self.init_args(), **self.init_kwargs())
         self.set_key(convert_val)
@@ -764,6 +772,7 @@ class CddlParser:
     cddl_regexes = dict()
 
     def cddl_regexes_init(self):
+        """Initialize the cddl_regexes dict"""
         match_uint = r"(0x[0-9a-fA-F]+|0o[0-7]+|0b[01]+|\d+)"
         match_int = r"(-?" + match_uint + ")"
         match_nint = r"(-" + match_uint + ")"
@@ -1046,6 +1055,7 @@ class CddlXcoder(CddlParser):
         return name
 
     def skip_condition(self):
+        """Whether this element should have its result variable omitted."""
         if self.skipped:
             return True
         if self.type in ["LIST", "MAP", "GROUP"]:
@@ -1084,12 +1094,14 @@ class CddlXcoder(CddlParser):
         return self.multi_var_condition() or self.repeated_multi_var_condition()
 
     def is_unambiguous_value(self):
+        """Whether this element is a non-compound value that can be known a priori."""
         return (self.type in ["NIL", "UNDEF", "ANY"]
                 or (self.type in ["INT", "NINT", "UINT", "FLOAT", "BSTR", "TSTR", "BOOL"]
                     and self.value is not None)
                 or (self.type == "OTHER" and self.my_types[self.value].is_unambiguous()))
 
     def is_unambiguous_repeated(self):
+        """Whether the repeated part of this element is known a priori."""
         return (self.is_unambiguous_value()
                 and (self.key is None or self.key.is_unambiguous_repeated())
                 or (self.type in ["LIST", "GROUP", "MAP"] and len(self.value) == 0)
@@ -1097,6 +1109,7 @@ class CddlXcoder(CddlParser):
                     and all((child.is_unambiguous() for child in self.value))))
 
     def is_unambiguous(self):
+        """Whether or not we can know the exact encoding of this element a priori."""
         return (self.is_unambiguous_repeated() and (self.min_qty == self.max_qty))
 
     def access_append_delimiter(self, prefix, delimiter, *suffix):
@@ -1251,6 +1264,7 @@ class CddlXcoder(CddlParser):
                 and (self.self_repeated_multi_var_condition() or self.range_check_condition()))
 
     def int_val(self):
+        """If this element is an integer, or starts with an integer, return the integer value."""
         if self.key:
             return self.key.int_val()
         elif self.type in ("UINT", "NINT") and self.is_unambiguous():
@@ -1265,18 +1279,29 @@ class CddlXcoder(CddlParser):
         return None
 
     def is_int_disambiguated(self):
+        """Whether this element starts with a specific integer that can be used to immediately
+        disambiguate it from other elements.
+        """
         return self.int_val() is not None
 
     def all_children_disambiguated(self, min_val, max_val):
+        """Whether all children of this element can be disambiguated via a starting integer.
+
+        This is relevant because it allows the decoder to directly decode the integer into an enum
+        value.
+        The min_val and max_val are to check whether the integers are within a certain range.
+        """
         values = set(child.int_val() for child in self.value)
         retval = (len(values) == len(self.value)) and None not in values \
             and max(values) <= max_val and min(values) >= min_val
         return retval
 
     def all_children_int_disambiguated(self):
+        """See all_children_disambiguated()"""
         return self.all_children_disambiguated(INT32_MIN, INT32_MAX)
 
     def all_children_uint_disambiguated(self):
+        """See all_children_disambiguated()"""
         return self.all_children_disambiguated(0, INT32_MAX)
 
     def present_var_name(self):
@@ -1919,6 +1944,7 @@ class CodeGenerator(CddlXcoder):
         return bit_size
 
     def float_type(self):
+        """If this is a floating point number, return the C type to use for it."""
         if self.type != "FLOAT":
             return None
 
@@ -2427,6 +2453,7 @@ class CodeGenerator(CddlXcoder):
         return ""
 
     def range_checks(self, access):
+        """Return the code needed to check the size/value bounds of this element."""
         if self.type != "OTHER" and self.value is not None:
             return []
 
