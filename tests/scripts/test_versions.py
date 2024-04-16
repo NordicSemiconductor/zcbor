@@ -14,6 +14,7 @@ p_script_dir = Path(__file__).absolute().parents[0]
 p_root = p_script_dir.parents[1]
 p_VERSION = p_root / "zcbor" / "VERSION"
 p_release_notes = p_root / "RELEASE_NOTES.md"
+p_migration_guide = p_root / "MIGRATION_GUIDE.md"
 p_HEAD_REF = p_script_dir / "HEAD_REF"
 
 
@@ -39,6 +40,10 @@ class VersionTest(TestCase):
             p_release_notes.read_text(encoding="utf-8").splitlines()[0],
             r"# zcbor v. " + version_number + f" ({date.today():%Y-%m-%d})",
             f"{p_release_notes} has not been updated with the correct version number.")
+        self.assertEqual(
+            p_migration_guide.read_text(encoding="utf-8").splitlines()[0],
+            r"# zcbor v. " + version_number,
+            f"{p_migration_guide} has not been updated with the correct version number.")
 
         tags_stdout, _ = Popen(['git', 'tag'], stdout=PIPE).communicate()
         tags = tags_stdout.decode("utf-8").strip().splitlines()
