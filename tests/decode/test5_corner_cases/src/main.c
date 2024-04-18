@@ -2210,4 +2210,18 @@ ZTEST(cbor_decode_test5, test_map_union_prim_alias)
 }
 
 
+ZTEST(cbor_decode_test5, test_empty_group)
+{
+	uint8_t empty_group_payload0[] = {LIST(3), 0, LIST(0), END MAP(0), END END};
+
+	struct EmptyContainer result;
+	size_t num_decode;
+
+	zassert_equal(ZCBOR_SUCCESS, cbor_decode_EmptyContainer(empty_group_payload0,
+		sizeof(empty_group_payload0), &result, &num_decode), NULL);
+	zassert_equal(sizeof(empty_group_payload0), num_decode, NULL);
+	zassert_equal(0, result.Int);
+}
+
+
 ZTEST_SUITE(cbor_decode_test5, NULL, NULL, NULL, NULL, NULL);

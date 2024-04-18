@@ -57,6 +57,7 @@ set(py_command
     BstrSize
     MapUnionPrimAlias
     Keywords
+    EmptyContainer
   --decode
   --git-sha-header
   --short-names

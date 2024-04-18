@@ -349,3 +349,8 @@ Keywords = [
 	void: int,
 	volatile: int,
 	while: int]
+
+EmptyGroup = ()
+EmptyList = []
+
+EmptyContainer = [int, EmptyGroup, EmptyList, EmptyMap]

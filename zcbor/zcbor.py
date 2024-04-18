@@ -948,7 +948,7 @@ class CddlParser:
         return self.key is not None\
             or (self.type == "OTHER" and self.my_types[self.value].elem_has_key())\
             or (self.type in ["GROUP", "UNION"]
-                and all(child.elem_has_key() for child in self.value))
+                and (self.value and all(child.elem_has_key() for child in self.value)))
 
     def post_validate(self):
         """Function for performing validations that must be done after all parsing is complete.
@@ -1253,7 +1253,8 @@ class CddlXcoder(CddlParser):
             or self.cbor_var_condition()
             or (self.tags and self in self.my_types.values())
             or self.type_def_condition()
-            or (self.type in ["LIST", "MAP", "GROUP"] and len(self.value) != 0))
+            or (self.type in ["LIST", "MAP"])
+            or (self.type == "GROUP" and len(self.value) != 0))
 
     def repeated_single_func_impl_condition(self):
         """Whether this element needs its own encoder/decoder function."""
@@ -2225,6 +2226,10 @@ class CodeGenerator(CddlXcoder):
         ("OTHER"))
         """
         assert self.type not in ["LIST", "MAP"], "Must have wrapper function for list or map."
+
+        if self.type == "GROUP":
+            assert len(self.value) == 0, "Group should have no children to get here."
+            return (None, None)
 
         if self.type == "OTHER":
             return self.my_types[self.value].single_func(access, union_int)

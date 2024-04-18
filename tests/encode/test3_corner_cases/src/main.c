@@ -1606,4 +1606,20 @@ ZTEST(cbor_encode_test3, test_map_union_prim_alias)
 }
 
 
+ZTEST(cbor_encode_test3, test_empty_group)
+{
+	uint8_t exp_empty_group_payload0[] = {LIST(3), 0, LIST(0), END MAP(0), END END};
+	uint8_t payload[10];
+
+	struct EmptyContainer input;
+	size_t num_encode;
+
+	input.Int = 0;
+	zassert_equal(ZCBOR_SUCCESS, cbor_encode_EmptyContainer(payload,
+		sizeof(payload), &input, &num_encode), NULL);
+	zassert_equal(sizeof(exp_empty_group_payload0), num_encode, NULL);
+	zassert_mem_equal(exp_empty_group_payload0, payload, num_encode);
+}
+
+
 ZTEST_SUITE(cbor_encode_test3, NULL, NULL, NULL, NULL, NULL);
