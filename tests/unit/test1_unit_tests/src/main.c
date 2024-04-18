@@ -9,6 +9,7 @@
 #include "zcbor_encode.h"
 #include "zcbor_print.h"
 
+
 ZTEST(zcbor_unit_tests, test_int64)
 {
 	uint8_t payload[100] = {0};
@@ -409,7 +410,8 @@ ZTEST(zcbor_unit_tests, test_fragments)
 	zassert_false(zcbor_payload_at_end(state_d2), NULL);
 	zassert_false(zcbor_bstr_decode(state_d, &output), NULL);
 	zassert_false(zcbor_payload_at_end(state_d), NULL);
-	zassert_true(zcbor_bstr_decode_fragment(state_d, &output_frags[0]), NULL);
+	zassert_true(zcbor_bstr_fragments_start_decode(state_d), NULL);
+	zcbor_str_fragment_decode(state_d, &output_frags[0]);
 	zassert_equal_ptr(&payload[1], output_frags[0].fragment.value, NULL);
 	zassert_equal(7, output_frags[0].fragment.len, NULL);
 	zassert_equal(10, output_frags[0].total_len, "%d != %d\r\n", 10, output_frags[0].total_len);
@@ -418,8 +420,8 @@ ZTEST(zcbor_unit_tests, test_fragments)
 
 	zassert_true(zcbor_payload_at_end(state_d), NULL);
 	zcbor_update_state(state_d, &payload[8], sizeof(payload) - 8);
-	zassert_false(zcbor_bstr_decode_fragment(state_d, &output_frags[1]), NULL);
-	zcbor_next_fragment(state_d, &output_frags[0], &output_frags[1]);
+	zassert_false(zcbor_bstr_fragments_start_decode(state_d), NULL);
+	zcbor_str_fragment_decode(state_d, &output_frags[1]);
 	zassert_equal_ptr(&payload[8], output_frags[1].fragment.value, NULL);
 	zassert_equal(3, output_frags[1].fragment.len, "%d != %d\r\n", 3, output_frags[1].fragment.len);
 	zassert_equal(10, output_frags[1].total_len, NULL);
@@ -436,7 +438,6 @@ ZTEST(zcbor_unit_tests, test_fragments)
 	zassert_equal(10, output.len, NULL);
 	zassert_mem_equal(output.value, "HelloWorld", 10, NULL);
 }
-
 
 /** The long string "HelloWorld1HelloWorld2..." is split into 18 fragments.
  *
@@ -466,14 +467,15 @@ ZTEST(zcbor_unit_tests, test_validate_fragments)
 	ZCBOR_STATE_D(state_d2, 0, payload, sizeof(payload), 1, 0);
 
 	zassert_true(zcbor_bstr_decode(state_d2, &output), NULL);
-	zassert_true(zcbor_bstr_decode_fragment(state_d, &output_frags[0]), NULL);
+	zassert_true(zcbor_bstr_fragments_start_decode(state_d), NULL);
+	zcbor_str_fragment_decode(state_d, &output_frags[0]);
 
 	for (int i = 1; i < 18; i++) {
 		zassert_true(zcbor_payload_at_end(state_d), NULL);
 		zassert_false(zcbor_is_last_fragment(&output_frags[i - 1]), NULL);
 		memcpy(frag_payload, &payload[11 * i + 2], 11); // + 2 because of the CBOR header
 		zcbor_update_state(state_d, frag_payload, 11);
-		zcbor_next_fragment(state_d, &output_frags[i - 1], &output_frags[i]);
+		zcbor_str_fragment_decode(state_d, &output_frags[i]);
 	}
 	zassert_true(zcbor_payload_at_end(state_d), NULL);
 	zassert_true(zcbor_is_last_fragment(&output_frags[17]), NULL);
@@ -535,7 +537,6 @@ ZTEST(zcbor_unit_tests, test_validate_fragments)
 	zassert_true(zcbor_validate_string_fragments(output_frags, 18), NULL); // Check that all errors were restored correctly.
 }
 
-
 /** This test creates the following structure, wrapped in a BSTR:
  *
  *  (
@@ -571,7 +572,6 @@ ZTEST(zcbor_unit_tests, test_bstr_cbor_fragments)
 	uint8_t payload[100];
 	ZCBOR_STATE_E(state_e, 2, payload, sizeof(payload), 0);
 	struct zcbor_string output;
-	struct zcbor_string_fragment output_frags[3];
 	struct zcbor_string_fragment tstr_frags[2];
 
 	zassert_true(zcbor_bstr_start_encode(state_e), NULL); // 1 B
@@ -594,15 +594,14 @@ ZTEST(zcbor_unit_tests, test_bstr_cbor_fragments)
 
 	zassert_true(zcbor_bstr_decode(state_d2, &output), NULL);
 	zassert_false(zcbor_bstr_start_decode(state_d, &output), NULL);
-	zassert_true(zcbor_bstr_start_decode_fragment(state_d, &output_frags[0]), NULL);
-	zassert_equal_ptr(&payload[1], output_frags[0].fragment.value, NULL);
-	zassert_equal(7, output_frags[0].fragment.len, NULL);
-	zassert_equal(EXP_TOTAL_LEN, output_frags[0].total_len, "%d != %d\r\n", EXP_TOTAL_LEN, output_frags[0].total_len);
-	zassert_equal(0, output_frags[0].offset, NULL);
-	zassert_false(zcbor_is_last_fragment(&output_frags[0]), NULL);
+	zassert_true(zcbor_cbor_bstr_fragments_start_decode(state_d), NULL);
+	zassert_equal_ptr(&payload[0], state_d->constant_state->curr_payload_section, "%p, %p\n",&payload[0], state_d->constant_state->curr_payload_section);
+	zassert_equal(EXP_TOTAL_LEN, state_d->str_total_len_cbor, "%d != %d\r\n", EXP_TOTAL_LEN, state_d->str_total_len_cbor);
+	zassert_equal(-1, state_d->frag_offset_cbor, NULL);
 	zassert_true(zcbor_uint32_expect(state_d, 42), NULL);
 	zassert_false(zcbor_tstr_expect_lit(state_d, "Hello World"), NULL);
-	zassert_true(zcbor_tstr_decode_fragment(state_d, &tstr_frags[0]), NULL);
+	zassert_true(zcbor_tstr_fragments_start_decode(state_d), NULL);
+	zassert_true(zcbor_str_fragment_decode(state_d, &tstr_frags[0]));
 	zassert_equal_ptr(&payload[4], tstr_frags[0].fragment.value, NULL);
 	zassert_equal(4, tstr_frags[0].fragment.len, NULL);
 	zassert_equal(11, tstr_frags[0].total_len, NULL);
@@ -610,31 +609,23 @@ ZTEST(zcbor_unit_tests, test_bstr_cbor_fragments)
 
 	zassert_true(zcbor_payload_at_end(state_d), NULL);
 	zcbor_update_state(state_d, &payload[8], 8);
-	zassert_false(zcbor_bstr_decode_fragment(state_d, &output_frags[1]), NULL);
-	zcbor_bstr_next_fragment(state_d, &output_frags[0], &output_frags[1]);
-	zassert_equal_ptr(&payload[8], output_frags[1].fragment.value, NULL);
-	zassert_equal(8, output_frags[1].fragment.len, "%d != %d\r\n", 3, output_frags[1].fragment.len);
-	zassert_equal(EXP_TOTAL_LEN, output_frags[1].total_len, "%d != %d\r\n", EXP_TOTAL_LEN, output_frags[1].total_len);
-	zassert_equal(7, output_frags[1].offset, NULL);
-	zassert_false(zcbor_is_last_fragment(&output_frags[1]), NULL);
-	zcbor_next_fragment(state_d, &tstr_frags[0], &tstr_frags[1]);
+	zassert_true(zcbor_str_fragment_decode(state_d, &tstr_frags[1]));
+	zassert_true(zcbor_str_fragments_end_decode(state_d));
+	zassert_false(zcbor_cbor_bstr_fragments_start_decode(state_d), NULL);
 	zassert_equal_ptr(&payload[8], tstr_frags[1].fragment.value, NULL);
 	zassert_equal(7, tstr_frags[1].fragment.len, "%d != %d\r\n", 7, tstr_frags[1].fragment.len);
-	zassert_equal(11, tstr_frags[1].total_len, NULL);
-	zassert_equal(4, tstr_frags[1].offset, NULL);
+	zassert_equal(11, tstr_frags[1].total_len, "%d != %d\r\n", 11, tstr_frags[1].total_len);
+	zassert_equal(EXP_TOTAL_LEN, state_d->str_total_len_cbor, "%d != %d\r\n", EXP_TOTAL_LEN, state_d->str_total_len_cbor);
+	zassert_equal(7, state_d->frag_offset_cbor, NULL);
 	zassert_true(zcbor_is_last_fragment(&tstr_frags[1]), NULL);
 	zassert_true(zcbor_list_start_decode(state_d), NULL);
 
 	zassert_true(zcbor_payload_at_end(state_d), NULL);
 	zcbor_update_state(state_d, &payload[16], sizeof(payload) - 16);
-	zassert_false(zcbor_bstr_decode_fragment(state_d, &output_frags[2]), NULL);
-	zcbor_bstr_next_fragment(state_d, &output_frags[1], &output_frags[2]);
-	zassert_equal_ptr(&payload[16], output_frags[2].fragment.value, NULL);
-	zassert_equal(EXP_TOTAL_LEN - 15,
-			output_frags[2].fragment.len, NULL);
-	zassert_equal(EXP_TOTAL_LEN, output_frags[2].total_len, NULL);
-	zassert_equal(15, output_frags[2].offset, NULL);
-	zassert_true(zcbor_is_last_fragment(&output_frags[2]), NULL);
+	zassert_false(zcbor_bstr_fragments_start_decode(state_d), NULL);
+	zassert_equal_ptr(&payload[16], state_d->constant_state->curr_payload_section, NULL);
+	zassert_equal(EXP_TOTAL_LEN, state_d->str_total_len_cbor, NULL);
+	zassert_equal(15, state_d->frag_offset_cbor, NULL);
 	zassert_true(zcbor_bool_expect(state_d, true), NULL);
 	zassert_true(zcbor_nil_expect(state_d, NULL), NULL);
 	zassert_true(zcbor_list_end_decode(state_d), NULL);
@@ -643,21 +634,12 @@ ZTEST(zcbor_unit_tests, test_bstr_cbor_fragments)
 	output.value = spliced;
 	output.len = sizeof(spliced);
 
-	zassert_true(zcbor_validate_string_fragments(output_frags, 3), NULL);
-	zassert_true(zcbor_splice_string_fragments(output_frags, 3, spliced, &output.len), NULL);
-
-	zassert_equal(EXP_TOTAL_LEN, output.len, NULL);
-	zassert_mem_equal(output.value, &payload[1], EXP_TOTAL_LEN, NULL);
-
-	output.len = sizeof(spliced);
-
 	zassert_true(zcbor_validate_string_fragments(tstr_frags, 2), NULL);
 	zassert_true(zcbor_splice_string_fragments(tstr_frags, 2, spliced, &output.len), NULL);
 
 	zassert_equal(11, output.len, NULL);
 	zassert_mem_equal(output.value, &payload[4], 11, NULL);
 }
-
 
 ZTEST(zcbor_unit_tests, test_canonical_list)
 {
@@ -1011,10 +993,13 @@ ZTEST(zcbor_unit_tests, test_error_str)
 	test_str(ZCBOR_ERR_MAP_FLAGS_NOT_AVAILABLE);
 	test_str(ZCBOR_ERR_INVALID_VALUE_ENCODING);
 	test_str(ZCBOR_ERR_CONSTANT_STATE_MISSING);
+	test_str(ZCBOR_ERR_INNER_STRING_TOO_LARGE);
+	test_str(ZCBOR_ERR_NOT_IN_FRAGMENT);
+	test_str(ZCBOR_ERR_INSIDE_STRING);
 	test_str(ZCBOR_ERR_UNKNOWN);
 	zassert_mem_equal(zcbor_error_str(-1), "ZCBOR_ERR_UNKNOWN", sizeof("ZCBOR_ERR_UNKNOWN"), NULL);
 	zassert_mem_equal(zcbor_error_str(-10), "ZCBOR_ERR_UNKNOWN", sizeof("ZCBOR_ERR_UNKNOWN"), NULL);
-	zassert_mem_equal(zcbor_error_str(ZCBOR_ERR_CONSTANT_STATE_MISSING + 1), "ZCBOR_ERR_UNKNOWN", sizeof("ZCBOR_ERR_UNKNOWN"), NULL);
+	zassert_mem_equal(zcbor_error_str(ZCBOR_ERR_INSIDE_STRING + 1), "ZCBOR_ERR_UNKNOWN", sizeof("ZCBOR_ERR_UNKNOWN"), NULL);
 	zassert_mem_equal(zcbor_error_str(100000), "ZCBOR_ERR_UNKNOWN", sizeof("ZCBOR_ERR_UNKNOWN"), NULL);
 }
 
@@ -1438,6 +1423,5 @@ ZTEST(zcbor_unit_tests, test_zcbor_version)
 	zassert_equal(TEST_ZCBOR_VERSION_MINOR, ZCBOR_VERSION_MINOR, NULL);
 	zassert_equal(TEST_ZCBOR_VERSION_BUGFIX, ZCBOR_VERSION_BUGFIX, NULL);
 }
-
 
 ZTEST_SUITE(zcbor_unit_tests, NULL, NULL, NULL, NULL, NULL);
