@@ -107,6 +107,18 @@ union {
 	bool payload_moved; /**< Is set to true while the state is stored as a backup
 	                         if @ref zcbor_update_state is called, since that function
 	                         updates the payload_end of all backed-up states. */
+	bool inside_cbor_bstr; /**< True if we are currently inside a CBOR-encoded bstr,
+	                            i.e. that as been started with zcbor_bstr_start_*(), or
+	                            `zcbor_cbor_bstr_fragments_start_*()`. */
+#ifdef ZCBOR_FRAGMENTS
+	bool inside_frag_str; /**< True if we are currently inside a fragmented (non-CBOR-encoded)
+	                           string. This is mutually exclusive with `inside_cbor_bstr`,
+	                           i.e. not set when using `zcbor_cbor_bstr_fragments_start_*()` */
+	ptrdiff_t frag_offset; /**< The offset in the current string at which this payload section starts. Used for non-CBOR-encoded strings. */
+	size_t str_total_len; /**< The total length of the string this fragment is a part of. Used for non-CBOR-encoded strings. */
+	ptrdiff_t frag_offset_cbor; /**< The offset in the current string at which this payload section starts. Used for CBOR-encoded strings. */
+	size_t str_total_len_cbor; /**< The total length of the string this fragment is a part of. Used for CBOR-encoded strings. */
+#endif
 
 /* This is the "decode state", the part of zcbor_state_t that is only used by zcbor_decode.c. */
 struct {
@@ -152,6 +164,7 @@ struct zcbor_state_constant {
 #ifdef ZCBOR_MAP_SMART_SEARCH
 	uint8_t *map_search_elem_state_end; /**< The end of the @ref map_search_elem_state buffer. */
 #endif
+	const uint8_t *curr_payload_section; /**< The currently encoded/decoded payload section. */
 };
 
 #ifdef ZCBOR_CANONICAL
@@ -285,6 +298,9 @@ do { \
 #define ZCBOR_ERR_MAP_FLAGS_NOT_AVAILABLE 20
 #define ZCBOR_ERR_INVALID_VALUE_ENCODING 21 ///! When ZCBOR_CANONICAL is defined, and the incoming data is not encoded with minimal length, or uses indefinite length array.
 #define ZCBOR_ERR_CONSTANT_STATE_MISSING 22
+#define ZCBOR_ERR_INNER_STRING_TOO_LARGE 23 ///! Trying to start a nested string that is too large to fit in the container string.
+#define ZCBOR_ERR_NOT_IN_FRAGMENT 24
+#define ZCBOR_ERR_INSIDE_STRING 25 ///! Currently encoding/decoding a non-CBOR-encoded string, so cannot use most zcbor encoding/decoding functions
 #define ZCBOR_ERR_UNKNOWN 31
 
 /** The largest possible elem_count. */
@@ -392,17 +408,23 @@ static inline void zcbor_error(zcbor_state_t *state, int err)
 	}
 }
 
-/** Whether the current payload is exhausted. */
+/** Whether the current payload (section) is exhausted. */
 static inline bool zcbor_payload_at_end(const zcbor_state_t *state)
 {
 	return (state->payload == state->payload_end);
 }
 
-/** Update the current payload pointer (and payload_end).
+/** Introduce a new payload section.
  *
+ *  Updates the current payload pointer (and payload_end and frag_offset(_cbor)).
  *  For use when the payload is divided into multiple chunks.
  *
- *  This function also updates all backups to the new payload_end.
+ *  This function also updates all backups to the new payload_end,
+ *  and also updates the frag_offset/frag_offset_cbor of all backups.
+ *
+ *  Note that if this is called before the current payload is exhausted, the
+ *  remaining payload will be abandoned.
+ *
  *  This sets a flag so that @ref zcbor_process_backup fails if a backup is
  *  processed with the flag @ref ZCBOR_FLAG_RESTORE, but without the flag
  *  @ref ZCBOR_FLAG_KEEP_PAYLOAD since this would cause an invalid state.
@@ -414,6 +436,17 @@ static inline bool zcbor_payload_at_end(const zcbor_state_t *state)
  */
 void zcbor_update_state(zcbor_state_t *state,
 		const uint8_t *payload, size_t payload_len);
+
+/** Get the the offset into the current string at which the current payload
+ *  pointer (state->payload) belongs. */
+size_t zcbor_current_string_offset(zcbor_state_t *state);
+
+/** Get the remaining number of bytes in the current string, calculated from
+ *  the current payload pointer (state->payload). */
+size_t zcbor_current_string_remainder(zcbor_state_t *state);
+
+/** Can be used on any fragment to tell if it is the final fragment of its string. */
+bool zcbor_is_last_fragment(const struct zcbor_string_fragment *fragment);
 
 /** Check that the provided fragments are complete and in the right order.
  *

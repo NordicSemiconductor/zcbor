@@ -103,6 +103,7 @@ Name                      | Description
 `ZCBOR_STOP_ON_ERROR`     | Enable the `stop_on_error` functionality. Note that it also has to be enabled in the state variable (`state->constant_state->stop_on_error`). This makes all zcbor functions abort their execution if called when an error has already happened.
 `ZCBOR_BIG_ENDIAN`        | All decoded values are returned as big-endian. The default is little-endian.
 `ZCBOR_MAP_SMART_SEARCH`  | Applies to decoding of unordered maps. When enabled, a flag is kept for each element in an array, ensuring it is not processed twice. If disabled, a count is kept for map as a whole. Enabling increases code size and memory usage, and requires the state variable to possess the memory necessary for the flags.
+`ZCBOR_FRAGMENTS`         | Enable functions for decoding and encoding byte and text strings in fragments.
 
 
 Python script and module

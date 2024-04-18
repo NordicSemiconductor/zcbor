@@ -36,6 +36,9 @@ static bool initial_checks(zcbor_state_t *state)
 {
 	ZCBOR_CHECK_ERROR();
 	ZCBOR_CHECK_PAYLOAD();
+#ifdef ZCBOR_FRAGMENTS
+	ZCBOR_ERR_IF(state->inside_frag_str, ZCBOR_ERR_INSIDE_STRING);
+#endif
 	return true;
 }
 
@@ -67,6 +70,23 @@ do {\
 		ZCBOR_FAIL(); \
 	} \
 } while(0)
+
+
+#ifdef ZCBOR_FRAGMENTS
+static bool initial_check_inside_frag_str(zcbor_state_t *state)
+{
+	ZCBOR_CHECK_ERROR();
+	ZCBOR_CHECK_PAYLOAD();
+	return true;
+}
+
+#define INITIAL_CHECKS_INSIDE_FRAG_STR() \
+do {\
+	if (!initial_check_inside_frag_str(state)) { \
+		ZCBOR_FAIL(); \
+	} \
+} while(0)
+#endif
 
 static void err_restore(zcbor_state_t *state, int err)
 {
@@ -490,6 +510,8 @@ bool zcbor_bstr_start_decode(zcbor_state_t *state, struct zcbor_string *result)
 	}
 
 	state->payload_end = result->value + result->len;
+	state->inside_cbor_bstr = true;
+
 	return true;
 }
 
@@ -508,80 +530,112 @@ bool zcbor_bstr_end_decode(zcbor_state_t *state)
 }
 
 
-static void partition_fragment(const zcbor_state_t *state,
-	struct zcbor_string_fragment *result)
-{
-	result->fragment.len = MIN(result->fragment.len,
-		(size_t)state->payload_end - (size_t)state->payload);
-}
+#ifdef ZCBOR_FRAGMENTS
 
-
-static bool start_decode_fragment(zcbor_state_t *state,
-	struct zcbor_string_fragment *result,
-	zcbor_major_type_t exp_major_type)
+static bool start_decode_fragments(zcbor_state_t *state,
+	zcbor_major_type_t exp_major_type, bool cbor_bstr)
 {
-	PRINT_FUNC();
-	if(!str_start_decode(state, &result->fragment, exp_major_type)) {
+	struct zcbor_string string_hdr;
+
+	if(!str_start_decode(state, &string_hdr, exp_major_type)) {
 		ZCBOR_FAIL();
 	}
 
-	result->offset = 0;
-	result->total_len = result->fragment.len;
-	partition_fragment(state, result);
-	state->payload_end = state->payload + result->fragment.len;
+	if (state->inside_cbor_bstr) {
+		if (zcbor_current_string_remainder(state) < string_hdr.len) {
+			ERR_RESTORE(ZCBOR_ERR_INNER_STRING_TOO_LARGE);
+		}
+	}
+
+	ptrdiff_t new_offset = state->constant_state->curr_payload_section - state->payload;
+
+	if (cbor_bstr) {
+		if (!zcbor_new_backup(state, ZCBOR_MAX_ELEM_COUNT)) {
+			FAIL_RESTORE();
+		}
+		state->frag_offset_cbor = new_offset;
+		state->str_total_len_cbor = string_hdr.len;
+		state->inside_cbor_bstr = true;
+	} else {
+		state->frag_offset = new_offset;
+		state->str_total_len = string_hdr.len;
+		state->inside_frag_str = true;
+	}
 
 	return true;
 }
 
-bool zcbor_bstr_start_decode_fragment(zcbor_state_t *state,
-	struct zcbor_string_fragment *result)
+
+bool zcbor_bstr_fragments_start_decode(zcbor_state_t *state)
 {
 	PRINT_FUNC();
-	if (!start_decode_fragment(state, result, ZCBOR_MAJOR_TYPE_BSTR)) {
-		ZCBOR_FAIL();
+	return start_decode_fragments(state, ZCBOR_MAJOR_TYPE_BSTR, false);
+}
+
+
+bool zcbor_tstr_fragments_start_decode(zcbor_state_t *state)
+{
+	PRINT_FUNC();
+	return start_decode_fragments(state, ZCBOR_MAJOR_TYPE_TSTR, false);
+}
+
+
+bool zcbor_cbor_bstr_fragments_start_decode(zcbor_state_t *state)
+{
+	PRINT_FUNC();
+	return start_decode_fragments(state, ZCBOR_MAJOR_TYPE_BSTR, true);
+}
+
+
+bool zcbor_str_fragment_decode(zcbor_state_t *state, struct zcbor_string_fragment *fragment)
+{
+	PRINT_FUNC();
+	INITIAL_CHECKS_INSIDE_FRAG_STR();
+
+	ZCBOR_ERR_IF(!state->inside_frag_str && !state->inside_cbor_bstr, ZCBOR_ERR_NOT_IN_FRAGMENT);
+
+	size_t len;
+
+	if (state->inside_frag_str) {
+		len = MIN((size_t)state->payload_end - (size_t)state->payload,
+					zcbor_current_string_remainder(state));
+		state->payload += len;
+		fragment->total_len = state->str_total_len;
+	} else {
+		len = MIN((size_t)state->payload - (size_t)state->constant_state->curr_payload_section,
+					zcbor_current_string_offset(state));
+		fragment->total_len = state->str_total_len_cbor;
 	}
-	if (!zcbor_new_backup(state, ZCBOR_MAX_ELEM_COUNT)) {
-		FAIL_RESTORE();
-	}
+
+	fragment->fragment.value = state->payload - len;
+	fragment->fragment.len = len;
+
+	fragment->offset = zcbor_current_string_offset(state) - len;
+
 	return true;
 }
 
 
-void zcbor_next_fragment(zcbor_state_t *state,
-	struct zcbor_string_fragment *prev_fragment,
-	struct zcbor_string_fragment *result)
+bool zcbor_str_fragments_end_decode(zcbor_state_t *state)
 {
-	memcpy(result, prev_fragment, sizeof(*result));
-	result->fragment.value = state->payload_mut;
-	result->offset += prev_fragment->fragment.len;
-	result->fragment.len = result->total_len - result->offset;
+	PRINT_FUNC();
 
-	partition_fragment(state, result);
-	zcbor_log("New fragment length %zu\r\n", result->fragment.len);
+	ZCBOR_ERR_IF(!state->inside_frag_str && !state->inside_cbor_bstr, ZCBOR_ERR_NOT_IN_FRAGMENT);
+	ZCBOR_ERR_IF(zcbor_current_string_remainder(state) != 0, ZCBOR_ERR_NOT_AT_END);
 
-	state->payload += result->fragment.len;
+	if (state->inside_frag_str) {
+		state->inside_frag_str = false;
+	} else {
+		if (!zcbor_bstr_end_decode(state)) {
+			ZCBOR_FAIL();
+		}
+		state->inside_cbor_bstr = false;
+	}
+
+	return true;
 }
 
-
-void zcbor_bstr_next_fragment(zcbor_state_t *state,
-	struct zcbor_string_fragment *prev_fragment,
-	struct zcbor_string_fragment *result)
-{
-	memcpy(result, prev_fragment, sizeof(*result));
-	result->fragment.value = state->payload_mut;
-	result->offset += prev_fragment->fragment.len;
-	result->fragment.len = result->total_len - result->offset;
-
-	partition_fragment(state, result);
-	zcbor_log("fragment length %zu\r\n", result->fragment.len);
-	state->payload_end = state->payload + result->fragment.len;
-}
-
-
-bool zcbor_is_last_fragment(const struct zcbor_string_fragment *fragment)
-{
-	return (fragment->total_len == (fragment->offset + fragment->fragment.len));
-}
+#endif /* ZCBOR_FRAGMENTS */
 
 
 static bool str_decode(zcbor_state_t *state, struct zcbor_string *result,
@@ -592,18 +646,6 @@ static bool str_decode(zcbor_state_t *state, struct zcbor_string *result,
 	}
 
 	state->payload += result->len;
-	return true;
-}
-
-
-static bool str_decode_fragment(zcbor_state_t *state, struct zcbor_string_fragment *result,
-		zcbor_major_type_t exp_major_type)
-{
-	if (!start_decode_fragment(state, result, exp_major_type)) {
-		ZCBOR_FAIL();
-	}
-
-	(state->payload) += result->fragment.len;
 	return true;
 }
 
@@ -630,13 +672,6 @@ bool zcbor_bstr_decode(zcbor_state_t *state, struct zcbor_string *result)
 }
 
 
-bool zcbor_bstr_decode_fragment(zcbor_state_t *state, struct zcbor_string_fragment *result)
-{
-	PRINT_FUNC();
-	return str_decode_fragment(state, result, ZCBOR_MAJOR_TYPE_BSTR);
-}
-
-
 bool zcbor_bstr_expect(zcbor_state_t *state, struct zcbor_string *expected)
 {
 	PRINT_FUNC();
@@ -648,13 +683,6 @@ bool zcbor_tstr_decode(zcbor_state_t *state, struct zcbor_string *result)
 {
 	PRINT_FUNC();
 	return str_decode(state, result, ZCBOR_MAJOR_TYPE_TSTR);
-}
-
-
-bool zcbor_tstr_decode_fragment(zcbor_state_t *state, struct zcbor_string_fragment *result)
-{
-	PRINT_FUNC();
-	return str_decode_fragment(state, result, ZCBOR_MAJOR_TYPE_TSTR);
 }
 
 
