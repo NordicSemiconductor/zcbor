@@ -46,6 +46,7 @@ set(py_command
   Intmax2
   InvalidIdentifiers
   MapUnionPrimAlias
+  EmptyContainer
   -e
   ${bit_arg}
   --short-names
