@@ -143,7 +143,7 @@ struct {
 #endif
 	size_t map_start_backup_num; /** The index of the backup made at the start of the current map.
 	                                 This is used to move to the start of the map when searching
-					 unordered maps. */
+	                                 unordered maps. */
 	size_t map_elem_count; /**< Number of elements in the current unordered map.
 	                            This also serves as the number of bits (not bytes)
 	                            in the map_search_elem_state array (when applicable). */
