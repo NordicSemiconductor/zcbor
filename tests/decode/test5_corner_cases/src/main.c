@@ -790,7 +790,7 @@ ZTEST(cbor_decode_test5, test_map)
 
 	struct Map map;
 
-	zassert_equal(union_nintuint_c, -8,
+	zassert_equal(union_nint8uint_c, -8,
 		"The union_int optimization seems to not be working.\r\n");
 
 	zassert_equal(ZCBOR_SUCCESS, cbor_decode_Map(payload_map1, sizeof(payload_map1),
@@ -830,8 +830,8 @@ ZTEST(cbor_decode_test5, test_map)
 	zassert_equal(ZCBOR_SUCCESS, cbor_decode_Map(payload_map5, sizeof(payload_map5),
 			&map, NULL), NULL);
 	zassert_false(map.listkey, NULL);
-	zassert_equal(union_nintuint_c, map.Union_choice, NULL);
-	zassert_equal(1, map.nintuint, NULL);
+	zassert_equal(union_nint8uint_c, map.Union_choice, NULL);
+	zassert_equal(1, map.nint8uint, NULL);
 	zassert_equal(2, map.twotothree_count, NULL);
 }
 
@@ -1930,7 +1930,7 @@ ZTEST(cbor_decode_test5, test_union_int)
 	zassert_equal(ZCBOR_SUCCESS, cbor_decode_UnionInt2(union_int_payload3,
 		sizeof(union_int_payload3), &result2, &num_decode), NULL);
 	zassert_equal(sizeof(union_int_payload3), num_decode, NULL);
-	zassert_equal(result2.Union_choice, union_nint_l_c, NULL);
+	zassert_equal(result2.Union_choice, union_nint100000_l_c, NULL);
 	zassert_equal(result2.number_m.number_choice, number_int_c, NULL);
 	zassert_equal(result2.number_m.Int, 1, NULL);
 
@@ -2052,7 +2052,7 @@ ZTEST(cbor_decode_test5, test_intmax)
 	zassert_equal(sizeof(intmax3_payload1), num_decode, NULL);
 	zassert_equal(result3.Union_choice, Intmax3_union_uint254_c, NULL);
 	zassert_equal(result3.Int, 65534, NULL);
-	zassert_equal(result3.nintbstr.len, 127, NULL);
+	zassert_equal(result3.nint128bstr.len, 127, NULL);
 }
 
 

@@ -627,8 +627,8 @@ ZTEST(cbor_encode_test3, test_map)
 		}
 	};
 	struct Map map3 = {
-		.Union_choice = union_nintuint_c,
-		.nintuint = 1,
+		.Union_choice = union_nint8uint_c,
+		.nint8uint = 1,
 		.twotothree_count = 2,
 		.twotothree = {
 			{.twotothree = {.value = "hello", .len = 5}},
@@ -1429,7 +1429,7 @@ ZTEST(cbor_encode_test3, test_union_int)
 	zassert_equal(sizeof(exp_union_int_payload2), num_encode, NULL);
 	zassert_mem_equal(exp_union_int_payload2, output, num_encode, NULL);
 
-	input.Union_choice = union_nint_l_c;
+	input.Union_choice = union_nint100000_l_c;
 	input.number_m.number_choice = number_int_c;
 	input.number_m.Int = 1;
 	zassert_equal(ZCBOR_SUCCESS, cbor_encode_UnionInt2(output, sizeof(output),

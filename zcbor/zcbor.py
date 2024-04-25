@@ -352,8 +352,8 @@ class CddlParser:
             or (f"{self.value.replace(self.backslash_quotation_mark, '')}_{self.type.lower()}"
                 if self.type == "TSTR" and self.value is not None else None)
             # Name an integer by its expected value:
-            or (f"{self.type.lower()}{self.value}"
-                if self.type in ["INT", "UINT"] and self.value is not None else None)
+            or (f"{self.type.lower()}{abs(self.value)}"
+                if self.type in ["INT", "UINT", "NINT"] and self.value is not None else None)
             # Name a type by its type name
             or (next((key for key, value in self.my_types.items() if value == self), None))
             # Name a control group by its name
