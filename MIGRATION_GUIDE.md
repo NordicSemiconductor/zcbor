@@ -1,4 +1,4 @@
-# zcbor v. 0.8.99
+# zcbor v. 0.9.0
 
 * `zcbor_simple_*()` functions have been removed to avoid confusion about their use.
   They are still in the C file because they are used by other functions.
