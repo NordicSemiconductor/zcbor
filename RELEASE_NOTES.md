@@ -1,3 +1,62 @@
+# zcbor v. 0.8.99
+
+Any new bugs, requests, or missing features should be reported as [Github issues](https://github.com/NordicSemiconductor/zcbor/issues).
+
+## Improvements:
+
+ * zcbor.py:
+   * Allow --file-header to accept a path to a file with header contents
+   * Avoid generated names that are C keywords (capitalize them if present)
+   * Whenever generated code uses function pointers, add dummy calls using the function pointers, to verify that the arguments have the right type.
+   * Optimize range checks
+   * Convert function docs in comments to pep-257 docstrings and add some new docstrings
+ * C libraries:
+   * Remove zcbor_simple_*() functions from the header file to discourage their use.
+   * zcbor_decode: Allow deciding at run-time whether to enforce canonical data (via 'enforce_canonical'), instead of via ZCBOR_CANONICAL.
+   * zcbor_print.h: Move function implementations into new file zcbor_print.c
+ * Documentation:
+   * MIGRATION_GUIDE.md: Add a migration guide file
+   * README.md: Clarification on n_flags
+   * ARCHITECTURE.md: Small improvements to bring the document up to date
+
+## Bugfixes:
+
+ * zcbor.py:
+   * Fixes to support code generation on Windows
+   * Handle when files are on different drives in Windows
+   * Fix a few bugs in code generation to do with dereferencing
+   * Fix bug where NINT literals were not given unique names
+   * Fix a bug where empty groups and lists would give an error
+   * Fix bstr names based on size
+   * Don't omit zcbor_union_elem_code() when there is a range check.
+   * Fix bug where paths to generated files could not be absolute
+   * Fix a bug where some decoding function were not called
+   * Fix/improve deeply nested types
+   * Remove outdated assert statement that caused incorrect assert
+   * Fix a bug in CDDL parsing to do with nested brackets
+ * zcbor_decode:
+   * Fix various things related to constant_state
+   * Fix a bug with enforce_canonical (ZCBOR_CANONICAL) and floats
+ * zcbor_encode.c: Fix a length bug in zcbor_bstr_end_decode()
+ * zcbor_tags.h: Typo fix YANK -> YANG
+
+## Unsupported CDDL features
+Not all features outlined in the CDDL specs [RFC8610](https://datatracker.ietf.org/doc/html/rfc8610), [RFC9090](https://datatracker.ietf.org/doc/html/rfc9090), and [RFC9165](https://datatracker.ietf.org/doc/html/rfc9165) are supported by zcbor.
+The following is a list of limitations and missing features:
+
+ * Generated code does not support unordered maps.
+ * Using `&()` to turn groups into choices (unions). `&()` is supported when used with `.bits`.
+ * Representation Types (`#x.y`), except for tags (`#6.y(foo)`) which are supported.
+ * Unwrapping (`~`)
+ * The control operators `.regexp`, `.ne`, `.default`, and `.within` from RFC8610.
+ * The control operators `.sdnv`, `.sdnvseq`, and `.oid` from RFC9090.
+ * The control operators `.plus`, `.cat`, `.det`, `.abnf`, `.abnfb`, and `.feature` from RFC9165.
+ * Generics (`foo<a, b>`).
+ * Using `:` for map keys.
+ * Cuts, either via `^` or implicitly via `:`.
+ * Most of the "Extended Diagnostic Notation" is unsupported.
+
+
 # zcbor v. 0.8.1 (2024-01-26)
 
 Any new bugs, requests, or missing features should be reported as [Github issues](https://github.com/NordicSemiconductor/zcbor/issues).
