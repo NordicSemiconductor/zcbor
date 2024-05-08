@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
-# Generated using zcbor version 0.8.99
+# Generated using zcbor version 0.9.0
 # https://github.com/NordicSemiconductor/zcbor
 # Generated with a --default-max-qty of 3
 #
@@ -21,3 +21,4 @@ target_include_directories(pet PUBLIC
     ${CMAKE_CURRENT_LIST_DIR}/../../include
     ${CMAKE_CURRENT_LIST_DIR}/include
     )
+target_compile_definitions(pet PUBLIC ZCBOR_MAP_SMART_SEARCH)

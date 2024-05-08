@@ -88,6 +88,31 @@ ZCBOR_STATE_D(decode_state, n, payload, payload_len, elem_count, n_flags);
 ZCBOR_STATE_E(encode_state, n, payload, payload_len, 0);
 ```
 
+Fragmented payloads
+-------------------
+
+zcbor can encode and decode payloads in sections.
+This can be useful e.g. if you send or receive your payload in multiple packets.
+When the current payload section is done, call `zcbor_update_state()` to introduce the next section.
+Note that zcbor does not allow section boundaries to fall inside a zcbor header/value pair.
+This means that the following elements cannot be split between sections:
+
+- Numbers and simple values (integers, floats, bools, undefined, nil)
+- Tags
+- Headers of lists, maps, tstrs, and bstrs
+
+If your payload is split in an unsupported way, you can get around it by making a small section out of the remaining bytes of one section spliced with the start of the next.
+Another option is to leave a little room at the start of each section buffer, and copy the remaining end of one section into the start of the next buffer.
+8 bytes should be enough for this.
+
+Lists and maps can span multiple sections, as long as the individual elements are not split as to break the above rule.
+
+String payloads can be split across multiple payload sections, if `ZCBOR_FRAGMENTS` is enabled, and the `*str_fragments_*()` APIs are used. Note that in the zcbor docs, the term "string fragment" is used for fragmented strings, while the term "payload section" is used for fragmented CBOR payloads, as passed to `zcbor_update_state()`. These do not always line up perfectly, particularly at the start and end of fragmented strings.
+
+CBOR-encoded bstrs can be nested, and there can also be a non-CBOR-encoded innermost string.
+The current innermost string is called the "current string".
+`zcbor_update_state()` modifies all backups so that outer nested strings have updated information about the new section.
+
 Configuration
 -------------
 
@@ -103,6 +128,7 @@ Name                      | Description
 `ZCBOR_STOP_ON_ERROR`     | Enable the `stop_on_error` functionality. This makes all functions abort their execution if called when an error has already happened.
 `ZCBOR_BIG_ENDIAN`        | All decoded values are returned as big-endian. The default is little-endian.
 `ZCBOR_MAP_SMART_SEARCH`  | Applies to decoding of unordered maps. When enabled, a flag is kept for each element in an array, ensuring it is not processed twice. If disabled, a count is kept for map as a whole. Enabling increases code size and memory usage, and requires the state variable to possess the memory necessary for the flags.
+`ZCBOR_FRAGMENTS`         | Enable functions for decoding and encoding byte and text strings in fragments.
 
 
 Python script and module
@@ -424,7 +450,7 @@ usage: zcbor code [-h] -c CDDL [--no-prelude] [-v]
                   ENTRY_TYPES [ENTRY_TYPES ...] [-d] [-e] [--time-header]
                   [--git-sha-header] [-b {32,64}]
                   [--include-prefix INCLUDE_PREFIX] [-s]
-                  [--file-header FILE_HEADER]
+                  [--file-header FILE_HEADER] [--unordered-maps]
 
 Parse a CDDL file and produce C code that validates and xcodes CBOR.
 The output from this script is a C file and a header file. The header file
@@ -525,6 +551,13 @@ options:
                         generated files, e.g. copyright. Can be a string or a
                         path to a file. If interpreted as a path to an
                         existing file, the file's contents will be used.
+  --unordered-maps      Add support in the generated code for parsing maps
+                        with unknown element order. When enabled, the
+                        generated code will use the zcbor_unordered_map_*()
+                        API to decode data whenever inside a map. zcbor
+                        detects when ZCBOR_MAP_SMART_SEARCH is needed and
+                        enable This places restrictions on the level of
+                        ambiguity allowed between map keys in a map.
 
 ```
 
