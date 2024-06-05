@@ -1440,4 +1440,105 @@ ZTEST(zcbor_unit_tests, test_zcbor_version)
 }
 
 
+/* Test that CBOR-encoded bstrs are encoded with the correct length. */
+ZTEST(zcbor_unit_tests, test_cbor_encoded_bstr_len)
+{
+	uint8_t payload[50];
+
+#ifdef ZCBOR_VERBOSE
+	for (size_t len = 10; len < 0x108; len++)
+#else
+	for (size_t len = 10; len < 0x10010; len++)
+#endif /* ZCBOR_VERBOSE */
+	{
+		ZCBOR_STATE_E(state_e, 1, payload, len, 0);
+		ZCBOR_STATE_D(state_d, 1, payload, len, 1, 0);
+
+		zassert_true(zcbor_bstr_start_encode(state_e), "len: %d\n", len);
+		zassert_true(zcbor_size_put(state_e, len), "len: %d\n", len);
+		zassert_true(zcbor_bstr_end_encode(state_e, NULL), "len: %d\n", len);
+
+		zassert_true(zcbor_bstr_start_decode(state_d, NULL), "len: %d\n", len);
+		zassert_true(zcbor_size_expect(state_d, len), "len: %d\n", len);
+		zassert_true(zcbor_bstr_end_decode(state_d), "len: %d\n", len);
+	}
+
+#if SIZE_MAX == UINT64_MAX
+	for (size_t len = 0xFFFFFF00; len <= 0x100000100; len++) {
+		ZCBOR_STATE_E(state_e, 1, payload, len, 0);
+		ZCBOR_STATE_D(state_d, 1, payload, len, 1, 0);
+
+		zassert_true(zcbor_bstr_start_encode(state_e), "len: %d\n", len);
+		zassert_true(zcbor_size_put(state_e, len), "len: %d\n", len);
+		zassert_true(zcbor_bstr_end_encode(state_e, NULL), "len: %d\n", len);
+
+		zassert_true(zcbor_bstr_start_decode(state_d, NULL), "len: %d\n", len);
+		zassert_true(zcbor_size_expect(state_d, len), "len: %d\n", len);
+		zassert_true(zcbor_bstr_end_decode(state_d), "len: %d\n", len);
+	}
+#endif /* SIZE_MAX == UINT64_MAX */
+}
+
+
+/* Test zcbor_remaining_str_len().
+ * Some payload lengths are impossible to fill with a properly encoded string,
+ * these have special cases. */
+ZTEST(zcbor_unit_tests, test_remaining_str_len)
+{
+	uint8_t payload[8];
+	ZCBOR_STATE_E(state_e, 1, payload, 0, 0);
+
+	zassert_equal(zcbor_remaining_str_len(state_e), 0, "i: 0\n");
+
+	for (uint64_t i = 1; i <= 0x20000; i++) {
+		size_t offset;
+
+		state_e->payload_end = payload + i;
+
+		switch(i) {
+		case 25:
+		case 0x102:
+			offset = 1;
+			break;
+		case 0x10003:
+		case 0x10004:
+			offset = 2;
+			break;
+		default:
+			offset = 0;
+			break;
+		}
+
+		size_t total_len = zcbor_remaining_str_len(state_e)
+					+ zcbor_header_len(zcbor_remaining_str_len(state_e));
+		zassert_equal(i - offset, total_len, "i: %ld, len: %zu\n", i, total_len);
+	}
+
+#if SIZE_MAX == UINT64_MAX
+	for (uint64_t i = 0xFFFFFF00; i <= 0x100000100; i++) {
+		size_t offset;
+
+		state_e->payload_end = payload + i;
+
+		switch(i) {
+		case 0x100000005:
+		case 0x100000006:
+		case 0x100000007:
+		case 0x100000008:
+			offset = 4;
+			break;
+		default:
+			offset = 0;
+			break;
+		}
+
+		size_t total_len = zcbor_remaining_str_len(state_e)
+					+ zcbor_header_len(zcbor_remaining_str_len(state_e));
+		zassert_equal(i - offset, total_len, "i: %lx, len: %zx\n", i, total_len);
+	}
+#endif
+}
+
+
+
 ZTEST_SUITE(zcbor_unit_tests, NULL, NULL, NULL, NULL, NULL);
