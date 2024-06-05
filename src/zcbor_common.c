@@ -283,6 +283,22 @@ size_t zcbor_header_len_ptr(const void *const value, size_t value_len)
 }
 
 
+size_t zcbor_remaining_str_len(zcbor_state_t *state)
+{
+	size_t max_len = (size_t)state->payload_end - (size_t)state->payload;
+
+	if (max_len == 0) {
+		return 0;
+	}
+
+	size_t max_header_len = zcbor_header_len(max_len);
+	size_t min_header_len = zcbor_header_len(max_len - max_header_len);
+	size_t header_len = zcbor_header_len(max_len - min_header_len);
+
+	return max_len - header_len;
+}
+
+
 int zcbor_entry_function(const uint8_t *payload, size_t payload_len,
 	void *result, size_t *payload_len_out, zcbor_state_t *state, zcbor_decoder_t func,
 	size_t n_states, size_t elem_count)

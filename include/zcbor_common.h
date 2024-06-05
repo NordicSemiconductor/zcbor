@@ -475,6 +475,18 @@ size_t zcbor_header_len(uint64_t value);
 /** Like @ref zcbor_header_len but for integer of any size <= 8. */
 size_t zcbor_header_len_ptr(const void *const value, size_t value_len);
 
+/** If a string (header + payload) is encoded into the rest of the payload, how long would it be?
+ *
+ *  Note that a string with this length doesn't necessarily fill the rest of the
+ *  payload. For some payload lengths, e.g. 25, it's impossible to encode a
+ *  string of that total length.
+ *
+ *  @param[in] state  The current state.
+ *
+ *  @return  The length of the string (payload, not including header) in bytes.
+ */
+size_t zcbor_remaining_str_len(zcbor_state_t *state);
+
 /** Convert a float16 value to float32.
  *
  *  @param[in] input  The float16 value stored in a uint16_t.

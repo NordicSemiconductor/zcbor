@@ -224,22 +224,13 @@ static bool str_start_encode(zcbor_state_t *state,
 }
 
 
-static size_t remaining_str_len(zcbor_state_t *state)
-{
-	size_t max_len = (size_t)state->payload_end - (size_t)state->payload;
-	size_t result_len = zcbor_header_len_ptr(&max_len, sizeof(max_len)) - 1;
-
-	return max_len - result_len - 1;
-}
-
-
 bool zcbor_bstr_start_encode(zcbor_state_t *state)
 {
 	if (!zcbor_new_backup(state, 0)) {
 		ZCBOR_FAIL();
 	}
 
-	uint64_t max_len = remaining_str_len(state);
+	uint64_t max_len = zcbor_remaining_str_len(state);
 
 	/* Encode a dummy header */
 	if (!value_encode(state, ZCBOR_MAJOR_TYPE_BSTR, &max_len, sizeof(max_len))) {
@@ -265,7 +256,7 @@ bool zcbor_bstr_end_encode(zcbor_state_t *state, struct zcbor_string *result)
 		ZCBOR_FAIL();
 	}
 
-	result->value = state->payload_end - remaining_str_len(state);
+	result->value = state->payload + zcbor_header_len(zcbor_remaining_str_len(state));
 	result->len = (size_t)payload - (size_t)result->value;
 
 	/* Reencode header of list now that we know the number of elements. */
