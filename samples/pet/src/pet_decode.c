@@ -20,6 +20,15 @@
 #error "The type file was generated with a different default_max_qty than this file"
 #endif
 
+#define log_result(state, result, func) do { \
+	if (!result) { \
+		zcbor_trace_file(state); \
+		zcbor_log("%s error: %s\r\n", func, zcbor_error_str(zcbor_peek_error(state))); \
+	} else { \
+		zcbor_log("%s success\r\n", func); \
+	} \
+} while(0)
+
 static bool decode_Pet(zcbor_state_t *state, struct Pet *result);
 
 
@@ -28,21 +37,15 @@ static bool decode_Pet(
 {
 	zcbor_log("%s\r\n", __func__);
 
-	bool tmp_result = (((zcbor_list_start_decode(state) && ((((zcbor_list_start_decode(state) && ((zcbor_multi_decode(1, 3, &(*result).names_count, (zcbor_decoder_t *)zcbor_tstr_decode, state, (&(*result).names), sizeof(struct zcbor_string))) || (zcbor_list_map_end_force_decode(state), false)) && zcbor_list_end_decode(state)))
+	bool res = (((zcbor_list_start_decode(state) && ((((zcbor_list_start_decode(state) && ((zcbor_multi_decode(1, 3, &(*result).names_count, (zcbor_decoder_t *)zcbor_tstr_decode, state, (&(*result).names), sizeof(struct zcbor_string))) || (zcbor_list_map_end_force_decode(state), false)) && zcbor_list_end_decode(state)))
 	&& ((zcbor_bstr_decode(state, (&(*result).birthday)))
 	&& ((((((*result).birthday.len == 8)) || (zcbor_error(state, ZCBOR_ERR_WRONG_RANGE), false))) || (zcbor_error(state, ZCBOR_ERR_WRONG_RANGE), false)))
 	&& ((((zcbor_uint_decode(state, &(*result).species_choice, sizeof((*result).species_choice)))) && ((((((*result).species_choice == Pet_species_cat_c) && ((1)))
 	|| (((*result).species_choice == Pet_species_dog_c) && ((1)))
 	|| (((*result).species_choice == Pet_species_other_c) && ((1)))) || (zcbor_error(state, ZCBOR_ERR_WRONG_VALUE), false)))))) || (zcbor_list_map_end_force_decode(state), false)) && zcbor_list_end_decode(state))));
 
-	if (!tmp_result) {
-		zcbor_trace_file(state);
-		zcbor_log("%s error: %s\r\n", __func__, zcbor_error_str(zcbor_peek_error(state)));
-	} else {
-		zcbor_log("%s success\r\n", __func__);
-	}
-
-	return tmp_result;
+	log_result(state, res, __func__);
+	return res;
 }
 
 
