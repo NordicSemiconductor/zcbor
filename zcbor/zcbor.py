@@ -2767,16 +2767,10 @@ static bool {xcoder.func_name}(
 	{"struct zcbor_string tmp_str;" if "tmp_str" in body else ""}
 	{"bool int_res;" if "int_res" in body else ""}
 
-	bool tmp_result = ({body});
+	bool res = ({body});
 
-	if (!tmp_result) {{
-		zcbor_trace_file(state);
-		zcbor_log("%s error: %s\\r\\n", __func__, zcbor_error_str(zcbor_peek_error(state)));
-	}} else {{
-		zcbor_log("%s success\\r\\n", __func__);
-	}}
-
-	return tmp_result;
+	log_result(state, res, __func__);
+	return res;
 }}""".replace("	\n", "")  # call replace() to remove empty lines.
 
     def render_entry_function(self, xcoder, mode):
@@ -2798,6 +2792,15 @@ static bool {xcoder.func_name}(
 
     def render_c_file(self, header_file_name, mode):
         """Render the entire generated C file contents."""
+        log_result_define = """#define log_result(state, result, func) \
+do { \\
+	if (!result) { \\
+		zcbor_trace_file(state); \\
+		zcbor_log("%s error: %s\\r\\n", func, zcbor_error_str(zcbor_peek_error(state))); \\
+	} else { \\
+		zcbor_log("%s success\\r\\n", func); \\
+	} \\
+} while(0)"""
         return f"""/*{self.render_file_header(" *")}
  */
 
@@ -2812,6 +2815,8 @@ static bool {xcoder.func_name}(
 #if DEFAULT_MAX_QTY != {self.default_max_qty}
 #error "The type file was generated with a different default_max_qty than this file"
 #endif
+
+{log_result_define}
 
 {linesep.join([self.render_forward_declaration(xcoder, mode) for xcoder in self.functions[mode]])}
 
