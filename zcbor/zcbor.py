@@ -1074,6 +1074,7 @@ class CddlXcoder(CddlParser):
             self.skipped = True
         else:
             self.skipped = skipped
+        return
 
     def delegate_type_condition(self):
         """Whether to use the C type of the first child as this type's C type"""
@@ -1091,8 +1092,9 @@ class CddlXcoder(CddlParser):
             list(map(lambda child: child.set_skipped(child.skip_condition()),
                      self.value))
             list(map(lambda child: child.set_access_prefix(
-                     self.var_access(), is_delegated=self.delegate_type_condition()
-                     or (is_delegated and self.skip_condition())),
+                     self.var_access(),
+                     is_delegated=(self.delegate_type_condition()
+                                   or (is_delegated and self.skip_condition()))),
                      self.value))
         elif self in self.my_types.values() and self.type != "OTHER":
             self.set_skipped(not self.multi_member())
@@ -1147,10 +1149,12 @@ class CddlXcoder(CddlParser):
     def val_access(self):
         """"Path" to access this element's actual value variable."""
         if self.is_unambiguous_repeated():
-            return "NULL"
+            ret = "NULL"
         elif self.skip_condition() or self.is_delegated_type():
-            return self.var_access()
-        return self.access_append(self.var_name())
+            ret = self.var_access()
+        else:
+            ret = self.access_append(self.var_name())
+        return ret
 
     def repeated_val_access(self):
         if self.is_unambiguous_repeated():
@@ -1924,8 +1928,7 @@ class CodeGenerator(CddlXcoder):
         decl = list()
         for child in self.value:
             if not child.is_unambiguous_repeated():
-                decl.extend(child.add_var_name(
-                    child.single_var_type(), anonymous=True))
+                decl.extend(child.single_declaration())
         return decl
 
     def simple_func_condition(self):
@@ -2038,8 +2041,9 @@ class CodeGenerator(CddlXcoder):
             assert (var_type[-1][-1] == "}" or len(var_type) == 1), \
                 f"Expected single var: {var_type!r}"
             if not anonymous or var_type[-1][-1] != "}":
-                var_type[-1] += " %s%s" % (
-                    self.var_name(), "[%s]" % self.max_qty if full and self.max_qty != 1 else "")
+                var_name = self.var_name()
+                array_part = f"[{self.max_qty}]" if full and self.max_qty != 1 else ""
+                var_type[-1] += f" {var_name}{array_part}"
             var_type = add_semicolon(var_type)
         return var_type
 
@@ -2062,6 +2066,9 @@ class CodeGenerator(CddlXcoder):
         """Type declaration for unions."""
         declaration = self.enclose("union", self.child_single_declarations())
         return declaration
+
+    def single_declaration(self):
+        return self.add_var_name(self.single_var_type(), anonymous=True)
 
     def repeated_declaration(self):
         """Declaration of the repeated part of this element."""
@@ -2275,16 +2282,6 @@ class CodeGenerator(CddlXcoder):
         else:
             assert False, "Should not come here."
 
-        min_val = None
-        max_val = None
-
-        if self.value is None:
-            if self.type in ["BSTR", "TSTR"]:
-                min_val = self.min_size
-                max_val = self.max_size
-            else:
-                min_val = self.min_value
-                max_val = self.max_value
         return (func_name, arg)
 
     def single_func(self, access=None, union_int=None):
