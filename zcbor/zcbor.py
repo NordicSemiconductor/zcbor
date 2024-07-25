@@ -307,7 +307,7 @@ class CddlParser:
     @staticmethod
     def strip_comments(instr):
         """Strip CDDL comments (';') from the string."""
-        return getrp(r"\;.*?\n").sub('', instr)
+        return getrp(r"\;.*?(\n|$)").sub('', instr)
 
     @staticmethod
     def resolve_backslashes(instr):
@@ -782,13 +782,13 @@ class CddlParser:
         # The "range_types" match the contents of brackets i.e. (), [], and {},
         # and strings, i.e. ' or "
         range_types = [
-            (r'\[(?P<item>(?>[^[\]]+|(?R))*)\]',
+            (r'(?P<bracket>\[(?P<item>(?>[^[\]]+|(?&bracket))*)\])',
              lambda m_self, list_str: m_self.type_and_value(
                  "LIST", lambda: m_self.parse(list_str))),
-            (r'\((?P<item>(?>[^\(\)]+|(?R))*)\)',
+            (r'(?P<paren>\((?P<item>(?>[^\(\)]+|(?&paren))*)\))',
              lambda m_self, group_str: m_self.type_and_value(
                  "GROUP", lambda: m_self.parse(group_str))),
-            (r'{(?P<item>(?>[^{}]+|(?R))*)}',
+            (r'(?P<curly>{(?P<item>(?>[^{}]+|(?&curly))*)})',
              lambda m_self, map_str: m_self.type_and_value(
                  "MAP", lambda: m_self.parse(map_str))),
             (r'\'(?P<item>.*?)(?<!\\)\'',
