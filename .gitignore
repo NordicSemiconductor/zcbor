@@ -6,3 +6,4 @@ types_playground*
 dist/
 twister-out*
 **/twister-out*
+tests/cases/foo.cddl
