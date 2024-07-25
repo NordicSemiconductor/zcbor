@@ -48,6 +48,11 @@ set(py_command
   MapUnionPrimAlias
   EmptyContainer
   SingleElemList
+  Choice1
+  Choice2
+  Choice3
+  Choice4
+  Choice5
   -e
   ${bit_arg}
   --short-names
