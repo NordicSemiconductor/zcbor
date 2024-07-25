@@ -1046,8 +1046,11 @@ class CddlXcoder(CddlParser):
         self.dependsOnCall = False
         self.skipped = False
 
-    def var_name(self, with_prefix=False):
+    def var_name(self, with_prefix=False, observe_skipped=True):
         """Name of variables and enum members for this element."""
+        if (observe_skipped and self.skip_condition()
+                and self.type in ["LIST", "MAP", "GROUP"] and self.value):
+            return self.value[0].var_name(with_prefix)
         name = self.id(with_prefix=with_prefix)
         if name in c_keywords:
             name = name.capitalize()
@@ -1060,7 +1063,7 @@ class CddlXcoder(CddlParser):
         if self.skipped:
             return True
         if self.type in ["LIST", "MAP", "GROUP"]:
-            return not self.multi_val_condition()
+            return not self.repeated_multi_var_condition()
         if self.type == "OTHER":
             return ((not self.repeated_multi_var_condition())
                     and (not self.multi_var_condition())
@@ -1086,20 +1089,22 @@ class CddlXcoder(CddlParser):
     def set_access_prefix(self, prefix, is_delegated=False):
         """Recursively set the access prefix for this element and all its children."""
         self.accessPrefix = prefix
-        self.is_delegated = is_delegated
         if self.type in ["LIST", "MAP", "GROUP", "UNION"]:
+            self.set_skipped(self.skip_condition())
             list(map(lambda child: child.set_skipped(child.skip_condition()),
                      self.value))
             list(map(lambda child: child.set_access_prefix(
                      self.var_access(), is_delegated=self.delegate_type_condition()
                      or (is_delegated and self.skip_condition())),
                      self.value))
-        elif self in self.my_types.values() and self.type != "OTHER":
+        elif self in self.my_types.values():
             self.set_skipped(not self.multi_member())
         if self.key is not None:
             self.key.set_access_prefix(self.var_access())
         if self.cbor_var_condition():
             self.cbor.set_access_prefix(self.var_access())
+        self.is_delegated = is_delegated and not self.skip_condition()
+        return
 
     def multi_member(self):
         """Whether this type has multiple member variables."""
@@ -1885,11 +1890,10 @@ class CodeGenerator(CddlXcoder):
 
     def delegate_type_condition(self):
         """Whether to use the C type of the first child as this type's C type"""
-        ret = (self.type in ["LIST", "MAP", "GROUP"]
-               and not self.multi_var_condition()
-               and not self.multi_val_condition()
-               and not self.self_repeated_multi_var_condition()
-               and self in self.my_types.values())
+        ret = self.skip_condition() and (self.multi_var_condition()
+                                         or self.self_repeated_multi_var_condition()
+                                         or self.range_check_condition()
+                                         or (self in self.my_types.values()))
         return ret
 
     def is_delegated_type(self):
@@ -2211,11 +2215,11 @@ class CodeGenerator(CddlXcoder):
 
     def xcode_func_name(self):
         """Name of the encoder/decoder function for this element."""
-        return f"{self.mode}_{self.var_name(with_prefix=True)}"
+        return f"{self.mode}_{self.var_name(with_prefix=True, observe_skipped=False)}"
 
     def repeated_xcode_func_name(self):
         """Name of the encoder/decoder function for the repeated part of this element."""
-        return f"{self.mode}_repeated_{self.var_name(with_prefix=True)}"
+        return f"{self.mode}_repeated_{self.var_name(with_prefix=True, observe_skipped=False)}"
 
     def single_func_prim_name(self, union_int=None, ptr_result=False):
         """Function name for xcoding this type, when it is a primitive type"""
