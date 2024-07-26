@@ -301,9 +301,13 @@ size_t zcbor_remaining_str_len(zcbor_state_t *state)
 
 int zcbor_entry_function(const uint8_t *payload, size_t payload_len,
 	void *result, size_t *payload_len_out, zcbor_state_t *state, zcbor_decoder_t func,
-	size_t n_states, size_t elem_count)
+	size_t n_states, size_t elem_count, size_t n_flags)
 {
-	zcbor_new_state(state, n_states, payload, payload_len, elem_count, NULL, 0);
+	zcbor_new_state(state, n_states, payload, payload_len, elem_count,
+		(uint8_t *)&state[n_states - 1 - ZCBOR_FLAG_STATES(n_flags)],
+		ZCBOR_FLAG_STATES(n_flags) * sizeof(zcbor_state_t));
+
+	state->constant_state->manually_process_elem = true;
 
 	bool ret = func(state, result);
 
