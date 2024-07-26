@@ -361,3 +361,9 @@ SingleElemList = [
     [true],
     {1: bstr},
 ]
+
+Choice1 = nil / [ * [tstr] ]
+Choice2 = nil / ([ * [tstr] ])
+Choice3 = nil / ([ * ([tstr])/nil ])
+Choice4 = nil / ([ * ([[Choice3]])/nil ])
+Choice5 = nil / ([ * {*int=>[tstr]}/nil ])

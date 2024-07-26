@@ -57,6 +57,11 @@ set(py_command
     Keywords
     EmptyContainer
     SingleElemList
+    Choice1
+    Choice2
+    Choice3
+    Choice4
+    Choice5
   --decode
   --git-sha-header
   --short-names
