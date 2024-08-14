@@ -148,13 +148,15 @@ static bool value_extract(zcbor_state_t *state,
 	INITIAL_CHECKS();
 	ZCBOR_ERR_IF((state->elem_count == 0), ZCBOR_ERR_LOW_ELEM_COUNT);
 
-	uint8_t additional = ZCBOR_ADDITIONAL(*state->payload);
+	uint8_t header_byte = *state->payload;
+	uint8_t additional = ZCBOR_ADDITIONAL(header_byte);
 	size_t len = 0;
 
 	if ((additional == ZCBOR_VALUE_IS_INDEFINITE_LENGTH) && (indefinite_length_array != NULL)) {
-		/* Indefinite length array. */
+		/* Indefinite length is not allowed in canonical CBOR */
 		ZCBOR_ERR_IF(ZCBOR_ENFORCE_CANONICAL(state),
 			ZCBOR_ERR_INVALID_VALUE_ENCODING);
+
 		*indefinite_length_array = true;
 	} else {
 		len = additional_len(additional);
@@ -172,7 +174,9 @@ static bool value_extract(zcbor_state_t *state,
 		} else {
 			endian_copy(result_offs, state->payload + 1, len);
 
-			if (ZCBOR_ENFORCE_CANONICAL(state)) {
+			/* Check whether value could have been encoded shorter.
+			   Only check when enforcing canonical CBOR, and never check floats. */
+			if (ZCBOR_ENFORCE_CANONICAL(state) && !ZCBOR_IS_FLOAT(header_byte)) {
 				ZCBOR_ERR_IF((zcbor_header_len_ptr(result, result_len) != (len + 1)),
 					ZCBOR_ERR_INVALID_VALUE_ENCODING);
 			}
