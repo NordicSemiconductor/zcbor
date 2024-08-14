@@ -8,6 +8,8 @@
 #include "zcbor_decode.h"
 #include "zcbor_encode.h"
 #include "zcbor_print.h"
+#include <math.h>
+
 
 ZTEST(zcbor_unit_tests, test_int64)
 {
@@ -1539,6 +1541,60 @@ ZTEST(zcbor_unit_tests, test_remaining_str_len)
 #endif
 }
 
+/* Test that CBOR-encoded tstrs are encoded with the correct length, even if the first part of the
+   number is 0s. */
+ZTEST(zcbor_unit_tests, test_float_len)
+{
+	uint8_t payload[50];
+	ZCBOR_STATE_E(state_e, 1, payload, sizeof(payload), 0);
+	ZCBOR_STATE_D(state_d, 1, payload, sizeof(payload), 20, 0);
+
+	zassert_true(zcbor_float16_put(state_e, 0.0));
+	zassert_true(zcbor_float16_expect(state_d, 0.0));
+	zassert_true(zcbor_float32_put(state_e, 0.0));
+	zassert_true(zcbor_float32_expect(state_d, 0.0));
+	zassert_true(zcbor_float64_put(state_e, 0.0));
+	zassert_true(zcbor_float64_expect(state_d, 0.0));
+
+	zassert_true(zcbor_float16_put(state_e, powf(2, -17)));
+	zassert_true(zcbor_float16_expect(state_d, powf(2, -17)));
+	zassert_true(zcbor_float32_put(state_e, 0.000000000000000000000000000000000000000001f));
+	zassert_true(zcbor_float32_expect(state_d, 0.000000000000000000000000000000000000000001f));
+	zassert_true(zcbor_float64_put(state_e, pow(10, -315)));
+	zassert_true(zcbor_float64_expect(state_d, pow(10, -315)));
+}
+
+ZTEST(zcbor_unit_tests, test_simple_value_len)
+{
+#ifndef ZCBOR_CANONICAL
+	printf("Skip on non-canonical builds.\n");
+#else
+	uint8_t payload[] = {0xe1, 0xf4, 0xf5, 0xf6, 0xf7};
+
+	/* Simple values under 24 must be encoded as single bytes. */
+	uint8_t payload_inv[] = {
+		0xf8, 1,
+		0xf8, ZCBOR_BOOL_TO_SIMPLE,
+		0xf8, ZCBOR_BOOL_TO_SIMPLE + 1,
+		0xf8, ZCBOR_NIL_VAL,
+		0xf8, ZCBOR_UNDEF_VAL
+	};
+	ZCBOR_STATE_D(state_d, 1, payload, sizeof(payload), 20, 0);
+	ZCBOR_STATE_D(state_d_inv, 1, payload_inv, sizeof(payload_inv), 20, 0);
+
+	zassert_true(zcbor_simple_expect(state_d, 1));
+	zassert_true(zcbor_bool_expect(state_d, false));
+	zassert_true(zcbor_bool_expect(state_d, true));
+	zassert_true(zcbor_nil_expect(state_d, NULL));
+	zassert_true(zcbor_undefined_expect(state_d, NULL));
+
+	zassert_false(zcbor_simple_expect(state_d_inv, 1));
+	zassert_false(zcbor_bool_expect(state_d_inv, false));
+	zassert_false(zcbor_bool_expect(state_d_inv, true));
+	zassert_false(zcbor_nil_expect(state_d_inv, NULL));
+	zassert_false(zcbor_undefined_expect(state_d_inv, NULL));
+#endif
+}
 
 
 ZTEST_SUITE(zcbor_unit_tests, NULL, NULL, NULL, NULL, NULL);
