@@ -445,6 +445,10 @@ bool zcbor_list_map_end_force_encode(zcbor_state_t *state)
 
 bool zcbor_simple_encode(zcbor_state_t *state, uint8_t *input)
 {
+	/* Simple values 24 to 31 inclusive are unused. Ref: RFC8949 sec 3.3 */
+	if ((*input > ZCBOR_VALUE_IN_HEADER) && (*input < 32)) {
+		ZCBOR_ERR(ZCBOR_ERR_INVALID_VALUE_ENCODING);
+	}
 	if (!value_encode(state, ZCBOR_MAJOR_TYPE_SIMPLE, input, sizeof(*input))) {
 		zcbor_log("Error encoding %u (0x%p)\r\n", *input, input);
 		ZCBOR_FAIL();
@@ -455,7 +459,7 @@ bool zcbor_simple_encode(zcbor_state_t *state, uint8_t *input)
 
 bool zcbor_simple_put(zcbor_state_t *state, uint8_t input)
 {
-	return value_encode(state, ZCBOR_MAJOR_TYPE_SIMPLE, &input, sizeof(input));
+	return zcbor_simple_encode(state, &input);
 }
 
 

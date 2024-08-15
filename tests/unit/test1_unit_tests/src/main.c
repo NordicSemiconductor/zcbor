@@ -885,22 +885,33 @@ ZTEST(zcbor_unit_tests, test_simple)
 	ZCBOR_STATE_D(state_d, 1, payload1, sizeof(payload1), 16, 0);
 	uint8_t simple1 = 0;
 	uint8_t simple2 = 2;
+	uint8_t simple3 = 0;
 
 	zassert_true(zcbor_simple_encode(state_e, &simple1), NULL);
 	zassert_true(zcbor_simple_put(state_e, 14), NULL);
 	zassert_true(zcbor_simple_put(state_e, 22), NULL);
-	zassert_true(zcbor_simple_put(state_e, 24), NULL);
+	zassert_false(zcbor_simple_put(state_e, 24), NULL);
+	zassert_equal(ZCBOR_ERR_INVALID_VALUE_ENCODING, zcbor_peek_error(state_e), NULL);
+	zassert_true(zcbor_simple_put(state_e, 32), NULL);
 	zassert_true(zcbor_simple_put(state_e, 255), NULL);
+	state_e->payload_mut[0] = 0xF8;
+	state_e->payload_mut[1] = 24; // Invalid value
+	state_e->payload_end += 2;
 
 	zassert_true(zcbor_simple_decode(state_d, &simple2), NULL);
 	zassert_true(zcbor_simple_expect(state_d, 14), NULL);
 	zassert_true(zcbor_nil_expect(state_d, NULL), NULL);
 	zassert_false(zcbor_undefined_expect(state_d, NULL), NULL);
-	zassert_true(zcbor_simple_expect(state_d, 24), NULL);
+	zassert_true(zcbor_simple_expect(state_d, 32), NULL);
 	zassert_false(zcbor_simple_expect(state_d, 254), NULL);
 	zassert_true(zcbor_simple_decode(state_d, &simple1), NULL);
 	zassert_equal(0, simple2, NULL);
 	zassert_equal(255, simple1, NULL);
+
+	zassert_false(zcbor_simple_expect(state_d, 24), NULL);
+	zassert_equal(ZCBOR_ERR_INVALID_VALUE_ENCODING, zcbor_peek_error(state_d), "%s\n", zcbor_error_str(zcbor_peek_error(state_d)));
+	zassert_false(zcbor_simple_decode(state_d, &simple3), NULL);
+	zassert_equal(ZCBOR_ERR_INVALID_VALUE_ENCODING, zcbor_peek_error(state_d), "%s\n", zcbor_error_str(zcbor_peek_error(state_d)));
 }
 
 
