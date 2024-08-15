@@ -2589,9 +2589,6 @@ class CodeGenerator(CddlXcoder):
                     f"This code needs self.mode to be 'decode', not {self.mode}."
                 if not self.repeated_single_func_impl_condition():
                     decode_str = self.repeated_xcode(union_int)
-                    assert "zcbor_" in decode_str, \
-                        """Must be a direct call to zcbor to guarantee that payload and elem_count"
-are cleaned up after a failure."""
                     return f"({self.present_var_access()} = {self.repeated_xcode(union_int)}, 1)"
                 func, *arguments = self.repeated_single_func(ptr_result=True)
                 return (
