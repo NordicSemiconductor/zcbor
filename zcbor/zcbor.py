@@ -14,7 +14,7 @@ from typing import NamedTuple
 from argparse import ArgumentParser, ArgumentTypeError, RawDescriptionHelpFormatter, FileType
 from datetime import datetime
 from copy import copy
-from itertools import tee
+from itertools import tee, chain
 from cbor2 import (loads, dumps, CBORTag, load, CBORDecodeValueError, CBORDecodeEOF, undefined,
                    CBORSimpleValue)
 from yaml import safe_load as yaml_load, dump as yaml_dump
@@ -2595,7 +2595,8 @@ class CodeGenerator(CddlXcoder):
                     f"zcbor_present_decode(&(%s), (zcbor_decoder_t *)%s, %s)" %
                     (self.present_var_access(), func, xcode_args(*arguments),))
         elif self.count_var_condition():
-            func, *arguments = self.repeated_single_func(ptr_result=True)
+            func, arg = self.repeated_single_func(ptr_result=True)
+
             minmax = "_minmax" if self.mode == "encode" else ""
             mode = self.mode
             return (
@@ -2604,7 +2605,7 @@ class CodeGenerator(CddlXcoder):
                  self.max_qty,
                  self.count_var_access(),
                  func,
-                 xcode_args(*arguments),
+                 xcode_args("*" + arg if arg != "NULL" and self.result_len() != "0" else arg),
                  self.result_len()))
         else:
             return self.repeated_xcode(union_int)
@@ -2751,6 +2752,32 @@ static bool {xcoder.func_name}(zcbor_state_t *state, {"" if mode == "decode" els
 
     def render_function(self, xcoder, mode):
         body = xcoder.body
+
+        # Define the subroutine "paren" that matches parenthesised expressions.
+        paren_re = r'(?(DEFINE)(?P<paren>\(((?>[^\(\)]+|(?&paren))*)\)))'
+        # This uses "paren" to match a single argument to a function.
+        arg_re = rf'([^,\(\)]|(?&paren))+'
+        # Match a function pointer argument to a function.
+        func_re = rf'\(zcbor_(en|de)coder_t \*\)(?P<func>{arg_re})'
+        # Match a triplet of function pointer, state arg, and result arg.
+        call_re = rf'{func_re}, (?P<state>{arg_re}), (?P<arg>{arg_re})'
+        multi_re = rf'{paren_re}zcbor_multi_(en|de)code\(({arg_re},){{3}} {call_re}'
+        present_re = rf'{paren_re}zcbor_present_(en|de)code\({arg_re}, {call_re}\)'
+        map_re = rf'{paren_re}zcbor_unordered_map_search\({call_re}\)'
+        all_funcs = chain(getrp(multi_re).finditer(body),
+                          getrp(present_re).finditer(body),
+                          getrp(map_re).finditer(body))
+        arg_test = ""
+        calls = ("\n		".join(
+            (f"{m.group('func')}({m.group('state')}, {m.group('arg')});" for m in (all_funcs))))
+        if calls != "":
+            arg_test = f"""
+	if (false) {{
+		/* For testing that the types of the arguments are correct.
+		   A compiler error here means a bug in zcbor. */
+		{calls}
+	}}
+"""
         return f"""
 static bool {xcoder.func_name}(
 		zcbor_state_t *state, {"" if mode == "decode" else "const "}{
@@ -2762,7 +2789,7 @@ static bool {xcoder.func_name}(
 	{"bool int_res;" if "int_res" in body else ""}
 
 	bool res = ({body});
-
+{arg_test}
 	log_result(state, res, __func__);
 	return res;
 }}""".replace("	\n", "")  # call replace() to remove empty lines.
