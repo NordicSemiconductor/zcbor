@@ -1794,4 +1794,36 @@ ZTEST(cbor_encode_test3, test_nested_choices)
 }
 
 
+ZTEST(cbor_encode_test3, test_optlist)
+{
+	uint8_t optlist_exp_payload1[] = {LIST(1),
+			10,
+		END
+	};
+	uint8_t optlist_exp_payload2[] = {LIST(2),
+			11,
+			LIST(1), 0x18, 100, END
+		END
+	};
+	struct OptList input;
+	uint8_t payload[20];
+
+	input.uint_present = false;
+	input.optlist_int= 10;
+
+	zassert_equal(ZCBOR_SUCCESS, cbor_encode_OptList(payload,
+		sizeof(payload), &input, NULL));
+	zassert_mem_equal(payload, optlist_exp_payload1, sizeof(optlist_exp_payload1));
+
+	input.uint_present = true;
+	input.optlist_int = 11;
+	input.uint = 100;
+
+	zassert_equal(ZCBOR_SUCCESS, cbor_encode_OptList(payload,
+		sizeof(payload), &input, NULL));
+	zassert_mem_equal(payload, optlist_exp_payload2, sizeof(optlist_exp_payload2));
+}
+
+
+
 ZTEST_SUITE(cbor_encode_test3, NULL, NULL, NULL, NULL, NULL);
