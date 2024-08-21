@@ -53,6 +53,7 @@ set(py_command
   Choice3
   Choice4
   Choice5
+  OptList
   -e
   ${bit_arg}
   --short-names
