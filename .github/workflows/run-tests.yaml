@@ -167,7 +167,7 @@ jobs:
 
   release-test-1:
     runs-on: ubuntu-22.04
-    name: Release tests 1 - Fuzz
+    name: Release tests 1 - Check versions
     needs:
     - merge-test-1
     - merge-test-1-win
@@ -192,6 +192,21 @@ jobs:
         echo -n ${{ github.head_ref }} > HEAD_REF
         python3 -m unittest test_versions
         rm HEAD_REF
+
+  release-test-2:
+    runs-on: ubuntu-22.04
+    name: Release tests 2 - Fuzz
+    needs:
+    - release-test-1
+    steps:
+    - name: Checkout the code
+      uses: actions/checkout@v4
+
+    - name: Read zcbor version
+      run: echo "ZCBOR_VERSION=$(cat zcbor/VERSION)" >> $GITHUB_ENV
+
+    - name: Install zcbor
+      uses: ./.github/actions/install_zcbor
 
     - name: Install packages
       run: |
@@ -232,13 +247,13 @@ jobs:
         name: zcbor-release-$ZCBOR_VERSION
         path: dist/*
 
-  release-test-2:
+  release-test-3:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
         python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
         asserts: ["", "-x VERBOSE=ON -x ASSERTS=ON"]
-    name: Release tests 2 (Python ${{ matrix.python-version }}${{ matrix.asserts != '' && ' with asserts' || '' }})
+    name: Release tests 3 (Python ${{ matrix.python-version }}${{ matrix.asserts != '' && ' with asserts' || '' }})
     needs:
     - merge-test-1
     - merge-test-1-win
@@ -268,13 +283,13 @@ jobs:
         zephyr_toolchain: zephyr
         zephyr_toolchain_arch: arm,mips
 
-  release-test-3:
+  release-test-4:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
         python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
         asserts: ["", "-x VERBOSE=ON -x ASSERTS=ON"]
-    name: Release tests 3 (Python ${{ matrix.python-version }}${{ matrix.asserts != '' && ' with asserts' || '' }})
+    name: Release tests 4 (Python ${{ matrix.python-version }}${{ matrix.asserts != '' && ' with asserts' || '' }})
     needs:
     - merge-test-1
     - merge-test-1-win
