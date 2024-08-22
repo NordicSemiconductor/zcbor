@@ -2959,7 +2959,7 @@ target_include_directories({target_name} PUBLIC
             h_name = Path(include_prefix, Path(h_files[mode].name).name)
 
             # Create and populate the generated c and h file.
-            makedirs(path.dirname(c_files[mode].name), exist_ok=True)
+            makedirs(path.dirname(Path(c_files[mode].name).absolute()), exist_ok=True)
 
             type_def_name = Path(include_prefix, Path(type_file.name).name)
 
