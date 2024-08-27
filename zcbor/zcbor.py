@@ -2778,7 +2778,8 @@ static bool {xcoder.func_name}(zcbor_state_t *state, {"" if mode == "decode" els
             arg_test = f"""
 	if (false) {{
 		/* For testing that the types of the arguments are correct.
-		   A compiler error here means a bug in zcbor. */
+		 * A compiler error here means a bug in zcbor.
+		 */
 		{calls}
 	}}
 """

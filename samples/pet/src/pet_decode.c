@@ -46,7 +46,8 @@ static bool decode_Pet(
 
 	if (false) {
 		/* For testing that the types of the arguments are correct.
-		   A compiler error here means a bug in zcbor. */
+		 * A compiler error here means a bug in zcbor.
+		 */
 		zcbor_tstr_decode(state, (*&(*result).names));
 	}
 
