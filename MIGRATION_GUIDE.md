@@ -1,3 +1,5 @@
+# zcbor v. 0.9.99
+
 # zcbor v. 0.9.0
 
 * `zcbor_simple_*()` functions have been removed to avoid confusion about their use.
