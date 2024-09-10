@@ -23,6 +23,7 @@ import os
 p_root = Path(__file__).absolute().parents[2]
 p_tests = p_root / 'tests'
 p_readme = p_root / "README.md"
+p_pypi_readme = p_root / "pypi_README.md"
 p_architecture = p_root / "ARCHITECTURE.md"
 p_release_notes = p_root / "RELEASE_NOTES.md"
 p_init_py = p_root / '__init__.py'
@@ -206,6 +207,9 @@ class TestDocs(TestCase):
 
     def test_pet_readme(self):
         self.do_test_links(p_pet_sample / "README.md")
+
+    def test_pypi_readme(self):
+        self.do_test_links(p_pypi_readme, allow_local=False)
 
     @skipIf(list(map(version_int, python_version_tuple())) < [3, 10, 0],
             "Skip on Python < 3.10 because of different wording in argparse output.")

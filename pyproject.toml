@@ -10,8 +10,8 @@ build-backend = 'setuptools.build_meta'
 
 [project]
 name = 'zcbor'
-description = 'Code generation and validation using CDDL schemas'
-readme = 'README.md'
+description = 'Code generation and data validation using CDDL schemas'
+readme = 'pypi_README.md'
 license = {text = 'Apache'}
 requires-python = ">=3.8"
 classifiers = [
