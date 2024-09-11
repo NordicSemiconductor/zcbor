@@ -179,9 +179,6 @@ jobs:
     - name: Checkout the code
       uses: actions/checkout@v4
 
-    - name: Read zcbor version
-      run: echo "ZCBOR_VERSION=$(cat zcbor/VERSION)" >> $GITHUB_ENV
-
     - name: Install zcbor
       uses: ./.github/actions/install_zcbor
 
@@ -244,7 +241,7 @@ jobs:
     - name: Upload release files
       uses: actions/upload-artifact@v4
       with:
-        name: zcbor-release-$ZCBOR_VERSION
+        name: zcbor-release-$env:ZCBOR_VERSION
         path: dist/*
 
   release-test-3:
