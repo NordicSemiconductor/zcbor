@@ -6,7 +6,7 @@
 
 from unittest import TestCase, main, skipIf, SkipTest
 from pathlib import Path
-from re import findall, search, S
+from re import search, S, compile
 from urllib import request
 from urllib.error import HTTPError
 from argparse import ArgumentParser
@@ -51,7 +51,8 @@ class TestCodestyle(TestCase):
 
     def test_codestyle(self):
         """Run codestyle tests on all Python scripts in the repo."""
-        self.do_codestyle([p_init_py, p_test_versions_py, p_test_repo_files_py, p_add_helptext])
+        self.do_codestyle([p_init_py, p_test_versions_py, p_test_repo_files_py, p_add_helptext,
+                           p_regenerate_samples])
         self.do_codestyle([p_zcbor_py], ignore=['W191', 'E101', 'W503'])
         self.do_codestyle([p_test_zcbor_py], ignore=['E402', 'E501', 'W503'])
 
@@ -148,6 +149,8 @@ class TestDocs(TestCase):
             # There is no remote tracking branch.
             self.base_url = None
 
+        self.link_regex = compile(r'\[.*?\]\((?P<link>.*?)\)')
+
     def check_code(self, link, codes):
         """Check the status code of a URL link. Assert if not 200 (OK)."""
         try:
@@ -157,23 +160,31 @@ class TestDocs(TestCase):
             code = e.code
         codes.append((link, code))
 
-    def do_test_links(self, path):
+    def do_test_links(self, path, allow_local=True):
         """Get all Markdown links in the file at <path> and check that they work."""
-        if self.base_url is None:
+        if allow_local and self.base_url is None:
             raise SkipTest('This test requires the current branch to be pushed to Github.')
 
         text = path.read_text(encoding="utf-8")
-        # Use .parent to test relative links (links to repo files):
-        relative_path = str(path.relative_to(p_root).parent)
-        relative_path = "" if relative_path == "." else relative_path + "/"
 
-        matches = findall(r'\[.*?\]\((?P<link>.*?)\)', text)
+        if allow_local:
+            # Use .parent to test relative links (links to repo files):
+            relative_path = str(path.relative_to(p_root).parent)
+            relative_path = "" if relative_path == "." else relative_path + "/"
+
+        matches = self.link_regex.findall(text)
         codes = list()
         threads = list()
         for m in matches:
-            # Github sometimes need the filename for anchor (#) links to work, so add it:
-            m = m if not m.startswith("#") else path.name + m
-            link = self.base_url + relative_path + m if "http" not in m else m
+            link = m
+            if allow_local:
+                if link.startswith("#"):
+                    # Github sometimes need the filename for anchor (#) links to work, so add it:
+                    link = path.name + m
+                if not link.startswith("https://"):
+                    link = self.base_url + relative_path + link
+            else:
+                self.assertTrue(link.startswith("https://"), "Link is not a URL")
             threads.append(t := Thread(target=self.check_code, args=(link, codes), daemon=True))
             t.start()
         for t in threads:

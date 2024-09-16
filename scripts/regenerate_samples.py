@@ -19,10 +19,13 @@ p_pet_cmake = p_pet_sample / 'pet.cmake'
 p_pet_include = p_pet_sample / 'include'
 p_pet_src = p_pet_sample / 'src'
 
+
 def regenerate():
     tmpdir = Path(mkdtemp())
-    p = run(['cmake', p_pet_sample, "-DREGENERATE_ZCBOR=Y", "-DCMAKE_MESSAGE_LOG_LEVEL=WARNING"], cwd=tmpdir)
+    run(['cmake', p_pet_sample, "-DREGENERATE_ZCBOR=Y", "-DCMAKE_MESSAGE_LOG_LEVEL=WARNING"],
+        cwd=tmpdir)
     rmtree(tmpdir)
+
 
 def check():
     files = (list(p_pet_include.iterdir()) + list(p_pet_src.iterdir()) + [p_pet_cmake])
@@ -35,6 +38,7 @@ def check():
     list(copy2(tmpdir / f.relative_to(p_pet_sample), f) for f in files)
     rmtree(tmpdir)
     return contents == new_contents
+
 
 if __name__ == "__main__":
     if len(argv) > 1 and argv[1] == "--check":
