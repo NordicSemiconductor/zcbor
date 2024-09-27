@@ -1,4 +1,4 @@
-# zcbor v. 0.9.99
+# zcbor v. 0.9.1 (2024-10-08)
 
 Any new bugs, requests, or missing features should be reported as [Github issues](https://github.com/NordicSemiconductor/zcbor/issues).
 
