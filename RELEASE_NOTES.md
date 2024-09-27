@@ -4,6 +4,11 @@ Any new bugs, requests, or missing features should be reported as [Github issues
 
 ## Improvements:
 
+ * README improvements:
+   * pypi_README.md: Add separate README for use in the pypi package
+   * README: Clarify what ZCBOR_STOP_ON_ERROR does
+   * RELEASE_NOTES.md: Move "Unsupported CDDL features" to the README
+
 ## Bugfixes:
 
 ## Unsupported CDDL features
