@@ -8,7 +8,10 @@
   `zcbor_bool_*()`, `zcbor_nil_*()`, and `zcbor_undefined_*()`.
   If a removed variant is strictly needed, add your own forward declaration in your code.
 
-* Code generation naming:
+* Code generation:
+
+  * `zcbor_entry_function()` gained a new argument.
+    Regenerate or manually edit your generated files to add a 0 parameter to all calls to `zcbor_entry_function()`.
 
   * More C keywords are now capitalized to avoid naming collision.
     You might have to capitalize some instances if your code was generated to have those names.

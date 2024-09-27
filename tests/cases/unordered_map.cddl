@@ -1,0 +1,46 @@
+;
+; Copyright (c) 2023 Nordic Semiconductor ASA
+;
+; SPDX-License-Identifier: Apache-2.0
+;
+
+UnorderedMap1 = {
+	1 => "one",
+	2 => "two",
+	int => bstr,
+	"foo" => "bar",
+	bazboz,
+	*bstr => intlist,
+}
+
+bazboz = ("baz" => "boz")
+intlist = [*int]
+
+UnorderedMap2 = {
+	+typeUnion,
+	"map" => {
+		?-1 => bstr,
+		?-2 => bstr,
+		?bool => int,
+	}
+}
+
+typeUnion = type1 / type2 / typeDefault
+type1 = 1 => tstr
+type2 = 2 => tstr
+typeDefault = int => nil
+
+UnorderedMap3 = {
+	1*2000 uint => uint,
+	1*2000 nint => nint,
+}
+
+group1 = (
+	uint => tstr,
+	nint => bstr,
+)
+type3 = 3*3group1
+
+UnorderedMap4 = {
+	3*3group1,
+}
