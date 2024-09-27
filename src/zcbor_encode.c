@@ -48,6 +48,10 @@ static bool encode_header_byte(zcbor_state_t *state,
 
 	zcbor_assert_state(additional < 32, "Unsupported additional value: %d\r\n", additional);
 
+#ifdef ZCBOR_FRAGMENTS
+	ZCBOR_ERR_IF(state->inside_frag_str, ZCBOR_ERR_INSIDE_STRING);
+#endif
+
 	*(state->payload_mut) = (uint8_t)((major_type << 5) | (additional & 0x1F));
 	zcbor_trace(state, "value_encode");
 	state->payload_mut++;
@@ -234,6 +238,7 @@ bool zcbor_bstr_start_encode(zcbor_state_t *state)
 
 	/* Encode a dummy header */
 	if (!value_encode(state, ZCBOR_MAJOR_TYPE_BSTR, &max_len, sizeof(max_len))) {
+		zcbor_process_backup(state, ZCBOR_FLAG_CONSUME, 0xFFFFFFFF);
 		ZCBOR_FAIL();
 	}
 	return true;
@@ -259,7 +264,7 @@ bool zcbor_bstr_end_encode(zcbor_state_t *state, struct zcbor_string *result)
 	result->value = state->payload + zcbor_header_len(zcbor_remaining_str_len(state));
 	result->len = (size_t)payload - (size_t)result->value;
 
-	/* Reencode header of list now that we know the number of elements. */
+	/* Reencode header of list now that we know the length. */
 	if (!zcbor_bstr_encode(state, result)) {
 		ZCBOR_FAIL();
 	}
@@ -279,7 +284,7 @@ static bool str_encode(zcbor_state_t *state,
 	}
 	if (state->payload_mut != input->value) {
 		/* Use memmove since string might be encoded into the same space
-		 * because of bstrx_cbor_start_encode/bstrx_cbor_end_encode. */
+		 * because of zcbor_bstr_start_encode/zcbor_bstr_end_encode. */
 		memmove(state->payload_mut, input->value, input->len);
 	}
 	state->payload += input->len;
@@ -325,6 +330,106 @@ bool zcbor_tstr_put_term(zcbor_state_t *state, char const *str, size_t maxlen)
 {
 	return zcbor_tstr_encode_ptr(state, str, strnlen(str, maxlen));
 }
+
+
+#ifdef ZCBOR_FRAGMENTS
+
+static bool start_encode_fragments(zcbor_state_t *state,
+	zcbor_major_type_t major_type, size_t len, bool cbor_bstr)
+{
+	ZCBOR_CHECK_PAYLOAD();
+
+	if (state->inside_cbor_bstr) {
+		if ((state->str_total_len_cbor - zcbor_current_string_offset(state) - zcbor_header_len(len)) < len) {
+			ZCBOR_ERR(ZCBOR_ERR_INNER_STRING_TOO_LARGE);
+		}
+	}
+
+	if (cbor_bstr) {
+		if (!zcbor_new_backup(state, 0)) {
+			ZCBOR_FAIL();
+		}
+	}
+
+	if (!value_encode(state, major_type, &len, sizeof(len))) {
+		if (cbor_bstr) {
+			zcbor_process_backup(state, ZCBOR_FLAG_CONSUME | ZCBOR_FLAG_RESTORE, 0xFFFFFFFF);
+		}
+		ZCBOR_FAIL();
+	}
+
+	ptrdiff_t new_offset = state->constant_state->curr_payload_section - state->payload;
+
+	if (cbor_bstr) {
+		state->frag_offset_cbor = new_offset;
+		state->str_total_len_cbor = len;
+		state->inside_cbor_bstr = true;
+	} else {
+		state->frag_offset = new_offset;
+		state->str_total_len = len;
+		state->inside_frag_str = true;
+	}
+
+	return true;
+}
+
+
+bool zcbor_bstr_fragments_start_encode(zcbor_state_t *state, size_t len)
+{
+	return start_encode_fragments(state, ZCBOR_MAJOR_TYPE_BSTR, len, false);
+}
+
+
+bool zcbor_tstr_fragments_start_encode(zcbor_state_t *state, size_t len)
+{
+	return start_encode_fragments(state, ZCBOR_MAJOR_TYPE_TSTR, len, false);
+}
+
+
+bool zcbor_cbor_bstr_fragments_start_encode(zcbor_state_t *state, size_t len)
+{
+	return start_encode_fragments(state, ZCBOR_MAJOR_TYPE_BSTR, len, true);
+}
+
+
+bool zcbor_str_fragment_encode(zcbor_state_t *state, struct zcbor_string *fragment, size_t *enc_len)
+{
+	ZCBOR_CHECK_PAYLOAD();
+
+	ZCBOR_ERR_IF(!state->inside_frag_str, ZCBOR_ERR_NOT_IN_FRAGMENT);
+
+	size_t len  = MIN(MIN((size_t)state->payload_end - (size_t)state->payload, fragment->len),
+				state->str_total_len - zcbor_current_string_offset(state));
+
+	memcpy(state->payload_mut, fragment->value, len);
+	state->payload += len;
+
+	if (enc_len != NULL) {
+		*enc_len = len;
+	}
+
+	return true;
+}
+
+
+bool zcbor_str_fragments_end_encode(zcbor_state_t *state)
+{
+	ZCBOR_ERR_IF(!state->inside_frag_str && !state->inside_cbor_bstr, ZCBOR_ERR_NOT_IN_FRAGMENT);
+	ZCBOR_ERR_IF(zcbor_current_string_remainder(state) != 0, ZCBOR_ERR_NOT_AT_END);
+
+	if (state->inside_frag_str) {
+		state->inside_frag_str = false;
+	} else {
+		if (!zcbor_process_backup(state, ZCBOR_FLAG_RESTORE | ZCBOR_FLAG_CONSUME | ZCBOR_FLAG_KEEP_PAYLOAD, 0xFFFFFFFF)) {
+			ZCBOR_FAIL();
+		}
+		state->elem_count++;
+	}
+
+	return true;
+}
+
+#endif /* ZCBOR_FRAGMENTS */
 
 
 static bool list_map_start_encode(zcbor_state_t *state, size_t max_num,
@@ -375,6 +480,14 @@ static bool list_map_end_encode(zcbor_state_t *state, size_t max_num,
 
 	size_t max_header_len = zcbor_header_len_ptr(&max_num, 4) - 1;
 	size_t header_len = zcbor_header_len_ptr(&list_count, 4) - 1;
+
+	if (max_num == list_count) {
+		if (!zcbor_process_backup(state, ZCBOR_FLAG_RESTORE | ZCBOR_FLAG_CONSUME | ZCBOR_FLAG_KEEP_PAYLOAD, 0xFFFFFFFF)) {
+			ZCBOR_FAIL();
+		}
+		state->elem_count++;
+		return true;
+	}
 
 	if (!zcbor_process_backup(state, ZCBOR_FLAG_RESTORE | ZCBOR_FLAG_CONSUME, 0xFFFFFFFF)) {
 		ZCBOR_FAIL();
