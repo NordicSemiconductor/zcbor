@@ -8,7 +8,7 @@ from sys import version
 from unittest import TestCase, main
 from pathlib import Path
 from subprocess import Popen, PIPE
-from datetime import date
+from datetime import date, timedelta
 from re import escape
 
 p_script_dir = Path(__file__).absolute().parents[0]
@@ -38,10 +38,12 @@ class VersionTest(TestCase):
         self.assertEqual(
             version_number, p_VERSION.read_text(encoding="utf-8"),
             f"{p_VERSION} has not been updated to the correct version number.")
-        self.assertEqual(
+        tomorrow = date.today() + timedelta(days=1)
+        self.assertRegex(
             p_release_notes.read_text(encoding="utf-8").splitlines()[0],
-            r"# zcbor v. " + version_number + f" ({date.today():%Y-%m-%d})",
-            f"{p_release_notes} has not been updated with the correct version number.")
+            escape(r"# zcbor v. " + version_number)
+            + fr" \(({date.today():%Y-%m-%d}|{tomorrow:%Y-%m-%d})\)",
+            f"{p_release_notes} has not been updated with the correct version number or date.")
         self.assertRegex(
             p_migration_guide.read_text(encoding="utf-8").splitlines()[0],
             escape(r"# zcbor v. " + version_number_no_bugfix) + r"\.\d",
