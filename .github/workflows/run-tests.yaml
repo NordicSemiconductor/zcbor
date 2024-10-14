@@ -7,15 +7,15 @@ on:
 
 
 env:
-  ZEPHYR_SDK_VERSION: 0.16.5
-  ZEPHYR_REV: 5cbf7b1b9d13a39f36ad8dabfaeaec21d98cf5ff
+  ZEPHYR_SDK_VERSION: 0.17.0
+  ZEPHYR_REV: c3466b14d09b1e51b6ca472f3b3654e40cba12d8
 
 jobs:
   merge-test-1:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        platform: ["native_posix", "native_posix/native/64", "mps2/an521/cpu0"]
+        platform: ["native_sim", "native_sim/native/64", "mps2/an521/cpu0"]
         asserts: ["", "-x VERBOSE=ON -x ASSERTS=ON"]
     name: Merge test 1 - Twister (Ubuntu) (${{ matrix.platform }}${{ matrix.asserts != '' && ' with asserts' || '' }})
     steps:
@@ -276,7 +276,7 @@ jobs:
     - name: Prepare and run tests
       uses: ./.github/actions/prepare_and_run_tests
       with:
-        twister_arguments: "--timestamps --platform native_posix --platform native_posix/native/64 --platform mps2/an521/cpu0 --platform qemu_malta/qemu_malta/be ${{ matrix.asserts }}"
+        twister_arguments: "--timestamps --platform native_sim --platform native_sim/native/64 --platform mps2/an521/cpu0 --platform qemu_malta/qemu_malta/be ${{ matrix.asserts }}"
         zephyr_toolchain: zephyr
         zephyr_toolchain_arch: arm,mips
 
