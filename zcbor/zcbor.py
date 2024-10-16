@@ -1955,11 +1955,11 @@ class CodeGenerator(CddlXcoder):
         """The bit width of the integers as represented in code."""
         bit_size = None
         if self.type in ["UINT", "INT", "NINT"]:
-            assert self.default_bit_size in [32, 64], "The default_bit_size must be 32 or 64."
+            assert self.default_bit_size in [8, 16, 32, 64], "The default_bit_size must be 32 or 64."
             if self.default_bit_size == 64:
                 bit_size = 64
             else:
-                bit_size = 32
+                bit_size = self.default_bit_size
 
                 for v in [self.value or 0, self.max_value or 0, self.min_value or 0]:
                     if (type(v) is str):
@@ -1968,9 +1968,18 @@ class CodeGenerator(CddlXcoder):
                     elif self.type == "UINT":
                         if (v > UINT32_MAX):
                             bit_size = 64
+                        elif (v > UINT16_MAX):
+                            bit_size = 32
+                        elif (v > UINT8_MAX):
+                            bit_size = 16
                     else:
                         if (v > INT32_MAX) or (v < INT32_MIN):
                             bit_size = 64
+                        elif (v > INT16_MAX) or (v < INT16_MIN):
+                            bit_size = 32
+                        elif (v > INT8_MAX) or (v < INT8_MIN):
+                            bit_size = 16
+
         return bit_size
 
     def float_type(self):
