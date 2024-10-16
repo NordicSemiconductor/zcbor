@@ -1955,7 +1955,7 @@ class CodeGenerator(CddlXcoder):
         """The bit width of the integers as represented in code."""
         bit_size = None
         if self.type in ["UINT", "INT", "NINT"]:
-            assert self.default_bit_size in [8, 16, 32, 64], "The default_bit_size must be 32 or 64."
+            assert self.default_bit_size in [8, 16, 32, 64], "The default_bit_size must be 8, 16,32 or 64."
             if self.default_bit_size == 64:
                 bit_size = 64
             else:
