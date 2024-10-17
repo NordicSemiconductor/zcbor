@@ -959,6 +959,10 @@ bool zcbor_unordered_map_search(zcbor_decoder_t key_decoder, zcbor_state_t *stat
 			(void)old_flags;
 		}
 
+		if (!should_try_key(state)) {
+			zcbor_log("Skipping element at index %zu.\n", get_current_index(state, 0));
+		}
+
 		if (should_try_key(state) && try_key(state, key_result, key_decoder)) {
 			if (!ZCBOR_MANUALLY_PROCESS_ELEM(state)) {
 				ZCBOR_FAIL_IF(!zcbor_elem_processed(state));
@@ -1576,8 +1580,8 @@ bool zcbor_multi_decode(size_t min_decode,
 			*num_decode = i;
 			state->payload = payload_bak;
 			state->elem_count = elem_count_bak;
-			ZCBOR_ERR_IF(i < min_decode, ZCBOR_ERR_ITERATIONS);
 			zcbor_log("Found %zu elements.\r\n", i);
+			ZCBOR_ERR_IF(i < min_decode, ZCBOR_ERR_ITERATIONS);
 			return true;
 		}
 	}
