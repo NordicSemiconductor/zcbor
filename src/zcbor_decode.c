@@ -239,6 +239,20 @@ bool zcbor_int_decode(zcbor_state_t *state, void *result, size_t result_size)
 }
 
 
+bool zcbor_int8_decode(zcbor_state_t *state, int8_t *result)
+{
+	PRINT_FUNC();
+	return zcbor_int_decode(state, result, sizeof(*result));
+}
+
+
+bool zcbor_int16_decode(zcbor_state_t *state, int16_t *result)
+{
+	PRINT_FUNC();
+	return zcbor_int_decode(state, result, sizeof(*result));
+}
+
+
 bool zcbor_int32_decode(zcbor_state_t *state, int32_t *result)
 {
 	PRINT_FUNC();
@@ -266,10 +280,51 @@ bool zcbor_uint_decode(zcbor_state_t *state, void *result, size_t result_size)
 }
 
 
+bool zcbor_uint8_decode(zcbor_state_t *state, uint8_t *result)
+{
+	PRINT_FUNC();
+	return zcbor_uint_decode(state, result, sizeof(*result));
+}
+
+
+bool zcbor_uint16_decode(zcbor_state_t *state, uint16_t *result)
+{
+	PRINT_FUNC();
+	return zcbor_uint_decode(state, result, sizeof(*result));
+}
+
+
 bool zcbor_uint32_decode(zcbor_state_t *state, uint32_t *result)
 {
 	PRINT_FUNC();
 	return zcbor_uint_decode(state, result, sizeof(*result));
+}
+
+
+bool zcbor_uint64_decode(zcbor_state_t *state, uint64_t *result)
+{
+	PRINT_FUNC();
+	return zcbor_uint_decode(state, result, sizeof(*result));
+}
+
+
+bool zcbor_int8_expect_union(zcbor_state_t *state, int8_t result)
+{
+	PRINT_FUNC();
+	if (!zcbor_union_elem_code(state)) {
+		ZCBOR_FAIL();
+	}
+	return zcbor_int8_expect(state, result);
+}
+
+
+bool zcbor_int16_expect_union(zcbor_state_t *state, int16_t result)
+{
+	PRINT_FUNC();
+	if (!zcbor_union_elem_code(state)) {
+		ZCBOR_FAIL();
+	}
+	return zcbor_int16_expect(state, result);
 }
 
 
@@ -293,6 +348,26 @@ bool zcbor_int64_expect_union(zcbor_state_t *state, int64_t result)
 }
 
 
+bool zcbor_uint8_expect_union(zcbor_state_t *state, uint8_t result)
+{
+	PRINT_FUNC();
+	if (!zcbor_union_elem_code(state)) {
+		ZCBOR_FAIL();
+	}
+	return zcbor_uint8_expect(state, result);
+}
+
+
+bool zcbor_uint16_expect_union(zcbor_state_t *state, uint16_t result)
+{
+	PRINT_FUNC();
+	if (!zcbor_union_elem_code(state)) {
+		ZCBOR_FAIL();
+	}
+	return zcbor_uint16_expect(state, result);
+}
+
+
 bool zcbor_uint32_expect_union(zcbor_state_t *state, uint32_t result)
 {
 	PRINT_FUNC();
@@ -310,6 +385,20 @@ bool zcbor_uint64_expect_union(zcbor_state_t *state, uint64_t result)
 		ZCBOR_FAIL();
 	}
 	return zcbor_uint64_expect(state, result);
+}
+
+
+bool zcbor_int8_expect(zcbor_state_t *state, int8_t expected)
+{
+	PRINT_FUNC();
+	return zcbor_int64_expect(state, expected);
+}
+
+
+bool zcbor_int16_expect(zcbor_state_t *state, int16_t expected)
+{
+	PRINT_FUNC();
+	return zcbor_int64_expect(state, expected);
 }
 
 
@@ -351,13 +440,6 @@ bool zcbor_int64_pexpect(zcbor_state_t *state, int64_t *expected)
 }
 
 
-bool zcbor_uint64_decode(zcbor_state_t *state, uint64_t *result)
-{
-	PRINT_FUNC();
-	return zcbor_uint_decode(state, result, sizeof(*result));
-}
-
-
 #ifdef ZCBOR_SUPPORTS_SIZE_T
 bool zcbor_size_decode(zcbor_state_t *state, size_t *result)
 {
@@ -365,6 +447,19 @@ bool zcbor_size_decode(zcbor_state_t *state, size_t *result)
 	return zcbor_uint_decode(state, result, sizeof(*result));
 }
 #endif
+
+
+bool zcbor_uint8_expect(zcbor_state_t *state, uint8_t expected)
+{
+	PRINT_FUNC();
+	return zcbor_uint64_expect(state, expected);
+}
+
+bool zcbor_uint16_expect(zcbor_state_t *state, uint16_t expected)
+{
+	PRINT_FUNC();
+	return zcbor_uint64_expect(state, expected);
+}
 
 
 bool zcbor_uint32_expect(zcbor_state_t *state, uint32_t expected)

@@ -146,54 +146,85 @@ bool zcbor_uint_encode(zcbor_state_t *state, const void *input_uint, size_t uint
 	return true;
 }
 
+bool zcbor_int8_encode(zcbor_state_t *state, const int8_t *input)
+{
+	return zcbor_int_encode(state, input, sizeof(*input));
+}
+
+bool zcbor_int16_encode(zcbor_state_t *state, const int16_t *input)
+{
+	return zcbor_int_encode(state, input, sizeof(*input));
+}
 
 bool zcbor_int32_encode(zcbor_state_t *state, const int32_t *input)
 {
 	return zcbor_int_encode(state, input, sizeof(*input));
 }
 
-
 bool zcbor_int64_encode(zcbor_state_t *state, const int64_t *input)
 {
 	return zcbor_int_encode(state, input, sizeof(*input));
 }
 
+bool zcbor_uint8_encode(zcbor_state_t *state, const uint8_t *input)
+{
+	return zcbor_uint_encode(state, input, sizeof(*input));
+}
+
+bool zcbor_uint16_encode(zcbor_state_t *state, const uint16_t *input)
+{
+	return zcbor_uint_encode(state, input, sizeof(*input));
+}
 
 bool zcbor_uint32_encode(zcbor_state_t *state, const uint32_t *input)
 {
 	return zcbor_uint_encode(state, input, sizeof(*input));
 }
 
-
 bool zcbor_uint64_encode(zcbor_state_t *state, const uint64_t *input)
 {
 	return zcbor_uint_encode(state, input, sizeof(*input));
 }
 
+bool zcbor_int8_put(zcbor_state_t *state, int8_t input)
+{
+	return zcbor_int_encode(state, &input, sizeof(input));
+}
+
+bool zcbor_int16_put(zcbor_state_t *state, int16_t input)
+{
+	return zcbor_int_encode(state, &input, sizeof(input));
+}
 
 bool zcbor_int32_put(zcbor_state_t *state, int32_t input)
 {
 	return zcbor_int_encode(state, &input, sizeof(input));
 }
 
-
 bool zcbor_int64_put(zcbor_state_t *state, int64_t input)
 {
 	return zcbor_int_encode(state, &input, sizeof(input));
 }
 
+bool zcbor_uint8_put(zcbor_state_t *state, uint8_t input)
+{
+	return zcbor_uint_encode(state, &input, sizeof(input));
+}
+
+bool zcbor_uint16_put(zcbor_state_t *state, uint16_t input)
+{
+	return zcbor_uint_encode(state, &input, sizeof(input));
+}
 
 bool zcbor_uint32_put(zcbor_state_t *state, uint32_t input)
 {
 	return zcbor_uint_encode(state, &input, sizeof(input));
 }
 
-
 bool zcbor_uint64_put(zcbor_state_t *state, uint64_t input)
 {
 	return zcbor_uint_encode(state, &input, sizeof(input));
 }
-
 
 #ifdef ZCBOR_SUPPORTS_SIZE_T
 bool zcbor_size_put(zcbor_state_t *state, size_t input)
