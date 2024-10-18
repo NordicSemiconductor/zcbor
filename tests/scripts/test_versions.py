@@ -8,7 +8,8 @@ from sys import version
 from unittest import TestCase, main
 from pathlib import Path
 from subprocess import Popen, PIPE
-from datetime import date
+from datetime import date, timedelta
+from re import escape
 
 p_script_dir = Path(__file__).absolute().parents[0]
 p_root = p_script_dir.parents[1]
@@ -30,20 +31,23 @@ class VersionTest(TestCase):
             "This test is meant to be run on a release branch on the form 'release/x.y.z'.")
 
         version_number = current_branch.replace("release/", "")
+        version_number_no_bugfix = ".".join(version_number.split(".")[:-1])
         self.assertRegex(
             version_number, r'\d+\.\d+\.(?!99)\d+',
             "Releases cannot have the x.y.99 development bugfix release number.")
         self.assertEqual(
             version_number, p_VERSION.read_text(encoding="utf-8"),
             f"{p_VERSION} has not been updated to the correct version number.")
-        self.assertEqual(
+        tomorrow = date.today() + timedelta(days=1)
+        self.assertRegex(
             p_release_notes.read_text(encoding="utf-8").splitlines()[0],
-            r"# zcbor v. " + version_number + f" ({date.today():%Y-%m-%d})",
-            f"{p_release_notes} has not been updated with the correct version number.")
-        self.assertEqual(
+            escape(r"# zcbor v. " + version_number)
+            + fr" \(({date.today():%Y-%m-%d}|{tomorrow:%Y-%m-%d})\)",
+            f"{p_release_notes} has not been updated with the correct version number or date.")
+        self.assertRegex(
             p_migration_guide.read_text(encoding="utf-8").splitlines()[0],
-            r"# zcbor v. " + version_number,
-            f"{p_migration_guide} has not been updated with the correct version number.")
+            escape(r"# zcbor v. " + version_number_no_bugfix) + r"\.\d",
+            f"{p_migration_guide} has not been updated with the correct minor/major version num.")
 
         tags_stdout, _ = Popen(['git', 'tag'], stdout=PIPE).communicate()
         tags = tags_stdout.decode("utf-8").strip().splitlines()
