@@ -43,6 +43,11 @@ jobs:
     - name: Checkout the code
       uses: actions/checkout@v4
 
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+
     - name: Checkout Zephyr
       run: |
         git init zephyr-clone
@@ -54,7 +59,7 @@ jobs:
     - name: Install zcbor and pip dependencies
       run: |
         $ErrorActionPreference="Stop"
-        pip install -U -r scripts\requirements.txt -r zephyr-clone\scripts\requirements-base.txt -r zephyr-clone\scripts\requirements-build-test.txt -r zephyr-clone\scripts\requirements-run-test.txt; if($LastExitCode -ne 0) {Write-Error "$LastExitCode"};
+        pip install -U --ignore-requires-python -r scripts\requirements.txt -r zephyr-clone\scripts\requirements-base.txt -r zephyr-clone\scripts\requirements-build-test.txt -r zephyr-clone\scripts\requirements-run-test.txt; if($LastExitCode -ne 0) {Write-Error "$LastExitCode"};
         pip install -e .
 
     - name: Install ninja and 7zip
@@ -115,10 +120,18 @@ jobs:
 
   merge-test-2-win:
     runs-on: windows-latest
+    strategy:
+      matrix:
+        python-version: ['3.12']
     name: Merge tests 2 - Python (${{ matrix.python-version }}) functional tests (Windows)
     steps:
     - name: Checkout the code
       uses: actions/checkout@v4
+
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
 
     - name: Read zcbor version
       run: |
