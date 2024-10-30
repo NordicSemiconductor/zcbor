@@ -103,6 +103,10 @@ ValueRange = [
 	lesseq1: uint .le 1,
 	equal42: uint .eq 42,
 	equalstrworld: tstr .eq "world",
+	default3: ?int .gt 2 .default 3,
+	defaulthello: ?bstr .default 'hello',
+	defaulte: ?float .size 4 .default 2.72,
+	defaultfalse: ?bool .default false,
 ]
 
 SingleBstr = bstr

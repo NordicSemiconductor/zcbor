@@ -182,6 +182,20 @@ def ternary_if_chain(access, names, xcode_strings):
         ternary_if_chain(access, names[1:], xcode_strings[1:]) if len(names) > 1 else "false")
 
 
+def comma_operator(*expressions):
+    """Add a C comma operator expression.
+
+    The individual expressions in arguments will be separated by commas.
+    "None" expressions are ignored."""
+    _expressions = list(e for e in expressions if e is not None)
+    if len(_expressions) == 0:
+        raise ValueError("comma operator must have at least one expression")
+    elif len(_expressions) == 1:
+        return _expressions[0]
+    else:
+        return f"({', '.join(_expressions)})"
+
+
 val_conversions = {
     (2**64) - 1: "UINT64_MAX",
     (2**63) - 1: "INT64_MAX",
@@ -254,6 +268,8 @@ class CddlParser:
         # "BOOL", "NIL", "UNDEF", "LIST", "MAP","GROUP", "UNION" and "OTHER". "OTHER" represents a
         # CDDL type defined with '='.
         self.type = None
+        # The default value of the element, as provided via the .default operator.
+        self.default = None
         self.match_str = ""
         self.errors = list()
 
@@ -560,6 +576,22 @@ class CddlParser:
                 self.set_max_value(value)
         if self.type == "NINT":
             self.max_value = -1
+
+    def set_default(self, value):
+        """Set the default value of this element (provided via '.default')."""
+        if self.type not in ["INT", "UINT", "NINT", "BSTR", "TSTR", "FLOAT", "BOOL"]:
+            raise TypeError(f"zcbor does not support .default values for the {self.type} type")
+        if self.min_qty != 0 or self.max_qty != 1:
+            raise ValueError("zcbor currently supports .default only with the ? quantifier.")
+        if value.value is None:
+            raise ValueError(".default value must be unambiguous.")
+
+        if not self.type == value.type:
+            if not (self.type == "INT" and value.type in ["UINT", "NINT"]):
+                raise TypeError(f"Type of default does not match type of element. "
+                                "({self.type} != {value.type})")
+
+        self.default = value.value
 
     def type_and_range(self, new_type, min_val, max_val, inc_end=True):
         """Set the self.type and self.minValue and self.max_value (or self.min_size and
@@ -888,6 +920,10 @@ class CddlParser:
              lambda m_self, value: m_self.set_value(lambda: int(value, 0))),
             (r'\.eq \"(?P<item>.*?)(?<!\\)\"',
              lambda m_self, value: m_self.set_value(lambda: value)),
+            (r'\.default (\((?P<item>(?>[^\(\)]+|(?1))*)\))',
+             lambda m_self, type_str: m_self.set_default(m_self.parse(type_str)[0])),
+            (r'\.default (?P<item>[^\s,]+)',
+             lambda m_self, type_str: m_self.set_default(m_self.parse(type_str)[0])),
             (r'\.cbor (\((?P<item>(?>[^\(\)]+|(?1))*)\))',
              lambda m_self, type_str: m_self.set_cbor(m_self.parse(type_str)[0], False)),
             (r'\.cbor (?P<item>[^\s,]+)',
@@ -1176,9 +1212,13 @@ class CddlXcoder(CddlParser):
             return "NULL"
         return self.access_append(self.var_name())
 
+    def optional_quantifier(self):
+        """Whether the element has the "optional" quantifier ('?')."""
+        return (self.min_qty == 0 and isinstance(self.max_qty, int) and self.max_qty <= 1)
+
     def present_var_condition(self):
         """Whether to include a "present" variable for this element."""
-        return self.min_qty == 0 and isinstance(self.max_qty, int) and self.max_qty <= 1
+        return self.optional_quantifier()
 
     def count_var_condition(self):
         """Whether to include a "count" variable for this element."""
@@ -2605,13 +2645,24 @@ class CodeGenerator(CddlXcoder):
             else:
                 assert self.mode == "decode", \
                     f"This code needs self.mode to be 'decode', not {self.mode}."
-                if not self.repeated_single_func_impl_condition():
+
+                assign = not self.repeated_single_func_impl_condition()
+                default_assignment = None
+                if self.default is not None:
+                    default_value = (f"*({tmp_str_or_null(self.default)})"
+                                     if self.type in ["TSTR", "BSTR"] else val_to_str(self.default))
+                    access = self.val_access() if assign else self.repeated_val_access()
+                    default_assignment = f"({access} = {default_value})"
+                if assign:
                     decode_str = self.repeated_xcode(union_int)
-                    return f"({self.present_var_access()} = {self.repeated_xcode(union_int)}, 1)"
+                    return comma_operator(default_assignment,
+                                          f"{self.present_var_access()} = {decode_str}", "1")
                 func, *arguments = self.repeated_single_func(ptr_result=True)
-                return (
-                    f"zcbor_present_decode(&(%s), (zcbor_decoder_t *)%s, %s)" %
+                return comma_operator(
+                    default_assignment,
+                    f"(zcbor_present_decode(&(%s), (zcbor_decoder_t *)%s, %s))" %
                     (self.present_var_access(), func, xcode_args(*arguments),))
+
         elif self.count_var_condition():
             func, arg = self.repeated_single_func(ptr_result=True)
 
