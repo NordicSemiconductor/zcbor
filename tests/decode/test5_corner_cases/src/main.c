@@ -1106,6 +1106,7 @@ ZTEST(cbor_decode_test5, test_range)
 	zassert_equal(ZCBOR_ERR_ITERATIONS, ret, "%d\r\n", ret);
 }
 
+
 ZTEST(cbor_decode_test5, test_value_range)
 {
 	const uint8_t payload_value_range1[] = {LIST(6),
@@ -1118,13 +1119,17 @@ ZTEST(cbor_decode_test5, test_value_range)
 		END
 	};
 
-	const uint8_t payload_value_range2[] = {LIST(6),
+	const uint8_t payload_value_range2[] = {LIST(A),
 		0x18, 100, // 100
 		0x39, 0x03, 0xe8, // -1001
 		0x18, 100, // 100
 		0,
 		0x18, 42, // 42
 		0x65, 'w', 'o', 'r', 'l', 'd', // "world"
+		0x04,
+		0x42, 'h', 'i', // "hi"
+		0xFA, 0x40, 0x48, 0xf5, 0xc3,
+		0xF5,
 		END
 	};
 
@@ -1218,17 +1223,45 @@ ZTEST(cbor_decode_test5, test_value_range)
 		END
 	};
 
+	const uint8_t payload_value_range12_inv[] = {LIST(A),
+		0x18, 100, // 100
+		0x39, 0x03, 0xe8, // -1001
+		0x18, 100, // 100
+		0,
+		0x18, 42, // 42
+		0x65, 'w', 'o', 'r', 'l', 'd', // "world"
+		0x01, // TOO LOW
+		0x42, 'h', 'i', // "hi"
+		0xFA, 0x40, 0x48, 0xf5, 0xc3,
+		0xF5,
+		END
+	};
+
 	struct ValueRange exp_output_value_range1 = {
 		.greater10 = 11,
 		.less1000 = 999,
 		.greatereqmin10 = -10,
 		.lesseq1 = 1,
+		.default3 = 3,
+		.defaulthello = {
+			.value = "hello",
+			.len = 5,
+		},
+		.defaulte = 2.72,
+		.defaultfalse = false,
 	};
 	struct ValueRange exp_output_value_range2 = {
 		.greater10 = 100,
 		.less1000 = -1001,
 		.greatereqmin10 = 100,
 		.lesseq1 = 0,
+		.default3 = 4,
+		.defaulthello = {
+			.value = "hi",
+			.len = 2,
+		},
+		.defaulte = 3.14,
+		.defaultfalse = true,
 	};
 
 	struct ValueRange output;
@@ -1245,10 +1278,20 @@ ZTEST(cbor_decode_test5, test_value_range)
 			output.greatereqmin10, NULL);
 	zassert_equal(exp_output_value_range1.lesseq1,
 			output.lesseq1, NULL);
+	zassert_equal(exp_output_value_range1.default3,
+			output.default3, NULL);
+	zassert_equal(exp_output_value_range1.defaulthello.len,
+			output.defaulthello.len, NULL);
+	zassert_mem_equal(exp_output_value_range1.defaulthello.value,
+			output.defaulthello.value, output.defaulthello.len, NULL);
+	zassert_equal(exp_output_value_range1.defaulte,
+			output.defaulte, NULL);
+	zassert_equal(exp_output_value_range1.defaultfalse,
+			output.defaultfalse, NULL);
 
 	zassert_equal(ZCBOR_SUCCESS, cbor_decode_ValueRange(payload_value_range2, sizeof(payload_value_range2),
 					&output, &out_len), NULL);
-	zassert_equal(sizeof(payload_value_range2), out_len, NULL);
+	zassert_equal(sizeof(payload_value_range2), out_len, "%d != %d", sizeof(payload_value_range2), out_len);
 	zassert_equal(exp_output_value_range2.greater10,
 			output.greater10, NULL);
 	zassert_equal(exp_output_value_range2.less1000,
@@ -1257,6 +1300,16 @@ ZTEST(cbor_decode_test5, test_value_range)
 			output.greatereqmin10, NULL);
 	zassert_equal(exp_output_value_range2.lesseq1,
 			output.lesseq1, NULL);
+	zassert_equal(exp_output_value_range2.default3,
+			output.default3, NULL);
+	zassert_equal(exp_output_value_range2.defaulthello.len,
+			output.defaulthello.len, NULL);
+	zassert_mem_equal(exp_output_value_range2.defaulthello.value,
+			output.defaulthello.value, output.defaulthello.len, NULL);
+	zassert_equal(exp_output_value_range2.defaulte,
+			output.defaulte, NULL);
+	zassert_equal(exp_output_value_range2.defaultfalse,
+			output.defaultfalse, NULL);
 
 	zassert_equal(ZCBOR_ERR_WRONG_RANGE, cbor_decode_ValueRange(payload_value_range3_inv,
 				sizeof(payload_value_range3_inv), &output, &out_len), NULL);
@@ -1276,7 +1329,11 @@ ZTEST(cbor_decode_test5, test_value_range)
 				sizeof(payload_value_range10_inv), &output, &out_len), NULL);
 	zassert_equal(ZCBOR_ERR_WRONG_RANGE, cbor_decode_ValueRange(payload_value_range11_inv,
 				sizeof(payload_value_range11_inv), &output, &out_len), NULL);
+	// HIGH_ELEM_COUNT because the entry is optional, so decoding continues to the end of the list.
+	zassert_equal(ARR_ERR5, cbor_decode_ValueRange(payload_value_range12_inv,
+				sizeof(payload_value_range12_inv), &output, &out_len), NULL);
 }
+
 
 ZTEST(cbor_decode_test5, test_single)
 {
