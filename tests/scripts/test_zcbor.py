@@ -1747,5 +1747,139 @@ class TestControlGroups(TestCase):
             cddl.decode_str_yaml("1")
 
 
+def cp_from_cddl(cddl):
+    return zcbor.CddlParser.from_cddl(cddl_string=cddl)
+
+
+class TestParsingErrors(TestCase):
+    def cddl_parsing_error_test(self, invalid_cddl, valid_cddl, message_regex=None):
+        """Check that invalid CDDL raises an error and check that a valid CDDL variant passes."""
+        self.assertTrue(cp_from_cddl(valid_cddl))
+        if message_regex is not None:
+            self.assertRaisesRegex(
+                zcbor.CddlParsingError, message_regex, cp_from_cddl, invalid_cddl
+            )
+        else:
+            self.assertRaises(zcbor.CddlParsingError, cp_from_cddl, invalid_cddl)
+
+    def test_invalid_cddl(self):
+        """Check that certain CDDL formatting errors are caught."""
+
+        # Two values
+        self.cddl_parsing_error_test(
+            "foo = 1 .eq 2", "foo = int .eq 2", r".*Attempting to set value.*"
+        )
+        self.cddl_parsing_error_test(
+            f"foo = int .eq uint",
+            f"foo = int .eq 1000000",
+            r".eq value must be unambiguous\.",
+        )
+        self.cddl_parsing_error_test(
+            "foo = float .eq 2",
+            "foo = float .eq 2.0",
+            r"Type of \.eq value does not match type of element\. \(FLOAT != UINT\)",
+        )
+
+        self.cddl_parsing_error_test(
+            'foo = ?int .default "hello"',
+            'foo = ?tstr .default "hello"',
+            r"Type of \.default value does not match type of element",
+        )
+        self.cddl_parsing_error_test(
+            f"foo = ?int .default uint",
+            f"foo = ?int .default 1000000",
+            r".default must be unambiguous\.",
+        )
+        self.cddl_parsing_error_test(
+            'foo = tstr .default "hello"',
+            'foo = ?tstr .default "hello"',
+            r"zcbor currently supports \.default only with the \? quantifier",
+        )
+
+        self.cddl_parsing_error_test("foo = {int}", "foo = {1 => int}", r"Missing map key")
+        self.cddl_parsing_error_test(
+            "bar = (int) foo = {bar}", "bar = (1 => int) foo = {bar}", r"Missing map key"
+        )
+
+        self.cddl_parsing_error_test(
+            f"foo = int .size uint",
+            f"foo = int .size 1",
+            r"Size must be unambiguous\.",
+        )
+        self.cddl_parsing_error_test(
+            "foo = int .size -1 .. 2",
+            "foo = int .size 1 .. 2",
+            r"Range value must be one of \('UINT',\), got NINT\.",
+        )
+        self.cddl_parsing_error_test(
+            f"foo = bool .size 1", f"foo = int .size 1", r"\.size cannot be applied to BOOL"
+        )
+        self.cddl_parsing_error_test(
+            f"foo = [] .size 1", f"foo = int .size 1", r"\.size cannot be applied to LIST"
+        )
+        self.cddl_parsing_error_test(
+            f"foo = int .size uint .. 2",
+            f"foo = int .size 1 .. 2",
+            r"Range value must be unambiguous\.",
+        )
+        self.cddl_parsing_error_test(
+            f"foo = int .size 1..2..",
+            f"foo = int .size 1..2",
+            r"Must have exactly one range specifier '..' or '...': 1..2..",
+        )
+        self.cddl_parsing_error_test(
+            f"foo = int .size 1....2",
+            f"foo = int .size 1...2",
+            r"Must have exactly one range specifier '..' or '...': 1....2",
+        )
+        self.cddl_parsing_error_test(
+            f"foo = int .size -2",
+            f"foo = int .size 2",
+            r"Size must be one of \('UINT',\), got NINT\.",
+        )
+        self.cddl_parsing_error_test(
+            "foo = float .size 2.0",
+            "foo = float .size 2",
+            r"Size must be one of \('UINT',\), got FLOAT\.",
+        )
+
+        for ctrl_op in (".lt", ".gt", ".ge", ".le"):
+            self.cddl_parsing_error_test(
+                f"foo = bool {ctrl_op} 1",
+                f"foo = int {ctrl_op} 1",
+                r"Inequality value must be applied to a number, got BOOL",
+            )
+            self.cddl_parsing_error_test(
+                f"foo = [] {ctrl_op} 1",
+                f"foo = int {ctrl_op} 1",
+                r"Inequality value must be applied to a number, got LIST",
+            )
+            self.cddl_parsing_error_test(
+                f"foo = 1 {ctrl_op} 1",
+                f"foo = int {ctrl_op} 1",
+                r"Inequality value is not needed when value is known: 1",
+            )
+            self.cddl_parsing_error_test(
+                f"foo = int {ctrl_op} 2.0",
+                f"foo = int {ctrl_op} 2",
+                r"Inequality value for integer must be UINT or NINT, got FLOAT\.",
+            )
+            self.cddl_parsing_error_test(
+                f"foo = uint {ctrl_op} 2.0",
+                f"foo = uint {ctrl_op} 2",
+                r"Inequality value for integer must be same type \(UINT\), got FLOAT\.",
+            )
+            self.cddl_parsing_error_test(
+                f"foo = float {ctrl_op} true",
+                f"foo = float {ctrl_op} 1.0",
+                r"Inequality value must be one of \('FLOAT', 'UINT', 'NINT'\), got BOOL\.",
+            )
+            self.cddl_parsing_error_test(
+                f"foo = int {ctrl_op} uint",
+                f"foo = int {ctrl_op} 1",
+                r"Inequality value must be unambiguous\.",
+            )
+
+
 if __name__ == "__main__":
     main()

@@ -764,11 +764,95 @@ class CddlParser:
         else:
             return [self]
 
+    def extract_unambiguous_val(self, in_obj, name, valid_types=("UINT",)):
+        """Extract a number value (float or integer), and check its validity."""
+        obj = in_obj
+        if obj.value is None:
+            raise CddlParsingError(f"{name} must be unambiguous.")
+        if obj.type not in valid_types:
+            raise CddlParsingError(f"{name} must be one of {valid_types}, got {obj.type}.")
+        return obj
+
+    def extract_range(self, range_str):
+        """Extract the minimum and maximum values from a range string.
+
+        On the form "min..max" or "min...max"."""
+        if range_str.count("..") != 1:
+            raise CddlParsingError(
+                f"Must have exactly one range specifier '..' or '...': {range_str}"
+            )
+
+        def get_part(s):
+            return self.extract_unambiguous_val(self.parse_one(s), "Range value")
+
+        min_val_obj, max_val_obj = map(get_part, range_str.replace("...", "..").split(".."))
+        inc_end = "..." not in range_str
+
+        return min_val_obj, max_val_obj, inc_end
+
     def set_min_value(self, min_value):
         self.min_value = min_value
 
     def set_max_value(self, max_value):
         self.max_value = max_value
+
+    def extract_ineq_val(self, obj):
+        """Extract an inequality constraint (<, <=, >, >=) from a string.
+
+        and check that it is valid and compatible with the current element."""
+        if self.type not in ("FLOAT", "INT", "UINT", "NINT"):
+            raise CddlParsingError(f"Inequality value must be applied to a number, got {self.type}")
+        if self.value is not None:
+            raise CddlParsingError(
+                f"Inequality value is not needed when value is known: {self.value}."
+            )
+
+        ineq = self.extract_unambiguous_val(
+            obj, "Inequality value", valid_types=("FLOAT", "UINT", "NINT")
+        )
+        if self.type == "INT":
+            if ineq.type not in ("NINT", "UINT"):
+                raise CddlParsingError(
+                    f"Inequality value for integer must be UINT or NINT, got {ineq.type}."
+                )
+        elif self.type in ("UINT", "NINT") and ineq.type != self.type:
+            raise CddlParsingError(
+                f"Inequality value for integer must be same type ({self.type}), got {ineq.type}."
+            )
+        return ineq
+
+    def set_gt(self, gt_value_in):
+        """Parse the .gt modifier and update the minimum value."""
+        gt = self.extract_ineq_val(gt_value_in)
+        self.set_min_value(gt.value + 1)
+
+    def set_lt(self, lt_value_in):
+        """Parse the .lt modifier and update the maximum value."""
+        lt = self.extract_ineq_val(lt_value_in)
+        self.set_max_value(lt.value - 1)
+
+    def set_ge(self, ge_value_in):
+        """Parse the .ge modifier and update the minimum value."""
+        ge = self.extract_ineq_val(ge_value_in)
+        self.set_min_value(ge.value)
+
+    def set_le(self, le_value_in):
+        """Parse the .le modifier and update the maximum value."""
+        le = self.extract_ineq_val(le_value_in)
+        self.set_max_value(le.value)
+
+    def set_size_value(self, size_in):
+        """Parse the .size modifier and update the size."""
+        size = self.extract_unambiguous_val(size_in, "Size")
+        self.set_size(size.value)
+
+    def set_size_values(self, range_str):
+        """Set the .size modifier and update the size range."""
+        min_val_obj, max_val_obj, inc_end = self.extract_range(range_str)
+        if {min_val_obj.type, max_val_obj.type} != {"UINT"}:
+            raise CddlParsingError("Size range must contain only non-negative integers.")
+        minsize, maxsize = min_val_obj.value, max_val_obj.value
+        self.set_size_range(minsize, maxsize, inc_end)
 
     def type_and_value(self, new_type, value_generator):
         """Set the self.type and self.value of this element."""
@@ -799,7 +883,7 @@ class CddlParser:
         if self.type in ["BSTR", "TSTR"]:
             if value is not None:
                 self.value = process_unicode_escape_sequences(value)
-                self.set_size(len(resolve_unicode_escape_sequences(self.value)))
+                self.size = len(resolve_unicode_escape_sequences(self.value))
         if self.type in ["UINT", "NINT"]:
             if value is not None:
                 self.size = sizeof(value)
@@ -808,16 +892,32 @@ class CddlParser:
         if self.type == "NINT":
             self.max_value = -1
 
+    eq_types = ("INT", "UINT", "NINT", "BSTR", "TSTR", "FLOAT", "BOOL")
+    default_types = eq_types
+
+    def set_eq(self, value):
+        """Set the value of this element (provided via '.eq')."""
+        if not self.type in self.eq_types:
+            raise CddlParsingError(f"zcbor does not support .eq values for the {self.type} type")
+        value = self.extract_unambiguous_val(value, ".eq value", valid_types=self.eq_types)
+
+        if not self.type == value.type:
+            if not (self.type == "INT" and value.type in ["UINT", "NINT"]):
+                raise CddlParsingError(
+                    f"Type of .eq value does not match type of element. ({self.type} != {value.type})"
+                )
+
+        self.set_value(lambda: value.value)
+
     def set_default(self, value):
         """Set the default value of this element (provided via '.default')."""
-        if self.type not in ["INT", "UINT", "NINT", "BSTR", "TSTR", "FLOAT", "BOOL"]:
+        if self.type not in self.default_types:
             raise CddlParsingError(
                 f"zcbor does not support .default values for the {self.type} type"
             )
         if self.min_qty != 0 or self.max_qty != 1:
             raise CddlParsingError("zcbor currently supports .default only with the ? quantifier.")
-        if value.value is None:
-            raise CddlParsingError(".default value must be unambiguous.")
+        value = self.extract_unambiguous_val(value, ".default", valid_types=self.default_types)
 
         if not self.type == value.type:
             if not (self.type == "INT" and value.type in ["UINT", "NINT"]):
@@ -906,6 +1006,8 @@ class CddlParser:
             raise CddlParsingError("Cannot have size before type")
         if self.type not in ["BSTR", "TSTR", "INT", "UINT", "NINT", "FLOAT"]:
             raise CddlParsingError(".size cannot be applied to %s" % self.type)
+        if self.value is not None and self.type != "FLOAT":
+            raise CddlParsingError(f"Size is not needed when value is known: {self.value}.")
 
     def set_size(self, size):
         """Set the self.size of this element.
@@ -924,6 +1026,7 @@ class CddlParser:
                 self.min_value = int(-1 * (value >> 1))
         elif self.type in ["BSTR", "TSTR", "FLOAT"]:
             self.set_size_range(size, size)
+        self.size = size
 
     def set_size_range(self, min_size, max_size_in, inc_end=True):
         """Set the self.minValue and self.max_value or self.min_size and self.max_size of this
@@ -1065,8 +1168,9 @@ class CddlParser:
     def cddl_regexes_init(self):
         """Initialize the cddl_regexes dict"""
         match_uint = r"(0x[0-9a-fA-F]+|0o[0-7]+|0b[01]+|\d+)"
-        match_int = r"(-?" + match_uint + ")"
         match_nint = r"(-" + match_uint + ")"
+        match_paren_or_symbol = r"((\((?P<item>(?>[^\(\)]+|(?1))*)\))|(?P<item>[^\s,\(\)\[\]]+))"
+        match_paren_or_symbol_no_name = match_paren_or_symbol.replace(r"?P<item>", "")
 
         self_type = type(self)
 
@@ -1180,68 +1284,48 @@ class CddlParser:
                 lambda m_self, other_str: m_self.type_and_value("OTHER", lambda: other_str),
             ),
             (
-                r"\.size \(?(?P<item>" + match_int + r"\.\." + match_int + r")\)?",
-                lambda m_self, _range: m_self.set_size_range(
-                    *map(lambda num: int(num, 0), _range.split(".."))
-                ),
+                r"\.size (?P<item>"
+                + match_paren_or_symbol_no_name
+                + r"\s*\.\.\.?\s*"
+                + match_paren_or_symbol_no_name
+                + r")",
+                lambda m_self, srange: m_self.set_size_values(srange),
             ),
             (
-                r"\.size \(?(?P<item>" + match_int + r"\.\.\." + match_int + r")\)?",
-                lambda m_self, _range: m_self.set_size_range(
-                    *map(lambda num: int(num, 0), _range.split("...")), inc_end=False
-                ),
+                r"\.size " + match_paren_or_symbol,
+                lambda m_self, size: m_self.set_size_value(self.parse_one(size)),
             ),
             (
-                r"\.size \(?(?P<item>" + match_uint + r")\)?",
-                lambda m_self, size: m_self.set_size(int(size, 0)),
+                r"\.gt " + match_paren_or_symbol,
+                lambda m_self, gt: m_self.set_gt(m_self.parse_one(gt)),
             ),
             (
-                r"\.gt \(?(?P<item>" + match_int + r")\)?",
-                lambda m_self, minvalue: m_self.set_min_value(int(minvalue, 0) + 1),
+                r"\.lt " + match_paren_or_symbol,
+                lambda m_self, lt: m_self.set_lt(m_self.parse_one(lt)),
             ),
             (
-                r"\.lt \(?(?P<item>" + match_int + r")\)?",
-                lambda m_self, maxvalue: m_self.set_max_value(int(maxvalue, 0) - 1),
+                r"\.ge " + match_paren_or_symbol,
+                lambda m_self, ge: m_self.set_ge(m_self.parse_one(ge)),
             ),
             (
-                r"\.ge \(?(?P<item>" + match_int + r")\)?",
-                lambda m_self, minvalue: m_self.set_min_value(int(minvalue, 0)),
+                r"\.le " + match_paren_or_symbol,
+                lambda m_self, le: m_self.set_le(m_self.parse_one(le)),
             ),
             (
-                r"\.le \(?(?P<item>" + match_int + r")\)?",
-                lambda m_self, maxvalue: m_self.set_max_value(int(maxvalue, 0)),
+                r"\.eq " + match_paren_or_symbol,
+                lambda m_self, eq: m_self.set_eq(m_self.parse_one(eq)),
             ),
             (
-                r"\.eq \(?(?P<item>" + match_int + r")\)?",
-                lambda m_self, value: m_self.set_value(lambda: int(value, 0)),
+                r"\.default " + match_paren_or_symbol,
+                lambda m_self, default: m_self.set_default(m_self.parse_one(default)),
             ),
             (
-                r"\.eq \"(?P<item>.*?)(?<!\\)\"",
-                lambda m_self, value: m_self.set_value(lambda: value),
+                r"\.cbor " + match_paren_or_symbol,
+                lambda m_self, cbor: m_self.set_cbor(m_self.parse_one(cbor), False),
             ),
             (
-                r"\.default (\((?P<item>(?>[^\(\)]+|(?1))*)\))",
-                lambda m_self, type_str: m_self.set_default(m_self.parse_one(type_str)),
-            ),
-            (
-                r"\.default (?P<item>[^\s,]+)",
-                lambda m_self, type_str: m_self.set_default(m_self.parse_one(type_str)),
-            ),
-            (
-                r"\.cbor (\((?P<item>(?>[^\(\)]+|(?1))*)\))",
-                lambda m_self, type_str: m_self.set_cbor(m_self.parse_one(type_str), False),
-            ),
-            (
-                r"\.cbor (?P<item>[^\s,]+)",
-                lambda m_self, type_str: m_self.set_cbor(m_self.parse_one(type_str), False),
-            ),
-            (
-                r"\.cborseq (\((?P<item>(?>[^\(\)]+|(?1))*)\))",
-                lambda m_self, type_str: m_self.set_cbor(m_self.parse_one(type_str), True),
-            ),
-            (
-                r"\.cborseq (?P<item>[^\s,]+)",
-                lambda m_self, type_str: m_self.set_cbor(m_self.parse_one(type_str), True),
+                r"\.cborseq " + match_paren_or_symbol,
+                lambda m_self, cborseq: m_self.set_cbor(m_self.parse_one(cborseq), True),
             ),
             (r"\.bits (?P<item>[\w-]+)", lambda m_self, bits_str: m_self.set_bits(bits_str)),
         ]
