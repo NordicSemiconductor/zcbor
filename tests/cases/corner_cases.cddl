@@ -4,11 +4,16 @@
 ; SPDX-License-Identifier: Apache-2.0
 ;
 
+One = 1
+Two = 2
+Three = 3
+Ten = 10
+
 Numbers = [
-	one: 1,
+	one: One,
 	minustwo: -2,
-	fourtoten: 4..10,
-	twobytes: uint .size 2,
+	fourtoten: 4..Ten,
+	twobytes: uint .size Two,
 	onetofourbytes: uint .size 0b1..0o4, ; Testing binary and octal
 	minusfivektoplustwohundred: -5000..200,
 	fourbillion: 0xEE6B2800,
@@ -72,9 +77,9 @@ MultiGroup = +(3,-4)
 Union = Group / MultiGroup / (3,4) / "\"hello\""
 
 Map = {
-	listkey: [5,6] => bool,
+	listkey: ((([5,6] => bool))),
 	union: (7=>uint) / (-8=>uint),
-	twotothree: 2*3 nil => bstr,
+	twotothree: (2*3 (nil => bstr)),
 }
 
 EmptyMap = {}
@@ -103,8 +108,10 @@ ValueRange = [
 	lesseq1: uint .le 1,
 	equal42: uint .eq 42,
 	equalstrworld: tstr .eq "world",
-	default3: ?int .gt 2 .default 3,
-	defaulthello: ?bstr .default 'hello',
+	equalpi: float .size 8 .eq ((( 3.14 ))),
+	equaltrue: bool .eq true,
+	default3: ?int .gt 2 .default Three,
+	defaulthello: ?bstr .default ((('hello'))),
 	defaulte: ?float .size 4 .default 2.72,
 	defaultfalse: ?bool .default false,
 ]
