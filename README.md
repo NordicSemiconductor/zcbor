@@ -438,8 +438,8 @@ zcbor code --help
 usage: zcbor code [-h] -c CDDL [--no-prelude] [-v]
                   [--default-max-qty DEFAULT_MAX_QTY] [--output-c OUTPUT_C]
                   [--output-h OUTPUT_H] [--output-h-types OUTPUT_H_TYPES]
-                  [--copy-sources] [--output-cmake OUTPUT_CMAKE] -t
-                  ENTRY_TYPES [ENTRY_TYPES ...] [-d] [-e] [--time-header]
+                  [--copy-sources] [--output-cmake OUTPUT_CMAKE]
+                  -t ENTRY_TYPES [ENTRY_TYPES ...] [-d] [-e] [--time-header]
                   [--git-sha-header] [-b {32,64}]
                   [--include-prefix INCLUDE_PREFIX] [-s]
                   [--file-header FILE_HEADER]
@@ -461,14 +461,14 @@ This script requires 'regex' for lookaround functionality not present in 're'.
 
 options:
   -h, --help            show this help message and exit
-  -c CDDL, --cddl CDDL  Path to one or more input CDDL file(s). Passing
+  -c, --cddl CDDL       Path to one or more input CDDL file(s). Passing
                         multiple files is equivalent to concatenating them.
   --no-prelude          Exclude the standard CDDL prelude from the build. The
                         prelude can be viewed at zcbor/prelude.cddl in the
                         repo, or together with the script.
   -v, --verbose         Print more information while parsing CDDL and
                         generating code.
-  --default-max-qty DEFAULT_MAX_QTY, --dq DEFAULT_MAX_QTY
+  --default-max-qty, --dq DEFAULT_MAX_QTY
                         Default maximum number of repetitions when no maximum
                         is specified. This is needed to construct complete C
                         types. The default_max_qty can usually be set to a
@@ -477,7 +477,7 @@ options:
                         as sometimes the value is needed for internal
                         computations. If so, the script will raise an
                         exception.
-  --output-c OUTPUT_C, --oc OUTPUT_C
+  --output-c, --oc OUTPUT_C
                         Path to output C file. If both --decode and --encode
                         are specified, _decode and _encode will be appended to
                         the filename when creating the two files. If not
@@ -486,7 +486,7 @@ options:
                         next to the cmake file, and the C file will be placed
                         there with the same name (except the file extension)
                         as the cmake file.
-  --output-h OUTPUT_H, --oh OUTPUT_H
+  --output-h, --oh OUTPUT_H
                         Path to output header file. If both --decode and
                         --encode are specified, _decode and _encode will be
                         appended to the filename when creating the two files.
@@ -495,7 +495,7 @@ options:
                         be created next to the cmake file, and the C file will
                         be placed there with the same name (except the file
                         extension) as the cmake file.
-  --output-h-types OUTPUT_H_TYPES, --oht OUTPUT_H_TYPES
+  --output-h-types, --oht OUTPUT_H_TYPES
                         Path to output header file with typedefs (shared
                         between decode and encode). If not specified, the path
                         and name will be taken from the output header file
@@ -513,7 +513,7 @@ options:
                         include() in your CMakeLists.txt file, and link the
                         target to your program. This option works with or
                         without the --copy-sources option.
-  -t ENTRY_TYPES [ENTRY_TYPES ...], --entry-types ENTRY_TYPES [ENTRY_TYPES ...]
+  -t, --entry-types ENTRY_TYPES [ENTRY_TYPES ...]
                         Names of the types which should have their xcode
                         functions exposed.
   -d, --decode          Generate decoding code. Either --decode or --encode or
@@ -524,7 +524,7 @@ options:
                         files.
   --git-sha-header      Put the current git sha of zcbor in a comment in the
                         generated files.
-  -b {32,64}, --default-bit-size {32,64}
+  -b, --default-bit-size {32,64}
                         Default bit size of integers in code. When integers
                         have no explicit bounds, assume they have this bit
                         width. Should follow the bit width of the architecture
@@ -560,25 +560,24 @@ CDDL schema file.
 
 options:
   -h, --help            show this help message and exit
-  -c CDDL, --cddl CDDL  Path to one or more input CDDL file(s). Passing
+  -c, --cddl CDDL       Path to one or more input CDDL file(s). Passing
                         multiple files is equivalent to concatenating them.
   --no-prelude          Exclude the standard CDDL prelude from the build. The
                         prelude can be viewed at zcbor/prelude.cddl in the
                         repo, or together with the script.
   -v, --verbose         Print more information while parsing CDDL and
                         generating code.
-  -i INPUT, --input INPUT
-                        Input data file. The option --input-as specifies how
+  -i, --input INPUT     Input data file. The option --input-as specifies how
                         to interpret the contents. Use "-" to indicate stdin.
   --input-as {yaml,json,cbor,cborhex}
                         Which format to interpret the input file as. If
                         omitted, the format is inferred from the file name.
                         .yaml, .yml => YAML, .json => JSON, .cborhex => CBOR
                         as hex string, everything else => CBOR
-  -t ENTRY_TYPE, --entry-type ENTRY_TYPE
+  -t, --entry-type ENTRY_TYPE
                         Name of the type (from the CDDL) to interpret the data
                         as.
-  --default-max-qty DEFAULT_MAX_QTY, --dq DEFAULT_MAX_QTY
+  --default-max-qty, --dq DEFAULT_MAX_QTY
                         Default maximum number of repetitions when no maximum
                         is specified. It is only relevant when handling data
                         that will be decoded by generated code. If omitted, a
@@ -613,25 +612,24 @@ conform. 'zcbor validate' can be used if only validate is needed.
 
 options:
   -h, --help            show this help message and exit
-  -c CDDL, --cddl CDDL  Path to one or more input CDDL file(s). Passing
+  -c, --cddl CDDL       Path to one or more input CDDL file(s). Passing
                         multiple files is equivalent to concatenating them.
   --no-prelude          Exclude the standard CDDL prelude from the build. The
                         prelude can be viewed at zcbor/prelude.cddl in the
                         repo, or together with the script.
   -v, --verbose         Print more information while parsing CDDL and
                         generating code.
-  -i INPUT, --input INPUT
-                        Input data file. The option --input-as specifies how
+  -i, --input INPUT     Input data file. The option --input-as specifies how
                         to interpret the contents. Use "-" to indicate stdin.
   --input-as {yaml,json,cbor,cborhex}
                         Which format to interpret the input file as. If
                         omitted, the format is inferred from the file name.
                         .yaml, .yml => YAML, .json => JSON, .cborhex => CBOR
                         as hex string, everything else => CBOR
-  -t ENTRY_TYPE, --entry-type ENTRY_TYPE
+  -t, --entry-type ENTRY_TYPE
                         Name of the type (from the CDDL) to interpret the data
                         as.
-  --default-max-qty DEFAULT_MAX_QTY, --dq DEFAULT_MAX_QTY
+  --default-max-qty, --dq DEFAULT_MAX_QTY
                         Default maximum number of repetitions when no maximum
                         is specified. It is only relevant when handling data
                         that will be decoded by generated code. If omitted, a
@@ -644,8 +642,7 @@ options:
                         supports. bytestrings (BSTR), tags, undefined, and
                         maps with non-text keys need special handling. See the
                         zcbor README for more information.
-  -o OUTPUT, --output OUTPUT
-                        Output data file. The option --output-as specifies how
+  -o, --output OUTPUT   Output data file. The option --output-as specifies how
                         to interpret the contents. Use "-" to indicate stdout.
   --output-as {yaml,json,cbor,cborhex,c_code}
                         Which format to interpret the output file as. If
