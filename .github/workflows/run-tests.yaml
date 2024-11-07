@@ -12,7 +12,7 @@ env:
 
 jobs:
   merge-test-1:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         platform: ["native_sim", "native_sim/native/64", "mps2/an521/cpu0"]
@@ -93,7 +93,7 @@ jobs:
 
 
   merge-test-2:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
@@ -157,7 +157,7 @@ jobs:
         python3 -m unittest test_zcbor
 
   merge-test-3:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     name: Merge tests 3 - Check repo files (Ubuntu)
     steps:
     - name: Checkout the code
@@ -179,7 +179,7 @@ jobs:
         python3 -m unittest test_repo_files
 
   release-test-1:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     name: Release tests 1 - Check versions
     needs:
     - merge-test-1
@@ -204,7 +204,7 @@ jobs:
         rm HEAD_REF
 
   release-test-2:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     name: Release tests 2 - Fuzz
     needs:
     - release-test-1
@@ -258,7 +258,7 @@ jobs:
         path: dist/*
 
   release-test-3:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
@@ -294,7 +294,7 @@ jobs:
         zephyr_toolchain_arch: arm,mips
 
   release-test-4:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
