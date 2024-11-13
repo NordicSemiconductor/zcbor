@@ -506,28 +506,23 @@ float zcbor_float16_to_32(uint16_t input);
 uint16_t zcbor_float32_to_16(float input);
 
 #ifdef ZCBOR_MAP_SMART_SEARCH
-static inline size_t zcbor_round_up(size_t x, size_t align)
-{
-	return (((x) + (align) - 1) / (align) * (align));
-}
-
+#define ZCBOR_ROUND_UP(x, align) (((x) + (align) - 1) / (align) * (align))
 #define ZCBOR_BITS_PER_BYTE 8
+
 /** Calculate the number of bytes needed to hold @p num_flags 1 bit flags
  */
 static inline size_t zcbor_flags_to_bytes(size_t num_flags)
 {
-	return zcbor_round_up(num_flags, ZCBOR_BITS_PER_BYTE) / ZCBOR_BITS_PER_BYTE;
+	return ZCBOR_ROUND_UP(num_flags, ZCBOR_BITS_PER_BYTE) / ZCBOR_BITS_PER_BYTE;
 }
 
 /** Calculate the number of zcbor_state_t instances needed to hold @p num_flags 1 bit flags
  */
-static inline size_t zcbor_flags_to_states(size_t num_flags)
-{
-	return zcbor_round_up(num_flags, sizeof(zcbor_state_t) * ZCBOR_BITS_PER_BYTE)
-			/ (sizeof(zcbor_state_t) * ZCBOR_BITS_PER_BYTE);
-}
+#define ZCBOR_FLAGS_TO_STATES(num_flags) \
+	(ZCBOR_ROUND_UP(num_flags, sizeof(zcbor_state_t) * ZCBOR_BITS_PER_BYTE) \
+			/ (sizeof(zcbor_state_t) * ZCBOR_BITS_PER_BYTE))
 
-#define ZCBOR_FLAG_STATES(n_flags) zcbor_flags_to_states(n_flags)
+#define ZCBOR_FLAG_STATES(n_flags) ZCBOR_FLAGS_TO_STATES(n_flags)
 
 #else
 #define ZCBOR_FLAG_STATES(n_flags) 0
