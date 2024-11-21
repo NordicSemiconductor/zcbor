@@ -440,7 +440,7 @@ usage: zcbor code [-h] -c CDDL [--no-prelude] [-v]
                   [--output-h OUTPUT_H] [--output-h-types OUTPUT_H_TYPES]
                   [--copy-sources] [--output-cmake OUTPUT_CMAKE]
                   -t ENTRY_TYPES [ENTRY_TYPES ...] [-d] [-e] [--time-header]
-                  [--git-sha-header] [-b {32,64}]
+                  [--git-sha-header] [-b {8,16,32,64}]
                   [--include-prefix INCLUDE_PREFIX] [-s]
                   [--file-header FILE_HEADER]
 
@@ -524,11 +524,11 @@ options:
                         files.
   --git-sha-header      Put the current git sha of zcbor in a comment in the
                         generated files.
-  -b, --default-bit-size {32,64}
+  -b, --default-bit-size {8,16,32,64}
                         Default bit size of integers in code. When integers
                         have no explicit bounds, assume they have this bit
-                        width. Should follow the bit width of the architecture
-                        the code will be running on. Default: 32
+                        width. Recommended to follow the bit width of the
+                        architecture the code will be running on. Default: 32
   --include-prefix INCLUDE_PREFIX
                         When #include'ing generated files, add this path
                         prefix to the filename.
