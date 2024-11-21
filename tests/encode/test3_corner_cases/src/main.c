@@ -1039,8 +1039,8 @@ ZTEST(cbor_encode_test3, test_single)
 	};
 	size_t input_single1 = 52;
 	size_t input_single2_ign = 53;
-	size_t input_single3 = 9;
-	size_t input_single4_inv = 10;
+	uint8_t input_single3 = 9;
+	uint8_t input_single4_inv = 10;
 
 	zassert_equal(ZCBOR_SUCCESS, cbor_encode_SingleBstr(output, sizeof(output), &input_single0, &out_len), NULL);
 	zassert_equal(sizeof(exp_payload_single0), out_len, NULL);

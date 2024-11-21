@@ -59,8 +59,12 @@ do { \
  * @retval false  If the payload is exhausted. Or an unexpected error happened.
  *                Use zcbor_peek_error() to see the error code.
  */
+bool zcbor_int8_put(zcbor_state_t *state, int8_t input);
+bool zcbor_int16_put(zcbor_state_t *state, int16_t input);
 bool zcbor_int32_put(zcbor_state_t *state, int32_t input); /* pint/nint */
 bool zcbor_int64_put(zcbor_state_t *state, int64_t input); /* pint/nint */
+bool zcbor_uint8_put(zcbor_state_t *state, uint8_t input);
+bool zcbor_uint16_put(zcbor_state_t *state, uint16_t input);
 bool zcbor_uint32_put(zcbor_state_t *state, uint32_t input); /* pint */
 bool zcbor_uint64_put(zcbor_state_t *state, uint64_t input); /* pint */
 bool zcbor_size_put(zcbor_state_t *state, size_t input); /* pint */
@@ -73,8 +77,12 @@ bool zcbor_float16_bytes_put(zcbor_state_t *state, uint16_t input); /* IEEE754 f
 bool zcbor_float32_put(zcbor_state_t *state, float input); /* IEEE754 float32 */
 bool zcbor_float64_put(zcbor_state_t *state, double input); /* IEEE754 float64 */
 
+bool zcbor_int8_encode(zcbor_state_t *state, const int8_t *input);
+bool zcbor_int16_encode(zcbor_state_t *state, const int16_t *input);
 bool zcbor_int32_encode(zcbor_state_t *state, const int32_t *input); /* pint/nint */
 bool zcbor_int64_encode(zcbor_state_t *state, const int64_t *input); /* pint/nint */
+bool zcbor_uint8_encode(zcbor_state_t *state, const uint8_t *input);
+bool zcbor_uint16_encode(zcbor_state_t *state, const uint16_t *input);
 bool zcbor_uint32_encode(zcbor_state_t *state, const uint32_t *input); /* pint */
 bool zcbor_uint64_encode(zcbor_state_t *state, const uint64_t *input); /* pint */
 bool zcbor_size_encode(zcbor_state_t *state, const size_t *input); /* pint */

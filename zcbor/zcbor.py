@@ -71,6 +71,10 @@ defaults = {
     "default_bit_size": 32,
 }
 
+UINT_MAX = {8: UINT8_MAX, 16: UINT16_MAX, 32: UINT32_MAX, 64: UINT64_MAX}
+INT_MIN = {8: INT8_MIN, 16: INT16_MIN, 32: INT32_MIN, 64: INT64_MIN}
+INT_MAX = {8: INT8_MAX, 16: INT16_MAX, 32: INT32_MAX, 64: INT64_MAX}
+
 
 def getrp(pattern, flags=0):
     """Get a compiled regex pattern from the cache. Add it to the cache if not present."""
@@ -2264,25 +2268,42 @@ class CodeGenerator(CddlXcoder):
 
     def bit_size(self):
         """The bit width of the integers as represented in code."""
-        bit_size = None
         if self.type in ["UINT", "INT", "NINT"]:
-            assert self.default_bit_size in [32, 64], "The default_bit_size must be 32 or 64."
-            if self.default_bit_size == 64:
-                bit_size = 64
-            else:
-                bit_size = 32
+            default = self.default_bit_size
+            assert default in [8, 16, 32, 64], f"Invalid default bit size: {default}."
+            default_max = INT_MAX[default]  # This doesn't need to be exact, hence no UINT_MAX
+            default_min = 0 if self.type == "UINT" else INT_MIN[default]
 
-                for v in [self.value or 0, self.max_value or 0, self.min_value or 0]:
-                    if type(v) is str:
-                        if "64" in v:
-                            bit_size = 64
-                    elif self.type == "UINT":
-                        if v > UINT32_MAX:
-                            bit_size = 64
+            candidates = []
+
+            for v in [
+                self.value or 0,
+                self.max_value or default_max,
+                self.min_value or default_min,
+            ]:
+                if self.type == "UINT":
+                    if v > UINT32_MAX:
+                        bit_size = 64
+                    elif v > UINT16_MAX:
+                        bit_size = 32
+                    elif v > UINT8_MAX:
+                        bit_size = 16
                     else:
-                        if (v > INT32_MAX) or (v < INT32_MIN):
-                            bit_size = 64
-        return bit_size
+                        bit_size = 8
+                else:
+                    if (v > INT32_MAX) or (v < INT32_MIN):
+                        bit_size = 64
+                    elif (v > INT16_MAX) or (v < INT16_MIN):
+                        bit_size = 32
+                    elif (v > INT8_MAX) or (v < INT8_MIN):
+                        bit_size = 16
+                    else:
+                        bit_size = 8
+                candidates.append(bit_size)
+
+            return max(candidates)
+        else:
+            return None
 
     def float_type(self):
         """If this is a floating point number, return the C type to use for it."""
@@ -3603,9 +3624,9 @@ This option works with or without the --copy-sources option.""",
         required=False,
         type=int,
         default=defaults["default_bit_size"],
-        choices=[32, 64],
+        choices=[8, 16, 32, 64],
         help="""Default bit size of integers in code. When integers have no explicit bounds,
-assume they have this bit width. Should follow the bit width of the architecture
+assume they have this bit width. Recommended to follow the bit width of the architecture
 the code will be running on. Default: %(default)s""",
     )
     code_parser.add_argument(

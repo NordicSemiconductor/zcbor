@@ -28,5 +28,5 @@ endif()
 zephyr_compile_options(-Werror)
 
 if (CONFIG_64BIT)
-  set(bit_arg -b 64)
+  set(bit_arg --default-bit-size 64)
 endif()
