@@ -505,9 +505,9 @@ float zcbor_float16_to_32(uint16_t input);
  */
 uint16_t zcbor_float32_to_16(float input);
 
-#ifdef ZCBOR_MAP_SMART_SEARCH
 #define ZCBOR_ROUND_UP(x, align) (((x) + (align) - 1) / (align) * (align))
 #define ZCBOR_BITS_PER_BYTE 8
+#ifdef ZCBOR_MAP_SMART_SEARCH
 
 /** Calculate the number of bytes needed to hold @p num_flags 1 bit flags
  */
@@ -522,10 +522,15 @@ static inline size_t zcbor_flags_to_bytes(size_t num_flags)
 	(ZCBOR_ROUND_UP(num_flags, sizeof(zcbor_state_t) * ZCBOR_BITS_PER_BYTE) \
 			/ (sizeof(zcbor_state_t) * ZCBOR_BITS_PER_BYTE))
 
+#define ZCBOR_BYTES_TO_STATES(num_bytes) \
+	(ZCBOR_ROUND_UP(num_bytes, sizeof(zcbor_state_t)) / (sizeof(zcbor_state_t)))
+
+#define ZCBOR_BYTE_STATES(n_bytes) ZCBOR_BYTES_TO_STATES(n_bytes)
 #define ZCBOR_FLAG_STATES(n_flags) ZCBOR_FLAGS_TO_STATES(n_flags)
 
 #else
-#define ZCBOR_FLAG_STATES(n_flags) 0
+#define ZCBOR_BYTE_STATES(n_bytes) (n_bytes * 0)
+#define ZCBOR_FLAG_STATES(n_flags) (n_flags * 0)
 #endif
 
 size_t strnlen(const char *, size_t);

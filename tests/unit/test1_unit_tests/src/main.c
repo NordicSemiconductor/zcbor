@@ -1644,4 +1644,22 @@ ZTEST(zcbor_unit_tests, test_simple_value_len)
 }
 
 
+ZTEST(zcbor_unit_tests, test_flag_states)
+{
+#ifndef ZCBOR_MAP_SMART_SEARCH
+	printf("Skip on builds with no SMART_SEARCH.\n");
+#else
+	zassert_equal(2, zcbor_flags_to_bytes(15), NULL);
+	zassert_equal(2, zcbor_flags_to_bytes(16), NULL);
+	zassert_equal(3, zcbor_flags_to_bytes(17), NULL);
+	zassert_equal(2, ZCBOR_FLAG_STATES(sizeof(zcbor_state_t) * 2 * ZCBOR_BITS_PER_BYTE - 1), NULL);
+	zassert_equal(2, ZCBOR_FLAG_STATES(sizeof(zcbor_state_t) * 2 * ZCBOR_BITS_PER_BYTE), NULL);
+	zassert_equal(3, ZCBOR_FLAG_STATES(sizeof(zcbor_state_t) * 2 * ZCBOR_BITS_PER_BYTE + 1), NULL);
+	zassert_equal(2, ZCBOR_BYTE_STATES(sizeof(zcbor_state_t) * 2 - 1), NULL);
+	zassert_equal(2, ZCBOR_BYTE_STATES(sizeof(zcbor_state_t) * 2), NULL);
+	zassert_equal(3, ZCBOR_BYTE_STATES(sizeof(zcbor_state_t) * 2 + 1), NULL);
+#endif
+}
+
+
 ZTEST_SUITE(zcbor_unit_tests, NULL, NULL, NULL, NULL, NULL);
