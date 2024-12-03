@@ -599,5 +599,15 @@ bool zcbor_multi_encode(const size_t num_encode, zcbor_encoder_t encoder,
 void zcbor_new_encode_state(zcbor_state_t *state_array, size_t n_states,
 		uint8_t *payload, size_t payload_len, size_t elem_count)
 {
-	zcbor_new_state(state_array, n_states, payload, payload_len, elem_count, NULL, 0);
+	struct zcbor_state_init_params params = {
+		.states = state_array,
+		.n_states = n_states,
+		.payload = payload,
+		.payload_len = payload_len,
+		.elem_count = elem_count,
+		.flags = NULL,
+		.flags_bytes = 0,
+	};
+
+	zcbor_state_init(&params);
 }

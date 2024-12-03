@@ -58,6 +58,19 @@ int cbor_encode_Pet(
 {
 	zcbor_state_t states[4];
 
-	return zcbor_entry_function(payload, payload_len, (void *)input, payload_len_out, states,
-		(zcbor_decoder_t *)encode_Pet, sizeof(states) / sizeof(zcbor_state_t), 1);
+	struct zcbor_state_init_params params = {
+		.states = states,
+		.n_states = sizeof(states) / sizeof(zcbor_state_t),
+		.payload = payload,
+		.payload_len = payload_len,
+		.elem_count = 1,
+	};
+
+	int ret = zcbor_entry_func((zcbor_decoder_t *)encode_Pet, (void *)input, &params);
+
+	if (payload_len_out != NULL && ret == ZCBOR_SUCCESS) {
+		*payload_len_out = params.payload_len_out;
+	}
+
+	return ret;
 }

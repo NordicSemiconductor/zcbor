@@ -1,5 +1,9 @@
 # zcbor v. 0.9.99
 
+* `zcbor_new_state` and `zcbor_entry_function` are now deprecated in favor of `zcbor_state_init`and `zcbor_entry_func` respectively.
+  They still work as before, but will be removed in a few more releases.
+  The new functions take a struct as parameter to allow parameters to be added in the future without breaking compatibility.
+
 
 # zcbor v. 0.9.0
 

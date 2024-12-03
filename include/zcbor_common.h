@@ -96,11 +96,13 @@ union {
 	                             processed. */
 };
 	uint8_t const *payload_bak; /**< Temporary backup of payload. */
-	size_t elem_count; /**< The current element is part of a LIST or a MAP,
-	                        and this keeps count of how many elements are
-	                        expected. This will be checked before processing
-	                        and decremented if the element is correctly
-	                        processed. */
+	size_t elem_count; /**< Keeps count of how many elements are expected/have been
+	                        encoded. This count is decremented for each element when
+	                        decoding, or incremented for each element when encoding.
+	                        When decoding, this is checked before decoding any element,
+	                        and decoding will fail if elem_count is 0.
+	                        When encoding, this value is eventually used to populate
+	                        the header of a list or map, when in canonical mode. */
 	uint8_t const *payload_end; /**< The end of the payload. This will be
 	                                 checked against payload before
 	                                 processing each element. */
@@ -323,23 +325,47 @@ bool zcbor_union_elem_code(zcbor_state_t *state);
  */
 bool zcbor_union_end_code(zcbor_state_t *state);
 
+/** Initialization parameters for zcbor_state_init() and zcbor_entry_func().
+ *
+ *  Note that members may be added to this struct, so initialize it in a way where
+ *  such members will be set to 0, either via a designated initializer (params = {...}),
+ *  or by memseting the struct to 0 before assigning the members.
+ */
+struct zcbor_state_init_params {
+	zcbor_state_t *states; // Memory used for the state, backup states, constant state, and flags.
+	size_t n_states; // Size of the states array.
+	const uint8_t *payload; // Note that in encoding, payload will be modified despite the `const`.
+	size_t payload_len; // Length in bytes of the payload buffer
+	size_t payload_len_out; // Will be written with the actual length used (encoded/decoded)
+	size_t elem_count; // The initial elem_count, i.e. how many elements are expected. Should be 0 for encoding.
+	uint8_t *flags; // Memory used for flags, when using ZCBOR_MAP_SMART_SEARCH and unordered maps. Ignored when ZCBOR_MAP_SMART_SEARCH is not defined.
+	size_t flags_bytes; // Length in bytes of the flags buffer. Or, if non-zero while flags is NULL, how much memory will be taken from the states array for use as flags.
+};
+
 /** Initialize a state with backups.
  *  As long as n_states is more than 1, one of the states in the array is used
  *  as a struct zcbor_state_constant object.
  *  If there is no struct zcbor_state_constant (n_states == 1), error codes are
  *  not available.
  *  This means that you get a state with (n_states - 2) backups.
- *  payload, payload_len, elem_count, and elem_state are used to initialize the first state.
- *  The elem_state is only needed for unordered maps, when ZCBOR_MAP_SMART_SEARCH is enabled.
+ *  payload, payload_len, elem_count, and flags are used to initialize the first state.
+ *  The flags is only needed for unordered maps, when ZCBOR_MAP_SMART_SEARCH is enabled.
  *  It is ignored otherwise.
  */
+
+void zcbor_state_init(struct zcbor_state_init_params *params);
+
+/** [DEPRECATED] Old variant of zcbor_state_init, kept for backwards compatibility. */
 void zcbor_new_state(zcbor_state_t *state_array, size_t n_states,
 		const uint8_t *payload, size_t payload_len, size_t elem_count,
-		uint8_t *elem_state, size_t elem_state_bytes);
+		uint8_t *flags, size_t flags_bytes);
 
 /** Do boilerplate entry function procedure.
  *  Initialize states, call function, and check the result.
  */
+int zcbor_entry_func(zcbor_decoder_t func, void *result, struct zcbor_state_init_params *params);
+
+/** [DEPRECATED] Old variant of zcbor_entry_func, kept for backwards compatibility. */
 int zcbor_entry_function(const uint8_t *payload, size_t payload_len,
 	void *result, size_t *payload_len_out, zcbor_state_t *state, zcbor_decoder_t func,
 	size_t n_states, size_t elem_count);
@@ -505,10 +531,10 @@ float zcbor_float16_to_32(uint16_t input);
  */
 uint16_t zcbor_float32_to_16(float input);
 
-#ifdef ZCBOR_MAP_SMART_SEARCH
 #define ZCBOR_ROUND_UP(x, align) (((x) + (align) - 1) / (align) * (align))
 #define ZCBOR_BITS_PER_BYTE 8
 
+#ifdef ZCBOR_MAP_SMART_SEARCH
 /** Calculate the number of bytes needed to hold @p num_flags 1 bit flags
  */
 static inline size_t zcbor_flags_to_bytes(size_t num_flags)
@@ -522,10 +548,15 @@ static inline size_t zcbor_flags_to_bytes(size_t num_flags)
 	(ZCBOR_ROUND_UP(num_flags, sizeof(zcbor_state_t) * ZCBOR_BITS_PER_BYTE) \
 			/ (sizeof(zcbor_state_t) * ZCBOR_BITS_PER_BYTE))
 
+#define ZCBOR_BYTES_TO_STATES(num_bytes) \
+	(ZCBOR_ROUND_UP(num_bytes, sizeof(zcbor_state_t)) / (sizeof(zcbor_state_t)))
+
+#define ZCBOR_BYTE_STATES(n_bytes) ZCBOR_BYTES_TO_STATES(n_bytes)
 #define ZCBOR_FLAG_STATES(n_flags) ZCBOR_FLAGS_TO_STATES(n_flags)
 
 #else
-#define ZCBOR_FLAG_STATES(n_flags) 0
+#define ZCBOR_BYTE_STATES(n_bytes) (n_bytes * 0)
+#define ZCBOR_FLAG_STATES(n_flags) (n_flags * 0)
 #endif
 
 size_t strnlen(const char *, size_t);

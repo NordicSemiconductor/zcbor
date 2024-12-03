@@ -2874,9 +2874,21 @@ static bool {xcoder.func_name}(
 {{
 	zcbor_state_t states[{xcoder.num_backups() + 2}];
 
-	return zcbor_entry_function(payload, payload_len, (void *){func_arg}, payload_len_out, states,
-		(zcbor_decoder_t *){func_name}, sizeof(states) / sizeof(zcbor_state_t), {
-            xcoder.list_counts()[1]});
+	struct zcbor_state_init_params params = {{
+		.states = states,
+		.n_states = sizeof(states) / sizeof(zcbor_state_t),
+		.payload = payload,
+		.payload_len = payload_len,
+		.elem_count = {xcoder.list_counts()[1]},
+	}};
+
+	int ret = zcbor_entry_func((zcbor_decoder_t *){func_name}, (void *){func_arg}, &params);
+
+	if (payload_len_out != NULL && ret == ZCBOR_SUCCESS) {{
+		*payload_len_out = params.payload_len_out;
+	}}
+
+	return ret;
 }}"""
 
     def render_file_header(self, line_prefix):

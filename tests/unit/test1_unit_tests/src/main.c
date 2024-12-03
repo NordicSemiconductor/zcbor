@@ -1196,7 +1196,7 @@ ZTEST(zcbor_unit_tests, test_unordered_map)
 {
 	uint8_t payload[200];
 	ZCBOR_STATE_E(state_e, 2, payload, sizeof(payload), 0);
-	ZCBOR_STATE_D(state_d, 2, payload, sizeof(payload), 10, 40);
+	ZCBOR_STATE_D(state_d, 2, payload, sizeof(payload), 10, 50);
 	struct zcbor_string str_result1;
 	struct zcbor_string str_result2;
 	struct zcbor_string str_result3;
@@ -1640,6 +1640,24 @@ ZTEST(zcbor_unit_tests, test_simple_value_len)
 	zassert_false(zcbor_bool_expect(state_d_inv, true));
 	zassert_false(zcbor_nil_expect(state_d_inv, NULL));
 	zassert_false(zcbor_undefined_expect(state_d_inv, NULL));
+#endif
+}
+
+
+ZTEST(zcbor_unit_tests, test_flag_states)
+{
+#ifndef ZCBOR_MAP_SMART_SEARCH
+	printf("Skip on builds with no SMART_SEARCH.\n");
+#else
+	zassert_equal(2, zcbor_flags_to_bytes(15), NULL);
+	zassert_equal(2, zcbor_flags_to_bytes(16), NULL);
+	zassert_equal(3, zcbor_flags_to_bytes(17), NULL);
+	zassert_equal(2, ZCBOR_FLAG_STATES(sizeof(zcbor_state_t) * 2 * ZCBOR_BITS_PER_BYTE - 1), NULL);
+	zassert_equal(2, ZCBOR_FLAG_STATES(sizeof(zcbor_state_t) * 2 * ZCBOR_BITS_PER_BYTE), NULL);
+	zassert_equal(3, ZCBOR_FLAG_STATES(sizeof(zcbor_state_t) * 2 * ZCBOR_BITS_PER_BYTE + 1), NULL);
+	zassert_equal(2, ZCBOR_BYTE_STATES(sizeof(zcbor_state_t) * 2 - 1), NULL);
+	zassert_equal(2, ZCBOR_BYTE_STATES(sizeof(zcbor_state_t) * 2), NULL);
+	zassert_equal(3, ZCBOR_BYTE_STATES(sizeof(zcbor_state_t) * 2 + 1), NULL);
 #endif
 }
 

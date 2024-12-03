@@ -1607,5 +1607,15 @@ void zcbor_new_decode_state(zcbor_state_t *state_array, size_t n_states,
 		const uint8_t *payload, size_t payload_len, size_t elem_count,
 		uint8_t *flags, size_t flags_bytes)
 {
-	zcbor_new_state(state_array, n_states, payload, payload_len, elem_count, flags, flags_bytes);
+	struct zcbor_state_init_params params = {
+		.states = state_array,
+		.n_states = n_states,
+		.payload = payload,
+		.payload_len = payload_len,
+		.elem_count = elem_count,
+		.flags = flags,
+		.flags_bytes = flags_bytes,
+	};
+
+	zcbor_state_init(&params);
 }

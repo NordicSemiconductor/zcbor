@@ -23,7 +23,7 @@ extern "C" {
  */
 
 
-/** See @ref zcbor_new_state() */
+/** [DEPRECATED] See @ref zcbor_new_state() and @ref zcbor_state_init() */
 void zcbor_new_decode_state(zcbor_state_t *state_array, size_t n_states,
 		const uint8_t *payload, size_t payload_len, size_t elem_count,
 		uint8_t *elem_state, size_t elem_state_bytes);
@@ -35,19 +35,27 @@ void zcbor_new_decode_state(zcbor_state_t *state_array, size_t n_states,
  *
  *  @param[in]  name          The name of the new state variable.
  *  @param[in]  num_backups   The number of backup slots to keep in the state.
- *  @param[in]  payload       The payload to work on.
+ *  @param[in]  payload_buf   The payload to work on.
  *  @param[in]  payload_size  The size (in bytes) of @p payload.
- *  @param[in]  elem_count    The starting elem_count (typically 1).
+ *  @param[in]  init_elem_count The starting elem_count (typically 1).
  *  @param[in]  n_flags       For use if ZCBOR_MAP_SMART_SEARCH is enabled, ignored otherwise.
  *                            The total number of unordered map search flags needed.
  *                            I.e. the largest number of elements expected in an unordered map,
  *                            including elements in nested unordered maps.
  */
-#define ZCBOR_STATE_D(name, num_backups, payload, payload_size, elem_count, n_flags) \
+#define ZCBOR_STATE_D(name, num_backups, payload_buf, payload_size, init_elem_count, n_flags) \
 zcbor_state_t name[((num_backups) + 2 + ZCBOR_FLAG_STATES(n_flags))]; \
 do { \
-	zcbor_new_decode_state(name, ZCBOR_ARRAY_SIZE(name), payload, payload_size, elem_count, \
-			(uint8_t *)&name[(num_backups) + 1], ZCBOR_FLAG_STATES(n_flags) * sizeof(zcbor_state_t)); \
+	struct zcbor_state_init_params params = { \
+		.states = name, \
+		.n_states = ZCBOR_ARRAY_SIZE(name), \
+		.payload = payload_buf, \
+		.payload_len = payload_size, \
+		.elem_count = init_elem_count, \
+		.flags = NULL, \
+		.flags_bytes = ZCBOR_ROUND_UP(n_flags, ZCBOR_BITS_PER_BYTE) / ZCBOR_BITS_PER_BYTE, \
+	}; \
+	zcbor_state_init(&params); \
 } while(0)
 
 
