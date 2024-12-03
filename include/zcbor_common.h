@@ -551,6 +551,64 @@ static inline size_t zcbor_flags_to_bytes(size_t num_flags)
 
 size_t strnlen(const char *, size_t);
 
+bool zcbor_cast_error(zcbor_state_t *state, void *unused);
+
+/** Add some additional safety when casting to zcbor_decoder_t or zcbor_encoder_t
+ *
+ *  This will fail if trying to cast functions (from the zcbor API or elsewhere) that
+ *  should not be used as zcbor_decoder_t or zcbor_encoder_t, such as
+ *  zcbor_decode_int() (3 arguments), or zcbor_int32_put() (input is not a pointer).
+ *
+ *  This macro uses _Generic(), which is assumed to be supported in newer copilers,
+ *  even when using the C99 flag.
+ *
+ *  @note The default case is included in ZCBOR_CAST_FP() so nested _CAST_FP macros work.
+ *        This default case should always fail, hopefully at compile time.
+ *        @ref zcbor_cast_error is cast to size_t to hopefully give a compiler error.
+ *        See for more info: https://stackoverflow.com/q/65654835/1463246
+ *
+ *  To add support for casting a custom function foo_decode() with a bespoke
+ *  result struct "foo_t", you can do something like the following:
+ *
+ *  #define ZCBOR_CAST_FP_CUSTOM(func) _Generic((func), \
+ *          bool(*)(zcbor_state_t *, foo_t *):       ((zcbor_decoder_t *)func), \
+ *          bool(*)(zcbor_state_t *, const foo_t *): ((zcbor_encoder_t *)func), \
+ *          default: ZCBOR_CAST_FP(func))
+ *
+ *  @param func  Function pointer to cast.
+ *  @retval      The result of the macro will be func, cast to either zcbor_decoder_t or
+ *               zcbor_encoder_t depending on whether the result argument is const.
+ */
+#define ZCBOR_CAST_FP(func) _Generic((func), \
+	bool(*)(zcbor_state_t *, void *):                      func, \
+	bool(*)(zcbor_state_t *, int8_t *):                    ((zcbor_decoder_t *)func), \
+	bool(*)(zcbor_state_t *, int16_t *):                   ((zcbor_decoder_t *)func), \
+	bool(*)(zcbor_state_t *, int32_t *):                   ((zcbor_decoder_t *)func), \
+	bool(*)(zcbor_state_t *, int64_t *):                   ((zcbor_decoder_t *)func), \
+	bool(*)(zcbor_state_t *, uint8_t *):                   ((zcbor_decoder_t *)func), \
+	bool(*)(zcbor_state_t *, uint16_t *):                  ((zcbor_decoder_t *)func), \
+	bool(*)(zcbor_state_t *, uint32_t *):                  ((zcbor_decoder_t *)func), \
+	bool(*)(zcbor_state_t *, uint64_t *):                  ((zcbor_decoder_t *)func), \
+	bool(*)(zcbor_state_t *, bool *):                      ((zcbor_decoder_t *)func), \
+	bool(*)(zcbor_state_t *, float *):                     ((zcbor_decoder_t *)func), \
+	bool(*)(zcbor_state_t *, double *):                    ((zcbor_decoder_t *)func), \
+	bool(*)(zcbor_state_t *, struct zcbor_string *):       ((zcbor_decoder_t *)func), \
+	bool(*)(zcbor_state_t *, const void *):                func, \
+	bool(*)(zcbor_state_t *, const int8_t *):              ((zcbor_encoder_t *)func), \
+	bool(*)(zcbor_state_t *, const int16_t *):             ((zcbor_encoder_t *)func), \
+	bool(*)(zcbor_state_t *, const int32_t *):             ((zcbor_encoder_t *)func), \
+	bool(*)(zcbor_state_t *, const int64_t *):             ((zcbor_encoder_t *)func), \
+	bool(*)(zcbor_state_t *, const uint8_t *):             ((zcbor_encoder_t *)func), \
+	bool(*)(zcbor_state_t *, const uint16_t *):            ((zcbor_encoder_t *)func), \
+	bool(*)(zcbor_state_t *, const uint32_t *):            ((zcbor_encoder_t *)func), \
+	bool(*)(zcbor_state_t *, const uint64_t *):            ((zcbor_encoder_t *)func), \
+	bool(*)(zcbor_state_t *, const bool *):                ((zcbor_encoder_t *)func), \
+	bool(*)(zcbor_state_t *, const float *):               ((zcbor_encoder_t *)func), \
+	bool(*)(zcbor_state_t *, const double *):              ((zcbor_encoder_t *)func), \
+	bool(*)(zcbor_state_t *, const struct zcbor_string *): ((zcbor_encoder_t *)func), \
+	default: (size_t)zcbor_cast_error /* A compile error here means your function pointer is bad. */ \
+)
+
 #ifdef __cplusplus
 }
 #endif

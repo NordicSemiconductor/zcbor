@@ -1149,7 +1149,7 @@ bool zcbor_search_key_bstr_ptr(zcbor_state_t *state, char const *ptr, size_t len
 {
 	struct zcbor_string zs = { .value = (const uint8_t *)ptr, .len = len };
 
-	return zcbor_unordered_map_search((zcbor_decoder_t *)zcbor_bstr_expect, state, &zs);
+	return zcbor_unordered_map_search(ZCBOR_CAST_FP(zcbor_bstr_expect), state, &zs);
 }
 
 
@@ -1157,7 +1157,7 @@ bool zcbor_search_key_tstr_ptr(zcbor_state_t *state, char const *ptr, size_t len
 {
 	struct zcbor_string zs = { .value = (const uint8_t *)ptr, .len = len };
 
-	return zcbor_unordered_map_search((zcbor_decoder_t *)zcbor_tstr_expect, state, &zs);
+	return zcbor_unordered_map_search(ZCBOR_CAST_FP(zcbor_tstr_expect), state, &zs);
 }
 
 

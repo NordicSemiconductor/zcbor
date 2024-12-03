@@ -471,3 +471,13 @@ size_t strnlen (const char *s, size_t maxlen)
 	}
 	return i;
 }
+
+
+bool zcbor_cast_error(zcbor_state_t *state, void *unused)
+{
+	(void)state;
+	(void)unused;
+	zcbor_log("This function should never be called.\n");
+	zcbor_log("It means ZCBOR_CAST_FP() was called with a bad function pointer.\n");
+	ZCBOR_ERR(ZCBOR_ERR_BAD_ARG);
+}
