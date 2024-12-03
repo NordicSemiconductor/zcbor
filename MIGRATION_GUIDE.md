@@ -5,6 +5,11 @@
   Arguments have not changed otherwise.
   This was done to avoid ambiguity to do with positional arguments, and generally simplify passing arguments around inside zcbor.
 
+* [Recommended] A new macro `ZCBOR_CAST_FP` has been added for casting function pointers for use in the zcbor API.
+  The macro will first check that the function pointer has one of the supported signatures.
+  You are recommended to use it on any function pointer that is passed as an argument to a zcbor function.
+  See the macro documentation in zcbor_common.h for more info.
+
 * Code generation:
 
   * Integers whose values are known to be within 8 or 16 bytes now use the corresponding integer types (`uint8_t`/`int8_t`/`uint16_t`/`int16_t`) instead of larger types.
