@@ -187,6 +187,8 @@ bool zcbor_unordered_map_start_decode(zcbor_state_t *state);
  *                         keys in the map until it returns true, at which point
  *                         @ref zcbor_unordered_map_search will return true.
  *                         For example, a zcbor_*_pexpect() function.
+ *                         Please use @ref ZCBOR_CAST_FP to cast the function
+ *                         since it will also check for compatibility.
  * @param[inout] state  The current state of decoding. Must be currently decoding
  *                      the contents of a map, and pointing to one (any) of the
  *                      keys, not one of the values. If successful, the @p state
@@ -316,6 +318,8 @@ bool zcbor_any_skip(zcbor_state_t *state, void *unused);
  *                           an array of result variables.
  *                           Should not be an _expect() function, use
  *                           _pexpect() instead.
+ *                           Please use @ref ZCBOR_CAST_FP to cast the function
+ *                           since it will also check for compatibility.
  * @param[out] result        Where to place the decoded values. Must be an array
  *                           of at least @p max_decode elements.
  * @param[in]  result_len    The length of each result variable. Must be the
@@ -336,6 +340,8 @@ bool zcbor_multi_decode(size_t min_decode, size_t max_decode, size_t *num_decode
  *
  * @param[out] present  Whether or not the data was present and successfully decoded.
  * @param[in]  decoder  The decoder to attempt.
+ *                      Please use @ref ZCBOR_CAST_FP to cast the function
+ *                      since it will also check for compatibility.
  * @param[out] result   The result, if present.
  *
  * @return Should always return true.
