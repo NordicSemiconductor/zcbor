@@ -959,6 +959,10 @@ bool zcbor_unordered_map_search(zcbor_decoder_t key_decoder, zcbor_state_t *stat
 			(void)old_flags;
 		}
 
+		if (!should_try_key(state)) {
+			zcbor_log("Skipping element at index %zu.\n", get_current_index(state, 0));
+		}
+
 		if (should_try_key(state) && try_key(state, key_result, key_decoder)) {
 			if (!ZCBOR_MANUALLY_PROCESS_ELEM(state)) {
 				ZCBOR_FAIL_IF(!zcbor_elem_processed(state));
@@ -1576,8 +1580,8 @@ bool zcbor_multi_decode(size_t min_decode,
 			*num_decode = i;
 			state->payload = payload_bak;
 			state->elem_count = elem_count_bak;
-			ZCBOR_ERR_IF(i < min_decode, ZCBOR_ERR_ITERATIONS);
 			zcbor_log("Found %zu elements.\r\n", i);
+			ZCBOR_ERR_IF(i < min_decode, ZCBOR_ERR_ITERATIONS);
 			return true;
 		}
 	}
@@ -1607,5 +1611,15 @@ void zcbor_new_decode_state(zcbor_state_t *state_array, size_t n_states,
 		const uint8_t *payload, size_t payload_len, size_t elem_count,
 		uint8_t *flags, size_t flags_bytes)
 {
-	zcbor_new_state(state_array, n_states, payload, payload_len, elem_count, flags, flags_bytes);
+	struct zcbor_state_init_params params = {
+		.states = state_array,
+		.n_states = n_states,
+		.payload = payload,
+		.payload_len = payload_len,
+		.elem_count = elem_count,
+		.flags = flags,
+		.flags_bytes = flags_bytes,
+	};
+
+	zcbor_state_init(&params);
 }

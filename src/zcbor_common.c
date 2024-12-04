@@ -131,33 +131,41 @@ bool zcbor_union_end_code(zcbor_state_t *state)
 	return true;
 }
 
-void zcbor_new_state(zcbor_state_t *state_array, size_t n_states,
-		const uint8_t *payload, size_t payload_len, size_t elem_count,
-		uint8_t *flags, size_t flags_bytes)
+void zcbor_state_init(struct zcbor_state_init_params *params)
 {
-	state_array[0].payload = payload;
-	state_array[0].payload_end = payload + payload_len;
-	state_array[0].elem_count = elem_count;
+	zcbor_state_t *state_array = params->states;
+
+#ifdef ZCBOR_MAP_SMART_SEARCH
+	if (params->flags == NULL) {
+		size_t flag_state_index =
+			params->n_states - ZCBOR_BYTE_STATES(params->flags_bytes);
+		params->flags =	(uint8_t *)&state_array[flag_state_index];
+		params->n_states = flag_state_index;
+	}
+#endif
+
+	state_array[0].payload = params->payload;
+	state_array[0].payload_end = params->payload + params->payload_len;
+	state_array[0].elem_count = params->elem_count;
 	state_array[0].payload_moved = false;
 	state_array[0].decode_state.indefinite_length_array = false;
 #ifdef ZCBOR_MAP_SMART_SEARCH
-	state_array[0].decode_state.map_search_elem_state = flags;
+	state_array[0].decode_state.map_search_elem_state = params->flags;
 	state_array[0].decode_state.map_elem_count = 0;
 #else
 	state_array[0].decode_state.map_elems_processed = 0;
-	(void)flags;
-	(void)flags_bytes;
 #endif
 	state_array[0].constant_state = NULL;
 
-	if (n_states < 2) {
+	if (params->n_states < 2) {
 		return;
 	}
 
 	/* Use the last state as a struct zcbor_state_constant object. */
-	state_array[0].constant_state = (struct zcbor_state_constant *)&state_array[n_states - 1];
+	state_array[0].constant_state =
+		(struct zcbor_state_constant *)&state_array[params->n_states - 1];
 	state_array[0].constant_state->backup_list = NULL;
-	state_array[0].constant_state->num_backups = n_states - 2;
+	state_array[0].constant_state->num_backups = params->n_states - 2;
 	state_array[0].constant_state->current_backup = 0;
 	state_array[0].constant_state->error = ZCBOR_SUCCESS;
 #ifdef ZCBOR_STOP_ON_ERROR
@@ -166,11 +174,30 @@ void zcbor_new_state(zcbor_state_t *state_array, size_t n_states,
 	state_array[0].constant_state->enforce_canonical = ZCBOR_ENFORCE_CANONICAL_DEFAULT;
 	state_array[0].constant_state->manually_process_elem = ZCBOR_MANUALLY_PROCESS_ELEM_DEFAULT;
 #ifdef ZCBOR_MAP_SMART_SEARCH
-	state_array[0].constant_state->map_search_elem_state_end = flags + flags_bytes;
+	state_array[0].constant_state->map_search_elem_state_end =
+		params->flags + params->flags_bytes;
 #endif
-	if (n_states > 2) {
+	if (params->n_states > 2) {
 		state_array[0].constant_state->backup_list = &state_array[1];
 	}
+}
+
+
+void zcbor_new_state(zcbor_state_t *state_array, size_t n_states,
+		const uint8_t *payload, size_t payload_len, size_t elem_count,
+		uint8_t *flags, size_t flags_bytes)
+{
+	struct zcbor_state_init_params params = {
+		.states = state_array,
+		.n_states = n_states,
+		.payload = payload,
+		.payload_len = payload_len,
+		.elem_count = elem_count,
+		.flags = flags,
+		.flags_bytes = flags_bytes,
+	};
+
+	zcbor_state_init(&params);
 }
 
 void zcbor_update_state(zcbor_state_t *state,
@@ -299,11 +326,13 @@ size_t zcbor_remaining_str_len(zcbor_state_t *state)
 }
 
 
-int zcbor_entry_function(const uint8_t *payload, size_t payload_len,
-	void *result, size_t *payload_len_out, zcbor_state_t *state, zcbor_decoder_t func,
-	size_t n_states, size_t elem_count)
+int zcbor_entry_func(zcbor_decoder_t func, void *result, struct zcbor_state_init_params *params)
 {
-	zcbor_new_state(state, n_states, payload, payload_len, elem_count, NULL, 0);
+	zcbor_state_t *state = params->states;
+
+	zcbor_state_init(params);
+
+	state->constant_state->manually_process_elem = true;
 
 	bool ret = func(state, result);
 
@@ -314,11 +343,32 @@ int zcbor_entry_function(const uint8_t *payload, size_t payload_len,
 		return err;
 	}
 
-	if (payload_len_out != NULL) {
-		*payload_len_out = MIN(payload_len,
-				(size_t)state[0].payload - (size_t)payload);
-	}
+	params->payload_len_out = MIN(params->payload_len,
+			(size_t)state[0].payload - (size_t)params->payload);
 	return ZCBOR_SUCCESS;
+}
+
+
+int zcbor_entry_function(const uint8_t *payload, size_t payload_len,
+	void *result, size_t *payload_len_out, zcbor_state_t *state, zcbor_decoder_t func,
+	size_t n_states, size_t elem_count)
+{
+	struct zcbor_state_init_params params = {
+		.states = state,
+		.n_states = n_states,
+		.payload = payload,
+		.payload_len = payload_len,
+		.elem_count = elem_count,
+		.flags_bytes = 0,
+	};
+
+	int ret = zcbor_entry_func(func, result, &params);
+
+	if (payload_len_out != NULL && ret == ZCBOR_SUCCESS) {
+		*payload_len_out = params.payload_len_out;
+	}
+
+	return ret;
 }
 
 

@@ -35,14 +35,23 @@ void zcbor_new_encode_state(zcbor_state_t *state_array, size_t n_states,
  *
  *  @param[in]  name          The name of the new state variable.
  *  @param[in]  num_backups   The number of backup slots to keep in the state.
- *  @param[in]  payload       The payload to work on.
+ *  @param[in]  payload_buf   The payload to work on.
  *  @param[in]  payload_size  The size (in bytes) of @p payload.
- *  @param[in]  elem_count    The starting elem_count (typically 1).
+ *  @param[in]  init_elem_count The starting elem_count (typically 1).
  */
-#define ZCBOR_STATE_E(name, num_backups, payload, payload_size, elem_count) \
+#define ZCBOR_STATE_E(name, num_backups, payload_buf, payload_size, init_elem_count) \
 zcbor_state_t name[((num_backups) + 2)]; \
 do { \
-	zcbor_new_encode_state(name, ZCBOR_ARRAY_SIZE(name), payload, payload_size, elem_count); \
+	struct zcbor_state_init_params params = { \
+		.states = name, \
+		.n_states = ZCBOR_ARRAY_SIZE(name), \
+		.payload = payload_buf, \
+		.payload_len = payload_size, \
+		.elem_count = init_elem_count, \
+		.flags = NULL, \
+		.flags_bytes = 0, \
+	}; \
+	zcbor_state_init(&params); \
 } while(0)
 
 

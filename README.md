@@ -442,7 +442,7 @@ usage: zcbor code [-h] -c CDDL [--no-prelude] [-v]
                   -t ENTRY_TYPES [ENTRY_TYPES ...] [-d] [-e] [--time-header]
                   [--git-sha-header] [-b {32,64}]
                   [--include-prefix INCLUDE_PREFIX] [-s]
-                  [--file-header FILE_HEADER]
+                  [--file-header FILE_HEADER] [--unordered-maps]
 
 Parse a CDDL file and produce C code that validates and xcodes CBOR.
 The output from this script is a C file and a header file. The header file
@@ -543,6 +543,13 @@ options:
                         generated files, e.g. copyright. Can be a string or a
                         path to a file. If interpreted as a path to an
                         existing file, the file's contents will be used.
+  --unordered-maps      Add support in the generated code for parsing maps
+                        with unknown element order. When enabled, the
+                        generated code will use the zcbor_unordered_map_*()
+                        API to decode data whenever inside a map. zcbor
+                        detects when ZCBOR_MAP_SMART_SEARCH is needed and
+                        enable This places restrictions on the level of
+                        ambiguity allowed between map keys in a map.
 
 ```
 
