@@ -1,9 +1,24 @@
 tests:
   zcbor.decode.test5_corner_cases:
-    platform_allow: native_sim native_sim/native/64 mps2/an521/cpu0 qemu_malta/qemu_malta/be
-    tags: zcbor decode test5
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+      - mps2/an521/cpu0
+      - qemu_malta/qemu_malta/be
+    tags:
+      - zcbor
+      - decode
+      - test5
     extra_args: CANONICAL=1
   zcbor.decode.test5_corner_cases.indefinite_length_arrays:
-    platform_allow: native_sim native_sim/native/64 mps2/an521/cpu0 qemu_malta/qemu_malta/be
-    tags: zcbor decode test5 indefinite
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+      - mps2/an521/cpu0
+      - qemu_malta/qemu_malta/be
+    tags:
+      - zcbor
+      - decode
+      - test5
+      - indefinite
     extra_args: TEST_INDEFINITE_LENGTH_ARRAYS=1
