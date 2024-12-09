@@ -1,8 +1,23 @@
 tests:
   zcbor.encode.test3_corner_cases:
-    platform_allow: native_sim native_sim/native/64 mps2/an521/cpu0 qemu_malta/qemu_malta/be
-    tags: zcbor encode test3
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+      - mps2/an521/cpu0
+      - qemu_malta/qemu_malta/be
+    tags:
+      - zcbor
+      - encode
+      - test3
   zcbor.encode.test3_corner_cases.canonical:
-    platform_allow: native_sim native_sim/native/64 mps2/an521/cpu0 qemu_malta/qemu_malta/be
-    tags: zcbor encode canonical test3
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+      - mps2/an521/cpu0
+      - qemu_malta/qemu_malta/be
+    tags:
+      - zcbor
+      - encode
+      - canonical
+      - test3
     extra_args: CANONICAL=CANONICAL
