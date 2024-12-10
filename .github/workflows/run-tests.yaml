@@ -46,7 +46,7 @@ jobs:
     - name: Setup Python
       uses: actions/setup-python@v5
       with:
-        python-version: "3.12"
+        python-version: "3.x"
 
     - name: Checkout Zephyr
       run: |
@@ -120,10 +120,7 @@ jobs:
 
   merge-test-2-win:
     runs-on: windows-latest
-    strategy:
-      matrix:
-        python-version: ['3.12']
-    name: Merge tests 2 - Python (${{ matrix.python-version }}) functional tests (Windows)
+    name: Merge tests 2 - Python (latest) functional tests (Windows)
     steps:
     - name: Checkout the code
       uses: actions/checkout@v4
@@ -131,7 +128,7 @@ jobs:
     - name: Setup Python
       uses: actions/setup-python@v5
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: '3.x'
 
     - name: Read zcbor version
       run: |
@@ -166,7 +163,8 @@ jobs:
     - name: Setup Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.13'
+        python-version: '3.x'
+        check-latest: true
 
     - name: Install zcbor
       uses: ./.github/actions/install_zcbor
