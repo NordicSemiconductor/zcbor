@@ -15,6 +15,7 @@ from sys import exit
 from yaml import safe_load
 from tempfile import mkdtemp, NamedTemporaryFile
 from shutil import rmtree
+from os import linesep
 
 
 try:
@@ -136,7 +137,7 @@ class TestEx0InvManifest12(TestManifest):
         super().__init__(*args, **kwargs)
 
     def test_duplicate_type(self):
-        with self.assertRaises(ValueError, msg="Duplicate CDDL type found"):
+        with self.assertRaises(zcbor.CddlParsingError, msg="Duplicate CDDL type found"):
             self.decode_file(p_test_vectors12[0], p_manifest12, p_manifest12)
 
 
@@ -1507,6 +1508,133 @@ class TestCanonical(PopenTest):
         self.assertEqual(self.expected_payload_canonical, out_canon)
         self.assertEqual(self.expected_payload, out2)
         self.assertEqual(self.expected_payload_canonical, out_canon2)
+
+
+class TestExceptions(TestCase):
+    def do_test_exception(self, cddl_string):
+        with self.assertRaises(zcbor.CddlParsingError) as cm:
+            zcbor.CodeGenerator.from_cddl(
+                cddl_string=cddl_string,
+                mode="decode",
+                default_max_qty=16,
+                entry_type_names=["test"],
+                default_bit_size=32,
+            )
+        return cm.exception
+
+    def test_exception_formatting(self):
+        failing_cddl_string = 'test = [foo: .size 3 "bar"]'
+        expected_error = """
+CDDL parsing error:
+Cannot have size before type: 3
+  while parsing CDDL: '3'
+  while parsing CDDL: 'foo: .size 3 "bar"'
+  while parsing type test""".strip()
+        self.assertEqual(
+            expected_error, zcbor.format_parsing_error(self.do_test_exception(failing_cddl_string))
+        )
+
+    def test_duplicate_type(self):
+        exc = self.do_test_exception("foo = 1\nfoo = 2")
+        self.assertEqual("Duplicate CDDL type found: foo", str(exc))
+
+    def test_duplicate_type(self):
+        exc = self.do_test_exception("foo = 1\nfoo = 2")
+        self.assertEqual("Duplicate CDDL type found: foo", str(exc))
+
+    def test_double_type(self):
+        exc = self.do_test_exception("foo = uint int")
+        self.assertEqual("Cannot have two types: UINT, INT", str(exc))
+
+    def test_default_type(self):
+        exc = self.do_test_exception("foo = ?nil .default 1")
+        self.assertEqual("zcbor does not support .default values for the NIL type", str(exc))
+
+    def test_default_quant(self):
+        exc = self.do_test_exception("foo = *uint .default 1")
+        self.assertEqual("zcbor currently supports .default only with the ? quantifier.", str(exc))
+
+    def test_default_type_match(self):
+        exc = self.do_test_exception("foo = ?bstr .default 1")
+        self.assertEqual(
+            "Type of .default value does not match type of element. (BSTR != UINT)", str(exc)
+        )
+
+    def test_range(self):
+        exc = self.do_test_exception("foo = 2..1")
+        self.assertEqual("Range has larger minimum than maximum (min 2, max 1)", str(exc))
+
+    def test_label(self):
+        exc = self.do_test_exception("foo = uint bar:")
+        self.assertEqual("Cannot have label after type: bar", str(exc))
+
+    def test_quantifier_placement(self):
+        exc = self.do_test_exception("foo = uint +")
+        self.assertEqual("Cannot have quantifier after type: +", str(exc))
+
+    def test_size_placement(self):
+        exc = self.do_test_exception("foo = .size 2 uint")
+        self.assertEqual("Cannot have size before type: 2", str(exc))
+
+    def test_size_type(self):
+        exc = self.do_test_exception("foo = nil .size 2")
+        self.assertEqual(".size cannot be applied to NIL", str(exc))
+
+    def test_size_value(self):
+        exc = self.do_test_exception("foo = int .size 9")
+        self.assertEqual("Integers must have size from 0 to 8, not 9.", str(exc))
+
+    def test_max_size(self):
+        exc = self.do_test_exception("foo = int .size 4..10")
+        self.assertEqual("Integers must have size from 0 to 8, not 10.", str(exc))
+
+    def test_cbor_bstr(self):
+        exc = self.do_test_exception("foo = tstr .cbor int")
+        self.assertEqual(".cbor must be used with bstr.", str(exc))
+
+    def test_bits_int(self):
+        exc = self.do_test_exception("foo = int .bits bar")
+        self.assertEqual(".bits must be used with uint.", str(exc))
+
+    def test_duplicate_key(self):
+        exc = self.do_test_exception("foo = 1 => 2 => tstr")
+        self.assertEqual("Cannot have two keys: //UINT1 and //UINT1 => //UINT2", str(exc))
+
+    def test_group_key(self):
+        exc = self.do_test_exception("foo = (1, 2) => tstr")
+        self.assertEqual(
+            "A key cannot be a group because it might represent more than 1 type.", str(exc)
+        )
+
+    def test_list_key(self):
+        exc = self.do_test_exception("foo = [1 => tstr]")
+        self.assertEqual(
+            f"""LIST[   //UINT1 => TSTR]{linesep}List member(s) cannot have key: [//UINT1 => TSTR] pointing to []""",
+            str(exc),
+        )
+
+    def test_unparsed(self):
+        exc = self.do_test_exception("foo = bar")
+        self.assertEqual("bar has not been parsed.", str(exc))
+
+    def test_ambiguous_any(self):
+        exc = self.do_test_exception("foo = [*any, 1]")
+        self.assertEqual(
+            "ambiguous quantity of 'any' is not supported in list, except as last element: */ANY",
+            str(exc),
+        )
+
+    def test_control_group_type(self):
+        exc = self.do_test_exception("foo = &(int)")
+        self.assertEqual("control groups must be of GROUP type.", str(exc))
+
+    def test_control_group_member_type(self):
+        exc = self.do_test_exception("foo = &(1, int)")
+        self.assertEqual("control group members must be literal positive integers.", str(exc))
+
+    def test_float_size(self):
+        exc = self.do_test_exception("foo = float .size 2..9")
+        self.assertEqual("Floats must have 2, 4 or 8 bytes of precision.", str(exc))
 
 
 if __name__ == "__main__":

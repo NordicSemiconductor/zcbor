@@ -7,4 +7,13 @@
 
 from pathlib import Path
 
-from .zcbor.zcbor import CddlValidationError, DataTranslator, main, CodeGenerator, CodeRenderer
+from .zcbor.zcbor import (
+    CddlValidationError,
+    CddlParsingError,
+    CddlParser,
+    DataTranslator,
+    CodeGenerator,
+    CodeRenderer,
+    format_parsing_error,
+    main,
+)
