@@ -470,6 +470,12 @@ class CddlParser:
         if type(self) not in type(self).cddl_regexes:
             self.cddl_regexes_init()
 
+    def post_process(self):
+        self.post_validate()
+
+    def post_process_control_group(self):
+        self.post_validate_control_group()
+
     @classmethod
     def from_cddl(cddl_class, *, cddl_string, **kwargs):
         my_types = dict()
@@ -505,12 +511,9 @@ class CddlParser:
 
         # post_validate all the definitions.
         for my_type in my_types:
-            my_types[my_type].set_id_prefix()
-            my_types[my_type].post_validate()
-            my_types[my_type].set_base_names()
+            my_types[my_type].post_process()
         for my_control_group in my_control_groups:
-            my_control_groups[my_control_group].set_id_prefix()
-            my_control_groups[my_control_group].post_validate_control_group()
+            my_control_groups[my_control_group].post_process_control_group()
 
         return CddlTypes(my_types, my_control_groups)
 
@@ -632,21 +635,6 @@ class CddlParser:
         """Set an explicit base name for this element."""
         self.base_name = base_name.replace("-", "_")
 
-    def set_base_names(self):
-        """Recursively set the base names of this element's children, keys, and cbor elements."""
-        if self.cbor:
-            self.cbor.set_base_name(self.var_name().strip("_") + "_cbor")
-        if self.key:
-            self.key.set_base_name(self.var_name().strip("_") + "_key")
-
-        if self.type in ["LIST", "MAP", "GROUP", "UNION"]:
-            for child in self.value:
-                child.set_base_names()
-        if self.cbor:
-            self.cbor.set_base_names()
-        if self.key:
-            self.key.set_base_names()
-
     def id(self, with_prefix=True):
         """Add uniqueness to the base name."""
         raw_name = self.get_base_name()
@@ -678,19 +666,6 @@ class CddlParser:
             "base_stem": self.base_stem,
         }
 
-    def set_id_prefix(self, id_prefix=""):
-        self.id_prefix = id_prefix
-        if self.type in ["LIST", "MAP", "GROUP", "UNION"]:
-            for child in self.value:
-                if child.single_func_impl_condition():
-                    child.set_id_prefix(self.generate_base_name())
-                else:
-                    child.set_id_prefix(self.child_base_id())
-        if self.cbor:
-            self.cbor.set_id_prefix(self.child_base_id())
-        if self.key:
-            self.key.set_id_prefix(self.child_base_id())
-
     def child_base_id(self):
         """Id to pass to children for them to use as basis for their id/base name."""
         return self.id()
@@ -720,6 +695,33 @@ class CddlParser:
         if self.cbor:
             reprstr += " cbor: " + repr(self.cbor)
         return reprstr.replace("\n", "\n    ")
+
+    def is_unambiguous_value(self):
+        """Whether this element is a non-compound value that can be known a priori."""
+        return (
+            self.type in ["NIL", "UNDEF", "ANY"]
+            or (
+                self.type in ["INT", "NINT", "UINT", "FLOAT", "BSTR", "TSTR", "BOOL"]
+                and self.value is not None
+            )
+            or (self.type == "OTHER" and self.my_types[self.value].is_unambiguous())
+        )
+
+    def is_unambiguous_repeated(self):
+        """Whether the repeated part of this element is known a priori."""
+        return (
+            self.is_unambiguous_value()
+            and (self.key is None or self.key.is_unambiguous_repeated())
+            or (self.type in ["LIST", "GROUP", "MAP"] and len(self.value) == 0)
+            or (
+                self.type in ["LIST", "GROUP", "MAP"]
+                and all((child.is_unambiguous() for child in self.value))
+            )
+        )
+
+    def is_unambiguous(self):
+        """Whether or not we can know the exact encoding of this element a priori."""
+        return self.is_unambiguous_repeated() and (self.min_qty == self.max_qty)
 
     def _flatten(self):
         """Recursively flatten children, key, and cbor elements."""
@@ -823,7 +825,7 @@ class CddlParser:
         if not inc_end:
             max_val -= 1
         if new_type not in ["INT", "UINT", "NINT"]:
-            raise TypeError("Only integers (not %s) can have range" % (new_type,))
+            raise ValueError("Only integers (not %s) can have range" % (new_type,))
         if min_val > max_val:
             raise CddlParsingError(
                 "Range has larger minimum than maximum (min %d, max %d)" % (min_val, max_val)
@@ -875,7 +877,7 @@ class CddlParser:
             if match_obj:
                 self.min_qty, self.max_qty = handler(match_obj)
                 return
-        raise ValueError("invalid quantifier: %s" % quantifier)
+        raise CddlParsingError("invalid quantifier: %s" % quantifier)
 
     def check_size(self, size):
         """Check if the size is valid for this element."""
@@ -1533,36 +1535,46 @@ class CddlXcoder(CddlParser):
         self.is_delegated = is_delegated and not self.skip_condition()
         return
 
+    def set_id_prefix(self, id_prefix=""):
+        self.id_prefix = id_prefix
+        if self.type in ["LIST", "MAP", "GROUP", "UNION"]:
+            for child in self.value:
+                if child.single_func_impl_condition():
+                    child.set_id_prefix(self.generate_base_name())
+                else:
+                    child.set_id_prefix(self.child_base_id())
+        if self.cbor:
+            self.cbor.set_id_prefix(self.child_base_id())
+        if self.key:
+            self.key.set_id_prefix(self.child_base_id())
+
+    def set_base_names(self):
+        """Recursively set the base names of this element's children, keys, and cbor elements."""
+        if self.cbor:
+            self.cbor.set_base_name(self.var_name().strip("_") + "_cbor")
+        if self.key:
+            self.key.set_base_name(self.var_name().strip("_") + "_key")
+
+        if self.type in ["LIST", "MAP", "GROUP", "UNION"]:
+            for child in self.value:
+                child.set_base_names()
+        if self.cbor:
+            self.cbor.set_base_names()
+        if self.key:
+            self.key.set_base_names()
+
+    def post_process(self):
+        self.set_id_prefix()
+        super().post_process()
+        self.set_base_names()
+
+    def post_process_control_group(self):
+        self.set_id_prefix()
+        super().post_process_control_group()
+
     def multi_member(self):
         """Whether this type has multiple member variables."""
         return self.multi_var_condition() or self.repeated_multi_var_condition()
-
-    def is_unambiguous_value(self):
-        """Whether this element is a non-compound value that can be known a priori."""
-        return (
-            self.type in ["NIL", "UNDEF", "ANY"]
-            or (
-                self.type in ["INT", "NINT", "UINT", "FLOAT", "BSTR", "TSTR", "BOOL"]
-                and self.value is not None
-            )
-            or (self.type == "OTHER" and self.my_types[self.value].is_unambiguous())
-        )
-
-    def is_unambiguous_repeated(self):
-        """Whether the repeated part of this element is known a priori."""
-        return (
-            self.is_unambiguous_value()
-            and (self.key is None or self.key.is_unambiguous_repeated())
-            or (self.type in ["LIST", "GROUP", "MAP"] and len(self.value) == 0)
-            or (
-                self.type in ["LIST", "GROUP", "MAP"]
-                and all((child.is_unambiguous() for child in self.value))
-            )
-        )
-
-    def is_unambiguous(self):
-        """Whether or not we can know the exact encoding of this element a priori."""
-        return self.is_unambiguous_repeated() and (self.min_qty == self.max_qty)
 
     def access_append_delimiter(self, prefix, delimiter, *suffix):
         """Create an access prefix based on an existing prefix, delimiter and a
