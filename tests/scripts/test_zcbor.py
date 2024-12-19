@@ -137,7 +137,7 @@ class TestEx0InvManifest12(TestManifest):
         super().__init__(*args, **kwargs)
 
     def test_duplicate_type(self):
-        with self.assertRaises(ValueError, msg="Duplicate CDDL type found"):
+        with self.assertRaises(zcbor.CddlParsingError, msg="Duplicate CDDL type found"):
             self.decode_file(p_test_vectors12[0], p_manifest12, p_manifest12)
 
 
