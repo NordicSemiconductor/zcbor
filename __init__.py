@@ -7,8 +7,4 @@
 
 from pathlib import Path
 
-from .zcbor.zcbor import (
-    CddlValidationError,
-    DataTranslator,
-    main
-)
+from .zcbor.zcbor import CddlValidationError, DataTranslator, main

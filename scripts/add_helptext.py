@@ -11,7 +11,7 @@ from pathlib import Path
 from sys import argv
 
 p_root = Path(__file__).absolute().parents[1]
-p_README = Path(p_root, 'README.md')
+p_README = Path(p_root, "README.md")
 
 pattern = r"""
 Command line documentation
@@ -42,13 +42,13 @@ if __name__ == "__main__":
 ```
 """
 
-    with open(p_README, 'r', encoding="utf-8") as f:
+    with open(p_README, "r", encoding="utf-8") as f:
         readme_contents = f.read()
-    new_readme_contents = sub(pattern + r'.*', output, readme_contents, flags=S)
+    new_readme_contents = sub(pattern + r".*", output, readme_contents, flags=S)
     if len(argv) > 1 and argv[1] == "--check":
         if new_readme_contents != readme_contents:
             print("Check failed")
             exit(9)
     else:
-        with open(p_README, 'w', encoding="utf-8") as f:
+        with open(p_README, "w", encoding="utf-8") as f:
             f.write(new_readme_contents)

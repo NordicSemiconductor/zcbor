@@ -11,7 +11,6 @@ from urllib import request
 from urllib.error import HTTPError
 from argparse import ArgumentParser
 from subprocess import Popen, check_output, PIPE, run
-from pycodestyle import StyleGuide
 from shutil import rmtree, copy2
 from platform import python_version_tuple
 from sys import platform
@@ -21,77 +20,63 @@ import os
 
 
 p_root = Path(__file__).absolute().parents[2]
-p_tests = p_root / 'tests'
+p_tests = p_root / "tests"
 p_readme = p_root / "README.md"
 p_pypi_readme = p_root / "pypi_README.md"
 p_architecture = p_root / "ARCHITECTURE.md"
 p_release_notes = p_root / "RELEASE_NOTES.md"
-p_init_py = p_root / '__init__.py'
-p_zcbor_py = p_root / 'zcbor' / 'zcbor.py'
-p_add_helptext = p_root / 'scripts' / 'add_helptext.py'
-p_regenerate_samples = p_root / 'scripts' / 'regenerate_samples.py'
-p_test_zcbor_py = p_tests / 'scripts' / 'test_zcbor.py'
-p_test_versions_py = p_tests / 'scripts' / 'test_versions.py'
-p_test_repo_files_py = p_tests / 'scripts' / 'test_repo_files.py'
-p_hello_world_sample = p_root / 'samples' / 'hello_world'
-p_hello_world_build = p_hello_world_sample / 'build'
-p_pet_sample = p_root / 'samples' / 'pet'
-p_pet_cmake = p_pet_sample / 'pet.cmake'
-p_pet_include = p_pet_sample / 'include'
-p_pet_src = p_pet_sample / 'src'
-p_pet_build = p_pet_sample / 'build'
+p_add_helptext = p_root / "scripts" / "add_helptext.py"
+p_regenerate_samples = p_root / "scripts" / "regenerate_samples.py"
+p_hello_world_sample = p_root / "samples" / "hello_world"
+p_hello_world_build = p_hello_world_sample / "build"
+p_pet_sample = p_root / "samples" / "pet"
+p_pet_cmake = p_pet_sample / "pet.cmake"
+p_pet_include = p_pet_sample / "include"
+p_pet_src = p_pet_sample / "src"
+p_pet_build = p_pet_sample / "build"
 
 
 class TestCodestyle(TestCase):
-    def do_codestyle(self, files, **kwargs):
-        style = StyleGuide(max_line_length=100, **kwargs)
-        result = style.check_files([str(f) for f in files])
-        result.print_statistics()
-        self.assertEqual(result.total_errors, 0,
-                         f"Found {result.total_errors} style errors")
-
     def test_codestyle(self):
-        """Run codestyle tests on all Python scripts in the repo."""
-        self.do_codestyle([p_init_py, p_test_versions_py, p_test_repo_files_py, p_add_helptext,
-                           p_regenerate_samples])
-        self.do_codestyle([p_zcbor_py], ignore=['W191', 'E101', 'W503'])
-        self.do_codestyle([p_test_zcbor_py], ignore=['E402', 'E501', 'W503'])
+        black_res = Popen(["black", "--check", p_root, "-l", "100"], stdout=PIPE, stderr=PIPE)
+        _, stderr = black_res.communicate()
+        self.assertEqual(0, black_res.returncode, "black failed:\n" + stderr.decode("utf-8"))
 
 
 def version_int(in_str):
-    return int(search(r'\A\d+', in_str)[0])  # e.g. '0rc' -> '0'
+    return int(search(r"\A\d+", in_str)[0])  # e.g. '0rc' -> '0'
 
 
 class TestSamples(TestCase):
-    def popen_test(self, args, input='', exp_retcode=0, **kwargs):
+    def popen_test(self, args, input="", exp_retcode=0, **kwargs):
         call0 = Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE, **kwargs)
         stdout0, stderr0 = call0.communicate(input)
-        self.assertEqual(exp_retcode, call0.returncode, stderr0.decode('utf-8'))
+        self.assertEqual(exp_retcode, call0.returncode, stderr0.decode("utf-8"))
         return stdout0, stderr0
 
     def cmake_build_run(self, path, build_path):
         if build_path.exists():
             rmtree(build_path)
-        with open(path / 'README.md', 'r', encoding="utf-8") as f:
+        with open(path / "README.md", "r", encoding="utf-8") as f:
             contents = f.read()
 
-        to_build_patt = r'### To build:.*?```(?P<to_build>.*?)```'
-        to_run_patt = r'### To run:.*?```(?P<to_run>.*?)```'
-        exp_out_patt = r'### Expected output:.*?(?P<exp_out>(\n>[^\n]*)+)'
-        to_build = search(to_build_patt, contents, flags=S)['to_build'].strip()
-        to_run = search(to_run_patt, contents, flags=S)['to_run'].strip()
-        exp_out = search(exp_out_patt, contents, flags=S)['exp_out'].replace("\n> ", "\n").strip()
+        to_build_patt = r"### To build:.*?```(?P<to_build>.*?)```"
+        to_run_patt = r"### To run:.*?```(?P<to_run>.*?)```"
+        exp_out_patt = r"### Expected output:.*?(?P<exp_out>(\n>[^\n]*)+)"
+        to_build = search(to_build_patt, contents, flags=S)["to_build"].strip()
+        to_run = search(to_run_patt, contents, flags=S)["to_run"].strip()
+        exp_out = search(exp_out_patt, contents, flags=S)["exp_out"].replace("\n> ", "\n").strip()
 
         os.chdir(path)
-        commands_build = [(line.split(' ')) for line in to_build.split('\n')]
-        assert '\n' not in to_run, "The 'to run' section should only have one command."
-        commands_run = to_run.split(' ')
+        commands_build = [(line.split(" ")) for line in to_build.split("\n")]
+        assert "\n" not in to_run, "The 'to run' section should only have one command."
+        commands_run = to_run.split(" ")
         for c in commands_build:
             self.popen_test(c)
         output_run = ""
         for c in commands_run:
             output, _ = self.popen_test(c)
-            output_run += output.decode('utf-8')
+            output_run += output.decode("utf-8")
         self.assertEqual(exp_out, output_run.strip())
 
     @skipIf(platform.startswith("win"), "Skip on Windows because requires a Unix shell.")
@@ -109,17 +94,16 @@ class TestSamples(TestCase):
         self.assertEqual(0, regenerate.returncode)
 
     def test_pet_file_header(self):
-        files = (list(p_pet_include.iterdir()) + list(p_pet_src.iterdir()) + [p_pet_cmake])
+        files = list(p_pet_include.iterdir()) + list(p_pet_src.iterdir()) + [p_pet_cmake]
         for p in [f for f in files if "pet" in f.name]:
-            with p.open('r', encoding="utf-8") as f:
+            with p.open("r", encoding="utf-8") as f:
                 f.readline()  # discard
                 self.assertEqual(
                     f.readline().strip(" *#\n"),
-                    "Copyright (c) 2022 Nordic Semiconductor ASA")
+                    "Copyright (c) 2022 Nordic Semiconductor ASA",
+                )
                 f.readline()  # discard
-                self.assertEqual(
-                    f.readline().strip(" *#\n"),
-                    "SPDX-License-Identifier: Apache-2.0")
+                self.assertEqual(f.readline().strip(" *#\n"), "SPDX-License-Identifier: Apache-2.0")
                 f.readline()  # discard
                 self.assertIn("Generated using zcbor version", f.readline())
                 self.assertIn("https://github.com/NordicSemiconductor/zcbor", f.readline())
@@ -130,15 +114,21 @@ class TestDocs(TestCase):
     def __init__(self, *args, **kwargs):
         """Overridden to get base URL for relative links from remote tracking branch."""
         super(TestDocs, self).__init__(*args, **kwargs)
-        remote_tr_args = ['git', 'rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{u}']
-        remote_tracking = run(remote_tr_args, capture_output=True).stdout.decode('utf-8').strip()
+        remote_tr_args = [
+            "git",
+            "rev-parse",
+            "--abbrev-ref",
+            "--symbolic-full-name",
+            "@{u}",
+        ]
+        remote_tracking = run(remote_tr_args, capture_output=True).stdout.decode("utf-8").strip()
 
         if remote_tracking:
-            remote, remote_branch = remote_tracking.split('/', 1)  # '1' to only split one time.
-            repo_url_args = ['git', 'remote', 'get-url', remote]
-            repo_url = check_output(repo_url_args).decode('utf-8').strip().strip('.git')
-            if 'github.com' in repo_url:
-                self.base_url = (repo_url + '/tree/' + remote_branch + '/')
+            remote, remote_branch = remote_tracking.split("/", 1)  # '1' to only split one time.
+            repo_url_args = ["git", "remote", "get-url", remote]
+            repo_url = check_output(repo_url_args).decode("utf-8").strip().strip(".git")
+            if "github.com" in repo_url:
+                self.base_url = repo_url + "/tree/" + remote_branch + "/"
             else:
                 # The URL is not in github.com, so we are not sure it is constructed correctly.
                 self.base_url = None
@@ -150,7 +140,7 @@ class TestDocs(TestCase):
             # There is no remote tracking branch.
             self.base_url = None
 
-        self.link_regex = compile(r'\[.*?\]\((?P<link>.*?)\)')
+        self.link_regex = compile(r"\[.*?\]\((?P<link>.*?)\)")
 
     def check_code(self, link, codes):
         """Check the status code of a URL link. Assert if not 200 (OK)."""
@@ -164,7 +154,7 @@ class TestDocs(TestCase):
     def do_test_links(self, path, allow_local=True):
         """Get all Markdown links in the file at <path> and check that they work."""
         if allow_local and self.base_url is None:
-            raise SkipTest('This test requires the current branch to be pushed to Github.')
+            raise SkipTest("This test requires the current branch to be pushed to Github.")
 
         text = path.read_text(encoding="utf-8")
 
@@ -211,8 +201,10 @@ class TestDocs(TestCase):
     def test_pypi_readme(self):
         self.do_test_links(p_pypi_readme, allow_local=False)
 
-    @skipIf(list(map(version_int, python_version_tuple())) < [3, 10, 0],
-            "Skip on Python < 3.10 because of different wording in argparse output.")
+    @skipIf(
+        list(map(version_int, python_version_tuple())) < [3, 10, 0],
+        "Skip on Python < 3.10 because of different wording in argparse output.",
+    )
     @skipIf(platform.startswith("win"), "Skip on Windows because of path/newline issues.")
     def test_cli_doc(self):
         """Check the auto-generated CLI docs in the top level README.md file."""
