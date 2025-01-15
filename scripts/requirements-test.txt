@@ -1,4 +1,4 @@
 pyelftools
-pycodestyle
+black
 west
 ecdsa
