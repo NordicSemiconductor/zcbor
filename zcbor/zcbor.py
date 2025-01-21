@@ -1808,20 +1808,8 @@ class DataTranslator(CddlXcoder):
         return obj
 
     def _construct_obj(self, my_list):
-        """Construct a namedtuple object from my_list. my_list contains tuples of name/value.
-
-        Also, attempt to flatten redundant levels of abstraction.
-        """
-        if my_list == []:
-            return None
-        names, values = tuple(zip(*my_list))
-        if len(values) == 1:
-            values = (self._flatten_obj(values[0]),)
-        values = tuple(self._flatten_list(names[i], values[i]) for i in range(len(values)))
-        assert not any(
-            (isinstance(elem, KeyTuple) for elem in values)
-        ), f"KeyTuple not processed: {values}"
-        return namedtuple("_", names)(*values)
+        """Can be overridden to construct a decoded object."""
+        pass
 
     def _add_if(self, my_list, obj, expect_key=False, name=None):
         """Add construct obj and add it to my_list if relevant.
@@ -1852,11 +1840,11 @@ CBOR-formatted bstr, all elements must be bstrs. If not, it is a programmer erro
             # If a bstr is CBOR-formatted, add both the string and the decoding of the string here
             if isinstance(obj, list) and all((isinstance(o, bytes) for o in obj)):
                 # One or more bstr in a list (i.e. it is optional or repeated)
-                my_list.append((name or self.var_name(), [self.cbor.decode_str(o) for o in obj]))
+                my_list.append((name or self.var_name(), [self.cbor._decode_str(o) for o in obj]))
                 my_list.append(((name or self.var_name()) + "_bstr", obj))
                 return
             if isinstance(obj, bytes):
-                my_list.append((name or self.var_name(), self.cbor.decode_str(obj)))
+                my_list.append((name or self.var_name(), self.cbor._decode_str(obj)))
                 my_list.append(((name or self.var_name()) + "_bstr", obj))
                 return
         my_list.append((name or self.var_name(), obj))
@@ -1946,7 +1934,7 @@ CBOR-formatted bstr, all elements must be bstrs. If not, it is a programmer erro
         res = KeyTuple((key_res if not self.key.is_unambiguous() else None, obj_res))
         return res
 
-    def _decode_obj(self, it):
+    def _decode_obj_it(self, it):
         """Decode single CDDL value, excluding repetitions.
 
         May consume 0 to n CBOR objects via the iterator.
@@ -2003,22 +1991,22 @@ CBOR-formatted bstr, all elements must be bstrs. If not, it is a programmer erro
         if self.multi_var_condition():
             retvals = []
             for i in range(self.min_qty):
-                it, retval = self._decode_obj(it)
+                it, retval = self._decode_obj_it(it)
                 retvals.append(retval if not self.is_unambiguous_repeated() else None)
             try:
                 for i in range(self.max_qty - self.min_qty):
                     it, it_copy = tee(it)
-                    it, retval = self._decode_obj(it)
+                    it, retval = self._decode_obj_it(it)
                     retvals.append(retval if not self.is_unambiguous_repeated() else None)
             except CddlValidationError as c:
                 self.errors.append(str(c))
                 it = it_copy
             return it, retvals
         else:
-            ret = self._decode_obj(it)
+            ret = self._decode_obj_it(it)
             return ret
 
-    def decode_obj(self, obj):
+    def _decode_obj(self, obj):
         """CBOR object => python object"""
         it = iter([obj])
         try:
@@ -2031,21 +2019,14 @@ CBOR-formatted bstr, all elements must be bstrs. If not, it is a programmer erro
             raise e
         return decoded
 
-    def decode_str_yaml(self, yaml_str, yaml_compat=False):
-        """YAML => python object"""
-        yaml_obj = yaml_load(yaml_str)
-        obj = self._from_yaml_obj(yaml_obj) if yaml_compat else yaml_obj
-        self.validate_obj(obj)
-        return self.decode_obj(obj)
-
-    def decode_str(self, cbor_str):
+    def _decode_str(self, cbor_str):
         """CBOR bytestring => python object"""
         cbor_obj = loads(cbor_str)
-        return self.decode_obj(cbor_obj)
+        return self._decode_obj(cbor_obj)
 
     def validate_obj(self, obj):
         """Validate CBOR object against CDDL. Exception if not valid."""
-        self.decode_obj(obj)
+        self._decode_obj(obj)  # Will raise exception if not valid
         return True
 
     def validate_str(self, cbor_str):
@@ -2160,6 +2141,43 @@ CBOR-formatted bstr, all elements must be bstrs. If not, it is a programmer erro
         if columns:
             arr = "\n" + indent("\n".join(wrap(arr, 6 * columns)), "\t") + "\n"
         return f"uint8_t {var_name}[] = {{{arr}}};\n"
+
+
+class DataDecoder(DataTranslator):
+    """Create a decoded object with element names taken from the CDDL.
+
+    This is kept separate from DataTranslator for performance reasons."""
+
+    def _construct_obj(self, my_list):
+        """Construct a namedtuple object from my_list. my_list contains tuples of name/value.
+
+        Also, attempt to flatten redundant levels of abstraction.
+        """
+        if my_list == []:
+            return None
+        names, values = tuple(zip(*my_list))
+        if len(values) == 1:
+            values = (self._flatten_obj(values[0]),)
+        values = tuple(self._flatten_list(names[i], values[i]) for i in range(len(values)))
+        assert not any(
+            (isinstance(elem, KeyTuple) for elem in values)
+        ), f"KeyTuple not processed: {values}"
+        return namedtuple("_", names)(*values)
+
+    def decode_obj(self, obj):
+        """CBOR object => python object"""
+        return self._decode_obj(obj)
+
+    def decode_str_yaml(self, yaml_str, yaml_compat=False):
+        """YAML => python object"""
+        yaml_obj = yaml_load(yaml_str)
+        obj = self._from_yaml_obj(yaml_obj) if yaml_compat else yaml_obj
+        self.validate_obj(obj)
+        return self.decode_obj(obj)
+
+    def decode_str(self, cbor_str):
+        """CBOR bytestring => python object"""
+        return self._decode_str(cbor_str)
 
 
 class XcoderTuple(NamedTuple):

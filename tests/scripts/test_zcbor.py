@@ -70,7 +70,7 @@ class TestManifest(TestCase):
 
     def decode_string(self, data_string, *cddl_paths):
         cddl_str = " ".join((Path(p).read_text(encoding="utf-8") for p in cddl_paths))
-        self.my_types = zcbor.DataTranslator.from_cddl(cddl_str, 16).my_types
+        self.my_types = zcbor.DataDecoder.from_cddl(cddl_str, 16).my_types
         cddl = self.my_types["SUIT_Envelope_Tagged"]
         self.decoded = cddl.decode_str(data_string)
 
@@ -1123,7 +1123,7 @@ file header"""
 class TestOptional(TestCase):
     def test_optional_0(self):
         with open(p_optional, "r", encoding="utf-8") as f:
-            cddl_res = zcbor.DataTranslator.from_cddl(f.read(), 16)
+            cddl_res = zcbor.DataDecoder.from_cddl(f.read(), 16)
         cddl = cddl_res.my_types["cfg"]
         test_yaml = """
             mem_config:
@@ -1136,7 +1136,7 @@ class TestOptional(TestCase):
 
 class TestUndefined(TestCase):
     def test_undefined_0(self):
-        cddl_res = zcbor.DataTranslator.from_cddl(
+        cddl_res = zcbor.DataDecoder.from_cddl(
             p_prelude.read_text(encoding="utf-8")
             + "\n"
             + p_corner_cases.read_text(encoding="utf-8"),
@@ -1154,7 +1154,7 @@ class TestUndefined(TestCase):
 
 class TestFloat(TestCase):
     def test_float_0(self):
-        cddl_res = zcbor.DataTranslator.from_cddl(
+        cddl_res = zcbor.DataDecoder.from_cddl(
             p_prelude.read_text(encoding="utf-8")
             + "\n"
             + p_corner_cases.read_text(encoding="utf-8"),
@@ -1243,7 +1243,7 @@ class TestYamlCompatibility(PopenTest):
 
 class TestIntmax(TestCase):
     def test_intmax1(self):
-        cddl_res = zcbor.DataTranslator.from_cddl(
+        cddl_res = zcbor.DataDecoder.from_cddl(
             p_prelude.read_text(encoding="utf-8")
             + "\n"
             + p_corner_cases.read_text(encoding="utf-8"),
@@ -1254,7 +1254,7 @@ class TestIntmax(TestCase):
         decoded = cddl.decode_str_yaml(test_yaml)
 
     def test_intmax2(self):
-        cddl_res = zcbor.DataTranslator.from_cddl(
+        cddl_res = zcbor.DataDecoder.from_cddl(
             p_prelude.read_text(encoding="utf-8")
             + "\n"
             + p_corner_cases.read_text(encoding="utf-8"),
@@ -1286,7 +1286,7 @@ class TestIntmax(TestCase):
 
 class TestInvalidIdentifiers(TestCase):
     def test_invalid_identifiers0(self):
-        cddl_res = zcbor.DataTranslator.from_cddl(
+        cddl_res = zcbor.DataDecoder.from_cddl(
             p_prelude.read_text(encoding="utf-8")
             + "\n"
             + p_corner_cases.read_text(encoding="utf-8"),
