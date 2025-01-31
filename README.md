@@ -527,8 +527,8 @@ options:
   -b, --default-bit-size {32,64}
                         Default bit size of integers in code. When integers
                         have no explicit bounds, assume they have this bit
-                        width. Should follow the bit width of the architecture
-                        the code will be running on.
+                        width. Recommended to follow the bit width of the
+                        architecture the code will be running on.
   --include-prefix INCLUDE_PREFIX
                         When #include'ing generated files, add this path
                         prefix to the filename.

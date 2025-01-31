@@ -40,9 +40,9 @@ static bool encode_Pet(
 	bool res = (((zcbor_list_start_encode(state, 3) && ((((zcbor_list_start_encode(state, 3) && ((zcbor_multi_encode_minmax(1, 3, &(*input).names_count, (zcbor_encoder_t *)zcbor_tstr_encode, state, (*&(*input).names), sizeof(struct zcbor_string))) || (zcbor_list_map_end_force_encode(state), false)) && zcbor_list_end_encode(state, 3)))
 	&& (((((((*input).birthday.len == 8)) || (zcbor_error(state, ZCBOR_ERR_WRONG_RANGE), false))) || (zcbor_error(state, ZCBOR_ERR_WRONG_RANGE), false))
 	&& (zcbor_bstr_encode(state, (&(*input).birthday))))
-	&& ((((*input).species_choice == Pet_species_cat_c) ? ((zcbor_uint32_put(state, (1))))
-	: (((*input).species_choice == Pet_species_dog_c) ? ((zcbor_uint32_put(state, (2))))
-	: (((*input).species_choice == Pet_species_other_c) ? ((zcbor_uint32_put(state, (3))))
+	&& ((((*input).species_choice == Pet_species_cat_c) ? ((zcbor_uint8_put(state, (1))))
+	: (((*input).species_choice == Pet_species_dog_c) ? ((zcbor_uint8_put(state, (2))))
+	: (((*input).species_choice == Pet_species_other_c) ? ((zcbor_uint8_put(state, (3))))
 	: false))))) || (zcbor_list_map_end_force_encode(state), false)) && zcbor_list_end_encode(state, 3))));
 
 	log_result(state, res, __func__);

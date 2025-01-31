@@ -1,5 +1,11 @@
 # zcbor v. 0.9.99
 
+* Code generation:
+
+  * Integers whose values are known to be within 8 or 16 bytes now use the corresponding integer types (`uint8_t`/`int8_t`/`uint16_t`/`int16_t`) instead of larger types.
+    In certain specific cases, the type of an argument to a `cbor_decode_*` or `cbor_decode_*` can change when regenerating the code, requiring changes in your non-generated code.
+    More commonly, struct members will change to use smaller int types.
+
 
 # zcbor v. 0.9.0
 
