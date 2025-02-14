@@ -106,3 +106,15 @@ void zcbor_print_error(int error)
 {
 	zcbor_do_print("%s\r\n", zcbor_error_str(error));
 }
+
+
+void zcbor_dump_hex(const uint8_t *str, size_t str_len)
+{
+	for (size_t i = 0; i < str_len; i++) {
+		zcbor_do_print("%02x ", str[i]);
+		if ((i % 16 == 15) && (i < (str_len - 1))) {
+			zcbor_do_print("\n");
+		}
+	}
+	zcbor_do_print("\n");
+}
