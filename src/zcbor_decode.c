@@ -1458,7 +1458,6 @@ bool zcbor_any_skip(zcbor_state_t *state, void *result)
 
 	INITIAL_CHECKS();
 	zcbor_major_type_t major_type = ZCBOR_MAJOR_TYPE(*state->payload);
-	uint8_t additional = ZCBOR_ADDITIONAL(*state->payload);
 	uint64_t value = 0; /* In case of indefinite_length_array. */
 	zcbor_state_t state_copy;
 
@@ -1472,7 +1471,6 @@ bool zcbor_any_skip(zcbor_state_t *state, void *result)
 		}
 		ZCBOR_ERR_IF(state_copy.payload >= state_copy.payload_end, ZCBOR_ERR_NO_PAYLOAD);
 		major_type = ZCBOR_MAJOR_TYPE(*state_copy.payload);
-		additional = ZCBOR_ADDITIONAL(*state_copy.payload);
 	}
 
 	bool indefinite_length_array = false;
