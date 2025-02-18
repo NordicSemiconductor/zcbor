@@ -16,6 +16,7 @@ The functionality is spread across 5 classes:
 1. CddlParser
 2. CddlXcoder (inherits from CddlParser)
 3. DataTranslator (inherits from CddlXcoder)
+4. DataDecoder (inherits from DataTranslator)
 4. CodeGenerator (inherits from CddlXcoder)
 5. CodeRenderer
 
@@ -100,7 +101,7 @@ Most of the functionality falls into one of two categories:
    - is_unambiguous(): Whether the type is completely specified, i.e. whether we know beforehand exactly how the encoding will look (e.g. `Foo = 5`).
 
 DataTranslator
------------
+--------------
 
 DataTranslator is for handling and manipulating CBOR on the "host".
 For example, the user can compose data in YAML or JSON files and have them converted to CBOR and validated against the CDDL.
@@ -127,15 +128,23 @@ One caveat is that CBOR supports more features than YAML/JSON, namely:
 
 zcbor allows creating bespoke representations via `--yaml-compatibility`, see the README or CLI docs for more info.
 
-Finally, DataTranslator can also generate a separate internal representation using `namedtuple`s to allow browsing CBOR data by the names given in the CDDL.
+DataTranslator functionality is tested in [tests/scripts/test_zcbor.py](tests/scripts/test_zcbor.py)
+
+DataDecoder
+-----------
+
+DataDecoder contains functions for generating a separate internal representation using `namedtuple`s to allow browsing CBOR data by the names given in the CDDL.
 (This is more analogous to how the data is accessed in the C code.)
 
-DataTranslator functionality is tested in [tests/scripts](tests/scripts)
+This functionality was originally part of DataTranslator, but was moved because the internal representation was always created but seldom used, and the namedtuples caused a noticeable performance hit.
+
+DataDecoder functionality is tested in [tests/scripts/test_zcbor.py](tests/scripts/test_zcbor.py)
 
 CodeGenerator
 -------------
 
 CodeGenerator, like DataTranslator, inherits from CddlXcoder.
+It is used to generate C code.
 Its primary purpose is to construct the individual decoding/encoding functions for the types specified in the given CDDL document.
 It also constructs struct definitions used to hold the decoded data/data to be encoded.
 
@@ -158,6 +167,7 @@ repeated_foo() concerns itself with the individual value, while foo() concerns i
 
 When invoking CodeGenerator, the user must decide which types it will need direct access to decode/encode.
 These types are called "entry types" and they are typically the "outermost" types, or the types it is expected that the data will have.
+CodeGenerator will generate a public function for each entry type.
 
 The user can also use entry types when there are `"BSTR"`s that are CBOR encoded, specified as `Foo = bstr .cbor Bar`.
 Usually such strings are automatically decoded/encoded by the generated code, and the objects part of the encompassing struct.

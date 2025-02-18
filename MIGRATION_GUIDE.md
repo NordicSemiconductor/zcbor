@@ -1,5 +1,14 @@
 # zcbor v. 0.9.99
 
+* The following `DataTranslator` functions have been moved to a separate class `DataDecoder`:
+
+    * `decode_obj()`
+    * `decode_str_yaml()`
+    * `decode_str()`
+
+  The split was done for performance reasons (namedtuple objects are slow to create).
+  This functionality is only relevant when zcbor is imported, so all CLI usage is unaffected.
+  The `DataDecoder` class is a subclass of `DataTranslator` so it can also do all the the same things as `DataTranslator`, but a bit slower.
 
 # zcbor v. 0.9.0
 

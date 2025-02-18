@@ -1277,6 +1277,7 @@ class CddlXcoder(CddlParser):
         # Used as a guard against endless recursion in self.dependsOn()
         self.dependsOnCall = False
         self.skipped = False
+        self.stored_id = None
 
     def var_name(self, with_prefix=False, observe_skipped=True):
         """Name of variables and enum members for this element."""
@@ -1678,7 +1679,9 @@ class DataTranslator(CddlXcoder):
         If the name starts with an underscore, prepend an 'f',
         since namedtuple() doesn't support identifiers that start with an underscore.
         """
-        return getrp(r"\A_").sub("f_", self.generate_base_name())
+        if self.stored_id is None:
+            self.stored_id = getrp(r"\A_").sub("f_", self.get_base_name())
+        return self.stored_id
 
     def var_name(self):
         """Override the var_name()"""
@@ -1687,6 +1690,8 @@ class DataTranslator(CddlXcoder):
     def _decode_assert(self, test, msg=""):
         """Check a condition and raise a CddlValidationError if not."""
         if not test:
+            if callable(msg):
+                msg = msg()
             raise CddlValidationError(
                 f"Data did not decode correctly {'(' + msg + ')' if msg else ''}"
             )
@@ -1696,6 +1701,9 @@ class DataTranslator(CddlXcoder):
 
         Return whether a tag was present.
         """
+        if not self.tags and not isinstance(obj, CBORTag):
+            return obj
+
         tags = copy(self.tags)  # All expected tags
         # Process all tags present in obj
         while isinstance(obj, CBORTag):
@@ -1706,27 +1714,29 @@ class DataTranslator(CddlXcoder):
                 continue
             elif self.type in ["OTHER", "GROUP", "UNION"]:
                 break
-            self._decode_assert(False, f"Tag ({obj.tag}) not expected for {self}")
+            self._decode_assert(False, lambda: f"Tag ({obj.tag}) not expected for {self}")
         # Check that all expected tags were found in obj.
-        self._decode_assert(not tags, f"Expected tags ({tags}), but none present.")
+        self._decode_assert(not tags, lambda: f"Expected tags ({tags}), but none present.")
         return obj
+
+    _exp_types = {
+        "UINT": (int,),
+        "INT": (int,),
+        "NINT": (int,),
+        "FLOAT": (float,),
+        "TSTR": (str,),
+        "BSTR": (bytes,),
+        "NIL": (type(None),),
+        "UNDEF": (type(undefined),),
+        "ANY": (int, float, str, bytes, type(None), type(undefined), bool, list, dict),
+        "BOOL": (bool,),
+        "LIST": (tuple, list),
+        "MAP": (dict,),
+    }
 
     def _expected_type(self):
         """Return our expected python type as returned by cbor2."""
-        return {
-            "UINT": lambda: (int,),
-            "INT": lambda: (int,),
-            "NINT": lambda: (int,),
-            "FLOAT": lambda: (float,),
-            "TSTR": lambda: (str,),
-            "BSTR": lambda: (bytes,),
-            "NIL": lambda: (type(None),),
-            "UNDEF": lambda: (type(undefined),),
-            "ANY": lambda: (int, float, str, bytes, type(None), type(undefined), bool, list, dict),
-            "BOOL": lambda: (bool,),
-            "LIST": lambda: (tuple, list),
-            "MAP": lambda: (dict,),
-        }[self.type]()
+        return self._exp_types[self.type]
 
     def _check_type(self, obj):
         """Check that the decoded object has the correct type."""
@@ -1734,7 +1744,7 @@ class DataTranslator(CddlXcoder):
             exp_type = self._expected_type()
             self._decode_assert(
                 type(obj) in exp_type,
-                f"{str(self)}: Wrong type ({type(obj)}) of {str(obj)}, expected {str(exp_type)}",
+                lambda: f"{str(self)}: Wrong type ({type(obj)}) of {str(obj)}, expected {str(exp_type)}",
             )
 
     def _check_value(self, obj):
@@ -1748,31 +1758,35 @@ class DataTranslator(CddlXcoder):
                 value = self.value.encode("utf-8")
             self._decode_assert(
                 self.value == obj,
-                f"{obj} should have value {self.value} according to {self.var_name()}",
+                lambda: f"{obj} should have value {self.value} according to {self.var_name()}",
             )
         if self.type in ["UINT", "INT", "NINT", "FLOAT"]:
             if self.min_value is not None:
-                self._decode_assert(obj >= self.min_value, "Minimum value: " + str(self.min_value))
+                self._decode_assert(
+                    obj >= self.min_value, lambda: "Minimum value: " + str(self.min_value)
+                )
             if self.max_value is not None:
-                self._decode_assert(obj <= self.max_value, "Maximum value: " + str(self.max_value))
+                self._decode_assert(
+                    obj <= self.max_value, lambda: "Maximum value: " + str(self.max_value)
+                )
         if self.type == "UINT":
             if self.bits:
                 mask = sum(((1 << b.value) for b in self.my_control_groups[self.bits].value))
-                self._decode_assert(not (obj & ~mask), "Allowed bitmask: " + bin(mask))
+                self._decode_assert(not (obj & ~mask), lambda: "Allowed bitmask: " + bin(mask))
         if self.type in ["TSTR", "BSTR"]:
             if self.min_size is not None:
                 self._decode_assert(
-                    len(obj) >= self.min_size, "Minimum length: " + str(self.min_size)
+                    len(obj) >= self.min_size, lambda: "Minimum length: " + str(self.min_size)
                 )
             if self.max_size is not None:
                 self._decode_assert(
-                    len(obj) <= self.max_size, "Maximum length: " + str(self.max_size)
+                    len(obj) <= self.max_size, lambda: "Maximum length: " + str(self.max_size)
                 )
 
     def _check_key(self, obj):
         """Check that the object is not a KeyTuple, which would mean it's not properly processed."""
         self._decode_assert(
-            not isinstance(obj, KeyTuple), "Unexpected key found: (key,value)=" + str(obj)
+            not isinstance(obj, KeyTuple), lambda: "Unexpected key found: (key,value)=" + str(obj)
         )
 
     def _flatten_obj(self, obj):
@@ -1794,20 +1808,8 @@ class DataTranslator(CddlXcoder):
         return obj
 
     def _construct_obj(self, my_list):
-        """Construct a namedtuple object from my_list. my_list contains tuples of name/value.
-
-        Also, attempt to flatten redundant levels of abstraction.
-        """
-        if my_list == []:
-            return None
-        names, values = tuple(zip(*my_list))
-        if len(values) == 1:
-            values = (self._flatten_obj(values[0]),)
-        values = tuple(self._flatten_list(names[i], values[i]) for i in range(len(values)))
-        assert not any(
-            (isinstance(elem, KeyTuple) for elem in values)
-        ), f"KeyTuple not processed: {values}"
-        return namedtuple("_", names)(*values)
+        """Can be overridden to construct a decoded object."""
+        pass
 
     def _add_if(self, my_list, obj, expect_key=False, name=None):
         """Add construct obj and add it to my_list if relevant.
@@ -1838,11 +1840,11 @@ CBOR-formatted bstr, all elements must be bstrs. If not, it is a programmer erro
             # If a bstr is CBOR-formatted, add both the string and the decoding of the string here
             if isinstance(obj, list) and all((isinstance(o, bytes) for o in obj)):
                 # One or more bstr in a list (i.e. it is optional or repeated)
-                my_list.append((name or self.var_name(), [self.cbor.decode_str(o) for o in obj]))
+                my_list.append((name or self.var_name(), [self.cbor._decode_str(o) for o in obj]))
                 my_list.append(((name or self.var_name()) + "_bstr", obj))
                 return
             if isinstance(obj, bytes):
-                my_list.append((name or self.var_name(), self.cbor.decode_str(obj)))
+                my_list.append((name or self.var_name(), self.cbor._decode_str(obj)))
                 my_list.append(((name or self.var_name()) + "_bstr", obj))
                 return
         my_list.append((name or self.var_name(), obj))
@@ -1875,7 +1877,7 @@ CBOR-formatted bstr, all elements must be bstrs. If not, it is a programmer erro
         obj = self._check_tag(obj)
         self._check_type(obj)
         self._check_value(obj)
-        if self.type in [
+        if self.type in (
             "UINT",
             "INT",
             "NINT",
@@ -1886,7 +1888,7 @@ CBOR-formatted bstr, all elements must be bstrs. If not, it is a programmer erro
             "NIL",
             "UNDEF",
             "ANY",
-        ]:
+        ):
             return obj
         elif self.type == "OTHER":
             return self.my_types[self.value]._decode_single_obj(obj)
@@ -1917,13 +1919,14 @@ CBOR-formatted bstr, all elements must be bstrs. If not, it is a programmer erro
                     return self._construct_obj(retval)
                 except CddlValidationError as c:
                     self.errors.append(str(c))
-            self._decode_assert(False, "No matches for union: " + str(self))
+            self._decode_assert(False, lambda: "No matches for union: " + str(self))
         assert False, "Unexpected type: " + self.type
 
     def _handle_key(self, next_obj):
         """Decode key and value in the form of a KeyTuple"""
         self._decode_assert(
-            isinstance(next_obj, KeyTuple), f"Expected key: {self.key} value=" + pformat(next_obj)
+            isinstance(next_obj, KeyTuple),
+            lambda: f"Expected key: {self.key} value=" + pformat(next_obj),
         )
         key, obj = next_obj
         key_res = self.key._decode_single_obj(key)
@@ -1931,7 +1934,7 @@ CBOR-formatted bstr, all elements must be bstrs. If not, it is a programmer erro
         res = KeyTuple((key_res if not self.key.is_unambiguous() else None, obj_res))
         return res
 
-    def _decode_obj(self, it):
+    def _decode_obj_it(self, it):
         """Decode single CDDL value, excluding repetitions.
 
         May consume 0 to n CBOR objects via the iterator.
@@ -1975,7 +1978,7 @@ CBOR-formatted bstr, all elements must be bstrs. If not, it is a programmer erro
                 except CddlValidationError as c:
                     self.errors.append(str(c))
                     child_it = it_copy
-            self._decode_assert(found, "No matches for union: " + str(self))
+            self._decode_assert(found, lambda: "No matches for union: " + str(self))
         else:
             ret = (it, self._decode_single_obj(self._iter_next(it)))
         return ret
@@ -1988,22 +1991,22 @@ CBOR-formatted bstr, all elements must be bstrs. If not, it is a programmer erro
         if self.multi_var_condition():
             retvals = []
             for i in range(self.min_qty):
-                it, retval = self._decode_obj(it)
+                it, retval = self._decode_obj_it(it)
                 retvals.append(retval if not self.is_unambiguous_repeated() else None)
             try:
                 for i in range(self.max_qty - self.min_qty):
                     it, it_copy = tee(it)
-                    it, retval = self._decode_obj(it)
+                    it, retval = self._decode_obj_it(it)
                     retvals.append(retval if not self.is_unambiguous_repeated() else None)
             except CddlValidationError as c:
                 self.errors.append(str(c))
                 it = it_copy
             return it, retvals
         else:
-            ret = self._decode_obj(it)
+            ret = self._decode_obj_it(it)
             return ret
 
-    def decode_obj(self, obj):
+    def _decode_obj(self, obj):
         """CBOR object => python object"""
         it = iter([obj])
         try:
@@ -2016,21 +2019,14 @@ CBOR-formatted bstr, all elements must be bstrs. If not, it is a programmer erro
             raise e
         return decoded
 
-    def decode_str_yaml(self, yaml_str, yaml_compat=False):
-        """YAML => python object"""
-        yaml_obj = yaml_load(yaml_str)
-        obj = self._from_yaml_obj(yaml_obj) if yaml_compat else yaml_obj
-        self.validate_obj(obj)
-        return self.decode_obj(obj)
-
-    def decode_str(self, cbor_str):
+    def _decode_str(self, cbor_str):
         """CBOR bytestring => python object"""
         cbor_obj = loads(cbor_str)
-        return self.decode_obj(cbor_obj)
+        return self._decode_obj(cbor_obj)
 
     def validate_obj(self, obj):
         """Validate CBOR object against CDDL. Exception if not valid."""
-        self.decode_obj(obj)
+        self._decode_obj(obj)  # Will raise exception if not valid
         return True
 
     def validate_str(self, cbor_str):
@@ -2145,6 +2141,43 @@ CBOR-formatted bstr, all elements must be bstrs. If not, it is a programmer erro
         if columns:
             arr = "\n" + indent("\n".join(wrap(arr, 6 * columns)), "\t") + "\n"
         return f"uint8_t {var_name}[] = {{{arr}}};\n"
+
+
+class DataDecoder(DataTranslator):
+    """Create a decoded object with element names taken from the CDDL.
+
+    This is kept separate from DataTranslator for performance reasons."""
+
+    def _construct_obj(self, my_list):
+        """Construct a namedtuple object from my_list. my_list contains tuples of name/value.
+
+        Also, attempt to flatten redundant levels of abstraction.
+        """
+        if my_list == []:
+            return None
+        names, values = tuple(zip(*my_list))
+        if len(values) == 1:
+            values = (self._flatten_obj(values[0]),)
+        values = tuple(self._flatten_list(names[i], values[i]) for i in range(len(values)))
+        assert not any(
+            (isinstance(elem, KeyTuple) for elem in values)
+        ), f"KeyTuple not processed: {values}"
+        return namedtuple("_", names)(*values)
+
+    def decode_obj(self, obj):
+        """CBOR object => python object"""
+        return self._decode_obj(obj)
+
+    def decode_str_yaml(self, yaml_str, yaml_compat=False):
+        """YAML => python object"""
+        yaml_obj = yaml_load(yaml_str)
+        obj = self._from_yaml_obj(yaml_obj) if yaml_compat else yaml_obj
+        self.validate_obj(obj)
+        return self.decode_obj(obj)
+
+    def decode_str(self, cbor_str):
+        """CBOR bytestring => python object"""
+        return self._decode_str(cbor_str)
 
 
 class XcoderTuple(NamedTuple):
