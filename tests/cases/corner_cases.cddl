@@ -376,3 +376,19 @@ OptList = [
 	optlist_int: int,
 	?optlist: [uint],
 ]
+
+; Unicode test case adapted from updated CDDL spec (https://datatracker.ietf.org/doc/html/rfc9682)
+UnicodeEscape = [a, b, c, d, x, y, z]
+UnicodeEscapeTstr = [a, b, c, d]
+
+; "🁳", DOMINO TILE VERTICAL-02-02, and
+; "⌘", PLACE OF INTEREST SIGN, in a text string:
+a = "D\u{6f}mino's \u{1F073} + \u{2318}"      ; \u{}-escape 3 chars
+b = "Domino's \uD83C\uDC73 + \u2318"          ; escape JSON-like
+c = "Domino's 🁳 + ⌘"                         ; unescaped
+d = "Domino's \U0001F073 + \U00002318"        ; \U{}-escape 2 chars
+
+; in a byte string given as text, the ' needs to be escaped:
+x = 'D\u{6f}mino\u{27}s \u{1F073} + \u{2318}' ; \u{}-escape 4 chars
+y = 'Domino\'s \uD83C\uDC73 + \u2318'         ; escape JSON-like
+z = 'Domino\'s 🁳 + ⌘'                        ; escape ' only

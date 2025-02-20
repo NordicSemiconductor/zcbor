@@ -35,6 +35,7 @@ import sys
 from site import USER_BASE
 from textwrap import wrap, indent
 from importlib.metadata import version
+from codecs import decode as codec_decode
 
 regex_cache = {}
 indentation = "\t"
@@ -225,6 +226,83 @@ def val_to_str(val):
     elif isinstance(val, Hashable) and val in val_conversions:
         return val_conversions[val]
     return str(val)
+
+
+def create_unicode_escape(chr_num):
+    """Create a unicode escape sequence for a given unicode code point.
+
+    Python doesn't support using larger-than-necessary escape sequences,
+    e.g. \U00001234 since it can be represented by the smaller \u1234."""
+
+    if chr_num < 256:
+        return f"\\x{chr_num:02x}"
+    elif chr_num < 65536:
+        return f"\\u{chr_num:04x}"
+    else:
+        return f"\\U{chr_num:08x}"
+
+
+def resolve_surrogates(surrogate_str):
+    r"""Surrogate pairs are a utf-16-specific way of encoding unicode code points larger than 16 bits.
+
+    Surrogates also have an escaped representation which is supported by JSON and CDDL.
+    Python doesn't support surrogates, so we need to resolve them to the actual code point.
+
+    The surrogate_str must contain only a single escaped surrogate pair, e.g. "\uD8YY\uDCYY".
+
+    This function returns the resolved code point as a unicode escape sequence, e.g. "\U00XXXXXX".
+    """
+
+    return (
+        codec_decode(
+            surrogate_str, "unicode-escape"
+        )  # Resolve the escaped surrogate pair into two characters
+        .encode("utf-16", "surrogatepass")  # Encode the (now un-escaped) surrogate pair to utf-16
+        .decode(
+            "utf-16"
+        )  # Decode the utf-16 string, resolving the surrogate pair to the actual character
+        .encode("unicode-escape")  # Re-escape the sequence, now as \U00XXXXXX
+        .decode("utf-8")  # Decode the utf-8 string to get the final (escaped) string
+    )
+
+
+def process_unicode_escape_sequences(escaped_str):
+    """Process all supported unicode escape sequences in a string.
+
+    This will not resolve them into the characters, but convert the escape sequences into a
+    consistent format that can be used in Python and C."""
+
+    # Remove brackets: e.g. "\u{XXXX}" -> "\uXXXX"
+    step1 = getrp(r"\\u\{([\d,a-f,A-F]+)\}").sub(
+        lambda m: create_unicode_escape(int(m.group(1), 16)), escaped_str
+    )
+    # Minimize \u sequences if possible: "\u00XX" -> "\xXX"
+    step2 = getrp(r"\\u([\d,a-f,A-F]{4})").sub(
+        lambda m: create_unicode_escape(int(m.group(1), 16)), step1
+    )
+    # Minimize \U sequences if possible: "\U0000XXXX" -> "\uXXXX" or "\U000000XX" -> "\xXX"
+    step3 = getrp(r"\\U([\d,a-f,A-F]{8})").sub(
+        lambda m: create_unicode_escape(int(m.group(1), 16)), step2
+    )
+    # Resolve surrogates since they are not supported in Python or C: "\uD8YY\uDCYY" -> "\U00XXXXXX"
+    step4 = getrp(r"\\u([dD]8[\d,a-f,A-F]{2})\\u([dD][cC][\d,a-f,A-F]{2})").sub(
+        lambda m: resolve_surrogates(m.group(0)), step3
+    )
+    return step4
+
+
+def resolve_unicode_escape_sequences(val):
+    """Resolve all unicode escape sequences in a string into the actual characters.
+
+    This takes care to preserve any existing non-escaped characters already present.
+    Some extra processing is needed because of the limitations of Python's unicode-escape codec.
+    """
+
+    # Escape all non-ascii unicode characters, otherwise "unicode-escape" doesn't work (https://stackoverflow.com/a/24519338/1463246)
+    val = getrp(r"[\u0080-\U0010FFFF]").sub(lambda m: create_unicode_escape(ord(m.group(0))), val)
+
+    # Resolve all unicode escape sequences
+    return codec_decode(val, "unicode-escape")
 
 
 class CddlParser:
@@ -613,7 +691,8 @@ class CddlParser:
 
         if self.type in ["BSTR", "TSTR"]:
             if value is not None:
-                self.set_size(len(value))
+                self.value = process_unicode_escape_sequences(value)
+                self.set_size(len(resolve_unicode_escape_sequences(self.value)))
         if self.type in ["UINT", "NINT"]:
             if value is not None:
                 self.size = sizeof(value)
@@ -1684,6 +1763,16 @@ class DataTranslator(CddlXcoder):
         """Override the var_name()"""
         return self.id()
 
+    def set_value(self, value_generator):
+        """Override set_value to resolve all escape sequences from CDDL string literals
+
+        In general, we keep the escape sequences so they can be used when generating C code, but
+        in this class we need to resolve them to make comparisons correct."""
+
+        super().set_value(value_generator)
+        if self.type in ["TSTR", "BSTR"] and self.value is not None:
+            self.value = resolve_unicode_escape_sequences(self.value)
+
     def _decode_assert(self, test, msg=""):
         """Check a condition and raise a CddlValidationError if not."""
         if not test:
@@ -1759,7 +1848,7 @@ class DataTranslator(CddlXcoder):
             if self.bits:
                 mask = sum(((1 << b.value) for b in self.my_control_groups[self.bits].value))
                 self._decode_assert(not (obj & ~mask), "Allowed bitmask: " + bin(mask))
-        if self.type in ["TSTR", "BSTR"]:
+        if self.type in ["TSTR", "BSTR"] and self.value is None:
             if self.min_size is not None:
                 self._decode_assert(
                     len(obj) >= self.min_size, "Minimum length: " + str(self.min_size)

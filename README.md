@@ -162,6 +162,28 @@ The following data types are supported by CBOR, but not by YAML (or JSON which i
 
 You can see an example of the conversions in [tests/cases/yaml_compatibility.yaml](tests/cases/yaml_compatibility.yaml) and its CDDL file [tests/cases/yaml_compatibility.cddl](tests/cases/yaml_compatibility.cddl).
 
+Unicode
+-------
+
+The zcbor Python script fully supports unicode. All text files read by the script, including CDDL files and YAML/JSON files must be utf-8. All produced text files are utf-8.
+
+Unicode escape sequences
+------------------------
+
+String literals in CDDL files can contain unicode escape sequences as described in the [CDDL spec update](https://datatracker.ietf.org/doc/html/rfc9682):
+
+ - 16-bit: "\uXXXX"
+ - 32-bit: "\U00XXXXXX"
+ - variable-length: "\u{XXXX}"
+ - characters, e.g.: "\\ \n \t \""
+
+As an example, the CDDL 'Foo = "\U0001F000\u{72}"' (equivalent to 'Foo = "🀀H"') will expect the CBOR data `65f09f808072`.
+
+In code generation, characters that are escaped in the CDDL will be escaped in the C string literals, while characters that are non-escaped in the CDDL will be non-escaped in the generated C code. In both cases, the characters must be non-escaped in the data.
+
+When using the script to handle YAML/JSON, input YAML/JSON data can contain escaped characters as supported in those standards, which will be handled as equivalent to the non-escaped characters.
+
+Surrogate pairs are allowed in CDDL (as `\uD8xx\uDCxx`), and will be converted to their proper representation internally.
 
 Code generation
 ===============
