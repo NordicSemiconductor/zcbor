@@ -12,7 +12,7 @@ from ecdsa import VerifyingKey
 from hashlib import sha256
 import cbor2
 from sys import exit
-from yaml import safe_load
+from yaml import safe_load, safe_dump
 from tempfile import mkdtemp, NamedTemporaryFile
 from shutil import rmtree
 from os import linesep
@@ -1635,6 +1635,29 @@ Cannot have size before type: 3
     def test_float_size(self):
         exc = self.do_test_exception("foo = float .size 2..9")
         self.assertEqual("Floats must have 2, 4 or 8 bytes of precision.", str(exc))
+
+
+class TestUnicodeEscape(TestCase):
+    def test_unicode_escape0(self):
+        expected = "Domino's 🁳 + ⌘"
+        cddl_res = zcbor.DataTranslator.from_cddl(
+            cddl_string=p_prelude.read_text(encoding="utf-8")
+            + "\n"
+            + p_corner_cases.read_text(encoding="utf-8"),
+            default_max_qty=16,
+        )
+        cddl = cddl_res.my_types["UnicodeEscapeTstr"]
+        test_yaml = safe_dump([expected] * 4)
+        cddl.decode_str_yaml(test_yaml)
+
+        test_json = r"""[
+            "D\u006fmino's 🁳 + \u2318",
+            "Domino's 🁳 + ⌘",
+            "Domino's \uD83C\uDC73 + \u2318",
+            "Domino's 🁳 + ⌘"
+        ]"""
+
+        cddl.from_json(test_json)
 
 
 if __name__ == "__main__":
