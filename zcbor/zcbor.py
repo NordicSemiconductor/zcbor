@@ -478,10 +478,10 @@ class CddlParser:
         # Separate type_strings as keys in two dicts, one dict for strings that start with &( which
         # are special control operators for .bits, and one dict for all the regular types.
         my_types = {
-            my_type: None for my_type, val in type_strings.items() if not val.startswith("&(")
+            my_type: val for my_type, val in type_strings.items() if not val.startswith("&(")
         }
         my_control_groups = {
-            my_cg: None for my_cg, val in type_strings.items() if val.startswith("&(")
+            my_cg: val for my_cg, val in type_strings.items() if val.startswith("&(")
         }
 
         # Parse the definitions, replacing the each string with a
@@ -977,7 +977,7 @@ class CddlParser:
         If the string is recognized as a type, it is treated as a key. For use during CDDL parsing.
         """
         if key_or_label in self.my_types:
-            self.set_key(self.parse(key_or_label)[0])
+            self.set_key(self.parse_one(key_or_label))
             assert self.key.type == "OTHER", "This should only be able to produce an OTHER key."
             if self.label is None:
                 self.set_label(key_or_label)
@@ -1093,7 +1093,7 @@ class CddlParser:
             (
                 r"\/\/\s*(?P<item>.+?)(?=\/\/|\Z)",
                 lambda m_self, union_str: m_self.union_add_value(
-                    m_self.parse("(%s)" % union_str if "," in union_str else union_str)[0],
+                    m_self.parse_one("(%s)" % union_str if "," in union_str else union_str),
                     doubleslash=True,
                 ),
             ),
@@ -1103,7 +1103,7 @@ class CddlParser:
             (r"(" + match_uint + r"\*\*?" + match_uint + r"?)", self_type.set_quantifier),
             (
                 r"\/\s*(?P<item>((" + range_types_regex + r")|[^,\[\]{}()])+?)(?=\/|\Z|,)",
-                lambda m_self, union_str: m_self.union_add_value(m_self.parse(union_str)[0]),
+                lambda m_self, union_str: m_self.union_add_value(m_self.parse_one(union_str)),
             ),
             (
                 r"(uint|nint|int|float|bstr|tstr|bool|nil|any)(?![\w-])",
@@ -1205,27 +1205,27 @@ class CddlParser:
             ),
             (
                 r"\.default (\((?P<item>(?>[^\(\)]+|(?1))*)\))",
-                lambda m_self, type_str: m_self.set_default(m_self.parse(type_str)[0]),
+                lambda m_self, type_str: m_self.set_default(m_self.parse_one(type_str)),
             ),
             (
                 r"\.default (?P<item>[^\s,]+)",
-                lambda m_self, type_str: m_self.set_default(m_self.parse(type_str)[0]),
+                lambda m_self, type_str: m_self.set_default(m_self.parse_one(type_str)),
             ),
             (
                 r"\.cbor (\((?P<item>(?>[^\(\)]+|(?1))*)\))",
-                lambda m_self, type_str: m_self.set_cbor(m_self.parse(type_str)[0], False),
+                lambda m_self, type_str: m_self.set_cbor(m_self.parse_one(type_str), False),
             ),
             (
                 r"\.cbor (?P<item>[^\s,]+)",
-                lambda m_self, type_str: m_self.set_cbor(m_self.parse(type_str)[0], False),
+                lambda m_self, type_str: m_self.set_cbor(m_self.parse_one(type_str), False),
             ),
             (
                 r"\.cborseq (\((?P<item>(?>[^\(\)]+|(?1))*)\))",
-                lambda m_self, type_str: m_self.set_cbor(m_self.parse(type_str)[0], True),
+                lambda m_self, type_str: m_self.set_cbor(m_self.parse_one(type_str), True),
             ),
             (
                 r"\.cborseq (?P<item>[^\s,]+)",
-                lambda m_self, type_str: m_self.set_cbor(m_self.parse(type_str)[0], True),
+                lambda m_self, type_str: m_self.set_cbor(m_self.parse_one(type_str), True),
             ),
             (r"\.bits (?P<item>[\w-]+)", lambda m_self, bits_str: m_self.set_bits(bits_str)),
         ]
@@ -1371,6 +1371,14 @@ class CddlParser:
             instr = value.get_value(instr)
             values.append(value)
         return values
+
+    def parse_one(self, instr):
+        """Parses instr and returns one object, failing if instr wasn't fully consumed."""
+        value = type(self)(**self.init_kwargs())
+        remainder = value.get_value(instr.strip())
+        if remainder != "":
+            raise CddlParsingError(f"Extra characters found: '{remainder}'")
+        return value
 
     def __repr__(self):
         return self.mrepr(False)
