@@ -666,15 +666,13 @@ class CddlParser:
         if new_type == "INT":
             self.set_size_range(None, max(sizeof(abs(max_val)), sizeof(abs(min_val))))
 
-    def type_value_size(self, new_type, value, size):
-        """Set the self.value and self.size of this element."""
-        self.type_and_value(new_type, value)
-        self.set_size(size)
-
-    def type_value_size_range(self, new_type, value, min_size, max_size):
-        """Set the self.value and self.min_size and self.max_size of this element."""
-        self.type_and_value(new_type, value)
-        self.set_size_range(min_size, max_size)
+    def float_with_size(self, float_variant):
+        """Set the type and size or size range of a float ("floatX" or "floatX-Y") element"""
+        self.type_and_value("FLOAT", lambda: None)
+        if "-" in float_variant:
+            self.set_size_range(*map(lambda numstr: int(numstr) // 8, float_variant.split("-")))
+        else:
+            self.set_size(int(float_variant) // 8)
 
     def set_label(self, label):
         """Set the self.label of this element. For use during CDDL parsing."""
@@ -918,24 +916,8 @@ class CddlParser:
             ),
             (r"undefined(?!\w)", lambda m_self, _: m_self.type_and_value("UNDEF", lambda: None)),
             (
-                r"float16(?![\w-])",
-                lambda m_self, _: m_self.type_value_size("FLOAT", lambda: None, 2),
-            ),
-            (
-                r"float16-32(?![\w-])",
-                lambda m_self, _: m_self.type_value_size_range("FLOAT", lambda: None, 2, 4),
-            ),
-            (
-                r"float32(?![\w-])",
-                lambda m_self, _: m_self.type_value_size("FLOAT", lambda: None, 4),
-            ),
-            (
-                r"float32-64(?![\w-])",
-                lambda m_self, _: m_self.type_value_size_range("FLOAT", lambda: None, 4, 8),
-            ),
-            (
-                r"float64(?![\w-])",
-                lambda m_self, _: m_self.type_value_size("FLOAT", lambda: None, 8),
+                r"float(?P<item>(16|32|64|16-32|32-64))?(?![\w-])",
+                lambda m_self, float_variant: m_self.float_with_size(float_variant),
             ),
             (
                 r"\-?\d*\.\d+",
