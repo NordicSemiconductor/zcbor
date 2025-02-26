@@ -14,7 +14,7 @@ from hashlib import sha256
 import cbor2
 from platform import python_version_tuple
 from sys import platform, exit
-from yaml import safe_load
+from yaml import safe_load, safe_dump
 from tempfile import mkdtemp
 from shutil import rmtree
 from os import linesep
@@ -1298,6 +1298,29 @@ class TestInvalidIdentifiers(TestCase):
         self.assertTrue(decoded.f_1one_tstr)
         self.assertTrue(decoded.f_)
         self.assertTrue(decoded.a_z_tstr)
+
+
+class TestUnicodeEscape(TestCase):
+    def test_unicode_escape0(self):
+        expected = "Domino's 🁳 + ⌘"
+        cddl_res = zcbor.DataTranslator.from_cddl(
+            p_prelude.read_text(encoding="utf-8")
+            + "\n"
+            + p_corner_cases.read_text(encoding="utf-8"),
+            16,
+        )
+        cddl = cddl_res.my_types["UnicodeEscapeTstr"]
+        test_yaml = safe_dump([expected] * 4)
+        cddl.decode_str_yaml(test_yaml)
+
+        test_json = r"""[
+            "D\u006fmino's 🁳 + \u2318",
+            "Domino's 🁳 + ⌘",
+            "Domino's \uD83C\uDC73 + \u2318",
+            "Domino's 🁳 + ⌘"
+        ]"""
+
+        cddl.from_json(test_json)
 
 
 if __name__ == "__main__":

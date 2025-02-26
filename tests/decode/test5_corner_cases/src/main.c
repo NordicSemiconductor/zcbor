@@ -2473,5 +2473,29 @@ ZTEST(cbor_decode_test5, test_optlist)
 	zassert_equal(100, result.uint);
 }
 
+ZTEST(cbor_decode_test5, test_unicode_escape)
+{
+	uint8_t unicode_escape_payload1[] = {
+		LIST(7),
+			0x73, 'D', 'o', 'm', 'i', 'n', 'o', '\'', 's', ' ',
+				0xf0, 0x9f, 0x81, 0xb3, ' ', '+', ' ', 0xe2, 0x8c, 0x98,
+			0x73, 'D', 'o', 'm', 'i', 'n', 'o', '\'', 's', ' ',
+				0xf0, 0x9f, 0x81, 0xb3, ' ', '+', ' ', 0xe2, 0x8c, 0x98,
+			0x73, 'D', 'o', 'm', 'i', 'n', 'o', '\'', 's', ' ',
+				0xf0, 0x9f, 0x81, 0xb3, ' ', '+', ' ', 0xe2, 0x8c, 0x98,
+			0x73, 'D', 'o', 'm', 'i', 'n', 'o', '\'', 's', ' ',
+				0xf0, 0x9f, 0x81, 0xb3, ' ', '+', ' ', 0xe2, 0x8c, 0x98,
+			0x53, 'D', 'o', 'm', 'i', 'n', 'o', '\'', 's', ' ',
+				0xf0, 0x9f, 0x81, 0xb3, ' ', '+', ' ', 0xe2, 0x8c, 0x98,
+			0x53, 'D', 'o', 'm', 'i', 'n', 'o', '\'', 's', ' ',
+				0xf0, 0x9f, 0x81, 0xb3, ' ', '+', ' ', 0xe2, 0x8c, 0x98,
+			0x53, 'D', 'o', 'm', 'i', 'n', 'o', '\'', 's', ' ',
+				0xf0, 0x9f, 0x81, 0xb3, ' ', '+', ' ', 0xe2, 0x8c, 0x98,
+		END
+	};
+
+	zassert_equal(ZCBOR_SUCCESS, cbor_decode_UnicodeEscape(unicode_escape_payload1,
+		sizeof(unicode_escape_payload1), NULL, NULL));
+}
 
 ZTEST_SUITE(cbor_decode_test5, NULL, NULL, NULL, NULL, NULL);
