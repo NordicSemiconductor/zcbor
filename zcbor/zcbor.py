@@ -2025,10 +2025,10 @@ CBOR-formatted bstr, all elements must be bstrs. If not, it is a programmer erro
             raise e
         return decoded
 
-    def decode_str_yaml(self, yaml_str, yaml_compat=False):
+    def decode_str_yaml(self, yaml_str, yaml_compat=False, canonical=False):
         """YAML => python object"""
         yaml_obj = yaml_load(yaml_str)
-        obj = self._from_yaml_obj(yaml_obj) if yaml_compat else yaml_obj
+        obj = self._from_yaml_obj(yaml_obj, canonical) if yaml_compat else yaml_obj
         self.validate_obj(obj)
         return self.decode_obj(obj)
 
@@ -2047,34 +2047,33 @@ CBOR-formatted bstr, all elements must be bstrs. If not, it is a programmer erro
         cbor_obj = loads(cbor_str)
         return self.validate_obj(cbor_obj)
 
-    def _from_yaml_obj(self, obj):
+    def _from_yaml_obj(self, obj, can):
         """Convert object from YAML/JSON (with special dicts for bstr, tag etc) to CBOR object
         that cbor2 understands.
         """
         if isinstance(obj, list):
             if len(obj) == 1 and obj[0] == "zcbor_undefined":
                 return undefined
-            return [self._from_yaml_obj(elem) for elem in obj]
+            return [self._from_yaml_obj(elem, can) for elem in obj]
         elif isinstance(obj, dict):
             if ["zcbor_bstr"] == list(obj.keys()):
                 if isinstance(obj["zcbor_bstr"], str):
                     bstr = bytes.fromhex(obj["zcbor_bstr"])
                 else:
-                    bstr = dumps(self._from_yaml_obj(obj["zcbor_bstr"]))
+                    bstr = dumps(self._from_yaml_obj(obj["zcbor_bstr"], can), canonical=can)
                 return bstr
             elif ["zcbor_tag", "zcbor_tag_val"] == list(obj.keys()):
-                return CBORTag(obj["zcbor_tag"], self._from_yaml_obj(obj["zcbor_tag_val"]))
+                return CBORTag(obj["zcbor_tag"], self._from_yaml_obj(obj["zcbor_tag_val"], can))
             retval = dict()
             for key, val in obj.items():
-                match = getrp(r"zcbor_keyval\d+").fullmatch(key)
-                if match is not None:
-                    new_key = self._from_yaml_obj(val["key"])
-                    new_val = self._from_yaml_obj(val["val"])
+                if isinstance(key, str) and getrp(r"zcbor_keyval\d+").fullmatch(key) is not None:
+                    new_key = self._from_yaml_obj(val["key"], can)
+                    new_val = self._from_yaml_obj(val["val"], can)
                     if isinstance(new_key, list):
                         new_key = tuple(new_key)
                     retval[new_key] = new_val
                 else:
-                    retval[key] = self._from_yaml_obj(val)
+                    retval[key] = self._from_yaml_obj(val, can)
             return retval
         return obj
 
@@ -2114,12 +2113,12 @@ CBOR-formatted bstr, all elements must be bstrs. If not, it is a programmer erro
         assert not isinstance(obj, bytes)
         return obj
 
-    def from_yaml(self, yaml_str, yaml_compat=False):
+    def from_yaml(self, yaml_str, yaml_compat=False, canonical=False):
         """YAML str => CBOR bytestr"""
         yaml_obj = yaml_load(yaml_str)
-        obj = self._from_yaml_obj(yaml_obj) if yaml_compat else yaml_obj
+        obj = self._from_yaml_obj(yaml_obj, canonical) if yaml_compat else yaml_obj
         self.validate_obj(obj)
-        return dumps(obj)
+        return dumps(obj, canonical=canonical)
 
     def obj_to_yaml(self, obj, yaml_compat=False):
         """CBOR object => YAML str"""
@@ -2131,12 +2130,12 @@ CBOR-formatted bstr, all elements must be bstrs. If not, it is a programmer erro
         """CBOR bytestring => YAML str"""
         return self.obj_to_yaml(loads(cbor_str), yaml_compat=yaml_compat)
 
-    def from_json(self, json_str, yaml_compat=False):
+    def from_json(self, json_str, yaml_compat=False, canonical=False):
         """JSON str => CBOR bytestr"""
         json_obj = json_load(json_str)
-        obj = self._from_yaml_obj(json_obj) if yaml_compat else json_obj
+        obj = self._from_yaml_obj(json_obj, canonical) if yaml_compat else json_obj
         self.validate_obj(obj)
-        return dumps(obj)
+        return dumps(obj, canonical=canonical)
 
     def obj_to_json(self, obj, yaml_compat=False):
         """CBOR object => JSON str"""
@@ -2154,6 +2153,12 @@ CBOR-formatted bstr, all elements must be bstrs. If not, it is a programmer erro
         if columns:
             arr = "\n" + indent("\n".join(wrap(arr, 6 * columns)), "\t") + "\n"
         return f"uint8_t {var_name}[] = {{{arr}}};\n"
+
+    def str_to_canonical(self, cbor_str):
+        """CBOR bytestring => canonical CBOR bytestring."""
+        return self.from_yaml(
+            self.str_to_yaml(cbor_str, yaml_compat=True), yaml_compat=True, canonical=True
+        )
 
 
 class XcoderTuple(NamedTuple):
@@ -3778,6 +3783,14 @@ If omitted, the format is inferred from the file name.
 The number of bytes per line in the variable instantiation. If omitted, the
 entire declaration is a single line.""",
     )
+    convert_parser.add_argument(
+        "--output-canonical",
+        required=False,
+        action="store_true",
+        default=False,
+        help="""If the output data is CBOR, use canonical CBOR rules.
+(no indefinite length lists, minially encoded floats, map elements sorted by key value).""",
+    )
     convert_parser.set_defaults(process=process_convert)
 
     args = parser.parse_args()
@@ -3932,23 +3945,31 @@ def parse_cddl(args):
     return cddl_res.my_types[args.entry_type]
 
 
-def read_data(args, cddl):
+def read_data(args, cddl, canonical=False):
     _, in_file_ext = path.splitext(args.input)
     in_file_format = args.input_as or in_file_ext.strip(".")
     if in_file_format in ["yaml", "yml"]:
         f = sys.stdin if args.input == "-" else open(args.input, "r", encoding="utf-8")
-        cbor_str = cddl.from_yaml(f.read(), yaml_compat=args.yaml_compatibility)
+        cbor_str = cddl.from_yaml(
+            f.read(), yaml_compat=args.yaml_compatibility, canonical=canonical
+        )
     elif in_file_format == "json":
         f = sys.stdin if args.input == "-" else open(args.input, "r", encoding="utf-8")
-        cbor_str = cddl.from_json(f.read(), yaml_compat=args.yaml_compatibility)
-    elif in_file_format == "cborhex":
-        f = sys.stdin if args.input == "-" else open(args.input, "r", encoding="utf-8")
-        cbor_str = bytes.fromhex(f.read().replace("\n", ""))
+        cbor_str = cddl.from_json(
+            f.read(), yaml_compat=args.yaml_compatibility, canonical=canonical
+        )
+    else:  # CBOR or CBORHEX
+        if in_file_format == "cborhex":
+            f = sys.stdin if args.input == "-" else open(args.input, "r", encoding="utf-8")
+            cbor_str = bytes.fromhex(f.read().replace("\n", ""))
+        else:
+            f = sys.stdin.buffer if args.input == "-" else open(args.input, "rb", encoding="utf-8")
+            cbor_str = f.read()
+
         cddl.validate_str(cbor_str)
-    else:
-        f = sys.stdin.buffer if args.input == "-" else open(args.input, "rb", encoding="utf-8")
-        cbor_str = f.read()
-        cddl.validate_str(cbor_str)
+        if canonical:
+            cbor_str = cddl.str_to_canonical(cbor_str)
+            cddl.validate_str(cbor_str)
 
     return cbor_str
 
@@ -3983,7 +4004,7 @@ def process_validate(args):
 
 def process_convert(args):
     cddl = parse_cddl(args)
-    cbor_str = read_data(args, cddl)
+    cbor_str = read_data(args, cddl, canonical=args.output_canonical)
     write_data(args, cddl, cbor_str)
 
 
