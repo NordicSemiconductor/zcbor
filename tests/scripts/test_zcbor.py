@@ -4,20 +4,17 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from unittest import TestCase, main, skipIf
+from unittest import TestCase, main
 from subprocess import Popen, PIPE
 from re import sub
 from pathlib import Path
-from pprint import pprint
 from ecdsa import VerifyingKey
 from hashlib import sha256
 import cbor2
-from platform import python_version_tuple
-from sys import platform, exit
+from sys import exit
 from yaml import safe_load
 from tempfile import mkdtemp
 from shutil import rmtree
-from os import linesep
 
 
 try:
