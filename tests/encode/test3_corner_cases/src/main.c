@@ -914,23 +914,27 @@ ZTEST(cbor_encode_test3, test_range)
 
 ZTEST(cbor_encode_test3, test_value_range)
 {
-	const uint8_t exp_payload_value_range1[] = {LIST(6),
+	const uint8_t exp_payload_value_range1[] = {LIST(8),
 		11,
 		0x19, 0x03, 0xe7, // 999
 		0x29, // -10
 		1,
 		0x18, 42, // 42
 		0x65, 'w', 'o', 'r', 'l', 'd', // "world"
+		0xFB, 0x40, 0x09, 0x1e, 0xb8, 0x51, 0xeb, 0x85, 0x1f,
+		0xF5,
 		END
 	};
 
-	const uint8_t exp_payload_value_range2[] = {LIST(6),
+	const uint8_t exp_payload_value_range2[] = {LIST(8),
 		0x18, 100, // 100
 		0x39, 0x03, 0xe8, // -1001
 		0x18, 100, // 100
 		0,
 		0x18, 42, // 42
 		0x65, 'w', 'o', 'r', 'l', 'd', // "world"
+		0xFB, 0x40, 0x09, 0x1e, 0xb8, 0x51, 0xeb, 0x85, 0x1f,
+		0xF5,
 		END
 	};
 
@@ -995,7 +999,7 @@ ZTEST(cbor_encode_test3, test_value_range)
 		.lesseq1 = 21,
 	};
 
-	uint8_t output[25];
+	uint8_t output[35];
 	size_t out_len;
 
 	zassert_equal(ZCBOR_SUCCESS, cbor_encode_ValueRange(output, sizeof(output), &input1,

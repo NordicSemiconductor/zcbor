@@ -1109,23 +1109,27 @@ ZTEST(cbor_decode_test5, test_range)
 
 ZTEST(cbor_decode_test5, test_value_range)
 {
-	const uint8_t payload_value_range1[] = {LIST(6),
+	const uint8_t payload_value_range1[] = {LIST(8),
 		11,
 		0x19, 0x03, 0xe7, // 999
 		0x29, // -10
 		1,
 		0x18, 42, // 42
 		0x65, 'w', 'o', 'r', 'l', 'd', // "world"
+		0xFB, 0x40, 0x09, 0x1e, 0xb8, 0x51, 0xeb, 0x85, 0x1f,
+		0xF5,
 		END
 	};
 
-	const uint8_t payload_value_range2[] = {LIST(A),
+	const uint8_t payload_value_range2[] = {LIST(C),
 		0x18, 100, // 100
 		0x39, 0x03, 0xe8, // -1001
 		0x18, 100, // 100
 		0,
 		0x18, 42, // 42
 		0x65, 'w', 'o', 'r', 'l', 'd', // "world"
+		0xFB, 0x40, 0x09, 0x1e, 0xb8, 0x51, 0xeb, 0x85, 0x1f,
+		0xF5,
 		0x04,
 		0x42, 'h', 'i', // "hi"
 		0xFA, 0x40, 0x48, 0xf5, 0xc3,
@@ -1133,103 +1137,123 @@ ZTEST(cbor_decode_test5, test_value_range)
 		END
 	};
 
-	const uint8_t payload_value_range3_inv[] = {LIST(6),
+	const uint8_t payload_value_range3_inv[] = {LIST(8),
 		10,
 		0x19, 0x03, 0xe7, // 999
 		0x29, // -10
 		1,
 		0x18, 42, // 42
 		0x65, 'w', 'o', 'r', 'l', 'd', // "world"
+		0xFB, 0x40, 0x09, 0x1e, 0xb8, 0x51, 0xeb, 0x85, 0x1f,
+		0xF5,
 		END
 	};
 
-	const uint8_t payload_value_range4_inv[] = {LIST(6),
+	const uint8_t payload_value_range4_inv[] = {LIST(8),
 		11,
 		0x19, 0x03, 0xe8, // 1000
 		0x29, // -10
 		1,
 		0x18, 42, // 42
 		0x65, 'w', 'o', 'r', 'l', 'd', // "world"
+		0xFB, 0x40, 0x09, 0x1e, 0xb8, 0x51, 0xeb, 0x85, 0x1f,
+		0xF5,
 		END
 	};
 
-	const uint8_t payload_value_range5_inv[] = {LIST(6),
+	const uint8_t payload_value_range5_inv[] = {LIST(8),
 		11,
 		0x19, 0x03, 0xe7, // 999
 		0x2a, // -11
 		1,
 		0x18, 42, // 42
 		0x65, 'w', 'o', 'r', 'l', 'd', // "world"
+		0xFB, 0x40, 0x09, 0x1e, 0xb8, 0x51, 0xeb, 0x85, 0x1f,
+		0xF5,
 		END
 	};
 
-	const uint8_t payload_value_range6_inv[] = {LIST(6),
+	const uint8_t payload_value_range6_inv[] = {LIST(8),
 		11,
 		0x19, 0x03, 0xe7, // 999
 		0x29, // -10
 		2,
 		0x18, 42, // 42
 		0x65, 'w', 'o', 'r', 'l', 'd', // "world"
+		0xFB, 0x40, 0x09, 0x1e, 0xb8, 0x51, 0xeb, 0x85, 0x1f,
+		0xF5,
 		END
 	};
 
-	const uint8_t payload_value_range7_inv[] = {LIST(6),
+	const uint8_t payload_value_range7_inv[] = {LIST(8),
 		11,
 		0x19, 0x03, 0xe7, // 999
 		0x29, // -10
 		1,
 		0x18, 43, // 42
 		0x65, 'w', 'o', 'r', 'l', 'e', // "worle"
+		0xFB, 0x40, 0x09, 0x1e, 0xb8, 0x51, 0xeb, 0x85, 0x1f,
+		0xF5,
 		END
 	};
 
-	const uint8_t payload_value_range8_inv[] = {LIST(6),
+	const uint8_t payload_value_range8_inv[] = {LIST(8),
 		11,
 		0x19, 0x03, 0xe7, // 999
 		0x29, // -10
 		1,
 		0x18, 42, // 42
 		0x66, 'w', 'o', 'r', 'l', 'd', 'd', // "worldd"
+		0xFB, 0x40, 0x09, 0x1e, 0xb8, 0x51, 0xeb, 0x85, 0x1f,
+		0xF5,
 		END
 	};
 
-	const uint8_t payload_value_range9_inv[] = {LIST(6),
+	const uint8_t payload_value_range9_inv[] = {LIST(8),
 		11,
 		0x19, 0x03, 0xe7, // 999
 		0x29, // -10
 		1,
 		0x18, 42, // 42
 		0x64, 'w', 'o', 'r', 'l', // "worl"
+		0xFB, 0x40, 0x09, 0x1e, 0xb8, 0x51, 0xeb, 0x85, 0x1f,
+		0xF5,
 		END
 	};
 
-	const uint8_t payload_value_range10_inv[] = {LIST(6),
+	const uint8_t payload_value_range10_inv[] = {LIST(8),
 		11,
 		0x39, 0x03, 0xe6, // -999
 		0x39, // -10
 		1,
 		0x18, 42, // 42
 		0x65, 'w', 'o', 'r', 'l', 'd', // "world"
+		0xFB, 0x40, 0x09, 0x1e, 0xb8, 0x51, 0xeb, 0x85, 0x1f,
+		0xF5,
 		END
 	};
 
-	const uint8_t payload_value_range11_inv[] = {LIST(6),
+	const uint8_t payload_value_range11_inv[] = {LIST(8),
 		11,
 		0x1a, 0x10, 0x00, 0x00, 0x00, // 0x10000000
 		0x39, 0x03, 0xe8, // -1001
 		1,
 		0x18, 42, // 42
 		0x65, 'w', 'o', 'r', 'l', 'd', // "world"
+		0xFB, 0x40, 0x09, 0x1e, 0xb8, 0x51, 0xeb, 0x85, 0x1f,
+		0xF5,
 		END
 	};
 
-	const uint8_t payload_value_range12_inv[] = {LIST(A),
+	const uint8_t payload_value_range12_inv[] = {LIST(C),
 		0x18, 100, // 100
 		0x39, 0x03, 0xe8, // -1001
 		0x18, 100, // 100
 		0,
 		0x18, 42, // 42
 		0x65, 'w', 'o', 'r', 'l', 'd', // "world"
+		0xFB, 0x40, 0x09, 0x1e, 0xb8, 0x51, 0xeb, 0x85, 0x1f,
+		0xF5,
 		0x01, // TOO LOW
 		0x42, 'h', 'i', // "hi"
 		0xFA, 0x40, 0x48, 0xf5, 0xc3,
@@ -1289,8 +1313,9 @@ ZTEST(cbor_decode_test5, test_value_range)
 	zassert_equal(exp_output_value_range1.defaultfalse,
 			output.defaultfalse, NULL);
 
-	zassert_equal(ZCBOR_SUCCESS, cbor_decode_ValueRange(payload_value_range2, sizeof(payload_value_range2),
-					&output, &out_len), NULL);
+	int ret = cbor_decode_ValueRange(payload_value_range2, sizeof(payload_value_range2),
+					&output, &out_len);
+	zassert_equal(ZCBOR_SUCCESS, ret, zcbor_error_str(ret));
 	zassert_equal(sizeof(payload_value_range2), out_len, "%d != %d", sizeof(payload_value_range2), out_len);
 	zassert_equal(exp_output_value_range2.greater10,
 			output.greater10, NULL);
@@ -1330,8 +1355,9 @@ ZTEST(cbor_decode_test5, test_value_range)
 	zassert_equal(ZCBOR_ERR_WRONG_RANGE, cbor_decode_ValueRange(payload_value_range11_inv,
 				sizeof(payload_value_range11_inv), &output, &out_len), NULL);
 	// HIGH_ELEM_COUNT because the entry is optional, so decoding continues to the end of the list.
-	zassert_equal(ARR_ERR5, cbor_decode_ValueRange(payload_value_range12_inv,
-				sizeof(payload_value_range12_inv), &output, &out_len), NULL);
+	ret = cbor_decode_ValueRange(payload_value_range12_inv,
+				sizeof(payload_value_range12_inv), &output, &out_len);
+	zassert_equal(ARR_ERR5, ret, "%s != %s\n", zcbor_error_str(ARR_ERR5), zcbor_error_str(ret));
 }
 
 
