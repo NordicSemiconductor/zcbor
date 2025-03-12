@@ -13,7 +13,7 @@ from hashlib import sha256
 import cbor2
 from sys import exit
 from yaml import safe_load
-from tempfile import mkdtemp
+from tempfile import mkdtemp, NamedTemporaryFile
 from shutil import rmtree
 
 
@@ -1295,6 +1295,95 @@ class TestInvalidIdentifiers(TestCase):
         self.assertTrue(decoded.f_1one_tstr)
         self.assertTrue(decoded.f_)
         self.assertTrue(decoded.a_z_tstr)
+
+
+class TestCanonical(PopenTest):
+    canonical_cddl = """
+        Dict = {+tstr => int}
+        Canonical = [
+            num: float,
+            map: {
+                +int => tstr
+            },
+            cbor_bstr: bstr .cbor Dict
+        ]
+    """
+
+    test_yaml = b"""
+        [
+            1.5,
+            {2: "two", 1: "one"},
+            {"zcbor_bstr": {"two": 2, "one": 1}},
+        ]
+    """
+
+    # fmt: off
+    expected_payload = bytes((
+        0x83,
+            0xfb, 0x3f, 0xf8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0xA2,
+                0x02, 0x63, ord('t'), ord('w'), ord('o'),
+                0x01, 0x63, ord('o'), ord('n'), ord('e'),
+            0x4B, 0xA2,
+                0x63, ord('t'), ord('w'), ord('o'), 0x02,
+                0x63, ord('o'), ord('n'), ord('e'), 0x01,
+        )
+    )
+
+    expected_payload_canonical = bytes((
+        0x83,
+            0xf9, 0x3e, 0x00,
+            0xA2,
+                0x01, 0x63, ord('o'), ord('n'), ord('e'),
+                0x02, 0x63, ord('t'), ord('w'), ord('o'),
+            0x4B, 0xA2,
+                0x63, ord('o'), ord('n'), ord('e'), 0x01,
+                0x63, ord('t'), ord('w'), ord('o'), 0x02,
+        )
+    )
+    # fmt: on
+
+    def test_canonical(self):
+        cddl = zcbor.DataTranslator.from_cddl(self.canonical_cddl, default_max_qty=16).my_types[
+            "Canonical"
+        ]
+
+        out = cddl.from_yaml(self.test_yaml, yaml_compat=True)
+        out_canon = cddl.from_yaml(self.test_yaml, yaml_compat=True, canonical=True)
+        self.assertEqual(self.expected_payload, out)
+        self.assertEqual(self.expected_payload_canonical, out_canon)
+
+    def test_canonical_cli(self):
+        # Must have delete=False because of permission error on Windows.
+        # Cannot use delete_on_close because it is not present in Python 3.11 and earlier.
+        try:
+            with NamedTemporaryFile(mode="w", delete=False) as fc:
+                fc.write(self.canonical_cddl)
+                fc.flush()
+                args = [
+                    "zcbor",
+                    "convert",
+                    "-c",
+                    fc.name,
+                    "-i",
+                    "-",
+                    "--input-as",
+                    "yaml",
+                    "-o",
+                    "-",
+                    "-t",
+                    "Canonical",
+                    "--yaml-compatibility",
+                ]
+                out, _ = self.popen_test(args, self.test_yaml, exp_retcode=0)
+                out_canon, _ = self.popen_test(
+                    args + ["--output-canonical"], self.test_yaml, exp_retcode=0
+                )
+        finally:
+            Path(fc.name).unlink()
+
+        self.assertEqual(self.expected_payload, out)
+        self.assertEqual(self.expected_payload_canonical, out_canon)
 
 
 if __name__ == "__main__":
