@@ -238,6 +238,7 @@ class CddlParser:
 
     def __init__(
         self,
+        *,
         default_max_qty,
         my_types,
         my_control_groups,
@@ -300,7 +301,7 @@ class CddlParser:
             self.cddl_regexes_init()
 
     @classmethod
-    def from_cddl(cddl_class, cddl_string, default_max_qty, *args, **kwargs):
+    def from_cddl(cddl_class, *, cddl_string, **kwargs):
         my_types = dict()
 
         type_strings = cddl_class.get_types(cddl_string)
@@ -317,7 +318,7 @@ class CddlParser:
         # CodeGenerator instance.
         for my_type, cddl_string in type_strings.items():
             parsed = cddl_class(
-                *args, default_max_qty, my_types, my_control_groups, **kwargs, base_stem=my_type
+                my_types=my_types, my_control_groups=my_control_groups, **kwargs, base_stem=my_type
             )
             parsed.get_value(cddl_string.replace("\n", " ").lstrip("&"))
             parsed = parsed.flatten()[0]
@@ -491,16 +492,18 @@ class CddlParser:
             return f"{self.base_stem}_{raw_name}"
         return raw_name
 
-    def init_args(self):
-        """Return the args that should be used to initialize a new instance of this class."""
-        return (self.default_max_qty,)
-
     def init_kwargs(self):
-        """Return the kwargs that should be used to initialize a new instance of this class."""
+        """Return the kwargs that should be used to initialize a new instance of this class.
+
+        This is needed because it is used for reinitializing self, not just instansiating a new
+        instance.
+        """
         return {
+            "default_max_qty": self.default_max_qty,
             "my_types": self.my_types,
             "my_control_groups": self.my_control_groups,
             "short_names": self.short_names,
+            "base_stem": self.base_stem,
         }
 
     def set_id_prefix(self, id_prefix=""):
@@ -799,17 +802,21 @@ class CddlParser:
 
         Used with the "UNION" type, which has a python list as self.value. The list represents the
         "children" of the type. For use during CDDL parsing.
+
+        If self is not a "UNION" type, it will be copied, converted into "UNION", and the copy added
+        as a child.
         """
         if self.type != "UNION":
             convert_val = copy(self)
-            self.__init__(*self.init_args(), **self.init_kwargs())
+            self.__init__(**self.init_kwargs())
             self.type_and_value("UNION", lambda: [convert_val])
 
             self.base_name = convert_val.base_name
             convert_val.base_name = None
-            self.base_stem = convert_val.base_stem
 
             if not doubleslash:
+                # Operator precendence dictates that for single-slash unions, the following values
+                # apply to the union, not to the element.
                 self.label = convert_val.label
                 self.key = convert_val.key
                 self.quantifier = convert_val.quantifier
@@ -826,7 +833,7 @@ class CddlParser:
     def convert_to_key(self):
         """The current element is the key, so copy it to a new element and set the key to the new"""
         convert_val = copy(self)
-        self.__init__(*self.init_args(), **self.init_kwargs())
+        self.__init__(**self.init_kwargs())
         self.set_key(convert_val)
 
         self.label = convert_val.label
@@ -1183,7 +1190,7 @@ class CddlParser:
         instr = instr.strip()
         values = []
         while instr != "":
-            value = type(self)(*self.init_args(), **self.init_kwargs(), base_stem=self.base_stem)
+            value = type(self)(**self.init_kwargs())
             instr = value.get_value(instr)
             values.append(value)
         return values
@@ -1267,8 +1274,8 @@ c_keywords_underscore = [
 
 class CddlXcoder(CddlParser):
 
-    def __init__(self, *args, **kwargs):
-        super(CddlXcoder, self).__init__(*args, **kwargs)
+    def __init__(self, **kwargs):
+        super(CddlXcoder, self).__init__(**kwargs)
 
         # The prefix used for C code accessing this element, i.e. the struct
         # hierarchy leading up to this element.
@@ -2161,15 +2168,15 @@ class CddlTypes(NamedTuple):
 class CodeGenerator(CddlXcoder):
     """Class for generating C code that encode/decodes CBOR and validates it according to the CDDL."""
 
-    def __init__(self, mode, entry_type_names, default_bit_size, *args, **kwargs):
-        super(CodeGenerator, self).__init__(*args, **kwargs)
+    def __init__(self, *, mode, entry_type_names, default_bit_size, **kwargs):
+        super(CodeGenerator, self).__init__(**kwargs)
         self.mode = mode
         self.entry_type_names = entry_type_names
         self.default_bit_size = default_bit_size
 
     @classmethod
-    def from_cddl(cddl_class, mode, *args, **kwargs):
-        cddl_res = super(CodeGenerator, cddl_class).from_cddl(*args, **kwargs)
+    def from_cddl(cddl_class, *, mode, **kwargs):
+        cddl_res = super(CodeGenerator, cddl_class).from_cddl(mode=mode, **kwargs)
 
         # set access prefix (struct access paths) for all the definitions.
         for my_type in cddl_res.my_types:
@@ -2190,8 +2197,15 @@ class CodeGenerator(CddlXcoder):
         )
         return res
 
-    def init_args(self):
-        return (self.mode, self.entry_type_names, self.default_bit_size, self.default_max_qty)
+    def init_kwargs(self):
+        """Override the init_kwargs() function."""
+        return {
+            **(super().init_kwargs()),
+            "mode": self.mode,
+            "entry_type_names": self.entry_type_names,
+            "default_bit_size": self.default_bit_size,
+            "default_max_qty": self.default_max_qty,
+        }
 
     def delegate_type_condition(self):
         """Whether to use the C type of the first child as this type's C type"""
@@ -3040,7 +3054,9 @@ int cbor_{self.xcode_func_name()}(
 
 
 class CodeRenderer:
-    def __init__(self, entry_types, modes, print_time, default_max_qty, git_sha="", file_header=""):
+    def __init__(
+        self, *, entry_types, modes, print_time, default_max_qty, git_sha="", file_header=""
+    ):
         self.entry_types = entry_types
         self.print_time = print_time
         self.default_max_qty = default_max_qty
@@ -3752,12 +3768,11 @@ def process_code(args):
     cddl_res = dict()
     for mode in modes:
         cddl_res[mode] = CodeGenerator.from_cddl(
-            mode,
-            cddl_contents,
-            args.default_max_qty,
-            mode,
-            args.entry_types,
-            args.default_bit_size,
+            mode=mode,
+            cddl_string=cddl_contents,
+            default_max_qty=args.default_max_qty,
+            entry_type_names=args.entry_types,
+            default_bit_size=args.default_bit_size,
             short_names=args.short_names,
         )
 
@@ -3862,7 +3877,9 @@ def process_code(args):
 
 def parse_cddl(args):
     cddl_contents = linesep.join((c.read() for c in args.cddl))
-    cddl_res = DataTranslator.from_cddl(cddl_contents, args.default_max_qty)
+    cddl_res = DataTranslator.from_cddl(
+        cddl_string=cddl_contents, default_max_qty=args.default_max_qty
+    )
     return cddl_res.my_types[args.entry_type]
 
 
