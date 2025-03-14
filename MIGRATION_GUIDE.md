@@ -1,5 +1,9 @@
 # zcbor v. 0.9.99
 
+* `from_cddl()` and `__init__()` now takes only keyword-only arguments.
+  Positional arguments to any constructor or `from_cddl()` function must now be made into keyword arguments.
+  Arguments have not changed otherwise.
+  This was done to avoid ambiguity to do with positional arguments, and generally simplify passing arguments around inside zcbor.
 
 # zcbor v. 0.9.0
 
