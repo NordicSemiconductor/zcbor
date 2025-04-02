@@ -81,6 +81,8 @@ const char *zcbor_error_str(int error);
 
 void zcbor_print_error(int error);
 
+void zcbor_dump_hex(const uint8_t *str, size_t str_len);
+
 #ifdef __cplusplus
 }
 #endif
