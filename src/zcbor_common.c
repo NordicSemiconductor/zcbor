@@ -383,7 +383,7 @@ uint16_t zcbor_float32_to_16(float input)
 	uint16_t value16 = (uint16_t)(sign << F16_SIGN_OFFS);
 
 	float abs_input;
-	*(uint32_t *)&abs_input = value32 & ~(1 << F32_SIGN_OFFS);
+	*(uint32_t *)&abs_input = value32 & ~(1U << F32_SIGN_OFFS);
 
 	if (abs_input <= (F16_MIN / 2)) {
 		/* 0 or too small for float16. Round down to 0. value16 is already correct. */
