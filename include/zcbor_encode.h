@@ -168,6 +168,8 @@ bool zcbor_list_map_end_force_encode(zcbor_state_t *state);
  *                           The input pointer is moved @p input_len bytes for
  *                           each call to @p encoder, i.e. @p input refers to an
  *                           array of input variables.
+ *                           Please use @ref ZCBOR_CAST_FP to cast the function
+ *                           since it will also check for compatibility.
  * @param[in]  input         Source of the encoded values. Must be an array of
  *                           at least @p max_encode elements.
  * @param[in]  input_len     The length of the input variables. Must be the
