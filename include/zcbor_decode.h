@@ -220,13 +220,18 @@ bool zcbor_search_key_tstr_term(zcbor_state_t *state, char const *str, size_t ma
 #define zcbor_search_key_bstr_arr(state, str) zcbor_search_key_bstr_ptr(state, str, (sizeof(str)))
 #define zcbor_search_key_tstr_arr(state, str) zcbor_search_key_tstr_ptr(state, str, (sizeof(str)))
 
-/** (Optional) Call this function to mark an (unordered map) element as processed.
+/** Manually mark an (unordered map) element as processed.
  *
- * @note This should not be called unless the @ref manually_process_elem flag is set.
+ * @note This must only be called when the @ref manually_process_elem flag is set,
+ *       in which case it is mandatory.
  *       By default, i.e. when @ref manually_process_elem is not set, this function is
  *       called internally by @ref zcbor_unordered_map_search whenever a key is found.
  *
- * By default, this function increments the internal count @ref map_elems_processed.
+ * @note This function must be called after the key has been found, before the next key
+ *       is searched for, or before the map is exited.
+ *
+ * If ZCBOR_MAP_SMART_SEARCH is NOT defined, this function increments the internal
+ * count @ref map_elems_processed.
  *
  * If ZCBOR_MAP_SMART_SEARCH is defined, this function instead clears a flag for the
  * element (key-value pair) that is currently being processed, or that has just been

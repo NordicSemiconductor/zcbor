@@ -338,10 +338,20 @@ void zcbor_new_state(zcbor_state_t *state_array, size_t n_states,
 		uint8_t *elem_state, size_t elem_state_bytes);
 
 /** Do boilerplate entry function procedure.
- *  Initialize states, call function, and check the result.
+ *
+ *  @note This function is tailored for use with the generated code.
+ *
+ *  Initialize the first member of @p states via @ref zcbor_new_state,
+ *  call @p function, populate @p payload_len_out and check the result.
+ *
+ *  @note This function sets `manually_process_elem` to true.
+ *
+ *  Since @ref zcbor_new_state takes one additional state from the state list
+ *  to use as the constant_state, the number of states must be at least 2, and
+ *  the number of backups will be `n_states - 2`.
  */
 int zcbor_entry_function(const uint8_t *payload, size_t payload_len,
-	void *result, size_t *payload_len_out, zcbor_state_t *state, zcbor_decoder_t func,
+	void *result, size_t *payload_len_out, zcbor_state_t *states, zcbor_decoder_t func,
 	size_t n_states, size_t elem_count);
 
 #ifdef ZCBOR_STOP_ON_ERROR
