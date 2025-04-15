@@ -71,6 +71,16 @@ do { \
 #define zcbor_assert_state(expr, ...)
 #endif
 
+
+/** Print the function name.
+ */
+#define ZCBOR_PRINT_FUNC_NAME() zcbor_log("%s ", __func__);
+
+/** Print the function name and extra text (e.g. arguments).
+ */
+#define ZCBOR_PRINT_FUNC_NAME_ARGS(arg_fmt_str, ...) zcbor_log("%s" arg_fmt_str " ", __func__, __VA_ARGS__);
+
+
 void zcbor_print_compare_lines(const uint8_t *str1, const uint8_t *str2, size_t size);
 
 void zcbor_print_compare_strings(const uint8_t *str1, const uint8_t *str2, size_t size);
