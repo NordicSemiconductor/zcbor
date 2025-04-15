@@ -104,6 +104,29 @@ Name                      | Description
 `ZCBOR_BIG_ENDIAN`        | All decoded values are returned as big-endian. The default is little-endian.
 `ZCBOR_MAP_SMART_SEARCH`  | Applies to decoding of unordered maps. When enabled, a flag is kept for each element in an array, ensuring it is not processed twice. If disabled, a count is kept for map as a whole. Enabling increases code size and memory usage, and requires the state variable to possess the memory necessary for the flags.
 
+Canonical encoding
+------------------
+
+The C library supports some of the rules for canonical encoding. To enable these, use the `ZCBOR_CANONICAL` config for encoding, or the `enforce_canonical` flag for decoding. Note that enabling `ZCBOR_CANONICAL` changes the default value of `enforce_canonical`.
+
+Some rules are not supported because it would introduce significant code size or complexity.
+
+The following canonical encoding rules are enforced for encoding:
+
+ - integers are minimally encoded (always)
+ - lists and maps do not use indefinite length encoding (when `ZCBOR_CANONCAL` is enabled)
+ - floats are encoded minimally (when using the function `zcbor_float_min_encode` or `zcbor_float_min_put`).
+
+The following canonical encoding rules are enforced for decoding:
+
+ - integers are minimally encoded (when `enforce_canonical` is enabled)
+ - lists and maps do not use indefinite length encoding (when `enforce_canonical` is enabled)
+
+The following canonical encoding rules are not enforced:
+
+ - floats are encoded minimally (during decoding)
+ - map keys are sorted by bytewise value
+
 
 Python script and module
 ========================
@@ -146,6 +169,11 @@ When accessing the data, you can choose between two internal formats:
     When returning this format, DataTranslator hides the idiomatic representations for bytestrings, tags, and non-text keys described above.
  2. A custom format which allows accessing the data via the names from the CDDL description file.
     This format is implemented using named tuples, and is immutable, meaning that it can be used for inspecting data, but not for changing or creating data.
+
+Canonical encoding
+------------------
+
+CBOR data created by the python script can be made canonical by setting the `canonical` argument to `True` in supported `DataTranslator` functions. Note that in CBOR data from the script, integers are always minimally encoded, and indeterminate length lists are never used, even without the `canonical` argument.
 
 Making CBOR YAML-/JSON-compatible
 ---------------------------------
@@ -603,7 +631,7 @@ usage: zcbor convert [-h] -c CDDL [--no-prelude] [-v] -i INPUT
                      [--yaml-compatibility] -o OUTPUT
                      [--output-as {yaml,json,cbor,cborhex,c_code}]
                      [--c-code-var-name C_CODE_VAR_NAME]
-                     [--c-code-columns C_CODE_COLUMNS]
+                     [--c-code-columns C_CODE_COLUMNS] [--output-canonical]
 
 Parse a CDDL file and validate/convert between CBOR and YAML/JSON. The script
 decodes the CBOR/YAML/JSON data from a file or stdin and verifies that it
@@ -658,5 +686,9 @@ options:
                         files. The number of bytes per line in the variable
                         instantiation. If omitted, the entire declaration is a
                         single line.
+  --output-canonical    If the output data is CBOR, use canonical CBOR rules.
+                        (no indefinite length lists, minially encoded floats,
+                        map elements sorted by key value). Note: If the input
+                        data is cbor or cborhex, this option has no effect.
 
 ```
