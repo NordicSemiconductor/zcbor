@@ -17,6 +17,11 @@ _Static_assert((sizeof(size_t) == sizeof(void *)),
 _Static_assert((sizeof(zcbor_state_t) >= sizeof(struct zcbor_state_constant)),
 	"This code needs zcbor_state_t to be at least as large as zcbor_backups_t.");
 
+
+#define PRINT_FUNC() zcbor_log("%s ", __func__);
+#define PRINT_FUNC_ARGS(arg_fmt_str, ...) zcbor_log("%s" arg_fmt_str " ", __func__, __VA_ARGS__);
+
+
 bool zcbor_new_backup(zcbor_state_t *state, size_t new_elem_count)
 {
 	ZCBOR_CHECK_ERROR();
@@ -108,6 +113,7 @@ static void update_backups(zcbor_state_t *state, uint8_t const *new_payload_end)
 
 bool zcbor_union_start_code(zcbor_state_t *state)
 {
+	PRINT_FUNC();
 	if (!zcbor_new_backup(state, state->elem_count)) {
 		ZCBOR_FAIL();
 	}
@@ -117,6 +123,7 @@ bool zcbor_union_start_code(zcbor_state_t *state)
 
 bool zcbor_union_elem_code(zcbor_state_t *state)
 {
+	PRINT_FUNC();
 	if (!zcbor_process_backup(state, ZCBOR_FLAG_RESTORE, state->elem_count)) {
 		ZCBOR_FAIL();
 	}
@@ -125,6 +132,7 @@ bool zcbor_union_elem_code(zcbor_state_t *state)
 
 bool zcbor_union_end_code(zcbor_state_t *state)
 {
+	PRINT_FUNC();
 	if (!zcbor_process_backup(state, ZCBOR_FLAG_CONSUME, state->elem_count)) {
 		ZCBOR_FAIL();
 	}

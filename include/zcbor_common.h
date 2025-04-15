@@ -297,9 +297,9 @@ do { \
 /** Take a backup of the current state. Overwrite the current elem_count. */
 bool zcbor_new_backup(zcbor_state_t *state, size_t new_elem_count);
 
-/** Consult the most recent backup. In doing so, check whether elem_count is
- *  less than or equal to max_elem_count.
- *  Also, take action based on the flags (See ZCBOR_FLAG_*).
+/** Consult a backup. In doing so, check whether elem_count is
+ *  less than or equal to @p max_elem_count.
+ *  Also, take action based on the @p flags (See ZCBOR_FLAG_*).
  */
 bool zcbor_process_backup(zcbor_state_t *state, uint32_t flags, size_t max_elem_count);
 
@@ -338,7 +338,10 @@ void zcbor_new_state(zcbor_state_t *state_array, size_t n_states,
 		uint8_t *elem_state, size_t elem_state_bytes);
 
 /** Do boilerplate entry function procedure.
- *  Initialize states, call function, and check the result.
+ *  Initialize the first member of @p states via @ref zcbor_new_state
+ *  (which takes one state from the state list to use as the constant_state),
+ *  call @p function, populate @p payload_len_out and check the result.
+ *  This sets `manually_process_elem` to true.
  */
 int zcbor_entry_function(const uint8_t *payload, size_t payload_len,
 	void *result, size_t *payload_len_out, zcbor_state_t *state, zcbor_decoder_t func,
