@@ -50,32 +50,32 @@ bool zcbor_new_backup(zcbor_state_t *state, size_t new_elem_count)
 }
 
 
-bool zcbor_process_backup(zcbor_state_t *state, uint32_t flags,
-		size_t max_elem_count)
+bool zcbor_process_backup_num(zcbor_state_t *state, uint32_t flags,
+		size_t max_elem_count, size_t backup_num)
 {
+	PRINT_FUNC_ARGS("(flags=%u, backup_num=%zu)", flags, backup_num);
+	zcbor_log("\r\n");
 	ZCBOR_CHECK_ERROR();
-	zcbor_state_t local_copy = *state;
 
-	if (state->constant_state->current_backup == 0) {
-		zcbor_log("No backups available.\r\n");
+	if (backup_num > state->constant_state->current_backup) {
+		zcbor_log("Invalid backup number.\r\n");
 		ZCBOR_ERR(ZCBOR_ERR_NO_BACKUP_ACTIVE);
 	}
 
-	/* use the backup at current_backup - 1, since otherwise, the
-		* 0th backup would be unused. */
-	size_t i = state->constant_state->current_backup - 1;
+	zcbor_state_t local_copy = *state;
 
-	zcbor_log("Process backup (level %zu, flags 0x%x)\n", i, flags);
+	size_t i = backup_num - 1;
+	zcbor_state_t *backup = &state->constant_state->backup_list[i];
+
 
 	if (flags & ZCBOR_FLAG_RESTORE) {
 		if (!(flags & ZCBOR_FLAG_KEEP_PAYLOAD)) {
-			if (state->constant_state->backup_list[i].payload_moved) {
+			if (backup->payload_moved) {
 				zcbor_log("Payload pointer out of date.\r\n");
 				ZCBOR_ERR(ZCBOR_ERR_PAYLOAD_OUTDATED);
 			}
 		}
-		memcpy(state, &state->constant_state->backup_list[i],
-			sizeof(zcbor_state_t));
+		memcpy(state, backup, sizeof(zcbor_state_t));
 	}
 
 	if (flags & ZCBOR_FLAG_CONSUME) {
@@ -98,6 +98,18 @@ bool zcbor_process_backup(zcbor_state_t *state, uint32_t flags,
 	}
 
 	return true;
+}
+
+
+bool zcbor_process_backup(zcbor_state_t *state, uint32_t flags,
+	size_t max_elem_count)
+{
+	if (state->constant_state->current_backup == 0) {
+		zcbor_log("No backups available.\r\n");
+		ZCBOR_ERR(ZCBOR_ERR_NO_BACKUP_ACTIVE);
+	}
+
+	return zcbor_process_backup_num(state, flags, max_elem_count, state->constant_state->current_backup);
 }
 
 static void update_backups(zcbor_state_t *state, uint8_t const *new_payload_end)
