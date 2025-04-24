@@ -129,6 +129,9 @@ struct {
 	size_t map_elems_processed; /**< The number of elements of an unordered map
 	                                 that have been processed. */
 #endif
+	size_t map_start_backup_num; /** The index of the backup made at the start of the current map.
+	                                 This is used to move to the start of the map when searching
+					 unordered maps. */
 	size_t map_elem_count; /**< Number of elements in the current unordered map.
 	                            This also serves as the number of bits (not bytes)
 	                            in the map_search_elem_state array (when applicable). */
@@ -300,8 +303,12 @@ bool zcbor_new_backup(zcbor_state_t *state, size_t new_elem_count);
 /** Consult a backup. In doing so, check whether elem_count is
  *  less than or equal to @p max_elem_count.
  *  Also, take action based on the @p flags (See ZCBOR_FLAG_*).
+ *  @ref zcbor_process_backup uses the most recent backup.
+ *  @ref zcbor_process_backup_num uses the backup with the given number via @p backup_num.
  */
 bool zcbor_process_backup(zcbor_state_t *state, uint32_t flags, size_t max_elem_count);
+bool zcbor_process_backup_num(zcbor_state_t *state, uint32_t flags,
+	size_t max_elem_count, size_t backup_num);
 
 /** Convenience function for starting encoding/decoding of a union.
  *
