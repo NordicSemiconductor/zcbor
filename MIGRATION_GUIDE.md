@@ -1,5 +1,9 @@
 # zcbor v. 0.9.99
 
+* [Recommended] A new macro `ZCBOR_CAST_FP` has been added for casting function pointers for use in the zcbor API.
+  The macro will first check that the function pointer has one of the supported signatures.
+  You are recommended to use it on any function pointer that is passed as an argument to a zcbor function.
+
 
 # zcbor v. 0.9.0
 
