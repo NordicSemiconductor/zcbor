@@ -350,6 +350,11 @@ int zcbor_entry_function(const uint8_t *payload, size_t payload_len,
 								  * for tiebreak. */
 #define NORM_ROUND_BIT_MSK (1 << (F32_EXPO_OFFS - F16_EXPO_OFFS - 1)) /* bit 12 (0x1000) */
 
+/* Union type to avoid strict aliasing issues. */
+union zcbor_float_int {
+	float f;
+	uint32_t i;
+};
 
 float zcbor_float16_to_32(uint16_t input)
 {
@@ -367,14 +372,17 @@ float zcbor_float16_to_32(uint16_t input)
 				: (expo + (F32_BIAS - F16_BIAS));
 		uint32_t value32 = (sign << F32_SIGN_OFFS) | (new_expo << F32_EXPO_OFFS)
 			| (mantissa << (F32_EXPO_OFFS - F16_EXPO_OFFS));
-		return *(float *)&value32;
+		union zcbor_float_int output_u = { .i = value32 };
+		return output_u.f;
 	}
 }
 
 
 uint16_t zcbor_float32_to_16(float input)
 {
-	uint32_t value32 = *(uint32_t *)&input;
+
+	union zcbor_float_int input_u = { .f = input };
+	uint32_t value32 = input_u.i;
 
 	uint32_t sign = value32 >> F32_SIGN_OFFS;
 	uint32_t expo = (value32 >> F32_EXPO_OFFS) & F32_EXPO_MSK;
@@ -382,8 +390,8 @@ uint16_t zcbor_float32_to_16(float input)
 
 	uint16_t value16 = (uint16_t)(sign << F16_SIGN_OFFS);
 
-	float abs_input;
-	*(uint32_t *)&abs_input = value32 & ~(1U << F32_SIGN_OFFS);
+	union zcbor_float_int abs_input_u = { .i = value32 & ~(1U << F32_SIGN_OFFS) };
+	float abs_input = abs_input_u.f;
 
 	if (abs_input <= (F16_MIN / 2)) {
 		/* 0 or too small for float16. Round down to 0. value16 is already correct. */
