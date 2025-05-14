@@ -4,27 +4,32 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from unittest import TestCase, main, skipIf, SkipTest
+from unittest import TestCase, main, skipIf
+from unittest.mock import patch
 from pathlib import Path
 from re import search, S, compile
 from urllib import request
-from urllib.error import HTTPError
-from argparse import ArgumentParser
-from subprocess import Popen, check_output, PIPE, run
-from shutil import rmtree, copy2
+from urllib.error import HTTPError, URLError
+from subprocess import Popen, check_output, PIPE, run, CalledProcessError
+from shutil import rmtree
 from platform import python_version_tuple
 from sys import platform
-from threading import Thread
-from tempfile import mkdtemp
+from concurrent.futures import ThreadPoolExecutor
 import os
+from time import sleep
+from http import HTTPStatus
+from typing import List, Tuple, Optional
 
 
-p_root = Path(__file__).absolute().parents[2]
+p_script = Path(__file__).absolute()
+p_script_dir = p_script.parent
+p_root = p_script_dir.parents[1]
 p_tests = p_root / "tests"
 p_readme = p_root / "README.md"
 p_pypi_readme = p_root / "pypi_README.md"
 p_architecture = p_root / "ARCHITECTURE.md"
 p_release_notes = p_root / "RELEASE_NOTES.md"
+p_migration_guide = p_root / "MIGRATION_GUIDE.md"
 p_add_helptext = p_root / "scripts" / "add_helptext.py"
 p_regenerate_samples = p_root / "scripts" / "regenerate_samples.py"
 p_hello_world_sample = p_root / "samples" / "hello_world"
@@ -34,6 +39,200 @@ p_pet_cmake = p_pet_sample / "pet.cmake"
 p_pet_include = p_pet_sample / "include"
 p_pet_src = p_pet_sample / "src"
 p_pet_build = p_pet_sample / "build"
+
+
+DEFAULT_TARGET_REF = "main"
+DEFAULT_TARGET_REPO = "NordicSemiconductor/zcbor"
+
+
+class GitRepoInfo:
+    """Container for git repository information."""
+
+    base_url: Optional[str] = None
+    affected_files: Optional[List[Path]] = None
+    current_branch: Optional[str] = None
+    _instance = None
+    _initialized = False
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(GitRepoInfo, cls).__new__(cls)
+        return cls._instance
+
+    @staticmethod
+    def _get_remote_tracking_branch() -> Optional[str]:
+        """Get the remote tracking branch name."""
+        try:
+            remote_tr_args = ["git", "rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}"]
+            result = run(remote_tr_args, capture_output=True)
+            return result.stdout.decode("utf-8").strip() if result.returncode == 0 else None
+        except CalledProcessError:
+            return None
+
+    @staticmethod
+    def _get_repo_url(remote: str) -> Optional[str]:
+        """Get repository URL for a given remote."""
+        try:
+            repo_url_args = ["git", "remote", "get-url", remote]
+            repo_url = check_output(repo_url_args).decode("utf-8").strip().strip(".git")
+            return repo_url if "github.com" in repo_url else None
+        except CalledProcessError:
+            return None
+
+    @staticmethod
+    def _build_base_url_from_github_env() -> Optional[str]:
+        """Build base URL from GitHub environment variables."""
+        if "GITHUB_SHA" not in os.environ or "GITHUB_REPOSITORY" not in os.environ:
+            return None
+
+        repo = os.environ["GITHUB_REPOSITORY"]
+        sha = os.environ["GITHUB_SHA"]
+        return f"https://github.com/{repo}/blob/{sha}/"
+
+    @staticmethod
+    def _prepare_local_target_ref():
+        """Prepare a local ref for calculating affected files."""
+        # Setup target reference for comparison
+        target_ref = os.environ.get("GITHUB_BASE_REF", DEFAULT_TARGET_REF)
+        local_target_ref = "_zcbor_doc_test_target_ref"
+        target_repo = os.environ.get("GITHUB_REPOSITORY", DEFAULT_TARGET_REPO)
+        target_repo_url = f"https://github.com/{target_repo}.git"
+
+        # Fetch target reference
+        check_output(["git", "fetch", target_repo_url, f"{target_ref}:{local_target_ref}"])
+        return local_target_ref
+
+    @staticmethod
+    def _get_affected_files(target_ref: str) -> List[Path]:
+        """Get list of files affected in the current branch compared to target."""
+        diff_args = ["git", "diff", "--name-only", f"{target_ref}..HEAD"]
+        diff = check_output(diff_args).decode("utf-8").strip()
+        return [Path(p_root, p).absolute() for p in diff.split("\n") if p]
+
+    @classmethod
+    def _build_base_url_from_remote_tracking(cls, remote_tracking: str) -> Optional[str]:
+        """Build base URL from remote tracking branch."""
+        remote, remote_branch = remote_tracking.split("/", 1)
+        repo_url = cls._get_repo_url(remote)
+        return f"{repo_url}/tree/{remote_branch}/" if repo_url else None
+
+    @classmethod
+    def _determine_base_url(cls) -> Optional[str]:
+        """Determine the base URL for the repository."""
+        # Try remote tracking branch first
+        remote_tracking = cls._get_remote_tracking_branch()
+        if remote_tracking:
+            base_url = cls._build_base_url_from_remote_tracking(remote_tracking)
+            if base_url:
+                return base_url
+
+        # Fall back to GitHub environment
+        return cls._build_base_url_from_github_env()
+
+    @staticmethod
+    def _get_current_branch() -> str:
+        """Get the current branch name."""
+        return check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"]).decode("utf-8").strip()
+
+    def __init__(self):
+        """Initialize repository information."""
+
+        if self._initialized:
+            return
+
+        self.base_url = self._determine_base_url()
+        self.affected_files = self._get_affected_files(self._prepare_local_target_ref())
+        self.current_branch = self._get_current_branch()
+        self._initialized = True
+
+
+DEFAULT_BACKOFF_TIME = 20
+DEFAULT_MAX_ATTEMPTS = 5
+
+
+class LinkTester:
+    """Test the links in the documentation files."""
+
+    def __init__(self, *args, **kwargs):
+        super(LinkTester, self).__init__()
+        self.repo_info = GitRepoInfo()
+        self.link_regex = compile(r"\[.*?\]\((?P<link>.*?)\)")
+        self.check_all = (
+            self.repo_info.current_branch == "main" or "release/" in self.repo_info.current_branch
+        )
+        self.check_all = True  # Always check all files for now
+
+    @staticmethod
+    def _get_relative_path(file_path: Path) -> str:
+        """Get relative path for local link processing."""
+        relative_path = str(file_path.relative_to(p_root).parent)
+        return "" if relative_path == "." else relative_path + "/"
+
+    def _process_local_link(self, link: str, file_path: Path, relative_path: str) -> str:
+        """Process local links (anchors and relative file paths)."""
+        if link.startswith("#"):
+            if not self.repo_info.base_url:
+                raise ValueError("Base URL required for anchor links")
+            return f"{self.repo_info.base_url}{relative_path}{file_path.name}{link}"
+        else:
+            return relative_path + link
+
+    def extract_links(self, file_path: Path) -> Tuple[List[str], List[str]]:
+        """Extract URLs and local links from a file."""
+        text = file_path.read_text(encoding="utf-8")
+        matches = self.link_regex.findall(text)
+
+        urls = []
+        processed_links = []
+        local_links = []
+
+        relative_path = self._get_relative_path(file_path)
+
+        for link in matches:
+            if not link.startswith("https://"):
+                processed_link = self._process_local_link(link, file_path, relative_path)
+                if processed_link.startswith("https://"):
+                    processed_links.append(processed_link)
+                else:
+                    local_links.append(processed_link)
+            else:
+                urls.append(link)
+
+        return urls, processed_links, local_links
+
+    def should_check_file(self, file_path: Path) -> bool:
+        """Determine if a file should be checked for links."""
+        return self.check_all or file_path.absolute() in self.repo_info.affected_files
+
+    @staticmethod
+    def _check_url_status(
+        url: str, backoff_time: int = DEFAULT_BACKOFF_TIME, max_attempts: int = DEFAULT_MAX_ATTEMPTS
+    ) -> int:
+        """Check the HTTP status code of a URL with retry logic."""
+        for attempt in range(max_attempts):
+            try:
+                response = request.urlopen(url)
+                return response.getcode(), response
+            except HTTPError as e:
+                if (
+                    e.code == HTTPStatus.TOO_MANY_REQUESTS
+                    and backoff_time > 0
+                    and attempt < max_attempts - 1
+                ):
+                    sleep(backoff_time)
+                    continue
+                return e.code, None
+            except URLError as e:
+                return HTTPStatus.SERVICE_UNAVAILABLE, None
+        return HTTPStatus.TOO_MANY_REQUESTS
+
+    @classmethod
+    def check_urls_async(cls, urls: List[str]) -> List[Tuple[str, int]]:
+        """Check multiple URLs asynchronously and return status codes."""
+        with ThreadPoolExecutor() as executor:
+            results = [(url, *executor.submit(cls._check_url_status, url).result()) for url in urls]
+
+        return results
 
 
 class TestCodestyle(TestCase):
@@ -110,96 +309,101 @@ class TestSamples(TestCase):
                 self.assertIn("Generated with a --default-max-qty of", f.readline())
 
 
-class TestDocs(TestCase):
+class TestDocs(TestCase, LinkTester):
+    """Run tests on the documentation in the repo."""
+
     def __init__(self, *args, **kwargs):
-        """Overridden to get base URL for relative links from remote tracking branch."""
-        super(TestDocs, self).__init__(*args, **kwargs)
-        remote_tr_args = [
-            "git",
-            "rev-parse",
-            "--abbrev-ref",
-            "--symbolic-full-name",
-            "@{u}",
-        ]
-        remote_tracking = run(remote_tr_args, capture_output=True).stdout.decode("utf-8").strip()
+        TestCase.__init__(self, *args, **kwargs)
+        LinkTester.__init__(self, *args, **kwargs)
 
-        if remote_tracking:
-            remote, remote_branch = remote_tracking.split("/", 1)  # '1' to only split one time.
-            repo_url_args = ["git", "remote", "get-url", remote]
-            repo_url = check_output(repo_url_args).decode("utf-8").strip().strip(".git")
-            if "github.com" in repo_url:
-                self.base_url = repo_url + "/tree/" + remote_branch + "/"
+    def _validate_local_links(self, local_links: List[str]) -> None:
+        """Validate that local file links exist."""
+        for link in local_links:
+            resolved_link = (p_root / link).resolve()
+            self.assertTrue(p_root in resolved_link.parents, f"Link '{link}' is outside the repo.")
+            self.assertTrue(resolved_link.exists(), f"Local file '{link}' does not exist")
+
+    def _validate_urls(self, urls: List[str]) -> None:
+        """Validate that URLs return successful status codes."""
+        if not urls:
+            return
+
+        self.assertTrue(
+            all(u.startswith("https://") for u in urls), "All URLs must start with 'https://'"
+        )
+
+        results = self.check_urls_async(urls)
+        for url, status_code, response in results:
+            self.assertEqual(
+                status_code, HTTPStatus.OK, f"'{url}' returned status code {status_code}"
+            )
+            if "#" in url and "https://docs.zephyrproject.org/latest/kconfig.html" not in url:
+                # https://docs.zephyrproject.org/latest/kconfig.html works in a different way
+                anchor = url.split("#", 1)[1]
+                html_content = response.read().decode("utf-8")
+                self.assertTrue(anchor in html_content, f"Anchor '{anchor}' not found at '{url}'")
+
+    def _validate_all_links(self, file_path: Path, allow_local: bool) -> set:
+        """Validate all links in a file."""
+        urls, processed_links, local_links = self.extract_links(file_path)
+
+        all_locals = local_links + processed_links
+        self.assertTrue(
+            allow_local or not all_locals,
+            f"Local link(s) ({all_locals}) found in {file_path} (not allowed).",
+        )
+
+        # Validate local links immediately
+        self._validate_local_links(local_links)
+
+        # Collect URLs for batch validation
+        return urls + processed_links
+
+    def do_test_doc_links(self, files_to_parse) -> None:
+        """Main method to test documentation links."""
+        all_urls = set()
+
+        for file_path, allow_local in files_to_parse:
+            if self.should_check_file(file_path):
+                all_urls.update(self._validate_all_links(file_path, allow_local))
             else:
-                # The URL is not in github.com, so we are not sure it is constructed correctly.
-                self.base_url = None
-        elif "GITHUB_SHA" in os.environ and "GITHUB_REPOSITORY" in os.environ:
-            repo = os.environ["GITHUB_REPOSITORY"]
-            sha = os.environ["GITHUB_SHA"]
-            self.base_url = f"https://github.com/{repo}/blob/{sha}/"
-        else:
-            # There is no remote tracking branch.
-            self.base_url = None
+                print(f"Skipping link checking of {file_path} (not changed in this PR)")
 
-        self.link_regex = compile(r"\[.*?\]\((?P<link>.*?)\)")
+        # Validate all URLs at once to avoid duplicates
+        self._validate_urls(list(all_urls))
 
-    def check_code(self, link, codes):
-        """Check the status code of a URL link. Assert if not 200 (OK)."""
-        try:
-            call = request.urlopen(link)
-            code = call.getcode()
-        except HTTPError as e:
-            code = e.code
-        codes.append((link, code))
+    def test_doc_links_fail(self) -> None:
+        if not p_script in self.repo_info.affected_files:
+            self.skipTest("Skipping doc link negative tests.")
 
-    def do_test_links(self, path, allow_local=True):
-        """Get all Markdown links in the file at <path> and check that they work."""
-        if allow_local and self.base_url is None:
-            raise SkipTest("This test requires the current branch to be pushed to Github.")
+        def assertAssert(func, *args, **kwargs):
+            self.assertRaises(AssertionError, func, *args, **kwargs)
 
-        text = path.read_text(encoding="utf-8")
+        check_all = self.check_all
+        self.check_all = True  # Force checking all files
+        p_doc_fail_cases = p_script_dir / "doc_fail_cases"
 
-        if allow_local:
-            # Use .parent to test relative links (links to repo files):
-            relative_path = str(path.relative_to(p_root).parent)
-            relative_path = "" if relative_path == "." else relative_path + "/"
+        assertAssert(self.do_test_doc_links, [(p_readme, False)])
+        assertAssert(self.do_test_doc_links, [(p_release_notes, False)])
+        with patch("urllib.request.urlopen", side_effect=URLError("Could not connect to server")):
+            assertAssert(self.do_test_doc_links, [(p_doc_fail_cases / "fail1.md", True)])
+        assertAssert(self.do_test_doc_links, [(p_doc_fail_cases / "fail2.md", True)])
+        assertAssert(self.do_test_doc_links, [(p_doc_fail_cases / "fail3.md", True)])
 
-        matches = self.link_regex.findall(text)
-        codes = list()
-        threads = list()
-        for m in matches:
-            link = m
-            if allow_local:
-                if link.startswith("#"):
-                    # Github sometimes need the filename for anchor (#) links to work, so add it:
-                    link = path.name + m
-                if not link.startswith("https://"):
-                    link = self.base_url + relative_path + link
-            else:
-                self.assertTrue(link.startswith("https://"), "Link is not a URL")
-            threads.append(t := Thread(target=self.check_code, args=(link, codes), daemon=True))
-            t.start()
-        for t in threads:
-            t.join()
-        for link, code in codes:
-            self.assertEqual(code, 200, f"'{link}' gives code {code}")
+        self.check_all = check_all  # Restore original check_all state
 
-    def test_readme_links(self):
-        self.do_test_links(p_readme)
-
-    def test_architecture(self):
-        self.do_test_links(p_architecture)
-
-    def test_release_notes(self):
-        self.do_test_links(p_release_notes)
-
-    def test_hello_world_readme(self):
-        self.do_test_links(p_hello_world_sample / "README.md")
-
-    def test_pet_readme(self):
-        self.do_test_links(p_pet_sample / "README.md")
-
-    def test_pypi_readme(self):
-        self.do_test_links(p_pypi_readme, allow_local=False)
+    def test_doc_links(self) -> None:
+        self.do_test_doc_links(
+            [
+                (p_readme, True),
+                (p_architecture, True),
+                (p_release_notes, True),
+                (p_migration_guide, True),
+                (p_hello_world_sample / "README.md", True),
+                (p_pet_sample / "README.md", True),
+                (p_pypi_readme, False),
+            ]
+        )
 
     @skipIf(
         list(map(version_int, python_version_tuple())) < [3, 10, 0],
