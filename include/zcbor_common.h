@@ -285,6 +285,7 @@ do { \
 #define ZCBOR_ERR_MAP_FLAGS_NOT_AVAILABLE 20
 #define ZCBOR_ERR_INVALID_VALUE_ENCODING 21 ///! When ZCBOR_CANONICAL is defined, and the incoming data is not encoded with minimal length, or uses indefinite length array.
 #define ZCBOR_ERR_CONSTANT_STATE_MISSING 22
+#define ZCBOR_ERR_NO_FLAG_MEM 23
 #define ZCBOR_ERR_UNKNOWN 31
 
 /** The largest possible elem_count. */
@@ -339,10 +340,21 @@ void zcbor_new_state(zcbor_state_t *state_array, size_t n_states,
 
 /** Do boilerplate entry function procedure.
  *  Initialize states, call function, and check the result.
+ *  This sets `manually_process_elem` to true.
  */
 int zcbor_entry_function(const uint8_t *payload, size_t payload_len,
 	void *result, size_t *payload_len_out, zcbor_state_t *state, zcbor_decoder_t func,
 	size_t n_states, size_t elem_count);
+
+
+/** Do boilerplate entry function procedure.
+ *  Initialize states, call function, and check the result.
+ *  Allows for using one or more state structs for map elem_states.
+ *  This sets `manually_process_elem` to true.
+ */
+int zcbor_entry_function_with_elem_states(const uint8_t *payload, size_t payload_len,
+	void *result, size_t *payload_len_out, zcbor_state_t *state, zcbor_decoder_t func,
+	size_t n_states, size_t elem_count, size_t n_elem_states);
 
 #ifdef ZCBOR_STOP_ON_ERROR
 /** Check stored error and fail if present, but only if stop_on_error is true.
@@ -522,10 +534,15 @@ static inline size_t zcbor_flags_to_bytes(size_t num_flags)
 	(ZCBOR_ROUND_UP(num_flags, sizeof(zcbor_state_t) * ZCBOR_BITS_PER_BYTE) \
 			/ (sizeof(zcbor_state_t) * ZCBOR_BITS_PER_BYTE))
 
+#define ZCBOR_BYTES_TO_STATES(num_bytes) \
+	(ZCBOR_ROUND_UP(num_bytes, sizeof(zcbor_state_t)) / (sizeof(zcbor_state_t)))
+
+#define ZCBOR_BYTE_STATES(n_bytes) ZCBOR_BYTES_TO_STATES(n_bytes)
 #define ZCBOR_FLAG_STATES(n_flags) ZCBOR_FLAGS_TO_STATES(n_flags)
 
 #else
-#define ZCBOR_FLAG_STATES(n_flags) 0
+#define ZCBOR_BYTE_STATES(n_bytes) (n_bytes * 0)
+#define ZCBOR_FLAG_STATES(n_flags) (n_flags * 0)
 #endif
 
 size_t strnlen(const char *, size_t);
