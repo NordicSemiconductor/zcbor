@@ -34,8 +34,7 @@ bool zcbor_new_backup(zcbor_state_t *state, size_t new_elem_count)
 	 * backup would be unused. */
 	size_t i = (state->constant_state->current_backup) - 1;
 
-	memcpy(&state->constant_state->backup_list[i], state,
-		sizeof(zcbor_state_t));
+	state->constant_state->backup_list[i] = *state;
 
 	state->elem_count = new_elem_count;
 
@@ -69,8 +68,7 @@ bool zcbor_process_backup(zcbor_state_t *state, uint32_t flags,
 				ZCBOR_ERR(ZCBOR_ERR_PAYLOAD_OUTDATED);
 			}
 		}
-		memcpy(state, &state->constant_state->backup_list[i],
-			sizeof(zcbor_state_t));
+		*state = state->constant_state->backup_list[i];
 	}
 
 	if (flags & ZCBOR_FLAG_CONSUME) {
@@ -95,16 +93,6 @@ bool zcbor_process_backup(zcbor_state_t *state, uint32_t flags,
 	return true;
 }
 
-static void update_backups(zcbor_state_t *state, uint8_t const *new_payload_end)
-{
-	if (state->constant_state) {
-		for (unsigned int i = 0; i < state->constant_state->current_backup; i++) {
-			state->constant_state->backup_list[i].payload_end = new_payload_end;
-			state->constant_state->backup_list[i].payload_moved = true;
-		}
-	}
-}
-
 
 bool zcbor_union_start_code(zcbor_state_t *state)
 {
@@ -123,6 +111,7 @@ bool zcbor_union_elem_code(zcbor_state_t *state)
 	return true;
 }
 
+
 bool zcbor_union_end_code(zcbor_state_t *state)
 {
 	if (!zcbor_process_backup(state, ZCBOR_FLAG_CONSUME, state->elem_count)) {
@@ -130,6 +119,7 @@ bool zcbor_union_end_code(zcbor_state_t *state)
 	}
 	return true;
 }
+
 
 void zcbor_new_state(zcbor_state_t *state_array, size_t n_states,
 		const uint8_t *payload, size_t payload_len, size_t elem_count,
@@ -147,6 +137,14 @@ void zcbor_new_state(zcbor_state_t *state_array, size_t n_states,
 	state_array[0].decode_state.map_elems_processed = 0;
 	(void)flags;
 	(void)flags_bytes;
+#endif
+	state_array[0].inside_cbor_bstr = false;
+#ifdef ZCBOR_FRAGMENTS
+	state_array[0].inside_frag_str = false;
+	state_array[0].frag_offset = 0;
+	state_array[0].str_total_len = payload_len;
+	state_array[0].frag_offset_cbor = 0;
+	state_array[0].str_total_len_cbor = payload_len;
 #endif
 	state_array[0].constant_state = NULL;
 
@@ -168,18 +166,94 @@ void zcbor_new_state(zcbor_state_t *state_array, size_t n_states,
 #ifdef ZCBOR_MAP_SMART_SEARCH
 	state_array[0].constant_state->map_search_elem_state_end = flags + flags_bytes;
 #endif
+#ifdef ZCBOR_FRAGMENTS
+	state_array[0].constant_state->curr_payload_section = payload;
+#endif
 	if (n_states > 2) {
 		state_array[0].constant_state->backup_list = &state_array[1];
 	}
 }
 
-void zcbor_update_state(zcbor_state_t *state,
-		const uint8_t *payload, size_t payload_len)
-{
-	state->payload = payload;
-	state->payload_end = payload + payload_len;
 
-	update_backups(state, state->payload_end);
+static void update_state(zcbor_state_t *state, const uint8_t *payload, size_t payload_len)
+{
+	const uint8_t *old_payload = state->payload;
+
+	state->payload = payload;
+	(void)old_payload;
+#ifdef ZCBOR_FRAGMENTS
+	ptrdiff_t prev_len = old_payload - state->constant_state->curr_payload_section;
+
+	state->frag_offset += prev_len;
+	state->frag_offset_cbor += prev_len;
+	if (state->inside_cbor_bstr) {
+		state->payload_end = payload + MIN(payload_len,
+			(size_t)((ptrdiff_t)state->str_total_len_cbor - state->frag_offset_cbor));
+	} else
+#endif
+	{
+		state->payload_end = payload + payload_len;
+	}
+}
+
+
+static void update_backups(zcbor_state_t *state, const uint8_t *old_payload, size_t new_payload_len)
+{
+	for (unsigned int i = 0; i < state->constant_state->current_backup; i++) {
+		state->constant_state->backup_list[i].payload = old_payload;
+		update_state(&state->constant_state->backup_list[i], state->payload, new_payload_len);
+		state->constant_state->backup_list[i].payload_moved = true;
+	}
+}
+
+
+void zcbor_update_state(zcbor_state_t *state, const uint8_t *payload, size_t payload_len)
+{
+	const uint8_t *old_payload = state->payload;
+	update_state(state, payload, payload_len);
+	update_backups(state, old_payload, payload_len);
+	state->constant_state->curr_payload_section = payload;
+}
+
+
+#ifdef ZCBOR_FRAGMENTS
+size_t zcbor_current_string_offset(zcbor_state_t *state)
+{
+	ptrdiff_t res;
+
+	if (state->inside_frag_str) {
+		zcbor_assert((state->payload >= state->constant_state->curr_payload_section)
+			&& (state->payload < (state->constant_state->curr_payload_section + state->str_total_len)),
+			"Payload not within fragment\n");
+		res = ((state->payload - state->constant_state->curr_payload_section)
+				+ state->frag_offset);
+	} else {
+		zcbor_assert((state->payload >= state->constant_state->curr_payload_section)
+			&& (state->payload < (state->constant_state->curr_payload_section + state->str_total_len_cbor)),
+			"Payload not within fragment\n");
+		res = ((state->payload - state->constant_state->curr_payload_section)
+				+ state->frag_offset_cbor);
+	}
+	zcbor_assert(res >= 0, "Negative offset\n");
+	return (size_t)res;
+}
+
+
+size_t zcbor_current_string_remainder(zcbor_state_t *state)
+{
+	size_t curr_offset = zcbor_current_string_offset(state);
+	if (state->inside_frag_str) {
+		return state->str_total_len - curr_offset;
+	} else {
+		return state->str_total_len_cbor - curr_offset;
+	}
+}
+#endif
+
+
+bool zcbor_is_last_fragment(const struct zcbor_string_fragment *fragment)
+{
+	return (fragment->total_len == (fragment->offset + fragment->fragment.len));
 }
 
 
