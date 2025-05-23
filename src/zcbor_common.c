@@ -193,7 +193,7 @@ static void update_backups(zcbor_state_t *state, uint8_t const *new_payload_end)
 bool zcbor_union_start_code(zcbor_state_t *state)
 {
 	ZCBOR_PRINT_FUNC_NAME();
-	if (!zcbor_new_backup(state, state->elem_count)) {
+	if (!zcbor_new_backup_w_elem_state(state, state->elem_count, true)) {
 		ZCBOR_FAIL();
 	}
 	return true;
