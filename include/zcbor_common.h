@@ -116,6 +116,8 @@ struct {
 	bool counting_map_elems; /**< Is set to true while the number of elements of the
 	                              current map are being counted. */
 #ifdef ZCBOR_MAP_SMART_SEARCH
+	bool elem_state_backed_up; /**< Is set to true if the map elements have been backed up.
+	                                This flag is used internally by the backup process. */
 	uint8_t *map_search_elem_state; /**< Optional flags to use when searching unordered
 	                                     maps. If this is not NULL and map_elem_count
 	                                     is non-zero, this consists of one flag per element
@@ -297,6 +299,7 @@ do { \
 #define ZCBOR_ERR_CONSTANT_STATE_MISSING 22
 #define ZCBOR_ERR_BAD_ARG 23
 #define ZCBOR_ERR_NO_FLAG_MEM 24
+#define ZCBOR_ERR_UNSUPPORTED 25
 #define ZCBOR_ERR_UNKNOWN 31
 
 /** The largest possible elem_count. */
@@ -306,8 +309,12 @@ do { \
 #define ZCBOR_LARGE_ELEM_COUNT (ZCBOR_MAX_ELEM_COUNT - 15)
 
 
-/** Take a backup of the current state. Overwrite the current elem_count. */
+/** Take a backup of the @p state. Then, overwrite the current elem_count in @p state.
+ *  Can optionally take a backup of the elem_state if @p backup_elem_state is true.
+ *  In @ref zcbor_new_backup, @p backup_elem_state is false.
+ */
 bool zcbor_new_backup(zcbor_state_t *state, size_t new_elem_count);
+bool zcbor_new_backup_w_elem_state(zcbor_state_t *state, size_t new_elem_count, bool backup_elem_state);
 
 /** Consult a backup, and act on it based on the @p flags (See ZCBOR_FLAG_*).
  *
