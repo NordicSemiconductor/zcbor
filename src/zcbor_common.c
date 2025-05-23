@@ -171,6 +171,7 @@ bool zcbor_process_backup_num(zcbor_state_t *state, uint32_t flags,
 bool zcbor_process_backup(zcbor_state_t *state, uint32_t flags,
 	size_t max_elem_count)
 {
+	PRINT_FUNC();
 	if (state->constant_state->current_backup == 0) {
 		zcbor_log("No backups available.\r\n");
 		ZCBOR_ERR(ZCBOR_ERR_NO_BACKUP_ACTIVE);
@@ -193,7 +194,7 @@ static void update_backups(zcbor_state_t *state, uint8_t const *new_payload_end)
 bool zcbor_union_start_code(zcbor_state_t *state)
 {
 	PRINT_FUNC();
-	if (!zcbor_new_backup(state, state->elem_count)) {
+	if (!zcbor_new_backup_w_elem_state(state, state->elem_count, true)) {
 		ZCBOR_FAIL();
 	}
 	return true;
