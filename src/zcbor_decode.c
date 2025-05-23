@@ -1732,6 +1732,63 @@ bool zcbor_tag_pexpect(zcbor_state_t *state, uint32_t *expected)
 }
 
 
+static bool multi_decode_backup(size_t min_decode,
+		size_t max_decode,
+		size_t *num_decode,
+		zcbor_decoder_t decoder,
+		zcbor_state_t *state,
+		void *result,
+		size_t result_len,
+		bool backup)
+{
+	ZCBOR_PRINT_FUNC_NAME();
+	ZCBOR_CHECK_NULL(state);
+	ZCBOR_CHECK_ERROR();
+
+	for (size_t i = 0; i < max_decode; i++) {
+		uint8_t const *payload_bak;
+		size_t elem_count_bak;
+
+		if (backup) {
+			if (!zcbor_new_backup_w_elem_state(state, state->elem_count, true)) {
+				ZCBOR_FAIL();
+			}
+		} else {
+			payload_bak = state->payload;
+			elem_count_bak = state->elem_count;
+		}
+
+		if (!decoder(state, (uint8_t *)result + i*result_len)) {
+			*num_decode = i;
+
+			if (backup) {
+				if (!zcbor_process_backup(state,
+						ZCBOR_FLAG_CONSUME | ZCBOR_FLAG_RESTORE,
+						ZCBOR_MAX_ELEM_COUNT)) {
+					ZCBOR_FAIL();
+				}
+			} else {
+				state->payload = payload_bak;
+				state->elem_count = elem_count_bak;
+			}
+
+			zcbor_log("Found %zu elements.\r\n", i);
+			ZCBOR_ERR_IF(i < min_decode, ZCBOR_ERR_ITERATIONS);
+			return true;
+		}
+
+		if (backup) {
+			if (!zcbor_process_backup(state, ZCBOR_FLAG_CONSUME, ZCBOR_MAX_ELEM_COUNT)) {
+				ZCBOR_FAIL();
+			}
+		}
+	}
+	zcbor_log("Found %zu elements.\r\n", max_decode);
+	*num_decode = max_decode;
+	return true;
+}
+
+
 bool zcbor_multi_decode(size_t min_decode,
 		size_t max_decode,
 		size_t *num_decode,
@@ -1741,26 +1798,19 @@ bool zcbor_multi_decode(size_t min_decode,
 		size_t result_len)
 {
 	ZCBOR_PRINT_FUNC_NAME();
-	ZCBOR_CHECK_NULL(state);
-	ZCBOR_CHECK_ERROR();
-	for (size_t i = 0; i < max_decode; i++) {
-		uint8_t const *payload_bak = state->payload;
-		size_t elem_count_bak = state->elem_count;
+	return multi_decode_backup(min_decode, max_decode, num_decode, decoder, state, result, result_len, false);
+}
 
-		if (!decoder(state,
-				(uint8_t *)result + i*result_len)) {
-			*num_decode = i;
-			state->payload = payload_bak;
-			state->elem_count = elem_count_bak;
-
-			zcbor_log("Found %zu elements.\r\n", i);
-			ZCBOR_ERR_IF(i < min_decode, ZCBOR_ERR_ITERATIONS);
-			return true;
-		}
-	}
-	zcbor_log("Found %zu elements.\r\n", max_decode);
-	*num_decode = max_decode;
-	return true;
+bool zcbor_multi_decode_w_backup(size_t min_decode,
+		size_t max_decode,
+		size_t *num_decode,
+		zcbor_decoder_t decoder,
+		zcbor_state_t *state,
+		void *result,
+		size_t result_len)
+{
+	ZCBOR_PRINT_FUNC_NAME();
+	return multi_decode_backup(min_decode, max_decode, num_decode, decoder, state, result, result_len, true);
 }
 
 
@@ -1772,9 +1822,23 @@ bool zcbor_present_decode(bool *present,
 	ZCBOR_PRINT_FUNC_NAME();
 	ZCBOR_CHECK_NULL(state);
 	size_t num_decode = 0;
-	bool retval = zcbor_multi_decode(0, 1, &num_decode, decoder, state, result, 0);
+	bool retval = multi_decode_backup(0, 1, &num_decode, decoder, state, result, 0, false);
 
 	zcbor_assert_state(retval, "zcbor_multi_decode should not fail with these parameters.\r\n");
+
+	*present = !!num_decode;
+	return retval;
+}
+
+
+bool zcbor_present_decode_w_backup(bool *present,
+		zcbor_decoder_t decoder,
+		zcbor_state_t *state,
+		void *result)
+{
+	ZCBOR_PRINT_FUNC_NAME();
+	size_t num_decode = 0;
+	bool retval = multi_decode_backup(0, 1, &num_decode, decoder, state, result, 0, true);
 
 	*present = !!num_decode;
 	return retval;

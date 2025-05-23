@@ -332,6 +332,8 @@ do { \
 /** Take a backup of the @p state. Then, overwrite the current elem_count in @p state.
  *  Can optionally take a backup of the elem_state if @p backup_elem_state is true.
  *  In @ref zcbor_new_backup, @p backup_elem_state is false.
+ *
+ *  If @ref ZCBOR_MAP_SMART_SEARCH is not defined, @p backup_elem_state is ignored (assumed false).
  */
 bool zcbor_new_backup(zcbor_state_t *state, size_t new_elem_count);
 bool zcbor_new_backup_w_elem_state(zcbor_state_t *state, size_t new_elem_count, bool backup_elem_state);
