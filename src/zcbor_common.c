@@ -226,7 +226,7 @@ bool zcbor_union_start_code(zcbor_state_t *state)
 	ZCBOR_PRINT_FUNC_NAME();
 	ZCBOR_CHECK_NULL(state);
 
-	if (!zcbor_new_backup(state, state->elem_count)) {
+	if (!zcbor_new_backup_w_elem_state(state, state->elem_count, true)) {
 		ZCBOR_FAIL();
 	}
 	return true;
