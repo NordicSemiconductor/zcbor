@@ -116,6 +116,8 @@ struct {
 	bool counting_map_elems; /**< Is set to true while the number of elements of the
 	                              current map are being counted. */
 #ifdef ZCBOR_MAP_SMART_SEARCH
+	bool elem_state_backed_up; /**< Is set to true if the map elements have been backed up.
+	                                This flag is used internally by the backup process. */
 	uint8_t *map_search_elem_state; /**< Optional flags to use when searching unordered
 	                                     maps. If this is not NULL and map_elem_count
 	                                     is non-zero, this consists of one flag per element
@@ -306,8 +308,12 @@ do { \
 #define ZCBOR_LARGE_ELEM_COUNT (ZCBOR_MAX_ELEM_COUNT - 15)
 
 
-/** Take a backup of the current state. Overwrite the current elem_count. */
+/** Take a backup of the @p state. Then, overwrite the current elem_count in @p state.
+ *  Can optionally take a backup of the elem_state if @p backup_elem_state is true.
+ *  In @ref zcbor_new_backup, @p backup_elem_state is false.
+ */
 bool zcbor_new_backup(zcbor_state_t *state, size_t new_elem_count);
+bool zcbor_new_backup_w_elem_state(zcbor_state_t *state, size_t new_elem_count, bool backup_elem_state);
 
 /** Consult a backup, and act on it based on the @p flags (See ZCBOR_FLAG_*).
  *
@@ -318,6 +324,17 @@ bool zcbor_new_backup(zcbor_state_t *state, size_t new_elem_count);
  *  @ref zcbor_process_backup acts on the most recent backup, i.e. the one at
  *  `state->constant_state->current_backup`.
  *  @ref zcbor_process_backup_num acts on the backup at @p backup_num.
+ *
+ *  @param state            The state to process the backup on.
+ *  @param flags            Flags to control the processing. See ZCBOR_FLAG_*.
+ *                          Restrictions:
+ *                          - ZCBOR_FLAG_CONSUME and ZCBOR_FLAG_KEEP_DECODE_STATE are
+ *                            mututally exclusive.
+ *                          - If ZCBOR_FLAG_CONSUME is set, backup_num (if applicable)
+ *                            must be equal to current_backup.
+ *  @param max_elem_count   Deprecated. Must be ZCBOR_MAX_ELEM_COUNT.
+ *  @param backup_num       The index of the backup to process. Must be between 1 and
+ *                          state->constant_state->current_backup (inclusive).
  */
 bool zcbor_process_backup(zcbor_state_t *state, uint32_t flags, size_t max_elem_count);
 bool zcbor_process_backup_num(zcbor_state_t *state, uint32_t flags,

@@ -17,15 +17,80 @@ _Static_assert((sizeof(size_t) == sizeof(void *)),
 _Static_assert((sizeof(zcbor_state_t) >= sizeof(struct zcbor_state_constant)),
 	"This code needs zcbor_state_t to be at least as large as zcbor_backups_t.");
 
-bool zcbor_new_backup(zcbor_state_t *state, size_t new_elem_count)
+
+#ifdef ZCBOR_MAP_SMART_SEARCH
+/** Take a backup of the elem_state by copying it to immediately after itself.
+ *
+ *  The copy becomes the active elem_state.
+ *  This way, since the active state is after the backup, the elem_state can
+ *  continue to grow without colliding with the backup.
+ *
+ *  @param[in] dry_run If true, only the checks are performed, and no backup is made.
+ */
+static bool do_elem_state_backup(zcbor_state_t *state, bool dry_run)
 {
+	uint8_t *flags = state->decode_state.map_search_elem_state;
+
+	if (!flags) {
+		ZCBOR_ERR(ZCBOR_ERR_MAP_FLAGS_NOT_AVAILABLE);
+	}
+
+	size_t flags_len = zcbor_flags_to_bytes(state->decode_state.map_elem_count);
+
+	/* Check for integer overflow
+	 * The expression is gained from rearranging: (flags + flags_len * 2) > SIZE_MAX
+	 * which matches how the variables are used in the subsequent check. */
+	if (flags_len > ((SIZE_MAX - (size_t)flags) / 2)) {
+		ZCBOR_ERR(ZCBOR_ERR_MAP_FLAGS_NOT_AVAILABLE);
+	}
+
+	if ((flags + flags_len * 2) > (state->constant_state->map_search_elem_state_end)) {
+		ZCBOR_ERR(ZCBOR_ERR_MAP_FLAGS_NOT_AVAILABLE);
+	}
+
+	if (!dry_run) {
+		memcpy(flags + flags_len, flags, flags_len);
+		state->decode_state.map_search_elem_state += flags_len;
+	}
+
+	return true;
+}
+
+/** Discard the elem_state backup by copying the active elem_state to overwrite the backup. */
+static void discard_elem_state_backup(zcbor_state_t *state, zcbor_state_t *backup)
+{
+	uint8_t *flags = state->decode_state.map_search_elem_state;
+	uint8_t *backup_flags = backup->decode_state.map_search_elem_state;
+	size_t flags_len = zcbor_flags_to_bytes(state->decode_state.map_elem_count);
+
+	/* Overwrite the backup with the current elem_state.
+	 * Use memmove because the active elem_state may have expanded since the
+	 * backup was made, in which case the source and destination areas overlap. */
+	memmove(backup_flags, flags, flags_len);
+	state->decode_state.map_search_elem_state = backup_flags;
+}
+#endif
+
+
+bool zcbor_new_backup_w_elem_state(zcbor_state_t *state, size_t new_elem_count, bool backup_elem_state)
+{
+	(void)backup_elem_state; // Possibly unused
 	ZCBOR_CHECK_NULL(state);
+	ZCBOR_PRINT_FUNC_NAME_ARGS("(backup_elem_state=%u, backup_num=%zu)", backup_elem_state, state->constant_state->current_backup+1);
+	zcbor_log("\r\n");
 	ZCBOR_CHECK_ERROR();
 
 	if ((state->constant_state->current_backup)
 		>= state->constant_state->num_backups) {
 		ZCBOR_ERR(ZCBOR_ERR_NO_BACKUP_MEM);
 	}
+
+#ifdef ZCBOR_MAP_SMART_SEARCH
+	if (backup_elem_state) {
+		ZCBOR_FAIL_IF(!do_elem_state_backup(state, true));
+	}
+	state->decode_state.elem_state_backed_up = backup_elem_state;
+#endif
 
 	state->payload_moved = false;
 
@@ -40,9 +105,19 @@ bool zcbor_new_backup(zcbor_state_t *state, size_t new_elem_count)
 
 	state->elem_count = new_elem_count;
 
-	zcbor_log("New backup (level %zu)\n", i);
+#ifdef ZCBOR_MAP_SMART_SEARCH
+	if (backup_elem_state) {
+		ZCBOR_FAIL_IF(!do_elem_state_backup(state, false));
+	}
+#endif
 
 	return true;
+}
+
+
+bool zcbor_new_backup(zcbor_state_t *state, size_t new_elem_count)
+{
+	return zcbor_new_backup_w_elem_state(state, new_elem_count, false);
 }
 
 
@@ -56,12 +131,19 @@ bool zcbor_process_backup_num(zcbor_state_t *state, uint32_t flags,
 
 	size_t i = backup_num - 1;
 
-	if ((backup_num > state->constant_state->current_backup)
+	if ((backup_num == 0)
+		 || (backup_num > state->constant_state->current_backup)
 		 || (i >= state->constant_state->num_backups)) {
 		/* The backup_num is currently 1-based, so this also catches underflow. */
 		zcbor_log("Invalid backup number: %zu.\r\n", backup_num);
 		ZCBOR_ERR(ZCBOR_ERR_BAD_ARG);
 	}
+
+	if (flags & ZCBOR_FLAG_CONSUME) {
+		ZCBOR_ERR_IF((flags & ZCBOR_FLAG_KEEP_DECODE_STATE), ZCBOR_ERR_BAD_ARG);
+		ZCBOR_ERR_IF(backup_num != state->constant_state->current_backup, ZCBOR_ERR_BAD_ARG);
+	}
+
 
 	zcbor_state_t local_copy = *state;
 	zcbor_state_t *backup = &state->constant_state->backup_list[i];
@@ -74,9 +156,20 @@ bool zcbor_process_backup_num(zcbor_state_t *state, uint32_t flags,
 			}
 		}
 		memcpy(state, backup, sizeof(zcbor_state_t));
+
+#ifdef ZCBOR_MAP_SMART_SEARCH
+		if (!(flags & ZCBOR_FLAG_CONSUME) && state->decode_state.elem_state_backed_up) {
+			ZCBOR_FAIL_IF(!do_elem_state_backup(state, false));
+		}
+#endif
 	}
 
 	if (flags & ZCBOR_FLAG_CONSUME) {
+#ifdef ZCBOR_MAP_SMART_SEARCH
+		if (!(flags & ZCBOR_FLAG_RESTORE) && backup->decode_state.elem_state_backed_up) {
+			discard_elem_state_backup(state, backup);
+		}
+#endif
 		state->constant_state->current_backup--;
 	}
 
@@ -177,6 +270,9 @@ void zcbor_new_state(zcbor_state_t *state_array, size_t n_states,
 	state_array[0].decode_state.indefinite_length_array = false;
 #ifdef ZCBOR_MAP_SMART_SEARCH
 	state_array[0].decode_state.map_search_elem_state = flags;
+	if (flags == NULL) {
+		flags_bytes = 0;
+	}
 	state_array[0].decode_state.map_elem_count = 0;
 #else
 	state_array[0].decode_state.map_elems_processed = 0;
