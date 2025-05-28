@@ -1109,10 +1109,11 @@ ZTEST(zcbor_unit_tests, test_error_str)
 	test_str(ZCBOR_ERR_INVALID_VALUE_ENCODING);
 	test_str(ZCBOR_ERR_CONSTANT_STATE_MISSING);
 	test_str(ZCBOR_ERR_BAD_ARG);
+	test_str(ZCBOR_ERR_NO_FLAG_MEM);
 	test_str(ZCBOR_ERR_UNKNOWN);
 	zassert_mem_equal(zcbor_error_str(-1), "ZCBOR_ERR_UNKNOWN", sizeof("ZCBOR_ERR_UNKNOWN"), NULL);
 	zassert_mem_equal(zcbor_error_str(-10), "ZCBOR_ERR_UNKNOWN", sizeof("ZCBOR_ERR_UNKNOWN"), NULL);
-	zassert_mem_equal(zcbor_error_str(ZCBOR_ERR_BAD_ARG + 1), "ZCBOR_ERR_UNKNOWN", sizeof("ZCBOR_ERR_UNKNOWN"), NULL);
+	zassert_mem_equal(zcbor_error_str(ZCBOR_ERR_NO_FLAG_MEM + 1), "ZCBOR_ERR_UNKNOWN", sizeof("ZCBOR_ERR_UNKNOWN"), NULL);
 	zassert_mem_equal(zcbor_error_str(100000), "ZCBOR_ERR_UNKNOWN", sizeof("ZCBOR_ERR_UNKNOWN"), NULL);
 }
 
@@ -1694,6 +1695,72 @@ ZTEST(zcbor_unit_tests, test_simple_value_len)
 	zassert_false(zcbor_nil_expect(state_d_inv, NULL));
 	zassert_false(zcbor_undefined_expect(state_d_inv, NULL));
 #endif
+}
+
+
+uint8_t dummy_entry_func_payload[10] = {
+	0x18, 42, /* uint: 42 */};
+
+uint32_t dummy_entry_func_result;
+
+bool dummy_entry_function(zcbor_state_t *state, uint32_t *result)
+{
+	zassert_equal(state->payload, dummy_entry_func_payload, NULL);
+	zassert_equal(state->elem_count, 1, NULL);
+	zassert_true(zcbor_uint32_expect(state, 42), NULL);
+	zassert_equal_ptr(result, &dummy_entry_func_result, NULL);
+	*result = 42;
+	zassert_equal(state->constant_state->manually_process_elem, true, NULL);
+	zassert_equal(state->constant_state->num_backups, 2, "%d\n", state->constant_state->num_backups);
+#ifdef ZCBOR_MAP_SMART_SEARCH
+	size_t elem_state_bytes = state->constant_state->map_search_elem_state_end
+				- state->decode_state.map_search_elem_state;
+	zassert_equal(elem_state_bytes, sizeof(zcbor_state_t) + 1, "%d != %d\n",
+		      elem_state_bytes, sizeof(zcbor_state_t) + 1);
+#endif
+	return true;
+}
+
+
+bool dummy_entry_function_fail(zcbor_state_t *state, uint32_t *result)
+{
+	/* This function is never called, but it is used to test the
+	 * zcbor_entry_function_with_elem_states() function.
+	 */
+	ZCBOR_ERR(ZCBOR_ERR_WRONG_VALUE);
+}
+
+
+ZTEST(zcbor_unit_tests, test_entry_function)
+{
+	size_t payload_len_out;
+	int err;
+
+#ifdef ZCBOR_MAP_SMART_SEARCH
+	zcbor_state_t states[6];
+
+	err = zcbor_entry_function_with_elem_states(dummy_entry_func_payload, sizeof(dummy_entry_func_payload),
+					&dummy_entry_func_result, &payload_len_out, states,
+					ZCBOR_CAST_FP(dummy_entry_function),
+					sizeof(states) / sizeof(zcbor_state_t) - 2, 1, (sizeof(zcbor_state_t) * 8) + 1);
+	zassert_equal(err, ZCBOR_ERR_NO_FLAG_MEM, "err: %d\n", err);
+#else
+	zcbor_state_t states[4]; /* 2 less since these aren't used for elem_state. */
+#endif
+
+	err = zcbor_entry_function_with_elem_states(dummy_entry_func_payload, sizeof(dummy_entry_func_payload),
+					&dummy_entry_func_result, &payload_len_out, states,
+					ZCBOR_CAST_FP(dummy_entry_function_fail),
+					sizeof(states) / sizeof(zcbor_state_t), 1, (sizeof(zcbor_state_t) * 8) + 1);
+	zassert_equal(err, ZCBOR_ERR_WRONG_VALUE, "err: %d\n", err);
+
+	err = zcbor_entry_function_with_elem_states(dummy_entry_func_payload, sizeof(dummy_entry_func_payload),
+					&dummy_entry_func_result, &payload_len_out, states,
+					ZCBOR_CAST_FP(dummy_entry_function),
+					sizeof(states) / sizeof(zcbor_state_t), 1, (sizeof(zcbor_state_t) * 8) + 1);
+	zassert_equal(err, ZCBOR_SUCCESS, "err: %d\n", err);
+	zassert_equal(payload_len_out, 2, NULL);
+	zassert_equal(dummy_entry_func_result, 42, NULL);
 }
 
 
