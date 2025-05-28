@@ -357,10 +357,18 @@ void zcbor_new_state(zcbor_state_t *state_array, size_t n_states,
  *  (which takes one state from the state list to use as the constant_state),
  *  call @p function, populate @p payload_len_out and check the result.
  *  This sets `manually_process_elem` to true.
+ *
+ *  @zcbor_entry_function_with_elem_states allows for using one or more state
+ *  structs for map elem_states. The required number of state structs needed is
+ *  calculated from @p n_elem_states (one bit per elem_state), and the state structs
+ *  used for this purpose are removed from the backup list.
  */
 int zcbor_entry_function(const uint8_t *payload, size_t payload_len,
-	void *result, size_t *payload_len_out, zcbor_state_t *state, zcbor_decoder_t func,
+	void *result, size_t *payload_len_out, zcbor_state_t *states, zcbor_decoder_t func,
 	size_t n_states, size_t elem_count);
+int zcbor_entry_function_with_elem_states(const uint8_t *payload, size_t payload_len,
+	void *result, size_t *payload_len_out, zcbor_state_t *states, zcbor_decoder_t func,
+	size_t n_states, size_t elem_count, size_t n_elem_states);
 
 #ifdef ZCBOR_STOP_ON_ERROR
 /** Check stored error and fail if present, but only if stop_on_error is true.
@@ -543,7 +551,7 @@ static inline size_t zcbor_flags_to_bytes(size_t num_flags)
 #define ZCBOR_FLAG_STATES(n_flags) ZCBOR_FLAGS_TO_STATES(n_flags)
 
 #else
-#define ZCBOR_FLAG_STATES(n_flags) 0
+#define ZCBOR_FLAG_STATES(n_flags) (n_flags * 0)
 #endif
 
 size_t strnlen(const char *, size_t);
