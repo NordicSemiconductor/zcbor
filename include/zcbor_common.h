@@ -289,6 +289,7 @@ do { \
 #define ZCBOR_ERR_INVALID_VALUE_ENCODING 21 ///! When ZCBOR_CANONICAL is defined, and the incoming data is not encoded with minimal length, or uses indefinite length array.
 #define ZCBOR_ERR_CONSTANT_STATE_MISSING 22
 #define ZCBOR_ERR_BAD_ARG 23
+#define ZCBOR_ERR_NO_FLAG_MEM 24
 #define ZCBOR_ERR_UNKNOWN 31
 
 /** The largest possible elem_count. */
@@ -360,10 +361,21 @@ void zcbor_new_state(zcbor_state_t *state_array, size_t n_states,
  *  Since @ref zcbor_new_state takes one additional state from the state list
  *  to use as the constant_state, the number of states must be at least 2, and
  *  the number of backups will be `n_states - 2`.
+ *
+ *  @ref zcbor_entry_function_with_elem_states allows for using one or more state
+ *  structs for map elem_states. The required number of state structs needed is
+ *  calculated from @p n_elem_states (one bit per elem_state), and the state structs
+ *  used for this purpose are removed from the backup list.
  */
-int zcbor_entry_function(const uint8_t *payload, size_t payload_len,
+int zcbor_entry_function_with_elem_states(const uint8_t *payload, size_t payload_len,
 	void *result, size_t *payload_len_out, zcbor_state_t *states, zcbor_decoder_t func,
-	size_t n_states, size_t elem_count);
+	size_t n_states, size_t elem_count, size_t n_elem_states);
+
+/** For backwards compatibility.
+ *
+ *  Equivalent to @ref zcbor_entry_function_with_elem_states with @p n_elem_states = 0
+ */
+#define zcbor_entry_function(...) zcbor_entry_function_with_elem_states(__VA_ARGS__, 0)
 
 #ifdef ZCBOR_STOP_ON_ERROR
 /** Check stored error and fail if present, but only if stop_on_error is true.
@@ -546,7 +558,7 @@ static inline size_t zcbor_flags_to_bytes(size_t num_flags)
 #define ZCBOR_FLAG_STATES(n_flags) ZCBOR_FLAGS_TO_STATES(n_flags)
 
 #else
-#define ZCBOR_FLAG_STATES(n_flags) 0
+#define ZCBOR_FLAG_STATES(n_flags) (n_flags * 0)
 #endif
 
 size_t strnlen(const char *, size_t);
