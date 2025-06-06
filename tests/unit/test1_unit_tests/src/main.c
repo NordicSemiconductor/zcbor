@@ -1281,6 +1281,9 @@ ZTEST(zcbor_unit_tests, test_unordered_map)
 	/* Test that looping stops both if it starts at the very start and very end of the map.
 	 * Also test ZCBOR_ERR_MAP_MISALIGNED. */
 	zassert_true(zcbor_unordered_map_start_decode(state_d2), NULL);
+	zassert_false(zcbor_elem_processed(state_d2), NULL);
+	int err = zcbor_pop_error(state_d2);
+	zassert_equal(err, ZCBOR_ERR_MAP_MISALIGNED, "err: %d\n", err);
 	zassert_false(zcbor_unordered_map_search((zcbor_decoder_t *)zcbor_int32_pexpect, state_d2, &(int32_t){3}), NULL);
 	ret = zcbor_unordered_map_search((zcbor_decoder_t *)zcbor_int32_pexpect, state_d2, &(int32_t){2});
 	zassert_true(ret, "err: %d\n", zcbor_peek_error(state_d2));

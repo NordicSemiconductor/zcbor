@@ -814,7 +814,14 @@ static bool map_restart(zcbor_state_t *state)
 __attribute__((used))
 static size_t get_current_index(zcbor_state_t *state, uint32_t index_offset)
 {
-	return ((zcbor_current_max_elem_count(state) - state->elem_count - index_offset) / 2);
+	size_t current_elem_count_index = zcbor_current_max_elem_count(state) - state->elem_count;
+
+	if (index_offset > current_elem_count_index) {
+		/* Invalid case, should be caught earlier, return 0 to prevent underflow. */
+		return 0;
+	}
+
+	return ((current_elem_count_index - index_offset) / 2);
 }
 
 
@@ -859,6 +866,10 @@ static bool should_try_key(zcbor_state_t *state)
 
 bool zcbor_elem_processed(zcbor_state_t *state)
 {
+	if (state->elem_count >= zcbor_current_max_elem_count(state)) {
+		/* If elem_count is at the start of the map, we have not processed anything yet. */
+		ZCBOR_ERR(ZCBOR_ERR_MAP_MISALIGNED);
+	}
 	return manipulate_flags(state, FLAG_MODE_CLEAR_CURRENT);
 }
 
@@ -893,6 +904,10 @@ static bool should_try_key(zcbor_state_t *state)
 
 bool zcbor_elem_processed(zcbor_state_t *state)
 {
+	if (state->elem_count >= zcbor_current_max_elem_count(state)) {
+		/* If elem_count is at the start of the map, we have not processed anything yet. */
+		ZCBOR_ERR(ZCBOR_ERR_MAP_MISALIGNED);
+	}
 	if (should_try_key(state)) {
 		state->decode_state.map_elems_processed++;
 	}
