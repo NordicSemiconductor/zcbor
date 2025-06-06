@@ -89,6 +89,7 @@ do { \
 } while(0)
 
 #define PRINT_FUNC() zcbor_log("%s ", __func__);
+#define PRINT_FUNC_ARGS(arg_fmt_str, ...) zcbor_log("%s" arg_fmt_str " ", __func__, __VA_ARGS__);
 
 
 static void endian_copy(uint8_t *dst, const uint8_t *src, size_t src_len)
@@ -329,7 +330,7 @@ bool zcbor_int32_pexpect(zcbor_state_t *state, int32_t *expected)
 
 bool zcbor_int64_expect(zcbor_state_t *state, int64_t expected)
 {
-	PRINT_FUNC();
+	PRINT_FUNC_ARGS("(%" PRIi64 ")", expected);
 	int64_t actual;
 
 	if (!zcbor_int64_decode(state, &actual)) {
@@ -383,7 +384,7 @@ bool zcbor_uint32_pexpect(zcbor_state_t *state, uint32_t *expected)
 
 bool zcbor_uint64_expect(zcbor_state_t *state, uint64_t expected)
 {
-	PRINT_FUNC();
+	PRINT_FUNC_ARGS("(%" PRIu64 ")", expected);
 	uint64_t actual;
 
 	if (!zcbor_uint64_decode(state, &actual)) {
@@ -473,6 +474,22 @@ static bool str_start_decode_with_overflow_check(zcbor_state_t *state,
 }
 
 
+/**
+ * @brief Reset map element processing if we are in an unordered map.
+ */
+static void exit_map(zcbor_state_t *state)
+{
+#ifdef ZCBOR_MAP_SMART_SEARCH
+	// This has no effect if we are not in an unordered map, since map_elem_count is 0.
+	state->decode_state.map_search_elem_state
+		+= zcbor_flags_to_bytes(state->decode_state.map_elem_count);
+#else
+	state->decode_state.map_elems_processed = 0;
+#endif
+	state->decode_state.map_elem_count = 0;
+}
+
+
 bool zcbor_bstr_start_decode(zcbor_state_t *state, struct zcbor_string *result)
 {
 	PRINT_FUNC();
@@ -488,6 +505,7 @@ bool zcbor_bstr_start_decode(zcbor_state_t *state, struct zcbor_string *result)
 	if (!zcbor_new_backup(state, ZCBOR_MAX_ELEM_COUNT)) {
 		FAIL_RESTORE();
 	}
+	exit_map(state); // Exit the enclosing map if any
 
 	state->payload_end = result->value + result->len;
 	return true;
@@ -713,8 +731,11 @@ static bool list_map_start_decode(zcbor_state_t *state,
 				? ZCBOR_LARGE_ELEM_COUNT : new_elem_count)) {
 		FAIL_RESTORE();
 	}
+	state->decode_state.map_start_backup_num = state->constant_state->current_backup;
 
 	state->decode_state.indefinite_length_array = indefinite_length_array;
+
+	exit_map(state); // Exit the enclosing map if any
 
 	return true;
 }
@@ -765,12 +786,6 @@ bool zcbor_unordered_map_start_decode(zcbor_state_t *state)
 	PRINT_FUNC();
 	ZCBOR_FAIL_IF(!zcbor_map_start_decode(state));
 
-#ifdef ZCBOR_MAP_SMART_SEARCH
-	state->decode_state.map_search_elem_state
-		+= zcbor_flags_to_bytes(state->decode_state.map_elem_count);
-#else
-	state->decode_state.map_elems_processed = 0;
-#endif
 	state->decode_state.map_elem_count = 0;
 	state->decode_state.counting_map_elems = state->decode_state.indefinite_length_array;
 
@@ -799,8 +814,10 @@ static size_t zcbor_current_max_elem_count(zcbor_state_t *state)
 
 static bool map_restart(zcbor_state_t *state)
 {
-	if (!zcbor_process_backup(state, ZCBOR_FLAG_RESTORE | ZCBOR_FLAG_KEEP_DECODE_STATE,
-				ZCBOR_MAX_ELEM_COUNT)) {
+	if (!zcbor_process_backup_num(state,
+			ZCBOR_FLAG_RESTORE | ZCBOR_FLAG_KEEP_DECODE_STATE,
+			ZCBOR_MAX_ELEM_COUNT,
+			state->decode_state.map_start_backup_num)) {
 		ZCBOR_FAIL();
 	}
 
@@ -812,7 +829,7 @@ static bool map_restart(zcbor_state_t *state)
 __attribute__((used))
 static size_t get_current_index(zcbor_state_t *state, uint32_t index_offset)
 {
-	/* Subtract mode because for GET, you want the index you are pointing to, while for SET,
+	/* Subtract index_offset because for GET, you want the index you are pointing to, while for SET,
 	 * you want the one you just processed. This only comes into play when elem_count is even. */
 	return ((zcbor_current_max_elem_count(state) - state->elem_count - index_offset) / 2);
 }
@@ -959,6 +976,10 @@ bool zcbor_unordered_map_search(zcbor_decoder_t key_decoder, zcbor_state_t *stat
 			(void)old_flags;
 		}
 
+		if (!should_try_key(state)) {
+			zcbor_log("Skipping element at index %zu.\n", get_current_index(state, 0));
+		}
+
 		if (should_try_key(state) && try_key(state, key_result, key_decoder)) {
 			if (!ZCBOR_MANUALLY_PROCESS_ELEM(state)) {
 				ZCBOR_FAIL_IF(!zcbor_elem_processed(state));
@@ -1055,10 +1076,14 @@ bool zcbor_map_end_decode(zcbor_state_t *state)
 
 bool zcbor_unordered_map_end_decode(zcbor_state_t *state)
 {
+	PRINT_FUNC();
 	/* Checking zcbor_array_at_end() ensures that check is valid.
 	 * In case the map is at the end, but state->decode_state.counting_map_elems isn't updated.*/
-	ZCBOR_ERR_IF(!zcbor_array_at_end(state) && state->decode_state.counting_map_elems,
-			ZCBOR_ERR_ELEMS_NOT_PROCESSED);
+	if (!zcbor_array_at_end(state) && state->decode_state.counting_map_elems) {
+		zcbor_log("unprocessed element(s) in map after index %zu\n",
+				state->decode_state.map_elem_count);
+		ZCBOR_ERR(ZCBOR_ERR_ELEMS_NOT_PROCESSED);
+	}
 
 	if (state->decode_state.map_elem_count > 0) {
 #ifdef ZCBOR_MAP_SMART_SEARCH
@@ -1574,8 +1599,9 @@ bool zcbor_multi_decode(size_t min_decode,
 			*num_decode = i;
 			state->payload = payload_bak;
 			state->elem_count = elem_count_bak;
-			ZCBOR_ERR_IF(i < min_decode, ZCBOR_ERR_ITERATIONS);
+
 			zcbor_log("Found %zu elements.\r\n", i);
+			ZCBOR_ERR_IF(i < min_decode, ZCBOR_ERR_ITERATIONS);
 			return true;
 		}
 	}
