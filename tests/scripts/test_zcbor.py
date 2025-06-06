@@ -67,7 +67,9 @@ class TestManifest(TestCase):
 
     def decode_string(self, data_string, *cddl_paths):
         cddl_str = " ".join((Path(p).read_text(encoding="utf-8") for p in cddl_paths))
-        self.my_types = zcbor.DataTranslator.from_cddl(cddl_str, 16).my_types
+        self.my_types = zcbor.DataTranslator.from_cddl(
+            cddl_string=cddl_str, default_max_qty=16
+        ).my_types
         cddl = self.my_types["SUIT_Envelope_Tagged"]
         self.decoded = cddl.decode_str(data_string)
 
@@ -1120,7 +1122,7 @@ file header"""
 class TestOptional(TestCase):
     def test_optional_0(self):
         with open(p_optional, "r", encoding="utf-8") as f:
-            cddl_res = zcbor.DataTranslator.from_cddl(f.read(), 16)
+            cddl_res = zcbor.DataTranslator.from_cddl(cddl_string=f.read(), default_max_qty=16)
         cddl = cddl_res.my_types["cfg"]
         test_yaml = """
             mem_config:
@@ -1131,15 +1133,20 @@ class TestOptional(TestCase):
         self.assertEqual(decoded.mem_config[0].N, [5])
 
 
-class TestUndefined(TestCase):
-    def test_undefined_0(self):
-        cddl_res = zcbor.DataTranslator.from_cddl(
-            p_prelude.read_text(encoding="utf-8")
+class CornerCaseTest(TestCase):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.cddl_res = zcbor.DataTranslator.from_cddl(
+            cddl_string=p_prelude.read_text(encoding="utf-8")
             + "\n"
             + p_corner_cases.read_text(encoding="utf-8"),
-            16,
+            default_max_qty=16,
         )
-        cddl = cddl_res.my_types["Simples"]
+
+
+class TestUndefined(CornerCaseTest):
+    def test_undefined_0(self):
+        cddl = self.cddl_res.my_types["Simples"]
         test_yaml = "[true, false, true, null, [zcbor_undefined]]"
 
         decoded = cddl.decode_str_yaml(test_yaml, yaml_compat=True)
@@ -1149,15 +1156,9 @@ class TestUndefined(TestCase):
         self.assertEqual(safe_load(encoded), safe_load(test_yaml))
 
 
-class TestFloat(TestCase):
+class TestFloat(CornerCaseTest):
     def test_float_0(self):
-        cddl_res = zcbor.DataTranslator.from_cddl(
-            p_prelude.read_text(encoding="utf-8")
-            + "\n"
-            + p_corner_cases.read_text(encoding="utf-8"),
-            16,
-        )
-        cddl = cddl_res.my_types["Floats"]
+        cddl = self.cddl_res.my_types["Floats"]
         test_yaml = f"[3.1415, 1234567.89, 0.000123, 3.1415, 2.71828, 5.0, {1 / 3}]"
 
         decoded = cddl.decode_str_yaml(test_yaml)
@@ -1238,26 +1239,14 @@ class TestYamlCompatibility(PopenTest):
         )
 
 
-class TestIntmax(TestCase):
+class TestIntmax(CornerCaseTest):
     def test_intmax1(self):
-        cddl_res = zcbor.DataTranslator.from_cddl(
-            p_prelude.read_text(encoding="utf-8")
-            + "\n"
-            + p_corner_cases.read_text(encoding="utf-8"),
-            16,
-        )
-        cddl = cddl_res.my_types["Intmax1"]
+        cddl = self.cddl_res.my_types["Intmax1"]
         test_yaml = f"[-128, 127, 255, -32768, 32767, 65535, -2147483648, 2147483647, 4294967295, -9223372036854775808, 9223372036854775807, 18446744073709551615]"
         decoded = cddl.decode_str_yaml(test_yaml)
 
     def test_intmax2(self):
-        cddl_res = zcbor.DataTranslator.from_cddl(
-            p_prelude.read_text(encoding="utf-8")
-            + "\n"
-            + p_corner_cases.read_text(encoding="utf-8"),
-            16,
-        )
-        cddl = cddl_res.my_types["Intmax2"]
+        cddl = self.cddl_res.my_types["Intmax2"]
         test_yaml1 = f"[-128, 0, -32768, 0, -2147483648, 0, -9223372036854775808, 0]"
         decoded = cddl.decode_str_yaml(test_yaml1)
         self.assertEqual(decoded.INT_8, -128)
@@ -1281,15 +1270,9 @@ class TestIntmax(TestCase):
         self.assertEqual(decoded.UINT_64, 18446744073709551615)
 
 
-class TestInvalidIdentifiers(TestCase):
+class TestInvalidIdentifiers(CornerCaseTest):
     def test_invalid_identifiers0(self):
-        cddl_res = zcbor.DataTranslator.from_cddl(
-            p_prelude.read_text(encoding="utf-8")
-            + "\n"
-            + p_corner_cases.read_text(encoding="utf-8"),
-            16,
-        )
-        cddl = cddl_res.my_types["InvalidIdentifiers"]
+        cddl = self.cddl_res.my_types["InvalidIdentifiers"]
         test_yaml = "['1one', 2, '{[a-z]}']"
         decoded = cddl.decode_str_yaml(test_yaml)
         self.assertTrue(decoded.f_1one_tstr)

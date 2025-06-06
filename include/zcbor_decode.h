@@ -325,7 +325,12 @@ bool zcbor_any_skip(zcbor_state_t *state, void *unused);
  * @retval false  If @p decoder failed before having decoded @p min_decode
  *                values.
  */
-bool zcbor_multi_decode(size_t min_decode, size_t max_decode, size_t *num_decode,
+bool zcbor_multi_decode(
+		size_t min_decode, size_t max_decode, size_t *num_decode,
+		zcbor_decoder_t decoder, zcbor_state_t *state, void *result,
+		size_t result_len);
+bool zcbor_multi_decode_w_backup(
+		size_t min_decode, size_t max_decode, size_t *num_decode,
 		zcbor_decoder_t decoder, zcbor_state_t *state, void *result,
 		size_t result_len);
 
@@ -344,7 +349,10 @@ bool zcbor_present_decode(bool *present,
 		zcbor_decoder_t decoder,
 		zcbor_state_t *state,
 		void *result);
-
+bool zcbor_present_decode_w_backup(bool *present,
+		zcbor_decoder_t decoder,
+		zcbor_state_t *state,
+		void *result);
 
 /** Supplementary string (bstr/tstr) decoding functions: */
 
