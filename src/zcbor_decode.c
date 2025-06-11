@@ -432,8 +432,7 @@ static bool str_start_decode(zcbor_state_t *state,
 }
 
 
-/**
- * @brief Checks if there is a potential overflow when decoding a string.
+/** Check if there is a potential overflow when decoding a string.
  *
  * This function is used to check if the payload contains the whole string.
  * The payload in the state must point to the start of the string payload, the
