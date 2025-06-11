@@ -710,6 +710,7 @@ static bool list_map_start_decode(zcbor_state_t *state,
 				? ZCBOR_LARGE_ELEM_COUNT : new_elem_count)) {
 		FAIL_RESTORE();
 	}
+	state->decode_state.map_start_backup_num = state->constant_state->current_backup;
 
 	state->decode_state.indefinite_length_array = indefinite_length_array;
 
@@ -796,8 +797,10 @@ static size_t zcbor_current_max_elem_count(zcbor_state_t *state)
 
 static bool map_restart(zcbor_state_t *state)
 {
-	if (!zcbor_process_backup(state, ZCBOR_FLAG_RESTORE | ZCBOR_FLAG_KEEP_DECODE_STATE,
-				ZCBOR_MAX_ELEM_COUNT)) {
+	if (!zcbor_process_backup_num(state,
+			ZCBOR_FLAG_RESTORE | ZCBOR_FLAG_KEEP_DECODE_STATE,
+			ZCBOR_MAX_ELEM_COUNT,
+			state->decode_state.map_start_backup_num)) {
 		ZCBOR_FAIL();
 	}
 
