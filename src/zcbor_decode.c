@@ -470,6 +470,28 @@ static bool str_start_decode_with_overflow_check(zcbor_state_t *state,
 }
 
 
+/** Reset map element processing if we are in an unordered map. */
+static bool exit_map(zcbor_state_t *state)
+{
+#ifdef ZCBOR_MAP_SMART_SEARCH
+	/* This has no effect if we are not in an unordered map, since map_elem_count is 0. */
+	uint8_t *new_elem_state = state->decode_state.map_search_elem_state
+		+ zcbor_flags_to_bytes(state->decode_state.map_elem_count);
+
+	if (new_elem_state > state->constant_state->map_search_elem_state_end) {
+		zcbor_log("map_search_elem_state overflowed!\r\n");
+		ZCBOR_ERR(ZCBOR_ERR_MAP_FLAGS_NOT_AVAILABLE);
+	}
+
+	state->decode_state.map_search_elem_state = new_elem_state;
+#else
+	state->decode_state.map_elems_processed = 0;
+#endif
+	state->decode_state.map_elem_count = 0;
+	return true;
+}
+
+
 bool zcbor_bstr_start_decode(zcbor_state_t *state, struct zcbor_string *result)
 {
 	ZCBOR_PRINT_FUNC_NAME();
@@ -485,6 +507,7 @@ bool zcbor_bstr_start_decode(zcbor_state_t *state, struct zcbor_string *result)
 	if (!zcbor_new_backup(state, ZCBOR_MAX_ELEM_COUNT)) {
 		FAIL_RESTORE();
 	}
+	ZCBOR_FAIL_IF(!exit_map(state)); // Exit the enclosing map if any
 
 	state->payload_end = result->value + result->len;
 	return true;
@@ -714,6 +737,8 @@ static bool list_map_start_decode(zcbor_state_t *state,
 
 	state->decode_state.indefinite_length_array = indefinite_length_array;
 
+	ZCBOR_FAIL_IF(!exit_map(state)); // Exit the enclosing map if any
+
 	return true;
 }
 
@@ -763,12 +788,6 @@ bool zcbor_unordered_map_start_decode(zcbor_state_t *state)
 	ZCBOR_PRINT_FUNC_NAME();
 	ZCBOR_FAIL_IF(!zcbor_map_start_decode(state));
 
-#ifdef ZCBOR_MAP_SMART_SEARCH
-	state->decode_state.map_search_elem_state
-		+= zcbor_flags_to_bytes(state->decode_state.map_elem_count);
-#else
-	state->decode_state.map_elems_processed = 0;
-#endif
 	state->decode_state.map_elem_count = 0;
 	state->decode_state.counting_map_elems = state->decode_state.indefinite_length_array;
 
@@ -1080,6 +1099,7 @@ bool zcbor_map_end_decode(zcbor_state_t *state)
 
 bool zcbor_unordered_map_end_decode(zcbor_state_t *state)
 {
+	ZCBOR_PRINT_FUNC_NAME();
 	/* Checking zcbor_array_at_end() ensures that check is valid.
 	 * In case the map is at the end, but state->decode_state.counting_map_elems isn't updated.*/
 	if (!zcbor_array_at_end(state) && state->decode_state.counting_map_elems) {
