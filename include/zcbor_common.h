@@ -129,6 +129,9 @@ struct {
 	size_t map_elems_processed; /**< The number of elements of an unordered map
 	                                 that have been processed. */
 #endif
+	size_t map_start_backup_num; /** The index of the backup made at the start of the current map.
+	                                 This is used to move to the start of the map when searching
+					 unordered maps. */
 	size_t map_elem_count; /**< Number of elements in the current unordered map.
 	                            This also serves as the number of bits (not bytes)
 	                            in the map_search_elem_state array (when applicable). */
@@ -285,6 +288,7 @@ do { \
 #define ZCBOR_ERR_MAP_FLAGS_NOT_AVAILABLE 20
 #define ZCBOR_ERR_INVALID_VALUE_ENCODING 21 ///! When ZCBOR_CANONICAL is defined, and the incoming data is not encoded with minimal length, or uses indefinite length array.
 #define ZCBOR_ERR_CONSTANT_STATE_MISSING 22
+#define ZCBOR_ERR_BAD_ARG 23
 #define ZCBOR_ERR_UNKNOWN 31
 
 /** The largest possible elem_count. */
@@ -297,11 +301,18 @@ do { \
 /** Take a backup of the current state. Overwrite the current elem_count. */
 bool zcbor_new_backup(zcbor_state_t *state, size_t new_elem_count);
 
-/** Consult the most recent backup. In doing so, check whether elem_count is
- *  less than or equal to max_elem_count.
- *  Also, take action based on the flags (See ZCBOR_FLAG_*).
+/** Consult a backup, and act on it based on the @p flags (See ZCBOR_FLAG_*).
+ *
+ *  In doing so, check the current elem_count and fail if it larger than
+ *  @p max_elem_count.
+ *
+ *  @ref zcbor_process_backup acts on the most recent backup, i.e. the one at
+ *  `state->constant_state->current_backup`.
+ *  @ref zcbor_process_backup_num acts on the backup at @p backup_num.
  */
 bool zcbor_process_backup(zcbor_state_t *state, uint32_t flags, size_t max_elem_count);
+bool zcbor_process_backup_num(zcbor_state_t *state, uint32_t flags,
+	size_t max_elem_count, size_t backup_num);
 
 /** Convenience function for starting encoding/decoding of a union.
  *
