@@ -86,7 +86,7 @@ def sizeof(num):
     elif num <= UINT64_MAX:
         return 8
     else:
-        raise ValueError("Number too large (more than 64 bits).")
+        raise CddlParsingError("Number too large (more than 64 bits).")
 
 
 def verbose_print(verbose_flag, *things):
@@ -196,7 +196,7 @@ def comma_operator(*expressions):
     "None" expressions are ignored."""
     _expressions = list(e for e in expressions if e is not None)
     if len(_expressions) == 0:
-        raise ValueError("comma operator must have at least one expression")
+        raise CddlParsingError("comma operator must have at least one expression")
     elif len(_expressions) == 1:
         return _expressions[0]
     else:
@@ -225,6 +225,15 @@ def val_to_str(val):
     elif isinstance(val, Hashable) and val in val_conversions:
         return val_conversions[val]
     return str(val)
+
+
+class CddlParsingError(Exception):
+    def zcbor_add_note(self, note):
+        if hasattr(self, "add_note"):
+            self.add_note(note)
+        else:
+            # Workaround for Python 3.10 and earlier
+            self.args = (self.args[0] + "\n" + note,) + self.args[1:]
 
 
 class CddlParser:
@@ -286,6 +295,9 @@ class CddlParser:
         self.type = None
         # The default value of the element, as provided via the .default operator.
         self.default = None
+        # A list of modifiers of any kind to this element.
+        # This includes e.g. quantifiers, size ranges, and control operators
+        self.modifiers = set()
         self.match_str = ""
         self.errors = list()
 
@@ -300,27 +312,37 @@ class CddlParser:
         if type(self) not in type(self).cddl_regexes:
             self.cddl_regexes_init()
 
+    def post_process(self):
+        self.post_validate()
+
+    def post_process_control_group(self):
+        self.post_validate_control_group()
+
     @classmethod
     def from_cddl(cddl_class, *, cddl_string, **kwargs):
-        my_types = dict()
-
         type_strings = cddl_class.get_types(cddl_string)
+
         # Separate type_strings as keys in two dicts, one dict for strings that start with &( which
         # are special control operators for .bits, and one dict for all the regular types.
         my_types = {
-            my_type: None for my_type, val in type_strings.items() if not val.startswith("&(")
+            my_type: val for my_type, val in type_strings.items() if not val.startswith("&(")
         }
         my_control_groups = {
-            my_cg: None for my_cg, val in type_strings.items() if val.startswith("&(")
+            my_cg: val for my_cg, val in type_strings.items() if val.startswith("&(")
         }
+
+        prototype = cddl_class(
+            my_types=my_types, my_control_groups=my_control_groups, **kwargs, base_stem=""
+        )
 
         # Parse the definitions, replacing the each string with a
         # CodeGenerator instance.
         for my_type, cddl_string in type_strings.items():
-            parsed = cddl_class(
-                my_types=my_types, my_control_groups=my_control_groups, **kwargs, base_stem=my_type
-            )
-            parsed.get_value(cddl_string.replace("\n", " ").lstrip("&"))
+            try:
+                parsed = prototype.parse_one(cddl_string, base_stem=my_type)
+            except CddlParsingError as e:
+                e.zcbor_add_note(f"  while parsing type {my_type}")
+                raise
             parsed = parsed.flatten()[0]
             if my_type in my_types:
                 my_types[my_type] = parsed
@@ -331,12 +353,9 @@ class CddlParser:
 
         # post_validate all the definitions.
         for my_type in my_types:
-            my_types[my_type].set_id_prefix()
-            my_types[my_type].post_validate()
-            my_types[my_type].set_base_names()
+            my_types[my_type].post_process()
         for my_control_group in my_control_groups:
-            my_control_groups[my_control_group].set_id_prefix()
-            my_control_groups[my_control_group].post_validate_control_group()
+            my_control_groups[my_control_group].post_process_control_group()
 
         return CddlTypes(my_types, my_control_groups)
 
@@ -370,7 +389,7 @@ class CddlParser:
                 result[key] = result[key].lstrip(slashes)  # strip from front
             else:
                 if key in result:
-                    raise ValueError(f"Duplicate CDDL type found: {key}")
+                    raise CddlParsingError(f"Duplicate CDDL type found: {key}")
                 result[key] = value
         return dict(result)
 
@@ -458,21 +477,6 @@ class CddlParser:
         """Set an explicit base name for this element."""
         self.base_name = base_name.replace("-", "_")
 
-    def set_base_names(self):
-        """Recursively set the base names of this element's children, keys, and cbor elements."""
-        if self.cbor:
-            self.cbor.set_base_name(self.var_name().strip("_") + "_cbor")
-        if self.key:
-            self.key.set_base_name(self.var_name().strip("_") + "_key")
-
-        if self.type in ["LIST", "MAP", "GROUP", "UNION"]:
-            for child in self.value:
-                child.set_base_names()
-        if self.cbor:
-            self.cbor.set_base_names()
-        if self.key:
-            self.key.set_base_names()
-
     def id(self, with_prefix=True):
         """Add uniqueness to the base name."""
         raw_name = self.get_base_name()
@@ -505,19 +509,6 @@ class CddlParser:
             "base_stem": self.base_stem,
         }
 
-    def set_id_prefix(self, id_prefix=""):
-        self.id_prefix = id_prefix
-        if self.type in ["LIST", "MAP", "GROUP", "UNION"]:
-            for child in self.value:
-                if child.single_func_impl_condition():
-                    child.set_id_prefix(self.generate_base_name())
-                else:
-                    child.set_id_prefix(self.child_base_id())
-        if self.cbor:
-            self.cbor.set_id_prefix(self.child_base_id())
-        if self.key:
-            self.key.set_id_prefix(self.child_base_id())
-
     def child_base_id(self):
         """Id to pass to children for them to use as basis for their id/base name."""
         return self.id()
@@ -547,6 +538,33 @@ class CddlParser:
         if self.cbor:
             reprstr += " cbor: " + repr(self.cbor)
         return reprstr.replace("\n", "\n    ")
+
+    def is_unambiguous_value(self):
+        """Whether this element is a non-compound value that can be known a priori."""
+        return (
+            self.type in ["NIL", "UNDEF", "ANY"]
+            or (
+                self.type in ["INT", "NINT", "UINT", "FLOAT", "BSTR", "TSTR", "BOOL"]
+                and self.value is not None
+            )
+            or (self.type == "OTHER" and self.my_types[self.value].is_unambiguous())
+        )
+
+    def is_unambiguous_repeated(self):
+        """Whether the repeated part of this element is known a priori."""
+        return (
+            self.is_unambiguous_value()
+            and (self.key is None or self.key.is_unambiguous_repeated())
+            or (self.type in ["LIST", "GROUP", "MAP"] and len(self.value) == 0)
+            or (
+                self.type in ["LIST", "GROUP", "MAP"]
+                and all((child.is_unambiguous() for child in self.value))
+            )
+        )
+
+    def is_unambiguous(self):
+        """Whether or not we can know the exact encoding of this element a priori."""
+        return self.is_unambiguous_repeated() and (self.min_qty == self.max_qty)
 
     def _flatten(self):
         """Recursively flatten children, key, and cbor elements."""
@@ -584,20 +602,129 @@ class CddlParser:
         else:
             return [self]
 
+    def enforce_no_modifier(self):
+        if len(self.modifiers) > 0:
+            raise CddlParsingError(f"Cannot use value with {next(iter(self.modifiers))} here.")
+
+    def unpack_value(self, value):
+        while value.type == "OTHER" or (value.type == "GROUP" and len(value.value) == 1):
+            value.enforce_no_modifier()
+            if value.type == "OTHER":
+                if isinstance(self.my_types[value.value], str):
+                    # Type hasn't been parsed yet, parse it now.
+                    self.my_types[value.value] = self.parse_one(
+                        self.my_types[value.value], base_stem=value.value
+                    )
+                value = self.my_types[value.value]
+            else:
+                value = value.value[0]
+            assert isinstance(value, CddlParser), f"Unknown type {value}."
+
+        value.enforce_no_modifier()
+        return value
+
+    def extract_range(self, range_str):
+        inc_end = "..." not in range_str
+        min_val_str, max_val_str = range_str.replace("...", "..").split("..")
+        min_val_obj = self.unpack_value(self.parse_one(min_val_str))
+        max_val_obj = self.unpack_value(self.parse_one(max_val_str))
+
+        for v in (min_val_obj, max_val_obj):
+            if v.type not in ["INT", "UINT", "NINT", "FLOAT"]:
+                raise CddlParsingError(
+                    f"zcbor does not support type {v.type} in ranges:\n{range_str}"
+                )
+            v.enforce_no_modifier()
+            if v.value is None:
+                raise CddlParsingError("Range values must be unambiguous.")
+        return min_val_obj, max_val_obj, inc_end
+
     def set_min_value(self, min_value):
         self.min_value = min_value
 
     def set_max_value(self, max_value):
         self.max_value = max_value
 
+    def check_val_range_type(self, obj):
+        if self.type not in ("FLOAT", "INT", "UINT", "NINT"):
+            raise CddlParsingError(f"Value range needs a number, got {self.type}.")
+        if self.value is not None:
+            raise CddlParsingError(f"Value range is not needed when value is known: {self.value}.")
+        if obj.type not in ("FLOAT", "UINT", "NINT"):
+            raise CddlParsingError(f"Value range must be a number, got {obj.type}.")
+        if self.type == "INT":
+            if obj.type not in ("NINT", "UINT"):
+                raise CddlParsingError(f"Value range must be integer, got {obj.type}.")
+        elif self.type in ("UINT", "NINT") and obj.type != self.type:
+            raise CddlParsingError(f"Value range must be {self.type}, got {obj.type}.")
+
+    def extract_parsed_int(self, in_obj, allow_neg=True):
+        obj = self.unpack_value(in_obj)
+        if not allow_neg and obj.type != "UINT":
+            raise CddlParsingError(f"Value must be a non-negative integer, not {obj.type}.")
+        elif allow_neg and obj.type not in ("UINT", "NINT"):
+            raise CddlParsingError(f"Value must be an integer, not {obj.type}.")
+        if obj.value is None:
+            raise CddlParsingError("Value must be unambiguous.")
+        return obj
+
+    def enforce_no_duplicate_modifier(self, modifier):
+        if modifier in self.modifiers:
+            raise CddlParsingError(f"Element already has {modifier} modifier.")
+
+    def add_modifier(self, modifier, no_duplicates=True):
+        if no_duplicates:
+            self.enforce_no_duplicate_modifier(modifier)
+        self.modifiers.add(modifier)
+
+    def set_gt(self, gt_value_in):
+        gt_value = self.extract_parsed_int(gt_value_in)
+        self.check_val_range_type(gt_value)
+        self.add_modifier(".gt")
+        self.set_min_value(gt_value.value + 1)
+
+    def set_lt(self, lt_value_in):
+        lt_value = self.extract_parsed_int(lt_value_in)
+        self.check_val_range_type(lt_value)
+        self.add_modifier(".lt")
+        self.set_max_value(lt_value.value - 1)
+
+    def set_ge(self, ge_value_in):
+        ge_value = self.extract_parsed_int(ge_value_in)
+        self.check_val_range_type(ge_value)
+        self.add_modifier(".ge")
+        self.set_min_value(ge_value.value)
+
+    def set_le(self, le_value_in):
+        le_value = self.extract_parsed_int(le_value_in)
+        self.check_val_range_type(le_value)
+        self.add_modifier(".le")
+        self.set_max_value(le_value.value)
+
+    def set_size_value(self, size_in):
+        size = self.extract_parsed_int(size_in, allow_neg=False)
+        self.enforce_sizeable()
+        if self.value is not None and self.type != "FLOAT":
+            raise CddlParsingError(f"Size is not needed when value is known: {self.value}.")
+        self.set_size(size.value)
+        self.add_modifier(".size")
+
+    def set_size_values(self, range_str):
+        min_val_obj, max_val_obj, inc_end = self.extract_range(range_str)
+        if {min_val_obj.type, max_val_obj.type} != {"UINT"}:
+            raise CddlParsingError("Size range must contain only non-negative integers.")
+        self.add_modifier(".size")
+        minsize, maxsize = min_val_obj.value, max_val_obj.value
+        self.set_size_range(minsize, maxsize, inc_end)
+
     def type_and_value(self, new_type, value_generator):
         """Set the self.type and self.value of this element."""
         if self.type is not None:
-            raise TypeError("Cannot have two values: %s, %s" % (self.type, new_type))
+            raise CddlParsingError("Cannot have two values: %s, %s" % (self.type, new_type))
         if new_type is None:
-            raise TypeError("Cannot set None as type")
+            raise CddlParsingError("Cannot set None as type")
         if new_type == "UNION" and self.value is not None:
-            raise ValueError("Did not expect multiple parsed values for union")
+            raise CddlParsingError("Did not expect multiple parsed values for union")
 
         self.type = new_type
         self.set_value(value_generator)
@@ -607,6 +734,10 @@ class CddlParser:
 
         value_generator must be a function that returns the value of the element."""
         value = value_generator()
+        if self.value is not None:
+            raise CddlParsingError(
+                f"Attempting to set value ({value}) when a value ({self.value}) already exists"
+            )
         self.value = value
 
         if self.type == "OTHER" and self.value.startswith("$"):
@@ -624,34 +755,68 @@ class CddlParser:
         if self.type == "NINT":
             self.max_value = -1
 
-    def set_default(self, value):
-        """Set the default value of this element (provided via '.default')."""
-        if self.type not in ["INT", "UINT", "NINT", "BSTR", "TSTR", "FLOAT", "BOOL"]:
-            raise TypeError(f"zcbor does not support .default values for the {self.type} type")
-        if self.min_qty != 0 or self.max_qty != 1:
-            raise ValueError("zcbor currently supports .default only with the ? quantifier.")
+    def set_eq_value(self, value):
+        """Set the value of this element (provided via '.eq')."""
+        value = self.unpack_value(value)
+        if not self.type in ["INT", "UINT", "NINT", "BSTR", "TSTR", "FLOAT", "BOOL"]:
+            raise CddlParsingError(f"zcbor does not support .eq values for the {self.type} type")
         if value.value is None:
-            raise ValueError(".default value must be unambiguous.")
+            raise CddlParsingError(".eq value must be unambiguous.")
+        value.enforce_no_modifier()
 
         if not self.type == value.type:
             if not (self.type == "INT" and value.type in ["UINT", "NINT"]):
-                raise TypeError(
-                    f"Type of default does not match type of element. "
+                raise CddlParsingError(
+                    f"Type of .eq value does not match type of element. "
                     "({self.type} != {value.type})"
                 )
 
+        self.add_modifier(".eq")
+        self.set_value(lambda: value.value)
+
+    def set_default(self, value):
+        """Set the default value of this element (provided via '.default')."""
+        value = self.unpack_value(value)
+        if self.type not in ["INT", "UINT", "NINT", "BSTR", "TSTR", "FLOAT", "BOOL"]:
+            raise CddlParsingError(
+                f"zcbor does not support .default values for the {self.type} type"
+            )
+        if self.min_qty != 0 or self.max_qty != 1:
+            raise CddlParsingError("zcbor currently supports .default only with the ? quantifier.")
+        if value.value is None:
+            raise CddlParsingError(".default value must be unambiguous.")
+        value.enforce_no_modifier()
+
+        if not self.type == value.type:
+            if not (self.type == "INT" and value.type in ["UINT", "NINT"]):
+                raise CddlParsingError(
+                    f"Type of .default value does not match type of element. "
+                    "({self.type} != {value.type})"
+                )
+
+        self.add_modifier(".default")
         self.default = value.value
 
-    def type_and_range(self, new_type, min_val, max_val, inc_end=True):
+    def type_and_range(self, range_str):
         """Set the self.type and self.minValue and self.max_value (or self.min_size and
         self.max_size depending on the type) of this element. For use during CDDL parsing.
         """
+        min_val_obj, max_val_obj, inc_end = self.extract_range(range_str)
+
+        types = {min_val_obj.type, max_val_obj.type}
+        new_type = (
+            "FLOAT" if "FLOAT" in types else "INT" if types == {"UINT", "NINT"} else types.pop()
+        )
+        assert len(types) in (0, 2), f"Unexpected state of 'types': {types}"
+
+        min_val, max_val = min_val_obj.value, max_val_obj.value
+
         if not inc_end:
             max_val -= 1
         if new_type not in ["INT", "UINT", "NINT"]:
-            raise TypeError("Only integers (not %s) can have range" % (new_type,))
+            raise CddlParsingError("Only integers (not %s) can have range" % (new_type,))
         if min_val > max_val:
-            raise TypeError(
+            raise CddlParsingError(
                 "Range has larger minimum than maximum (min %d, max %d)" % (min_val, max_val)
             )
         if min_val == max_val:
@@ -665,6 +830,7 @@ class CddlParser:
             self.set_size_range(sizeof(abs(max_val)), sizeof(abs(min_val)))
         if new_type == "INT":
             self.set_size_range(None, max(sizeof(abs(max_val)), sizeof(abs(min_val))))
+        self.add_modifier("..")
 
     def float_with_size(self, float_variant):
         """Set the type and size or size range of a float ("floatX" or "floatX-Y") element"""
@@ -677,13 +843,13 @@ class CddlParser:
     def set_label(self, label):
         """Set the self.label of this element. For use during CDDL parsing."""
         if self.type is not None:
-            raise TypeError("Cannot have label after value: " + label)
+            raise CddlParsingError("Cannot have label after value: " + label)
         self.label = label
 
     def set_quantifier(self, quantifier):
         """Set the self.quantifier, self.min_qty, and self.max_qty of this element"""
         if self.type is not None:
-            raise TypeError("Cannot have quantifier after value: " + quantifier)
+            raise CddlParsingError("Cannot have quantifier after value: " + quantifier)
 
         quantifier_mapping = [
             (r"\?", lambda mo: (0, 1)),
@@ -696,6 +862,7 @@ class CddlParser:
         ]
 
         self.quantifier = quantifier
+        self.add_modifier("quantifier")
         for reg, handler in quantifier_mapping:
             match_obj = getrp(reg).match(quantifier)
             if match_obj:
@@ -703,16 +870,19 @@ class CddlParser:
                 if self.max_qty is None:
                     self.max_qty = self.default_max_qty
                 return
-        raise ValueError("invalid quantifier: %s" % quantifier)
+        raise CddlParsingError("invalid quantifier: %s" % quantifier)
+
+    def enforce_sizeable(self):
+        if self.type not in ["BSTR", "TSTR", "INT", "UINT", "NINT", "FLOAT"]:
+            raise CddlParsingError(".size cannot be applied to %s" % self.type)
 
     def set_size(self, size):
         """Set the self.size of this element.
 
         This will also set the self.minValue and self.max_value of UINT types.
         """
-        if self.type is None:
-            raise TypeError("Cannot have size before value: " + str(size))
-        elif self.type in ["INT", "UINT", "NINT"]:
+        self.enforce_sizeable()
+        if self.type in ["INT", "UINT", "NINT"]:
             value = 256**size
             if self.type == "INT":
                 self.max_value = int((value >> 1) - 1)
@@ -722,8 +892,7 @@ class CddlParser:
                 self.min_value = int(-1 * (value >> 1))
         elif self.type in ["BSTR", "TSTR", "FLOAT"]:
             self.set_size_range(size, size)
-        else:
-            raise TypeError(".size cannot be applied to %s" % self.type)
+        self.size = size
 
     def set_size_range(self, min_size, max_size_in, inc_end=True):
         """Set the self.minValue and self.max_value or self.min_size and self.max_size of this
@@ -734,7 +903,7 @@ class CddlParser:
         if (min_size and min_size < 0 or max_size and max_size < 0) or (
             None not in [min_size, max_size] and min_size > max_size
         ):
-            raise TypeError("Invalid size range (min %d, max %d)" % (min_size, max_size))
+            raise CddlParsingError("Invalid size range (min %d, max %d)" % (min_size, max_size))
 
         self.set_min_size(min_size)
         self.set_max_size(max_size)
@@ -749,32 +918,39 @@ class CddlParser:
         """Set self.max_size, and self.max_value if type is UINT."""
         if self.type == "UINT" and max_size and self.max_value is None:
             if max_size > 8:
-                raise TypeError("Size too large for integer. size %d" % max_size)
+                raise CddlParsingError("Size too large for integer. size %d" % max_size)
             self.max_value = 256**max_size - 1
         self.max_size = max_size
 
     def set_cbor(self, cbor, cborseq):
         """Set the self.cbor of this element. For use during CDDL parsing."""
         if self.type != "BSTR":
-            raise TypeError("%s must be used with bstr." % (".cborseq" if cborseq else ".cbor",))
+            raise CddlParsingError(
+                "%s must be used with bstr." % (".cborseq" if cborseq else ".cbor",)
+            )
         self.cbor = cbor
         if cborseq:
             self.cbor.max_qty = self.default_max_qty
+        self.add_modifier(".cbor")
 
     def set_bits(self, bits):
         """Set the self.bits of this element. For use during CDDL parsing."""
         if self.type != "UINT":
-            raise TypeError(".bits must be used with bstr.")
+            raise CddlParsingError(".bits must be used with bstr.")
         self.bits = bits
+        self.add_modifier(".bits")
 
     def set_key(self, key):
         """Set the self.key of this element. For use during CDDL parsing."""
         if self.key is not None:
-            raise TypeError("Cannot have two keys: " + key)
+            raise CddlParsingError("Cannot have two keys: " + key)
         if key.type == "GROUP":
-            raise TypeError("A key cannot be a group because it might represent more than 1 type.")
+            raise CddlParsingError(
+                "A key cannot be a group because it might represent more than 1 type."
+            )
         self.key = key
         key.is_key = True
+        self.add_modifier("key")
 
     def set_key_or_label(self, key_or_label):
         """Set the self.label OR self.key of this element.
@@ -784,7 +960,7 @@ class CddlParser:
         If the string is recognized as a type, it is treated as a key. For use during CDDL parsing.
         """
         if key_or_label in self.my_types:
-            self.set_key(self.parse(key_or_label)[0])
+            self.set_key(self.parse_one(key_or_label))
             assert self.key.type == "OTHER", "This should only be able to produce an OTHER key."
             if self.label is None:
                 self.set_label(key_or_label)
@@ -792,6 +968,7 @@ class CddlParser:
             self.set_label(key_or_label)
 
     def add_tag(self, tag):
+        self.add_modifier("tag", no_duplicates=False)
         self.tags.append(int(tag))
 
     def union_add_value(self, value, doubleslash=False):
@@ -854,8 +1031,9 @@ class CddlParser:
     def cddl_regexes_init(self):
         """Initialize the cddl_regexes dict"""
         match_uint = r"(0x[0-9a-fA-F]+|0o[0-7]+|0b[01]+|\d+)"
-        match_int = r"(-?" + match_uint + ")"
         match_nint = r"(-" + match_uint + ")"
+        match_paren_or_symbol = r"((\((?P<item>(?>[^\(\)]+|(?1))*)\))|(?P<item>[^\s,\(\)\[\]]+))"
+        match_paren_or_symbol2 = match_paren_or_symbol.replace(r"?P<item>", "")
 
         self_type = type(self)
 
@@ -867,6 +1045,10 @@ class CddlParser:
                 lambda m_self, list_str: m_self.type_and_value(
                     "LIST", lambda: m_self.parse(list_str)
                 ),
+            ),
+            (
+                match_paren_or_symbol2 + r" ?\.\.\.? ?" + match_paren_or_symbol2,
+                lambda m_self, _range: m_self.type_and_range(_range),
             ),
             (
                 r"(?P<paren>\((?P<item>(?>[^\(\)]+|(?&paren))*)\))",
@@ -898,7 +1080,7 @@ class CddlParser:
             (
                 r"\/\/\s*(?P<item>.+?)(?=\/\/|\Z)",
                 lambda m_self, union_str: m_self.union_add_value(
-                    m_self.parse("(%s)" % union_str if "," in union_str else union_str)[0],
+                    m_self.parse_one("(%s)" % union_str if "," in union_str else union_str),
                     doubleslash=True,
                 ),
             ),
@@ -908,7 +1090,7 @@ class CddlParser:
             (r"(" + match_uint + r"\*\*?" + match_uint + r"?)", self_type.set_quantifier),
             (
                 r"\/\s*(?P<item>((" + range_types_regex + r")|[^,\[\]{}()])+?)(?=\/|\Z|,)",
-                lambda m_self, union_str: m_self.union_add_value(m_self.parse(union_str)[0]),
+                lambda m_self, union_str: m_self.union_add_value(m_self.parse_one(union_str)),
             ),
             (
                 r"(uint|nint|int|float|bstr|tstr|bool|nil|any)(?![\w-])",
@@ -923,42 +1105,6 @@ class CddlParser:
                 r"\-?\d*\.\d+",
                 lambda m_self, num: m_self.type_and_value("FLOAT", lambda: float(num)),
             ),
-            (
-                match_uint + r"\.\." + match_uint,
-                lambda m_self, _range: m_self.type_and_range(
-                    "UINT", *map(lambda num: int(num, 0), _range.split(".."))
-                ),
-            ),
-            (
-                match_nint + r"\.\." + match_uint,
-                lambda m_self, _range: m_self.type_and_range(
-                    "INT", *map(lambda num: int(num, 0), _range.split(".."))
-                ),
-            ),
-            (
-                match_nint + r"\.\." + match_nint,
-                lambda m_self, _range: m_self.type_and_range(
-                    "NINT", *map(lambda num: int(num, 0), _range.split(".."))
-                ),
-            ),
-            (
-                match_uint + r"\.\.\." + match_uint,
-                lambda m_self, _range: m_self.type_and_range(
-                    "UINT", *map(lambda num: int(num, 0), _range.split("...")), inc_end=False
-                ),
-            ),
-            (
-                match_nint + r"\.\.\." + match_uint,
-                lambda m_self, _range: m_self.type_and_range(
-                    "INT", *map(lambda num: int(num, 0), _range.split("...")), inc_end=False
-                ),
-            ),
-            (
-                match_nint + r"\.\.\." + match_nint,
-                lambda m_self, _range: m_self.type_and_range(
-                    "NINT", *map(lambda num: int(num, 0), _range.split("...")), inc_end=False
-                ),
-            ),
             (match_nint, lambda m_self, num: m_self.type_and_value("NINT", lambda: int(num, 0))),
             (match_uint, lambda m_self, num: m_self.type_and_value("UINT", lambda: int(num, 0))),
             (r"true(?!\w)", lambda m_self, _: m_self.type_and_value("BOOL", lambda: True)),
@@ -969,68 +1115,48 @@ class CddlParser:
                 lambda m_self, other_str: m_self.type_and_value("OTHER", lambda: other_str),
             ),
             (
-                r"\.size \(?(?P<item>" + match_int + r"\.\." + match_int + r")\)?",
-                lambda m_self, _range: m_self.set_size_range(
-                    *map(lambda num: int(num, 0), _range.split(".."))
-                ),
+                r"\.size (?P<item>"
+                + match_paren_or_symbol2
+                + r" ?\.\.\.? ?"
+                + match_paren_or_symbol2
+                + r")",
+                lambda m_self, _range: m_self.set_size_values(_range),
             ),
             (
-                r"\.size \(?(?P<item>" + match_int + r"\.\.\." + match_int + r")\)?",
-                lambda m_self, _range: m_self.set_size_range(
-                    *map(lambda num: int(num, 0), _range.split("...")), inc_end=False
-                ),
+                r"\.size " + match_paren_or_symbol,
+                lambda m_self, size: m_self.set_size_value(self.parse_one(size)),
             ),
             (
-                r"\.size \(?(?P<item>" + match_uint + r")\)?",
-                lambda m_self, size: m_self.set_size(int(size, 0)),
+                r"\.gt " + match_paren_or_symbol,
+                lambda m_self, gt: m_self.set_gt(m_self.parse_one(gt)),
             ),
             (
-                r"\.gt \(?(?P<item>" + match_int + r")\)?",
-                lambda m_self, minvalue: m_self.set_min_value(int(minvalue, 0) + 1),
+                r"\.lt " + match_paren_or_symbol,
+                lambda m_self, lt: m_self.set_lt(m_self.parse_one(lt)),
             ),
             (
-                r"\.lt \(?(?P<item>" + match_int + r")\)?",
-                lambda m_self, maxvalue: m_self.set_max_value(int(maxvalue, 0) - 1),
+                r"\.ge " + match_paren_or_symbol,
+                lambda m_self, ge: m_self.set_ge(m_self.parse_one(ge)),
             ),
             (
-                r"\.ge \(?(?P<item>" + match_int + r")\)?",
-                lambda m_self, minvalue: m_self.set_min_value(int(minvalue, 0)),
+                r"\.le " + match_paren_or_symbol,
+                lambda m_self, le: m_self.set_le(m_self.parse_one(le)),
             ),
             (
-                r"\.le \(?(?P<item>" + match_int + r")\)?",
-                lambda m_self, maxvalue: m_self.set_max_value(int(maxvalue, 0)),
+                r"\.eq " + match_paren_or_symbol,
+                lambda m_self, type_str: m_self.set_eq_value(m_self.parse_one(type_str)),
             ),
             (
-                r"\.eq \(?(?P<item>" + match_int + r")\)?",
-                lambda m_self, value: m_self.set_value(lambda: int(value, 0)),
+                r"\.default " + match_paren_or_symbol,
+                lambda m_self, type_str: m_self.set_default(m_self.parse_one(type_str)),
             ),
             (
-                r"\.eq \"(?P<item>.*?)(?<!\\)\"",
-                lambda m_self, value: m_self.set_value(lambda: value),
+                r"\.cbor " + match_paren_or_symbol,
+                lambda m_self, type_str: m_self.set_cbor(m_self.parse_one(type_str), False),
             ),
             (
-                r"\.default (\((?P<item>(?>[^\(\)]+|(?1))*)\))",
-                lambda m_self, type_str: m_self.set_default(m_self.parse(type_str)[0]),
-            ),
-            (
-                r"\.default (?P<item>[^\s,]+)",
-                lambda m_self, type_str: m_self.set_default(m_self.parse(type_str)[0]),
-            ),
-            (
-                r"\.cbor (\((?P<item>(?>[^\(\)]+|(?1))*)\))",
-                lambda m_self, type_str: m_self.set_cbor(m_self.parse(type_str)[0], False),
-            ),
-            (
-                r"\.cbor (?P<item>[^\s,]+)",
-                lambda m_self, type_str: m_self.set_cbor(m_self.parse(type_str)[0], False),
-            ),
-            (
-                r"\.cborseq (\((?P<item>(?>[^\(\)]+|(?1))*)\))",
-                lambda m_self, type_str: m_self.set_cbor(m_self.parse(type_str)[0], True),
-            ),
-            (
-                r"\.cborseq (?P<item>[^\s,]+)",
-                lambda m_self, type_str: m_self.set_cbor(m_self.parse(type_str)[0], True),
+                r"\.cborseq " + match_paren_or_symbol,
+                lambda m_self, type_str: m_self.set_cbor(m_self.parse_one(type_str), True),
             ),
             (r"\.bits (?P<item>[\w-]+)", lambda m_self, bits_str: m_self.set_bits(bits_str)),
         ]
@@ -1058,21 +1184,22 @@ class CddlParser:
                         match_str = match_obj.group(0)
                     try:
                         handler(self, match_str)
-                    except Exception as e:
-                        raise Exception("Failed while parsing this: '%s'" % match_str) from e
+                    except CddlParsingError as e:
+                        e.zcbor_add_note(f"  while parsing CDDL: '{match_obj.group(0)}'")
+                        raise
                     self.match_str += match_str
                     old_len = len(instr)
                     instr = getrp(reg).sub("", instr, count=1).lstrip()
                     if old_len == len(instr):
-                        raise Exception("empty match")
+                        raise CddlParsingError("empty match")
                     break
 
             if not match_obj:
-                raise TypeError("Could not parse this: '%s'" % instr)
+                raise CddlParsingError("Could not parse this: '%s'" % instr)
 
         instr = instr[1:]
         if not self.type:
-            raise ValueError("No proper value while parsing: %s" % instr)
+            raise CddlParsingError("No proper value while parsing: %s" % instr)
 
         # Return the unparsed part of the string.
         return instr.strip()
@@ -1112,13 +1239,13 @@ class CddlParser:
         if self.type in ["LIST", "MAP"]:
             invalid_elems = [child for child in self.value if not child.is_valid_map_elem()[0]]
             if self.type == "MAP" and invalid_elems:
-                raise TypeError(
+                raise CddlParsingError(
                     "Map member(s) are invalid:\n"
                     + "\n".join([f"{str(c)}: {c.is_valid_map_elem()[1]}" for c in invalid_elems])
                 )
             child_keys = [child for child in self.value if child not in invalid_elems]
             if self.type == "LIST" and child_keys:
-                raise TypeError(
+                raise CddlParsingError(
                     str(self)
                     + linesep
                     + "List member(s) cannot have key: "
@@ -1132,12 +1259,12 @@ class CddlParser:
             if self.value not in self.my_types.keys() or not isinstance(
                 self.my_types[self.value], type(self)
             ):
-                raise TypeError("%s has not been parsed." % self.value)
+                raise CddlParsingError("%s has not been parsed." % self.value)
         if self.type == "LIST":
             for child in self.value[:-1]:
                 if child.type == "ANY":
                     if child.min_qty != child.max_qty:
-                        raise TypeError(
+                        raise CddlParsingError(
                             f"ambiguous quantity of 'any' is not supported in list, "
                             + "except as last element:\n{str(child)}"
                         )
@@ -1146,7 +1273,7 @@ class CddlParser:
                 ((not child.key and child.type == "ANY") or (child.key and child.key.type == "ANY"))
                 for child in self.value
             ):
-                raise TypeError(
+                raise CddlParsingError(
                     "'any' inside union is not supported since it would always be triggered."
                 )
 
@@ -1161,10 +1288,10 @@ class CddlParser:
 
     def post_validate_control_group(self):
         if self.type != "GROUP":
-            raise TypeError("control groups must be of GROUP type.")
+            raise CddlParsingError("control groups must be of GROUP type.")
         for c in self.value:
             if c.type != "UINT" or c.value is None or c.value < 0:
-                raise TypeError("control group members must be literal positive integers.")
+                raise CddlParsingError("control group members must be literal positive integers.")
 
     def parse(self, instr):
         """Parses entire instr and returns a list of instances."""
@@ -1172,9 +1299,23 @@ class CddlParser:
         values = []
         while instr != "":
             value = type(self)(**self.init_kwargs())
-            instr = value.get_value(instr)
+            _instr = value.get_value(instr)
+            instr = _instr
             values.append(value)
         return values
+
+    def parse_one(self, instr, base_stem=None):
+        """Parses instr assumed to contain exactly one type definition."""
+        value = type(self)(
+            **{
+                **self.init_kwargs(),
+                "base_stem": self.base_stem if base_stem is None else base_stem,
+            }
+        )
+        remainder = value.get_value(instr.strip().replace("\n", " ").lstrip("&"))
+        if remainder != "":
+            raise CddlParsingError(f"Extra characters found: '{instr}'")
+        return value
 
     def __repr__(self):
         return self.mrepr(False)
@@ -1336,36 +1477,46 @@ class CddlXcoder(CddlParser):
         self.is_delegated = is_delegated and not self.skip_condition()
         return
 
+    def set_id_prefix(self, id_prefix=""):
+        self.id_prefix = id_prefix
+        if self.type in ["LIST", "MAP", "GROUP", "UNION"]:
+            for child in self.value:
+                if child.single_func_impl_condition():
+                    child.set_id_prefix(self.generate_base_name())
+                else:
+                    child.set_id_prefix(self.child_base_id())
+        if self.cbor:
+            self.cbor.set_id_prefix(self.child_base_id())
+        if self.key:
+            self.key.set_id_prefix(self.child_base_id())
+
+    def set_base_names(self):
+        """Recursively set the base names of this element's children, keys, and cbor elements."""
+        if self.cbor:
+            self.cbor.set_base_name(self.var_name().strip("_") + "_cbor")
+        if self.key:
+            self.key.set_base_name(self.var_name().strip("_") + "_key")
+
+        if self.type in ["LIST", "MAP", "GROUP", "UNION"]:
+            for child in self.value:
+                child.set_base_names()
+        if self.cbor:
+            self.cbor.set_base_names()
+        if self.key:
+            self.key.set_base_names()
+
+    def post_process(self):
+        self.set_id_prefix()
+        super().post_process()
+        self.set_base_names()
+
+    def post_process_control_group(self):
+        self.set_id_prefix()
+        super().post_process_control_group()
+
     def multi_member(self):
         """Whether this type has multiple member variables."""
         return self.multi_var_condition() or self.repeated_multi_var_condition()
-
-    def is_unambiguous_value(self):
-        """Whether this element is a non-compound value that can be known a priori."""
-        return (
-            self.type in ["NIL", "UNDEF", "ANY"]
-            or (
-                self.type in ["INT", "NINT", "UINT", "FLOAT", "BSTR", "TSTR", "BOOL"]
-                and self.value is not None
-            )
-            or (self.type == "OTHER" and self.my_types[self.value].is_unambiguous())
-        )
-
-    def is_unambiguous_repeated(self):
-        """Whether the repeated part of this element is known a priori."""
-        return (
-            self.is_unambiguous_value()
-            and (self.key is None or self.key.is_unambiguous_repeated())
-            or (self.type in ["LIST", "GROUP", "MAP"] and len(self.value) == 0)
-            or (
-                self.type in ["LIST", "GROUP", "MAP"]
-                and all((child.is_unambiguous() for child in self.value))
-            )
-        )
-
-    def is_unambiguous(self):
-        """Whether or not we can know the exact encoding of this element a priori."""
-        return self.is_unambiguous_repeated() and (self.min_qty == self.max_qty)
 
     def access_append_delimiter(self, prefix, delimiter, *suffix):
         """Create an access prefix based on an existing prefix, delimiter and a
@@ -2283,7 +2434,7 @@ class CodeGenerator(CddlXcoder):
         elif max_size == 8:
             return "double"
         else:
-            raise TypeError("Floats must have 4 or 8 bytes of precision.")
+            raise CddlParsingError("Floats must have 4 or 8 bytes of precision.")
 
     def val_type_name(self):
         """Name of the type of this element's actual value variable."""
@@ -2502,7 +2653,7 @@ class CodeGenerator(CddlXcoder):
         elif min_size <= 4 and max_size == 8:
             return "float" if self.mode == "decode" else "float64"
         else:
-            raise TypeError("Floats must have 2, 4 or 8 bytes of precision.")
+            raise CddlParsingError("Floats must have 2, 4 or 8 bytes of precision.")
 
     def single_func_prim_prefix(self):
         if self.type == "OTHER":
@@ -3732,6 +3883,10 @@ entire declaration is a single line.""",
     return args
 
 
+def format_parsing_error(exc):
+    print("\n".join(("CDDL parsing error:",) + exc.args + tuple(exc.__notes__)))
+
+
 def process_code(args):
     modes = list()
     if args.decode:
@@ -3748,14 +3903,18 @@ def process_code(args):
 
     cddl_res = dict()
     for mode in modes:
-        cddl_res[mode] = CodeGenerator.from_cddl(
-            mode=mode,
-            cddl_string=cddl_contents,
-            default_max_qty=args.default_max_qty,
-            entry_type_names=args.entry_types,
-            default_bit_size=args.default_bit_size,
-            short_names=args.short_names,
-        )
+        try:
+            cddl_res[mode] = CodeGenerator.from_cddl(
+                mode=mode,
+                cddl_string=cddl_contents,
+                default_max_qty=args.default_max_qty,
+                entry_type_names=args.entry_types,
+                default_bit_size=args.default_bit_size,
+                short_names=args.short_names,
+            )
+        except CddlParsingError as e:
+            format_parsing_error(e)
+            sys.exit(1)
 
     # Parsing is done, pretty print the result.
     verbose_print(args.verbose, "Parsed CDDL types:")
@@ -3858,9 +4017,13 @@ def process_code(args):
 
 def parse_cddl(args):
     cddl_contents = linesep.join((c.read() for c in args.cddl))
-    cddl_res = DataTranslator.from_cddl(
-        cddl_string=cddl_contents, default_max_qty=args.default_max_qty
-    )
+    try:
+        cddl_res = DataTranslator.from_cddl(
+            cddl_string=cddl_contents, default_max_qty=args.default_max_qty
+        )
+    except CddlParsingError as e:
+        format_parsing_error(e)
+        sys.exit(1)
     return cddl_res.my_types[args.entry_type]
 
 
