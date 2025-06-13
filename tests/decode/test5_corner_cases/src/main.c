@@ -341,7 +341,7 @@ ZTEST(cbor_decode_test5, test_number_map)
 	zassert_equal(0x12, number_map.opt_short.opt_short, NULL);
 	zassert_false(number_map.opt_cbor_present, NULL);
 
-	zassert_equal(ZCBOR_ERR_WRONG_RANGE, cbor_decode_NumberMap(payload_number_map4_inv,
+	zassert_equal(ZCBOR_ERR_INT_SIZE, cbor_decode_NumberMap(payload_number_map4_inv,
 		sizeof(payload_number_map4_inv), &number_map, &decode_len), NULL);
 
 	int res = cbor_decode_NumberMap(payload_number_map5_inv,
@@ -1343,7 +1343,7 @@ ZTEST(cbor_decode_test5, test_single)
 	uint8_t payload_single3[] = {9};
 	uint8_t payload_single4_inv[] = {10};
 	struct zcbor_string result_bstr;
-	size_t result_int;
+	uint8_t result_int;
 	size_t out_len;
 
 	zassert_equal(ZCBOR_SUCCESS, cbor_decode_SingleBstr(payload_single0, sizeof(payload_single0), &result_bstr, &out_len), NULL);
@@ -1727,8 +1727,8 @@ ZTEST(cbor_decode_test5, test_prelude)
 	uint8_t prelude_payload1[] = {
 		LIST3(25), 0x40 /* empty bstr */, 0x60 /* empty tstr */,
 		0xC0, 0x6A, '2', '0', '2', '2', '-', '0', '2', '-', '2', '2' /* tdate */,
-		0xC1, 0x1A, 0x62, 0x15, 0x5d, 0x6c /* 1645567340 */,
-		0xFA, 0x40, 0x49, 0xe, 0x56 /* 3.1415 */,
+		0xC1, 0x1A, 0x62, 0x15, 0x5d, 0x6c /* time: 1645567340 */,
+		0xFA, 0x40, 0x49, 0xe, 0x56 /* number: 3.1415 */,
 		0xC2, 0x4A, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 /* 0x0102030405060708090A */,
 		0xC3, 0x4A, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9 /* -0x0102030405060708090A */,
 		0xC3, 0x4A, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9 /* -0x0102030405060708090A */,

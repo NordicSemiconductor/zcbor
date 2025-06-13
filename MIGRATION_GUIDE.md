@@ -5,6 +5,13 @@
   Arguments have not changed otherwise.
   This was done to avoid ambiguity to do with positional arguments, and generally simplify passing arguments around inside zcbor.
 
+* Code generation:
+
+  * Integers whose values are known to be within 8 or 16 bytes now use the corresponding integer types (`uint8_t`/`int8_t`/`uint16_t`/`int16_t`) instead of larger types.
+    In certain specific cases, the type of an argument to a `cbor_decode_*` or `cbor_decode_*` can change when regenerating the code, requiring changes in your non-generated code.
+    More commonly, struct members will change to use smaller int types.
+
+
 # zcbor v. 0.9.0
 
 * `zcbor_simple_*()` functions have been removed to avoid confusion about their use.
