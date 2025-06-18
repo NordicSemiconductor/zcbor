@@ -112,6 +112,12 @@ def verbose_pprint(verbose_flag, *things):
         pprint(*things)
 
 
+def print_unless_quiet(quiet_flag, *things):
+    """Print only if not quiet"""
+    if not quiet_flag:
+        print(*things)
+
+
 global_counter = 0
 
 
@@ -3417,6 +3423,7 @@ target_include_directories({target_name} PUBLIC
         cmake_file=None,
         output_c_dir=None,
         output_h_dir=None,
+        quiet=False,
     ):
         for mode in modes:
             h_name = Path(include_prefix, Path(h_files[mode].name).name)
@@ -3426,19 +3433,19 @@ target_include_directories({target_name} PUBLIC
 
             type_def_name = Path(include_prefix, Path(type_file.name).name)
 
-            print("Writing to " + c_files[mode].name)
+            print_unless_quiet(quiet, "Writing to " + c_files[mode].name)
             c_files[mode].write(self.render_c_file(h_name, mode))
 
-            print("Writing to " + h_files[mode].name)
+            print_unless_quiet(quiet, "Writing to " + h_files[mode].name)
             h_files[mode].write(
                 self.render_h_file(type_def_name, self.header_guard(h_files[mode].name), mode)
             )
 
-        print("Writing to " + type_file.name)
+        print_unless_quiet(quiet, "Writing to " + type_file.name)
         type_file.write(self.render_type_file(self.header_guard(type_file.name), mode))
 
         if cmake_file:
-            print("Writing to " + cmake_file.name)
+            print_unless_quiet(quiet, "Writing to " + cmake_file.name)
             cmake_file.write(
                 self.render_cmake_file(
                     Path(cmake_file.name).stem,
@@ -3456,7 +3463,6 @@ def int_or_str(arg):
     try:
         return int(arg)
     except ValueError:
-        # print(arg)
         if getrp(r"\A\w+\Z").match(arg) is not None:
             return arg
     raise ArgumentTypeError(
@@ -3492,6 +3498,14 @@ concatenating them.""",
         action="store_true",
         default=False,
         help="Print more information while parsing CDDL and generating code.",
+    )
+    parent_parser.add_argument(
+        "-q",
+        "--quiet",
+        required=False,
+        action="store_true",
+        default=False,
+        help="Print less information while parsing CDDL and generating code.",
     )
 
     parser = ArgumentParser(
@@ -3795,7 +3809,7 @@ def process_code(args):
     if args.file_header and Path(args.file_header).exists():
         args.file_header = Path(args.file_header).read_text(encoding="utf-8")
 
-    print("Parsing files: " + ", ".join((c.name for c in args.cddl)))
+    print_unless_quiet("Parsing files: " + ", ".join((c.name for c in args.cddl)))
 
     cddl_contents = linesep.join((c.read() for c in args.cddl))
 
@@ -3906,6 +3920,7 @@ def process_code(args):
         output_cmake,
         c_code_dir,
         h_code_dir,
+        quiet=args.quiet,
     )
 
 
