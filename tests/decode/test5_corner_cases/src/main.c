@@ -2087,6 +2087,7 @@ ZTEST(cbor_decode_test5, test_intmax)
 
 	struct Intmax2 result2;
 	struct Intmax3 result3;
+	struct Intmax4 result4;
 	size_t num_decode;
 
 	zassert_equal(ZCBOR_SUCCESS, cbor_decode_Intmax1(intmax1_payload1,
@@ -2124,6 +2125,22 @@ ZTEST(cbor_decode_test5, test_intmax)
 	zassert_equal(result3.Union_choice, Intmax3_union_uint254_c, NULL);
 	zassert_equal(result3.Int, 65534, NULL);
 	zassert_equal(result3.nint128bstr.len, 127, NULL);
+
+	zassert_equal(ZCBOR_SUCCESS, cbor_decode_Intmax4(intmax1_payload1,
+		sizeof(intmax1_payload1), &result4, &num_decode), NULL);
+	zassert_equal(sizeof(intmax1_payload1), num_decode, NULL);
+	zassert_equal(result4.INT_8_MIN_count, 1, NULL);
+	zassert_equal(result4.INT_8_MAX_count, 1, NULL);
+	zassert_equal(result4.UINT_8_MAX_count, 1, NULL);
+	zassert_equal(result4.INT_16_MIN_count, 1, NULL);
+	zassert_equal(result4.INT_16_MAX_count, 1, NULL);
+	zassert_equal(result4.UINT_16_MAX_count, 1, NULL);
+	zassert_equal(result4.INT_32_MIN_count, 1, NULL);
+	zassert_equal(result4.INT_32_MAX_count, 1, NULL);
+	zassert_equal(result4.UINT_32_MAX_count, 1, NULL);
+	zassert_equal(result4.INT_64_MIN_count, 1, NULL);
+	zassert_equal(result4.INT_64_MAX_count, 1, NULL);
+	zassert_equal(result4.UINT_64_MAX_count, 1, NULL);
 }
 
 

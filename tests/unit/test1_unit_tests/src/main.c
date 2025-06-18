@@ -239,18 +239,30 @@ ZTEST(zcbor_unit_tests, test_stop_on_error)
 	memcpy(&constant_state_backup, state_e->constant_state, sizeof(constant_state_backup));
 
 	/* All fail because of ZCBOR_ERR_NO_PAYLOAD */
+	zassert_false(zcbor_int8_put(state_e, 16), NULL);
+	zassert_false(zcbor_int16_put(state_e, 17), NULL);
 	zassert_false(zcbor_int32_put(state_e, 1), NULL);
 	zassert_false(zcbor_int64_put(state_e, 2), NULL);
+	zassert_false(zcbor_uint8_put(state_e, 18), NULL);
+	zassert_false(zcbor_uint16_put(state_e, 19), NULL);
 	zassert_false(zcbor_uint32_put(state_e, 3), NULL);
 	zassert_false(zcbor_uint64_put(state_e, 4), NULL);
 	zassert_false(zcbor_size_put(state_e, 10), NULL);
+	zassert_false(zcbor_int8_put(state_e, 20), NULL);
+	zassert_false(zcbor_int16_put(state_e, 21), NULL);
 	zassert_false(zcbor_int32_put(state_e, 11), NULL);
 	zassert_false(zcbor_int64_put(state_e, 12), NULL);
+	zassert_false(zcbor_uint8_put(state_e, 22), NULL);
+	zassert_false(zcbor_uint16_put(state_e, 23), NULL);
 	zassert_false(zcbor_uint32_put(state_e, 13), NULL);
 	zassert_false(zcbor_uint64_put(state_e, 14), NULL);
 	zassert_false(zcbor_size_put(state_e, 15), NULL);
+	zassert_false(zcbor_int8_encode(state_e, &(int8_t){24}), NULL);
+	zassert_false(zcbor_int16_encode(state_e, &(int16_t){25}), NULL);
 	zassert_false(zcbor_int32_encode(state_e, &(int32_t){5}), NULL);
 	zassert_false(zcbor_int64_encode(state_e, &(int64_t){6}), NULL);
+	zassert_false(zcbor_uint8_encode(state_e, &(uint8_t){26}), NULL);
+	zassert_false(zcbor_uint16_encode(state_e, &(uint16_t){27}), NULL);
 	zassert_false(zcbor_uint32_encode(state_e, &(uint32_t){7}), NULL);
 	zassert_false(zcbor_uint64_encode(state_e, &(uint64_t){8}), NULL);
 	zassert_false(zcbor_size_encode(state_e, &(size_t){9}), NULL);
@@ -288,18 +300,30 @@ ZTEST(zcbor_unit_tests, test_stop_on_error)
 	zassert_equal(ZCBOR_SUCCESS, zcbor_peek_error(state_e), NULL);
 
 	/* All succeed since the error has been popped. */
+	zassert_true(zcbor_int8_put(state_e, 16), NULL);
+	zassert_true(zcbor_int16_put(state_e, 17), NULL);
 	zassert_true(zcbor_int32_put(state_e, 1), NULL);
 	zassert_true(zcbor_int64_put(state_e, 2), NULL);
+	zassert_true(zcbor_uint8_put(state_e, 18), NULL);
+	zassert_true(zcbor_uint16_put(state_e, 19), NULL);
 	zassert_true(zcbor_uint32_put(state_e, 3), NULL);
 	zassert_true(zcbor_uint64_put(state_e, 4), NULL);
 	zassert_true(zcbor_size_put(state_e, 10), NULL);
+	zassert_true(zcbor_int8_put(state_e, 20), NULL);
+	zassert_true(zcbor_int16_put(state_e, 21), NULL);
 	zassert_true(zcbor_int32_put(state_e, 11), NULL);
 	zassert_true(zcbor_int64_put(state_e, 12), NULL);
+	zassert_true(zcbor_uint8_put(state_e, 22), NULL);
+	zassert_true(zcbor_uint16_put(state_e, 23), NULL);
 	zassert_true(zcbor_uint32_put(state_e, 13), NULL);
 	zassert_true(zcbor_uint64_put(state_e, 14), NULL);
 	zassert_true(zcbor_size_put(state_e, 15), NULL);
+	zassert_true(zcbor_int8_encode(state_e, &(int8_t){24}), NULL);
+	zassert_true(zcbor_int16_encode(state_e, &(int16_t){25}), NULL);
 	zassert_true(zcbor_int32_encode(state_e, &(int32_t){5}), NULL);
 	zassert_true(zcbor_int64_encode(state_e, &(int64_t){6}), NULL);
+	zassert_true(zcbor_uint8_encode(state_e, &(uint8_t){26}), NULL);
+	zassert_true(zcbor_uint16_encode(state_e, &(uint16_t){27}), NULL);
 	zassert_true(zcbor_uint32_encode(state_e, &(uint32_t){7}), NULL);
 	zassert_true(zcbor_uint64_encode(state_e, &(uint64_t){8}), NULL);
 	zassert_true(zcbor_size_encode(state_e, &(size_t){9}), NULL);
@@ -337,18 +361,30 @@ ZTEST(zcbor_unit_tests, test_stop_on_error)
 	memcpy(&constant_state_backup, state_d->constant_state, sizeof(constant_state_backup));
 
 	/* All fail because of ZCBOR_ERR_WRONG_VALUE */
+	zassert_false(zcbor_int8_expect(state_d, 16), NULL);
+	zassert_false(zcbor_int16_expect(state_d, 17), NULL);
 	zassert_false(zcbor_int32_expect(state_d, 1), NULL);
 	zassert_false(zcbor_int64_expect(state_d, 2), NULL);
+	zassert_false(zcbor_uint8_expect(state_d, 18), NULL);
+	zassert_false(zcbor_uint16_expect(state_d, 19), NULL);
 	zassert_false(zcbor_uint32_expect(state_d, 3), NULL);
 	zassert_false(zcbor_uint64_expect(state_d, 4), NULL);
 	zassert_false(zcbor_size_expect(state_d, 10), NULL);
+	zassert_false(zcbor_int8_pexpect(state_d, &(int8_t){20}), NULL);
+	zassert_false(zcbor_int16_pexpect(state_d, &(int16_t){21}), NULL);
 	zassert_false(zcbor_int32_pexpect(state_d, &(int32_t){11}), NULL);
 	zassert_false(zcbor_int64_pexpect(state_d, &(int64_t){12}), NULL);
+	zassert_false(zcbor_uint8_pexpect(state_d, &(uint8_t){22}), NULL);
+	zassert_false(zcbor_uint16_pexpect(state_d, &(uint16_t){23}), NULL);
 	zassert_false(zcbor_uint32_pexpect(state_d, &(uint32_t){13}), NULL);
 	zassert_false(zcbor_uint64_pexpect(state_d, &(uint64_t){14}), NULL);
 	zassert_false(zcbor_size_pexpect(state_d, &(size_t){15}), NULL);
+	zassert_false(zcbor_int8_decode(state_d, &(int8_t){24}), NULL);
+	zassert_false(zcbor_int16_decode(state_d, &(int16_t){25}), NULL);
 	zassert_false(zcbor_int32_decode(state_d, &(int32_t){5}), NULL);
 	zassert_false(zcbor_int64_decode(state_d, &(int64_t){6}), NULL);
+	zassert_false(zcbor_uint8_decode(state_d, &(uint8_t){26}), NULL);
+	zassert_false(zcbor_uint16_decode(state_d, &(uint16_t){27}), NULL);
 	zassert_false(zcbor_uint32_decode(state_d, &(uint32_t){7}), NULL);
 	zassert_false(zcbor_uint64_decode(state_d, &(uint64_t){8}), NULL);
 	zassert_false(zcbor_size_decode(state_d, &(size_t){9}), NULL);
@@ -383,18 +419,30 @@ ZTEST(zcbor_unit_tests, test_stop_on_error)
 	zassert_equal(ZCBOR_ERR_WRONG_VALUE, zcbor_pop_error(state_d), NULL);
 
 	/* All succeed since the error has been popped. */
+	zassert_true(zcbor_int8_expect(state_d, 16), NULL);
+	zassert_true(zcbor_int16_expect(state_d, 17), NULL);
 	zassert_true(zcbor_int32_expect(state_d, 1), NULL);
 	zassert_true(zcbor_int64_expect(state_d, 2), NULL);
+	zassert_true(zcbor_uint8_expect(state_d, 18), NULL);
+	zassert_true(zcbor_uint16_expect(state_d, 19), NULL);
 	zassert_true(zcbor_uint32_expect(state_d, 3), NULL);
 	zassert_true(zcbor_uint64_expect(state_d, 4), NULL);
 	zassert_true(zcbor_size_expect(state_d, 10), NULL);
+	zassert_true(zcbor_int8_pexpect(state_d, &(int8_t){20}), NULL);
+	zassert_true(zcbor_int16_pexpect(state_d, &(int16_t){21}), NULL);
 	zassert_true(zcbor_int32_pexpect(state_d, &(int32_t){11}), NULL);
 	zassert_true(zcbor_int64_pexpect(state_d, &(int64_t){12}), NULL);
+	zassert_true(zcbor_uint8_pexpect(state_d, &(uint8_t){22}), NULL);
+	zassert_true(zcbor_uint16_pexpect(state_d, &(uint16_t){23}), NULL);
 	zassert_true(zcbor_uint32_pexpect(state_d, &(uint32_t){13}), NULL);
 	zassert_true(zcbor_uint64_pexpect(state_d, &(uint64_t){14}), NULL);
 	zassert_true(zcbor_size_pexpect(state_d, &(size_t){15}), NULL);
+	zassert_true(zcbor_int8_decode(state_d, &(int8_t){24}), NULL);
+	zassert_true(zcbor_int16_decode(state_d, &(int16_t){25}), NULL);
 	zassert_true(zcbor_int32_decode(state_d, &(int32_t){5}), NULL);
 	zassert_true(zcbor_int64_decode(state_d, &(int64_t){6}), NULL);
+	zassert_true(zcbor_uint8_decode(state_d, &(uint8_t){26}), NULL);
+	zassert_true(zcbor_uint16_decode(state_d, &(uint16_t){27}), NULL);
 	zassert_true(zcbor_uint32_decode(state_d, &(uint32_t){7}), NULL);
 	zassert_true(zcbor_uint64_decode(state_d, &(uint64_t){8}), NULL);
 	zassert_true(zcbor_size_decode(state_d, &(size_t){9}), NULL);
