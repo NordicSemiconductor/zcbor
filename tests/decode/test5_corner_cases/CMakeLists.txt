@@ -50,6 +50,7 @@ set(py_command
     Intmax1
     Intmax2
     Intmax3
+    Intmax4
     InvalidIdentifiers
     Uint64List
     BstrSize

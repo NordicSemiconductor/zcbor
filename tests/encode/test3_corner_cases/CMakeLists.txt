@@ -44,6 +44,7 @@ set(py_command
   UnionInt2
   Intmax1
   Intmax2
+  Intmax4
   InvalidIdentifiers
   MapUnionPrimAlias
   EmptyContainer
