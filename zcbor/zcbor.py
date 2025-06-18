@@ -64,6 +64,13 @@ INT16_MIN = -0x8000
 INT32_MIN = -0x80000000
 INT64_MIN = -0x8000000000000000
 
+defaults = {
+    "default_max_qty": 3,
+    "default_max_qty_validate": 0xFFFF_FFFF,
+    "print_time": False,
+    "default_bit_size": 32,
+}
+
 
 def getrp(pattern, flags=0):
     """Get a compiled regex pattern from the cache. Add it to the cache if not present."""
@@ -239,9 +246,9 @@ class CddlParser:
     def __init__(
         self,
         *,
-        default_max_qty,
         my_types,
         my_control_groups,
+        default_max_qty=defaults["default_max_qty"],
         base_name=None,
         short_names=False,
         base_stem="",
@@ -1637,6 +1644,10 @@ class DataTranslator(CddlXcoder):
     manipulate CBOR code.
     """
 
+    def __init__(self, default_max_qty=defaults["default_max_qty_validate"], **kwargs):
+        """Redefinition to give different default for default_max_qty."""
+        super(DataTranslator, self).__init__(default_max_qty=default_max_qty, **kwargs)
+
     @staticmethod
     def format_obj(obj):
         """Format a Python object for printing by adding newlines and indentation."""
@@ -2149,7 +2160,9 @@ class CddlTypes(NamedTuple):
 class CodeGenerator(CddlXcoder):
     """Class for generating C code that encode/decodes CBOR and validates it according to the CDDL."""
 
-    def __init__(self, *, mode, entry_type_names, default_bit_size, **kwargs):
+    def __init__(
+        self, *, mode, entry_type_names, default_bit_size=defaults["default_bit_size"], **kwargs
+    ):
         super(CodeGenerator, self).__init__(**kwargs)
         self.mode = mode
         self.entry_type_names = entry_type_names
@@ -3036,7 +3049,14 @@ int cbor_{self.xcode_func_name()}(
 
 class CodeRenderer:
     def __init__(
-        self, *, entry_types, modes, print_time, default_max_qty, git_sha="", file_header=""
+        self,
+        *,
+        entry_types,
+        modes,
+        print_time=defaults["print_time"],
+        default_max_qty=defaults["default_max_qty"],
+        git_sha="",
+        file_header="",
     ):
         self.entry_types = entry_types
         self.print_time = print_time
@@ -3045,6 +3065,10 @@ class CodeRenderer:
         self.sorted_types = dict()
         self.functions = dict()
         self.type_defs = dict()
+
+        if isinstance(modes, str):
+            modes = [modes]
+        assert isinstance(modes, list), "modes must be a list of strings."
 
         # Sort type definitions so the typedefs will come in the correct order in the header file
         # and the function in the correct order in the c file.
@@ -3474,7 +3498,7 @@ This script requires 'regex' for lookaround functionality not present in 're'.""
         "--dq",
         required=False,
         type=int_or_str,
-        default=3,
+        default=defaults["default_max_qty"],
         help="""Default maximum number of repetitions when no maximum
 is specified. This is needed to construct complete C types.
 
@@ -3563,7 +3587,7 @@ This option works with or without the --copy-sources option.""",
         "--time-header",
         required=False,
         action="store_true",
-        default=False,
+        default=defaults["print_time"],
         help="Put the current time in a comment in the generated files.",
     )
     code_parser.add_argument(
@@ -3578,7 +3602,7 @@ This option works with or without the --copy-sources option.""",
         "--default-bit-size",
         required=False,
         type=int,
-        default=32,
+        default=defaults["default_bit_size"],
         choices=[32, 64],
         help="""Default bit size of integers in code. When integers have no explicit bounds,
 assume they have this bit width. Should follow the bit width of the architecture
@@ -3640,7 +3664,7 @@ If omitted, the format is inferred from the file name.
         "--dq",
         required=False,
         type=int,
-        default=0xFFFFFFFF,
+        default=defaults["default_max_qty_validate"],
         help="""Default maximum number of repetitions when no maximum is specified.
 It is only relevant when handling data that will be decoded by generated code.
 If omitted, a large number will be used. Default: 0x%(default)x""",
