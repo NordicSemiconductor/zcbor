@@ -3481,7 +3481,7 @@ is specified. This is needed to construct complete C types.
 The default_max_qty can usually be set to a text symbol if desired,
 to allow it to be configurable when building the code. This is not always
 possible, as sometimes the value is needed for internal computations.
-If so, the script will raise an exception.""",
+If so, the script will raise an exception. Default: %(default)s""",
     )
     code_parser.add_argument(
         "--output-c",
@@ -3582,7 +3582,7 @@ This option works with or without the --copy-sources option.""",
         choices=[32, 64],
         help="""Default bit size of integers in code. When integers have no explicit bounds,
 assume they have this bit width. Should follow the bit width of the architecture
-the code will be running on.""",
+the code will be running on. Default: %(default)s""",
     )
     code_parser.add_argument(
         "--include-prefix",
@@ -3643,7 +3643,7 @@ If omitted, the format is inferred from the file name.
         default=0xFFFFFFFF,
         help="""Default maximum number of repetitions when no maximum is specified.
 It is only relevant when handling data that will be decoded by generated code.
-If omitted, a large number will be used.""",
+If omitted, a large number will be used. Default: 0x%(default)x""",
     )
     validate_parent_parser.add_argument(
         "--yaml-compatibility",
