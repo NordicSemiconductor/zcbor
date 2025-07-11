@@ -435,7 +435,7 @@ zcbor code --help
 -----------------
 
 ```
-usage: zcbor code [-h] -c CDDL [--no-prelude] [-v]
+usage: zcbor code [-h] -c CDDL [--no-prelude] [-v] [-q]
                   [--default-max-qty DEFAULT_MAX_QTY] [--output-c OUTPUT_C]
                   [--output-h OUTPUT_H] [--output-h-types OUTPUT_H_TYPES]
                   [--copy-sources] [--output-cmake OUTPUT_CMAKE]
@@ -467,6 +467,8 @@ options:
                         prelude can be viewed at zcbor/prelude.cddl in the
                         repo, or together with the script.
   -v, --verbose         Print more information while parsing CDDL and
+                        generating code.
+  -q, --quiet           Print less information while parsing CDDL and
                         generating code.
   --default-max-qty, --dq DEFAULT_MAX_QTY
                         Default maximum number of repetitions when no maximum
@@ -550,7 +552,7 @@ zcbor validate --help
 ---------------------
 
 ```
-usage: zcbor validate [-h] -c CDDL [--no-prelude] [-v] -i INPUT
+usage: zcbor validate [-h] -c CDDL [--no-prelude] [-v] [-q] -i INPUT
                       [--input-as {yaml,json,cbor,cborhex}] -t ENTRY_TYPE
                       [--default-max-qty DEFAULT_MAX_QTY]
                       [--yaml-compatibility]
@@ -566,6 +568,8 @@ options:
                         prelude can be viewed at zcbor/prelude.cddl in the
                         repo, or together with the script.
   -v, --verbose         Print more information while parsing CDDL and
+                        generating code.
+  -q, --quiet           Print less information while parsing CDDL and
                         generating code.
   -i, --input INPUT     Input data file. The option --input-as specifies how
                         to interpret the contents. Use "-" to indicate stdin.
@@ -597,7 +601,7 @@ zcbor convert --help
 --------------------
 
 ```
-usage: zcbor convert [-h] -c CDDL [--no-prelude] [-v] -i INPUT
+usage: zcbor convert [-h] -c CDDL [--no-prelude] [-v] [-q] -i INPUT
                      [--input-as {yaml,json,cbor,cborhex}] -t ENTRY_TYPE
                      [--default-max-qty DEFAULT_MAX_QTY]
                      [--yaml-compatibility] -o OUTPUT
@@ -618,6 +622,8 @@ options:
                         prelude can be viewed at zcbor/prelude.cddl in the
                         repo, or together with the script.
   -v, --verbose         Print more information while parsing CDDL and
+                        generating code.
+  -q, --quiet           Print less information while parsing CDDL and
                         generating code.
   -i, --input INPUT     Input data file. The option --input-as specifies how
                         to interpret the contents. Use "-" to indicate stdin.
