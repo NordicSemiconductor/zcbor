@@ -17,14 +17,56 @@ _Static_assert((sizeof(size_t) == sizeof(void *)),
 _Static_assert((sizeof(zcbor_state_t) >= sizeof(struct zcbor_state_constant)),
 	"This code needs zcbor_state_t to be at least as large as zcbor_backups_t.");
 
-bool zcbor_new_backup(zcbor_state_t *state, size_t new_elem_count)
+
+#ifdef ZCBOR_MAP_SMART_SEARCH
+static bool prepare_elem_state_backup(zcbor_state_t *state, uint8_t **flags_out, size_t *flags_len_out)
 {
+	*flags_out = state->decode_state.map_search_elem_state;
+	*flags_len_out = zcbor_flags_to_bytes(state->decode_state.map_elem_count);
+	if ((*flags_out + *flags_len_out * 2) > (state->constant_state->map_search_elem_state_end)) {
+		ZCBOR_ERR(ZCBOR_ERR_MAP_FLAGS_NOT_AVAILABLE);
+	}
+	return true;
+}
+
+static void do_elem_state_backup(zcbor_state_t *state, uint8_t *flags, size_t flags_len)
+{
+	memcpy(flags + flags_len, flags, flags_len);
+	state->decode_state.map_search_elem_state += flags_len;
+}
+
+static void restore_elem_state_backup(zcbor_state_t *state, zcbor_state_t *backup)
+{
+	uint8_t *flags = state->decode_state.map_search_elem_state;
+	size_t flags_len = zcbor_flags_to_bytes(state->decode_state.map_elem_count);
+	size_t backup_offset = zcbor_flags_to_bytes(backup->decode_state.map_elem_count);
+	memmove(flags - backup_offset, flags, flags_len);
+	state->decode_state.map_search_elem_state -= backup_offset;
+}
+#endif
+
+
+bool zcbor_new_backup_w_elem_state(zcbor_state_t *state, size_t new_elem_count, bool backup_elem_state)
+{
+	(void)backup_elem_state; // Possibly unused
+	ZCBOR_PRINT_FUNC_NAME_ARGS("(backup_elem_state=%u, backup_num=%zu)", backup_elem_state, state->constant_state->current_backup+1);
+	zcbor_log("\r\n");
 	ZCBOR_CHECK_ERROR();
 
 	if ((state->constant_state->current_backup)
 		>= state->constant_state->num_backups) {
 		ZCBOR_ERR(ZCBOR_ERR_NO_BACKUP_MEM);
 	}
+
+#ifdef ZCBOR_MAP_SMART_SEARCH
+	uint8_t *flags = NULL;
+	size_t flags_len = 0;
+
+	if (backup_elem_state) {
+		ZCBOR_FAIL_IF(!prepare_elem_state_backup(state, &flags, &flags_len));
+	}
+	state->decode_state.elem_state_backed_up = backup_elem_state;
+#endif
 
 	state->payload_moved = false;
 
@@ -39,9 +81,19 @@ bool zcbor_new_backup(zcbor_state_t *state, size_t new_elem_count)
 
 	state->elem_count = new_elem_count;
 
-	zcbor_log("New backup (level %zu)\n", i);
+#ifdef ZCBOR_MAP_SMART_SEARCH
+	if (backup_elem_state) {
+		do_elem_state_backup(state, flags, flags_len);
+	}
+#endif
 
 	return true;
+}
+
+
+bool zcbor_new_backup(zcbor_state_t *state, size_t new_elem_count)
+{
+	return zcbor_new_backup_w_elem_state(state, new_elem_count, false);
 }
 
 
@@ -72,9 +124,25 @@ bool zcbor_process_backup_num(zcbor_state_t *state, uint32_t flags,
 			}
 		}
 		memcpy(state, backup, sizeof(zcbor_state_t));
+
+#ifdef ZCBOR_MAP_SMART_SEARCH
+		if (!(flags & ZCBOR_FLAG_CONSUME) && state->decode_state.elem_state_backed_up) {
+			uint8_t *flags = NULL;
+			size_t flags_len = 0;
+			ZCBOR_FAIL_IF(!prepare_elem_state_backup(state, &flags, &flags_len));
+			do_elem_state_backup(state, flags, flags_len);
+		}
+#endif
 	}
 
 	if (flags & ZCBOR_FLAG_CONSUME) {
+		ZCBOR_ERR_IF(backup_num != state->constant_state->current_backup,
+			ZCBOR_ERR_UNSUPPORTED);
+#ifdef ZCBOR_MAP_SMART_SEARCH
+		if (!(flags & ZCBOR_FLAG_RESTORE) && backup->decode_state.elem_state_backed_up) {
+			restore_elem_state_backup(state, backup);
+		}
+#endif
 		state->constant_state->current_backup--;
 	}
 
@@ -91,6 +159,7 @@ bool zcbor_process_backup_num(zcbor_state_t *state, uint32_t flags,
 	if (flags & ZCBOR_FLAG_KEEP_DECODE_STATE) {
 		/* Copy decode state */
 		state->decode_state = local_copy.decode_state;
+		ZCBOR_ERR_IF(flags & ZCBOR_FLAG_CONSUME, ZCBOR_ERR_UNSUPPORTED);
 	}
 
 	return true;
@@ -124,7 +193,7 @@ static void update_backups(zcbor_state_t *state, uint8_t const *new_payload_end)
 bool zcbor_union_start_code(zcbor_state_t *state)
 {
 	ZCBOR_PRINT_FUNC_NAME();
-	if (!zcbor_new_backup(state, state->elem_count)) {
+	if (!zcbor_new_backup_w_elem_state(state, state->elem_count, true)) {
 		ZCBOR_FAIL();
 	}
 	return true;
@@ -160,6 +229,9 @@ void zcbor_new_state(zcbor_state_t *state_array, size_t n_states,
 	state_array[0].decode_state.indefinite_length_array = false;
 #ifdef ZCBOR_MAP_SMART_SEARCH
 	state_array[0].decode_state.map_search_elem_state = flags;
+	if (flags == NULL) {
+		flags_bytes = 0;
+	}
 	state_array[0].decode_state.map_elem_count = 0;
 #else
 	state_array[0].decode_state.map_elems_processed = 0;
