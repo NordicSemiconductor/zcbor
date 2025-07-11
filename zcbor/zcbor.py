@@ -3165,9 +3165,7 @@ static bool {xcoder.func_name}(zcbor_state_t *state, {"" if mode == "decode" els
             if struct_ptr_name(mode) in xcoder.body else "void"} *{struct_ptr_name(mode)});
             """.strip()
 
-    def render_function(self, xcoder, mode):
-        body = xcoder.body
-
+    def find_cast_func_calls(self, body):
         # Define the subroutine "paren" that matches parenthesised expressions.
         paren_re = r"(?(DEFINE)(?P<paren>\(((?>[^\(\)]+|(?&paren))*)\)))"
         # This uses "paren" to match a single argument to a function.
@@ -3184,19 +3182,29 @@ static bool {xcoder.func_name}(zcbor_state_t *state, {"" if mode == "decode" els
             getrp(present_re).finditer(body),
             getrp(map_re).finditer(body),
         )
-        arg_test = ""
-        calls = "\n		".join(
-            (f"{m.group('func')}({m.group('state')}, {m.group('arg')});" for m in (all_funcs))
-        )
-        if calls != "":
-            arg_test = f"""
+        return list((m.group("func"), m.group("state"), m.group("arg")) for m in all_funcs)
+
+    def render_arg_check(self, calls):
+        """Check that the arguments to the calls have the right type.
+
+        This is used for calls where the function pointer is cast to zcbor_decoder_t or
+        zcbor_encoder_t, so the compiler can check that the arguments are correct."""
+
+        call_strs = list(f"{func}({state}, {arg});" for func, state, arg in calls)
+        if not call_strs:
+            return ""
+        call_expr = "\n		".join(call_strs)
+        return f"""
 	if (false) {{
 		/* For testing that the types of the arguments are correct.
 		 * A compiler error here means a bug in zcbor.
 		 */
-		{calls}
+		{call_expr}
 	}}
 """
+
+    def render_function(self, xcoder, mode):
+        body = xcoder.body
         return f"""
 static bool {xcoder.func_name}(
 		zcbor_state_t *state, {"" if mode == "decode" else "const "}{
@@ -3208,7 +3216,7 @@ static bool {xcoder.func_name}(
 	{"bool int_res;" if "int_res" in body else ""}
 
 	bool res = ({body});
-{arg_test}
+{self.render_arg_check(self.find_cast_func_calls(body))}
 	log_result(state, res, __func__);
 	return res;
 }}""".replace(
@@ -3222,7 +3230,7 @@ static bool {xcoder.func_name}(
 {xcoder.public_xcode_func_sig()}
 {{
 	zcbor_state_t states[{xcoder.num_backups() + 2}];
-
+{self.render_arg_check(((func_name, "states", func_arg),))}
 	return zcbor_entry_function(payload, payload_len, (void *){func_arg}, payload_len_out, states,
 		(zcbor_decoder_t *){func_name}, sizeof(states) / sizeof(zcbor_state_t), {
             xcoder.list_counts()[1]});
