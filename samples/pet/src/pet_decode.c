@@ -64,6 +64,13 @@ int cbor_decode_Pet(
 {
 	zcbor_state_t states[4];
 
+	if (false) {
+		/* For testing that the types of the arguments are correct.
+		 * A compiler error here means a bug in zcbor.
+		 */
+		decode_Pet(states, result);
+	}
+
 	return zcbor_entry_function(payload, payload_len, (void *)result, payload_len_out, states,
 		(zcbor_decoder_t *)decode_Pet, sizeof(states) / sizeof(zcbor_state_t), 1);
 }
