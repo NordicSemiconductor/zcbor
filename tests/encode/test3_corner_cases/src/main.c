@@ -1039,8 +1039,8 @@ ZTEST(cbor_encode_test3, test_single)
 	};
 	size_t input_single1 = 52;
 	size_t input_single2_ign = 53;
-	size_t input_single3 = 9;
-	size_t input_single4_inv = 10;
+	uint8_t input_single3 = 9;
+	uint8_t input_single4_inv = 10;
 
 	zassert_equal(ZCBOR_SUCCESS, cbor_encode_SingleBstr(output, sizeof(output), &input_single0, &out_len), NULL);
 	zassert_equal(sizeof(exp_payload_single0), out_len, NULL);
@@ -1483,6 +1483,7 @@ ZTEST(cbor_encode_test3, test_intmax)
 		END
 	};
 	struct Intmax2 intput2;
+	struct Intmax4 intput4;
 	size_t num_encode;
 	uint8_t output[60];
 
@@ -1516,6 +1517,24 @@ ZTEST(cbor_encode_test3, test_intmax)
 		sizeof(output), &intput2, &num_encode), NULL);
 	zassert_equal(sizeof(exp_intmax2_payload2), num_encode, NULL);
 	zassert_mem_equal(exp_intmax2_payload2, output, num_encode, NULL);
+
+	intput4.INT_8_MIN_count = 1;
+	intput4.INT_8_MAX_count = 1;
+	intput4.UINT_8_MAX_count = 1;
+	intput4.INT_16_MIN_count = 1;
+	intput4.INT_16_MAX_count = 1;
+	intput4.UINT_16_MAX_count = 1;
+	intput4.INT_32_MIN_count = 1;
+	intput4.INT_32_MAX_count = 1;
+	intput4.UINT_32_MAX_count = 1;
+	intput4.INT_64_MIN_count = 1;
+	intput4.INT_64_MAX_count = 1;
+	intput4.UINT_64_MAX_count = 1;
+
+	zassert_equal(ZCBOR_SUCCESS, cbor_encode_Intmax4(output,
+		sizeof(output), &intput4, &num_encode), NULL);
+	zassert_equal(sizeof(exp_intmax1_payload1), num_encode, NULL);
+	zassert_mem_equal(exp_intmax1_payload1, output, num_encode, NULL);
 }
 
 

@@ -924,7 +924,18 @@ class PopenTest(TestCase):
         return stdout0, stderr0
 
 
-class TestCLI(PopenTest):
+class TempdTest(TestCase):
+    def setUp(self):
+        self.tempd = Path(mkdtemp())
+        return super().setUp()
+
+    def tearDown(self):
+        rmtree(self.tempd)
+        self.tempd = None
+        return super().tearDown()
+
+
+class CLI_Test(PopenTest):
     def get_std_args(self, input, cmd="convert"):
         return [
             "zcbor",
@@ -938,6 +949,8 @@ class TestCLI(PopenTest):
             "--yaml-compatibility",
         ]
 
+
+class TestCLI1(CLI_Test):
     def do_testManifest(self, n):
         self.popen_test(self.get_std_args(p_test_vectors12[n], cmd="validate"), "")
         stdout0, _ = self.popen_test(
@@ -1053,14 +1066,15 @@ class TestCLI(PopenTest):
             stderr2,
         )
 
+
+class TestFileHeader(CLI_Test, TempdTest):
     def do_test_file_header(self, from_file=False):
-        tempd = Path(mkdtemp())
         file_header = """Sample
 
 file header"""
         if from_file:
-            (tempd / "file_header.txt").write_text(file_header, encoding="utf-8")
-            file_header_input = str(tempd / "file_header.txt")
+            (self.tempd / "file_header.txt").write_text(file_header, encoding="utf-8")
+            file_header_input = str(self.tempd / "file_header.txt")
         else:
             file_header_input = file_header
 
@@ -1073,7 +1087,7 @@ file header"""
                 "-t",
                 "Pet",
                 "--output-cmake",
-                str(tempd / "pet.cmake"),
+                str(self.tempd / "pet.cmake"),
                 "-d",
                 "-e",
                 "--file-header",
@@ -1102,17 +1116,17 @@ file header"""
  * Generated with a --default-max-qty of 5
  */""".splitlines()
         self.assertEqual(
-            exp_cmake_header, (tempd / "pet.cmake").read_text(encoding="utf-8").splitlines()[:9]
+            exp_cmake_header,
+            (self.tempd / "pet.cmake").read_text(encoding="utf-8").splitlines()[:9],
         )
         for p in (
-            tempd / "src" / "pet_decode.c",
-            tempd / "src" / "pet_encode.c",
-            tempd / "include" / "pet_decode.h",
-            tempd / "include" / "pet_encode.h",
-            tempd / "include" / "pet_types.h",
+            self.tempd / "src" / "pet_decode.c",
+            self.tempd / "src" / "pet_encode.c",
+            self.tempd / "include" / "pet_decode.h",
+            self.tempd / "include" / "pet_encode.h",
+            self.tempd / "include" / "pet_types.h",
         ):
             self.assertEqual(exp_c_header, p.read_text(encoding="utf-8").splitlines()[:9])
-        rmtree(tempd)
 
     def test_file_header(self):
         self.do_test_file_header()
@@ -1278,6 +1292,119 @@ class TestInvalidIdentifiers(CornerCaseTest):
         self.assertTrue(decoded.f_1one_tstr)
         self.assertTrue(decoded.f_)
         self.assertTrue(decoded.a_z_tstr)
+
+
+class TestIntSize(PopenTest, TempdTest):
+    def do_test_int_size(self, mode, bit_size):
+        self.popen_test(
+            [
+                "zcbor",
+                "code",
+                "--cddl",
+                p_corner_cases,
+                "-t",
+                "Intmax1",
+                "Intmax2",
+                "Intmax4",
+                "Intmax5",
+                "Intmax6",
+                "DefaultInt",
+                f"--{mode}",
+                "--default-bit-size",
+                str(bit_size),
+                "--output-cmake",
+                self.tempd / "intmax.cmake",
+            ]
+        )
+
+        expected_output_types = [
+            "int8_t Intmax2_INT_8",
+            "uint8_t Intmax2_UINT_8",
+            "int16_t Intmax2_INT_16",
+            "uint16_t Intmax2_UINT_16",
+            "int32_t Intmax2_INT_32",
+            "uint32_t Intmax2_UINT_32",
+            "int64_t Intmax2_INT_64",
+            "uint64_t Intmax2_UINT_64",
+            "int16_t Intmax6_INT_8_PLUS1",
+            "int16_t Intmax6_UINT_8_PLUS1",
+            "int32_t Intmax6_INT_16_PLUS1",
+            "uint32_t Intmax6_UINT_16_PLUS1",
+            "int64_t Intmax6_INT_32_PLUS1",
+            "uint64_t Intmax6_UINT_32_PLUS1",
+            f"int{bit_size}_t DefaultInt_int",
+            f"uint{bit_size}_t DefaultInt_uint",
+        ]
+
+        lit_func = "put" if mode == "encode" else "expect"
+        lit_p_func = "encode" if mode == "encode" else "pexpect"
+        result_var = "input" if mode == "encode" else "result"
+        expected_output_code = [
+            f"zcbor_int8_{lit_func}(state, (INT8_MIN))",
+            f"zcbor_uint8_{lit_func}(state, (INT8_MAX))",
+            f"zcbor_uint8_{lit_func}(state, (UINT8_MAX))",
+            f"zcbor_int16_{lit_func}(state, (INT16_MIN))",
+            f"zcbor_uint16_{lit_func}(state, (INT16_MAX))",
+            f"zcbor_uint16_{lit_func}(state, (UINT16_MAX))",
+            f"zcbor_int32_{lit_func}(state, (INT32_MIN))",
+            f"zcbor_uint32_{lit_func}(state, (INT32_MAX))",
+            f"zcbor_uint32_{lit_func}(state, (UINT32_MAX))",
+            f"zcbor_int64_{lit_func}(state, (INT64_MIN))",
+            f"zcbor_uint64_{lit_func}(state, (INT64_MAX))",
+            f"zcbor_uint64_{lit_func}(state, (UINT64_MAX))",
+            f"zcbor_int8_{mode}(state, (&(*{result_var}).Intmax2_INT_8)",
+            f"zcbor_uint8_{mode}(state, (&(*{result_var}).Intmax2_UINT_8)",
+            f"zcbor_int16_{mode}(state, (&(*{result_var}).Intmax2_INT_16)",
+            f"zcbor_uint16_{mode}(state, (&(*{result_var}).Intmax2_UINT_16)",
+            f"zcbor_int32_{mode}(state, (&(*{result_var}).Intmax2_INT_32)",
+            f"zcbor_uint32_{mode}(state, (&(*{result_var}).Intmax2_UINT_32)",
+            f"zcbor_int64_{mode}(state, (&(*{result_var}).Intmax2_INT_64)",
+            f"zcbor_uint64_{mode}(state, (&(*{result_var}).Intmax2_UINT_64)",
+            f"&(*{result_var}).Intmax4_INT_8_MIN_count, (zcbor_{mode}r_t *)zcbor_int8_{lit_p_func}, state, (&(int8_t){{INT8_MIN}})",
+            f"&(*{result_var}).Intmax4_INT_8_MAX_count, (zcbor_{mode}r_t *)zcbor_uint8_{lit_p_func}, state, (&(uint8_t){{INT8_MAX}})",
+            f"&(*{result_var}).Intmax4_UINT_8_MAX_count, (zcbor_{mode}r_t *)zcbor_uint8_{lit_p_func}, state, (&(uint8_t){{UINT8_MAX}})",
+            f"&(*{result_var}).Intmax4_INT_16_MIN_count, (zcbor_{mode}r_t *)zcbor_int16_{lit_p_func}, state, (&(int16_t){{INT16_MIN}})",
+            f"&(*{result_var}).Intmax4_INT_16_MAX_count, (zcbor_{mode}r_t *)zcbor_uint16_{lit_p_func}, state, (&(uint16_t){{INT16_MAX}})",
+            f"&(*{result_var}).Intmax4_UINT_16_MAX_count, (zcbor_{mode}r_t *)zcbor_uint16_{lit_p_func}, state, (&(uint16_t){{UINT16_MAX}})",
+            f"&(*{result_var}).Intmax4_INT_32_MIN_count, (zcbor_{mode}r_t *)zcbor_int32_{lit_p_func}, state, (&(int32_t){{INT32_MIN}})",
+            f"&(*{result_var}).Intmax4_INT_32_MAX_count, (zcbor_{mode}r_t *)zcbor_uint32_{lit_p_func}, state, (&(uint32_t){{INT32_MAX}})",
+            f"&(*{result_var}).Intmax4_UINT_32_MAX_count, (zcbor_{mode}r_t *)zcbor_uint32_{lit_p_func}, state, (&(uint32_t){{UINT32_MAX}})",
+            f"&(*{result_var}).Intmax4_INT_64_MIN_count, (zcbor_{mode}r_t *)zcbor_int64_{lit_p_func}, state, (&(int64_t){{INT64_MIN}})",
+            f"&(*{result_var}).Intmax4_INT_64_MAX_count, (zcbor_{mode}r_t *)zcbor_uint64_{lit_p_func}, state, (&(uint64_t){{INT64_MAX}})",
+            f"&(*{result_var}).Intmax4_UINT_64_MAX_count, (zcbor_{mode}r_t *)zcbor_uint64_{lit_p_func}, state, (&(uint64_t){{UINT64_MAX}}),",
+            f"zcbor_int16_{lit_func}(state, (-129))",
+            f"zcbor_uint8_{lit_func}(state, (128))",
+            f"zcbor_uint16_{lit_func}(state, (256))",
+            f"zcbor_int32_{lit_func}(state, (-32769))",
+            f"zcbor_uint16_{lit_func}(state, (32768))",
+            f"zcbor_uint32_{lit_func}(state, (65536))",
+            f"zcbor_int64_{lit_func}(state, (-2147483649))",
+            f"zcbor_uint32_{lit_func}(state, (2147483648))",
+            f"zcbor_uint64_{lit_func}(state, (4294967296))",
+            f"zcbor_int16_{mode}(state, (&(*{result_var}).Intmax6_INT_8_PLUS1)",
+            f"zcbor_int16_{mode}(state, (&(*{result_var}).Intmax6_UINT_8_PLUS1)",
+            f"zcbor_int32_{mode}(state, (&(*{result_var}).Intmax6_INT_16_PLUS1)",
+            f"zcbor_uint32_{mode}(state, (&(*{result_var}).Intmax6_UINT_16_PLUS1)",
+            f"zcbor_int64_{mode}(state, (&(*{result_var}).Intmax6_INT_32_PLUS1)",
+            f"zcbor_uint64_{mode}(state, (&(*{result_var}).Intmax6_UINT_32_PLUS1)",
+            f"zcbor_int{bit_size}_{mode}(state, (&(*{result_var}).DefaultInt_int)",
+            f"zcbor_uint{bit_size}_{mode}(state, (&(*{result_var}).DefaultInt_uint)",
+        ]
+
+        output_c = (self.tempd / "src" / f"intmax_{mode}.c").read_text()
+        output_h_types = (self.tempd / "include" / "intmax_types.h").read_text()
+
+        for e in expected_output_types:
+            self.assertIn(e, output_h_types, f"Expected '{e}' in output_h_types")
+        for e in expected_output_code:
+            self.assertIn(e, output_c, f"Expected '{e}' in output_c")
+
+    def test_int_size(self):
+        """Test that the correct integer types are generated for different bit sizes."""
+
+        for mode in ("decode", "encode"):
+            for bit_size in (8, 16, 32, 64):
+                self.do_test_int_size(mode, bit_size)
 
 
 if __name__ == "__main__":

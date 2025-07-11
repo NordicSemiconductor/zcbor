@@ -63,8 +63,12 @@ do { \
  *                fit in the result variable.
  *                Use zcbor_peek_error() to see the error code.
  */
+bool zcbor_int8_decode(zcbor_state_t *state, int8_t *result);
+bool zcbor_int16_decode(zcbor_state_t *state, int16_t *result);
 bool zcbor_int32_decode(zcbor_state_t *state, int32_t *result); /* pint/nint */
 bool zcbor_int64_decode(zcbor_state_t *state, int64_t *result); /* pint/nint */
+bool zcbor_uint8_decode(zcbor_state_t *state, uint8_t *result);
+bool zcbor_uint16_decode(zcbor_state_t *state, uint16_t *result);
 bool zcbor_uint32_decode(zcbor_state_t *state, uint32_t *result); /* pint */
 bool zcbor_uint64_decode(zcbor_state_t *state, uint64_t *result); /* pint */
 bool zcbor_size_decode(zcbor_state_t *state, size_t *result); /* pint */
@@ -92,8 +96,12 @@ bool zcbor_float_decode(zcbor_state_t *state, double *result); /* IEEE754 float1
  *                expected value.
  *                Use zcbor_peek_error() to see the error code.
  */
+bool zcbor_int8_expect(zcbor_state_t *state, int8_t expected); /* pint/nint */
+bool zcbor_int16_expect(zcbor_state_t *state, int16_t expected); /* pint/nint */
 bool zcbor_int32_expect(zcbor_state_t *state, int32_t expected); /* pint/nint */
 bool zcbor_int64_expect(zcbor_state_t *state, int64_t expected); /* pint/nint */
+bool zcbor_uint8_expect(zcbor_state_t *state, uint8_t expected); /* pint */
+bool zcbor_uint16_expect(zcbor_state_t *state, uint16_t expected); /* pint */
 bool zcbor_uint32_expect(zcbor_state_t *state, uint32_t expected); /* pint */
 bool zcbor_uint64_expect(zcbor_state_t *state, uint64_t expected); /* pint */
 bool zcbor_size_expect(zcbor_state_t *state, size_t expected); /* pint */
@@ -113,8 +121,12 @@ bool zcbor_float_expect(zcbor_state_t *state, double expected); /* IEEE754 float
 
 /** Like the _expect() functions but the value is passed through a pointer.
  * (for use as a zcbor_decoder_t function) */
+bool zcbor_int8_pexpect(zcbor_state_t *state, int8_t *expected); /* pint/nint */
+bool zcbor_int16_pexpect(zcbor_state_t *state, int16_t *expected); /* pint/nint */
 bool zcbor_int32_pexpect(zcbor_state_t *state, int32_t *expected); /* pint/nint */
 bool zcbor_int64_pexpect(zcbor_state_t *state, int64_t *expected); /* pint/nint */
+bool zcbor_uint8_pexpect(zcbor_state_t *state, uint8_t *expected); /* pint */
+bool zcbor_uint16_pexpect(zcbor_state_t *state, uint16_t *expected); /* pint */
 bool zcbor_uint32_pexpect(zcbor_state_t *state, uint32_t *expected); /* pint */
 bool zcbor_uint64_pexpect(zcbor_state_t *state, uint64_t *expected); /* pint */
 bool zcbor_size_pexpect(zcbor_state_t *state, size_t *expected); /* pint */
@@ -132,8 +144,12 @@ bool zcbor_float_pexpect(zcbor_state_t *state, double *expected); /* IEEE754 flo
  *
  * Calls @ref zcbor_union_elem_code then @ref zcbor_[u]int[32|64]_expect.
  */
+bool zcbor_int8_expect_union(zcbor_state_t *state, int8_t expected);
+bool zcbor_int16_expect_union(zcbor_state_t *state, int16_t expected);
 bool zcbor_int32_expect_union(zcbor_state_t *state, int32_t expected);
 bool zcbor_int64_expect_union(zcbor_state_t *state, int64_t expected);
+bool zcbor_uint8_expect_union(zcbor_state_t *state, uint8_t expected);
+bool zcbor_uint16_expect_union(zcbor_state_t *state, uint16_t expected);
 bool zcbor_uint32_expect_union(zcbor_state_t *state, uint32_t expected);
 bool zcbor_uint64_expect_union(zcbor_state_t *state, uint64_t expected);
 
