@@ -476,7 +476,7 @@ options:
                         when building the code. This is not always possible,
                         as sometimes the value is needed for internal
                         computations. If so, the script will raise an
-                        exception.
+                        exception. Default: 3
   --output-c, --oc OUTPUT_C
                         Path to output C file. If both --decode and --encode
                         are specified, _decode and _encode will be appended to
@@ -528,7 +528,7 @@ options:
                         Default bit size of integers in code. When integers
                         have no explicit bounds, assume they have this bit
                         width. Should follow the bit width of the architecture
-                        the code will be running on.
+                        the code will be running on. Default: 32
   --include-prefix INCLUDE_PREFIX
                         When #include'ing generated files, add this path
                         prefix to the filename.
@@ -581,7 +581,7 @@ options:
                         Default maximum number of repetitions when no maximum
                         is specified. It is only relevant when handling data
                         that will be decoded by generated code. If omitted, a
-                        large number will be used.
+                        large number will be used. Default: 0xffffffff
   --yaml-compatibility  Whether to convert CBOR-only values to YAML-compatible
                         ones (when converting from CBOR), or vice versa (when
                         converting to CBOR). When this is enabled, all CBOR
@@ -633,7 +633,7 @@ options:
                         Default maximum number of repetitions when no maximum
                         is specified. It is only relevant when handling data
                         that will be decoded by generated code. If omitted, a
-                        large number will be used.
+                        large number will be used. Default: 0xffffffff
   --yaml-compatibility  Whether to convert CBOR-only values to YAML-compatible
                         ones (when converting from CBOR), or vice versa (when
                         converting to CBOR). When this is enabled, all CBOR
