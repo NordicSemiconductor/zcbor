@@ -3004,7 +3004,7 @@ class CodeGenerator(CddlXcoder):
                 func, *arguments = self.repeated_single_func(ptr_result=True)
                 return comma_operator(
                     default_assignment,
-                    f"(zcbor_present_decode(&(%s), (zcbor_decoder_t *)%s, %s))"
+                    f"(zcbor_present_decode(&(%s), ZCBOR_CUSTOM_CAST_FP(%s), %s))"
                     % (
                         self.present_var_access(),
                         func,
@@ -3017,7 +3017,7 @@ class CodeGenerator(CddlXcoder):
 
             minmax = "_minmax" if self.mode == "encode" else ""
             mode = self.mode
-            return f"zcbor_multi_{mode}{minmax}(%s, %s, &%s, (zcbor_{mode}r_t *)%s, %s, %s)" % (
+            return f"zcbor_multi_{mode}{minmax}(%s, %s, &%s, ZCBOR_CUSTOM_CAST_FP(%s), %s, %s)" % (
                 self.min_qty,
                 self.max_qty,
                 self.count_var_access(),
@@ -3192,7 +3192,7 @@ static bool {xcoder.func_name}(zcbor_state_t *state, {"" if mode == "decode" els
         # This uses "paren" to match a single argument to a function.
         arg_re = rf"([^,\(\)]|(?&paren))+"
         # Match a function pointer argument to a function.
-        func_re = rf"\(zcbor_(en|de)coder_t \*\)(?P<func>{arg_re})"
+        func_re = rf"ZCBOR_CUSTOM_CAST_FP\((?P<func>{arg_re})\)"
         # Match a triplet of function pointer, state arg, and result arg.
         call_re = rf"{func_re}, (?P<state>{arg_re}), (?P<arg>{arg_re})"
         multi_re = rf"{paren_re}zcbor_multi_(en|de)code\(({arg_re},){{3}} {call_re}"
@@ -3253,7 +3253,7 @@ static bool {xcoder.func_name}(
 	zcbor_state_t states[{xcoder.num_backups() + 2}];
 {self.render_arg_check(((func_name, "states", func_arg),))}
 	return zcbor_entry_function(payload, payload_len, (void *){func_arg}, payload_len_out, states,
-		(zcbor_decoder_t *){func_name}, sizeof(states) / sizeof(zcbor_state_t), {
+		(zcbor_decoder_t *)ZCBOR_CUSTOM_CAST_FP({func_name}), sizeof(states) / sizeof(zcbor_state_t), {
             xcoder.list_counts()[1]});
 }}"""
 
@@ -3286,6 +3286,8 @@ do { \\
 #if DEFAULT_MAX_QTY != {self.default_max_qty}
 #error "The type file was generated with a different default_max_qty than this file"
 #endif
+
+{self.render_cast_macro(mode)}
 
 {log_result_define}
 
@@ -3327,6 +3329,19 @@ extern "C" {{
 
 #endif /* {header_guard} */
 """
+
+    def render_cast_macro(self, mode):
+        """Render a macro that casts the function pointer to the correct type."""
+        if not self.type_defs[mode]:
+            return ""
+        c = "" if mode == "decode" else "const "
+        lines = list(f"bool(*)(zcbor_state_t *, {c}{n} *): " for _, n in self.type_defs[mode])
+        maxline = max(len(line) for line in lines)
+        lines = (line.ljust(maxline) + f"((zcbor_{mode}r_t *)func)" for line in lines)
+        body = ", \\\n\t".join(lines)
+        return f"""#define ZCBOR_CUSTOM_CAST_FP(func) _Generic((func), \\
+	{body}, \\
+	default: ZCBOR_CAST_FP(func))"""
 
     def render_type_file(self, header_guard, mode):
         body = (linesep + linesep).join(

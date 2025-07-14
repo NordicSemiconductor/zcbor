@@ -20,6 +20,10 @@
 #error "The type file was generated with a different default_max_qty than this file"
 #endif
 
+#define ZCBOR_CUSTOM_CAST_FP(func) _Generic((func), \
+	bool(*)(zcbor_state_t *, struct Pet *): ((zcbor_decoder_t *)func), \
+	default: ZCBOR_CAST_FP(func))
+
 #define log_result(state, result, func) do { \
 	if (!result) { \
 		zcbor_trace_file(state); \
@@ -37,7 +41,7 @@ static bool decode_Pet(
 {
 	zcbor_log("%s\r\n", __func__);
 
-	bool res = (((zcbor_list_start_decode(state) && ((((zcbor_list_start_decode(state) && ((zcbor_multi_decode(1, 3, &(*result).names_count, (zcbor_decoder_t *)zcbor_tstr_decode, state, (*&(*result).names), sizeof(struct zcbor_string))) || (zcbor_list_map_end_force_decode(state), false)) && zcbor_list_end_decode(state)))
+	bool res = (((zcbor_list_start_decode(state) && ((((zcbor_list_start_decode(state) && ((zcbor_multi_decode(1, 3, &(*result).names_count, ZCBOR_CUSTOM_CAST_FP(zcbor_tstr_decode), state, (*&(*result).names), sizeof(struct zcbor_string))) || (zcbor_list_map_end_force_decode(state), false)) && zcbor_list_end_decode(state)))
 	&& ((zcbor_bstr_decode(state, (&(*result).birthday)))
 	&& ((((((*result).birthday.len == 8)) || (zcbor_error(state, ZCBOR_ERR_WRONG_RANGE), false))) || (zcbor_error(state, ZCBOR_ERR_WRONG_RANGE), false)))
 	&& ((((zcbor_uint_decode(state, &(*result).species_choice, sizeof((*result).species_choice)))) && ((((((*result).species_choice == Pet_species_cat_c) && ((1)))
@@ -72,5 +76,5 @@ int cbor_decode_Pet(
 	}
 
 	return zcbor_entry_function(payload, payload_len, (void *)result, payload_len_out, states,
-		(zcbor_decoder_t *)decode_Pet, sizeof(states) / sizeof(zcbor_state_t), 1);
+		(zcbor_decoder_t *)ZCBOR_CUSTOM_CAST_FP(decode_Pet), sizeof(states) / sizeof(zcbor_state_t), 1);
 }
