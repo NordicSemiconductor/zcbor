@@ -3351,7 +3351,7 @@ static bool {xcoder.func_name}(zcbor_state_t *state, {"" if mode == "decode" els
         func_re = rf"ZCBOR_CUSTOM_CAST_FP\((?P<func>{arg_re})\)"
         # Match a triplet of function pointer, state arg, and result arg.
         call_re = rf"{func_re}, (?P<state>{arg_re}), (?P<arg>{arg_re})"
-        multi_re = rf"{paren_re}zcbor_multi_(en|de)code\(({arg_re},){{3}} {call_re}"
+        multi_re = rf"{paren_re}zcbor_multi_(en|de)code(_minmax)?\(({arg_re},){{3}} {call_re}"
         present_re = rf"{paren_re}zcbor_present_(en|de)code\({arg_re}, {call_re}\)"
         map_re = rf"{paren_re}zcbor_unordered_map_search\({call_re}\)"
         all_funcs = chain(
