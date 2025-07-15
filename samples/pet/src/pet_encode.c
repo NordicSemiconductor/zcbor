@@ -20,6 +20,10 @@
 #error "The type file was generated with a different default_max_qty than this file"
 #endif
 
+#define ZCBOR_CUSTOM_CAST_FP(func) _Generic((func), \
+	bool(*)(zcbor_state_t *, const struct Pet *): ((zcbor_encoder_t *)func), \
+	default: ZCBOR_CAST_FP(func))
+
 #define log_result(state, result, func) do { \
 	if (!result) { \
 		zcbor_trace_file(state); \
@@ -37,13 +41,20 @@ static bool encode_Pet(
 {
 	zcbor_log("%s\r\n", __func__);
 
-	bool res = (((zcbor_list_start_encode(state, 3) && ((((zcbor_list_start_encode(state, 3) && ((zcbor_multi_encode_minmax(1, 3, &(*input).names_count, (zcbor_encoder_t *)zcbor_tstr_encode, state, (*&(*input).names), sizeof(struct zcbor_string))) || (zcbor_list_map_end_force_encode(state), false)) && zcbor_list_end_encode(state, 3)))
+	bool res = (((zcbor_list_start_encode(state, 3) && ((((zcbor_list_start_encode(state, 3) && ((zcbor_multi_encode_minmax(1, 3, &(*input).names_count, ZCBOR_CUSTOM_CAST_FP(zcbor_tstr_encode), state, (*&(*input).names), sizeof(struct zcbor_string))) || (zcbor_list_map_end_force_encode(state), false)) && zcbor_list_end_encode(state, 3)))
 	&& (((((((*input).birthday.len == 8)) || (zcbor_error(state, ZCBOR_ERR_WRONG_RANGE), false))) || (zcbor_error(state, ZCBOR_ERR_WRONG_RANGE), false))
 	&& (zcbor_bstr_encode(state, (&(*input).birthday))))
 	&& ((((*input).species_choice == Pet_species_cat_c) ? ((zcbor_uint8_put(state, (1))))
 	: (((*input).species_choice == Pet_species_dog_c) ? ((zcbor_uint8_put(state, (2))))
 	: (((*input).species_choice == Pet_species_other_c) ? ((zcbor_uint8_put(state, (3))))
 	: false))))) || (zcbor_list_map_end_force_encode(state), false)) && zcbor_list_end_encode(state, 3))));
+
+	if (false) {
+		/* For testing that the types of the arguments are correct.
+		 * A compiler error here means a bug in zcbor.
+		 */
+		zcbor_tstr_encode(state, (*&(*input).names));
+	}
 
 	log_result(state, res, __func__);
 	return res;
@@ -66,5 +77,5 @@ int cbor_encode_Pet(
 	}
 
 	return zcbor_entry_function(payload, payload_len, (void *)input, payload_len_out, states,
-		(zcbor_decoder_t *)encode_Pet, sizeof(states) / sizeof(zcbor_state_t), 1);
+		(zcbor_decoder_t *)ZCBOR_CUSTOM_CAST_FP(encode_Pet), sizeof(states) / sizeof(zcbor_state_t), 1);
 }
