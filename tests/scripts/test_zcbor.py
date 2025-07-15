@@ -6,7 +6,7 @@
 
 from unittest import TestCase, main
 from subprocess import Popen, PIPE
-from re import sub
+from regex import sub, search, escape, compile
 from pathlib import Path
 from ecdsa import VerifyingKey
 from hashlib import sha256
@@ -1658,6 +1658,81 @@ class TestUnicodeEscape(TestCase):
         ]"""
 
         cddl.from_json(test_json)
+
+
+class TestFuncPointer(PopenTest, TempdTest):
+    def test_func_pointer(self):
+        # fmt: off
+        self.popen_test(
+            [
+                "zcbor",
+                "code",
+                "--cddl", p_corner_cases,
+                "-t", "NestedListMap", "NestedMapListMap", "Numbers", "Numbers2", "TaggedUnion",
+                "NumberMap", "Strings", "Simple2", "Optional", "Union", "Map", "EmptyMap",
+                "Level1", "Range", "ValueRange", "SingleBstr", "SingleInt", "SingleInt2",
+                "Unabstracted", "QuantityRange", "DoubleMap", "Floats", "Floats2", "Floats3",
+                "Prelude", "CBORBstr", "MapLength", "UnionInt1", "UnionInt2", "Intmax1", "Intmax2",
+                "Intmax3", "Intmax4", "InvalidIdentifiers", "Uint64List", "BstrSize",
+                "MapUnionPrimAlias", "Keywords", "EmptyContainer", "SingleElemList",
+                "Choice1", "Choice2", "Choice3", "Choice4", "Choice5", "OptList",
+                "-d", "-e",
+                "--output-cmake", self.tempd / "fptr.cmake",
+            ]
+        )
+        # fmt: on
+
+        output_c_e = (self.tempd / "src" / f"fptr_encode.c").read_text()
+        output_c_d = (self.tempd / "src" / f"fptr_decode.c").read_text()
+
+        in_macro_re = {
+            mode: compile(
+                rf"\tbool\(\*\)\(zcbor_state_t \*\, (const )?struct (?P<arg_type>\w+) \*\): +\(\(zcbor_{mode}r_t \*\)func\), \\"
+            )
+            for mode in ("decode", "encode")
+        }
+        macro_call_re = r"ZCBOR_CUSTOM_CAST_FP\((?P<func>\w+)\)"
+        paren_re = r"(?P<paren>\((?P<item>(?>[^\(\)]+|(?&paren))*)\))"
+        func_cast1_re = compile(rf"{macro_call_re}, state, (?P<arg>({paren_re}|[^,\(\)]*))")
+        func_cast2_re = compile(rf"{macro_call_re}, sizeof\(states\)")
+
+        def check_file(output_c, mode):
+            funcs = set()
+            for line in output_c.splitlines():
+                in_macro = in_macro_re[mode].fullmatch(line)
+                if not in_macro:
+                    self.assertFalse(
+                        search(rf"\(zcbor_(en|de)coder_t *\)(?!ZCBOR_CUSTOM_CAST_FP)", line),
+                        f"Unexpected cast: {line}",
+                    )
+                    func_cast1 = func_cast1_re.search(line)
+                    func_cast2 = func_cast2_re.search(line)
+                    if func_cast1 and "#define" not in line:
+                        funcs.add((func_cast1.group("func"), "state", func_cast1.group("arg")))
+                    if func_cast2:
+                        funcs.add(
+                            (
+                                func_cast2.group("func"),
+                                "states",
+                                "result" if mode == "decode" else "input",
+                            )
+                        )
+                    if (
+                        "ZCBOR_CUSTOM_CAST_FP" in line
+                        and not func_cast1
+                        and not func_cast2
+                        and not "#define" in line
+                    ):
+                        self.fail(f"Unexpected ZCBOR_CUSTOM_CAST_FP in line: {line}")
+            self.assertGreater(len(funcs), 80, f"Too few functions found in {mode} output")
+            for f, s, a in funcs:
+                self.assertTrue(
+                    search(rf"{f}\({s}, {escape(a)}\);", output_c),
+                    f"Function {f}({s}, {a}); not found in {mode} output",
+                )
+
+        check_file(output_c_d, "decode")
+        check_file(output_c_e, "encode")
 
 
 if __name__ == "__main__":
