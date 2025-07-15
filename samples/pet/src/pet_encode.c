@@ -49,6 +49,13 @@ static bool encode_Pet(
 	: (((*input).species_choice == Pet_species_other_c) ? ((zcbor_uint8_put(state, (3))))
 	: false))))) || (zcbor_list_map_end_force_encode(state), false)) && zcbor_list_end_encode(state, 3))));
 
+	if (false) {
+		/* For testing that the types of the arguments are correct.
+		 * A compiler error here means a bug in zcbor.
+		 */
+		zcbor_tstr_encode(state, (*&(*input).names));
+	}
+
 	log_result(state, res, __func__);
 	return res;
 }
