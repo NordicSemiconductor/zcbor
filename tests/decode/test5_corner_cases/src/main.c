@@ -1454,7 +1454,7 @@ ZTEST(cbor_decode_test5, test_doublemap)
 	int ret = cbor_decode_DoubleMap(payload_doublemap1_inv,
 					sizeof(payload_doublemap1_inv),
 					&result_doublemap, &out_len);
-	zassert_equal(ARR_ERR1, ret, "%d\r\n", ret);
+	zassert_equal(ARR_ERR1, ret, "%s != %s\r\n", zcbor_error_str(ret), zcbor_error_str(ARR_ERR1));
 }
 
 
@@ -2490,6 +2490,7 @@ ZTEST(cbor_decode_test5, test_optlist)
 	zassert_equal(100, result.uint);
 }
 
+
 ZTEST(cbor_decode_test5, test_unicode_escape)
 {
 	uint8_t unicode_escape_payload1[] = {
@@ -2514,5 +2515,69 @@ ZTEST(cbor_decode_test5, test_unicode_escape)
 	zassert_equal(ZCBOR_SUCCESS, cbor_decode_UnicodeEscape(unicode_escape_payload1,
 		sizeof(unicode_escape_payload1), NULL, NULL));
 }
+
+
+/** This test checks that backups are handled properly when list decoding fails.
+ *  E.g. in ambiglist_payload1, emptylist is missing, and the first list belongs
+ *  in intlist, but the decoder cannot know that until it opens it and sees that
+ *  it is not empty. */
+ZTEST(cbor_decode_test5, test_ambiglist)
+{
+
+	uint8_t ambiglist_payload1[] = {LIST(2),
+			LIST(1), 11, END
+			LIST(2), 11, 0x60, END
+		END
+	};
+	uint8_t ambiglist_payload2[] = {LIST(2),
+			LIST(2), 11, 12, END
+			LIST(3), 11, 0x60, 0x61, 'a', END
+		END
+	};
+	uint8_t ambiglist_payload3[] = {LIST(1),
+			LIST(3), 11, 0x60, 0x61, 'a', END
+		END
+	};
+	uint8_t ambiglist_payload4[] = {LIST(2),
+			LIST(0), END
+			LIST(3), 11, 0x60, 0x61, 'a', END
+		END
+	};
+	struct AmbigList result;
+
+	size_t num_decode;
+
+	zassert_equal(ZCBOR_SUCCESS, cbor_decode_AmbigList(ambiglist_payload1,
+		sizeof(ambiglist_payload1), &result, &num_decode));
+
+	zassert_false(result.emptylist_present);
+	zassert_equal(1, result.intlist_count);
+	zassert_equal(1, result.tstr_count);
+
+	int err = cbor_decode_AmbigList(ambiglist_payload2,
+		sizeof(ambiglist_payload2), &result, &num_decode);
+	zassert_equal(ZCBOR_SUCCESS, err, "%s\n", zcbor_error_str(err));
+
+	zassert_false(result.emptylist_present);
+	zassert_equal(1, result.intlist_count);
+	zassert_equal(2, result.tstr_count);
+
+	err = cbor_decode_AmbigList(ambiglist_payload3,
+		sizeof(ambiglist_payload3), &result, &num_decode);
+	zassert_equal(ZCBOR_SUCCESS, err, "%s\n", zcbor_error_str(err));
+
+	zassert_false(result.emptylist_present);
+	zassert_equal(0, result.intlist_count);
+	zassert_equal(2, result.tstr_count);
+
+	err = cbor_decode_AmbigList(ambiglist_payload4,
+		sizeof(ambiglist_payload4), &result, &num_decode);
+	zassert_equal(ZCBOR_SUCCESS, err, "%s\n", zcbor_error_str(err));
+
+	zassert_true(result.emptylist_present);
+	zassert_equal(0, result.intlist_count);
+	zassert_equal(2, result.tstr_count);
+}
+
 
 ZTEST_SUITE(cbor_decode_test5, NULL, NULL, NULL, NULL, NULL);

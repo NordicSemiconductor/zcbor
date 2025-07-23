@@ -434,3 +434,9 @@ d = "Domino's \U0001F073 + \U00002318"        ; \U{}-escape 2 chars
 x = 'D\u{6f}mino\u{27}s \u{1F073} + \u{2318}' ; \u{}-escape 4 chars
 y = 'Domino\'s \uD83C\uDC73 + \u2318'         ; escape JSON-like
 z = 'Domino\'s 🁳 + ⌘'                        ; escape ' only
+
+AmbigList = [
+	?emptylist: [],
+	intlist: *[+int],
+	tstrlist: [+int, +tstr],
+]

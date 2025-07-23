@@ -304,8 +304,9 @@ bool zcbor_new_backup(zcbor_state_t *state, size_t new_elem_count);
 
 /** Consult a backup, and act on it based on the @p flags (See ZCBOR_FLAG_*).
  *
- *  In doing so, check the current elem_count and fail if it larger than
- *  @p max_elem_count.
+ *  Deprecation warning: Using max_elem_count != ZCBOR_MAX_ELEM_COUNT is deprecated.
+ *  The parameter is used only one place, and introduces ambiguity related to the state
+ *  after a failure.
  *
  *  @ref zcbor_process_backup acts on the most recent backup, i.e. the one at
  *  `state->constant_state->current_backup`.
