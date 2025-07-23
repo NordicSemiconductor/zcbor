@@ -78,6 +78,10 @@ bool zcbor_process_backup_num(zcbor_state_t *state, uint32_t flags,
 		state->constant_state->current_backup--;
 	}
 
+	if (max_elem_count != ZCBOR_MAX_ELEM_COUNT) {
+		zcbor_log("Deprecation warning: Using max_elem_count != ZCBOR_MAX_ELEM_COUNT is deprecated.\r\n");
+		zcbor_log("See function documentation for details.\r\n");
+	}
 	if (local_copy.elem_count > max_elem_count) {
 		zcbor_log("elem_count: %zu (expected max %zu)\r\n",
 			local_copy.elem_count, max_elem_count);
@@ -97,8 +101,7 @@ bool zcbor_process_backup_num(zcbor_state_t *state, uint32_t flags,
 }
 
 
-bool zcbor_process_backup(zcbor_state_t *state, uint32_t flags,
-	size_t max_elem_count)
+bool zcbor_process_backup(zcbor_state_t *state, uint32_t flags, size_t max_elem_count)
 {
 	ZCBOR_PRINT_FUNC_NAME();
 	if (state->constant_state->current_backup == 0) {
@@ -134,7 +137,7 @@ bool zcbor_union_start_code(zcbor_state_t *state)
 bool zcbor_union_elem_code(zcbor_state_t *state)
 {
 	ZCBOR_PRINT_FUNC_NAME();
-	if (!zcbor_process_backup(state, ZCBOR_FLAG_RESTORE, state->elem_count)) {
+	if (!zcbor_process_backup(state, ZCBOR_FLAG_RESTORE, ZCBOR_MAX_ELEM_COUNT)) {
 		ZCBOR_FAIL();
 	}
 	return true;
@@ -143,7 +146,7 @@ bool zcbor_union_elem_code(zcbor_state_t *state)
 bool zcbor_union_end_code(zcbor_state_t *state)
 {
 	ZCBOR_PRINT_FUNC_NAME();
-	if (!zcbor_process_backup(state, ZCBOR_FLAG_CONSUME, state->elem_count)) {
+	if (!zcbor_process_backup(state, ZCBOR_FLAG_CONSUME, ZCBOR_MAX_ELEM_COUNT)) {
 		ZCBOR_FAIL();
 	}
 	return true;

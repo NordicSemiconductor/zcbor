@@ -1185,19 +1185,22 @@ static bool array_end_expect(zcbor_state_t *state)
 
 static bool list_map_end_decode(zcbor_state_t *state)
 {
-	size_t max_elem_count = 0;
-
-	if (state->decode_state.indefinite_length_array) {
+	zcbor_state_t state_copy = *state;
+	if (!zcbor_process_backup(state,
+			ZCBOR_FLAG_RESTORE | ZCBOR_FLAG_CONSUME | ZCBOR_FLAG_KEEP_PAYLOAD,
+			ZCBOR_MAX_ELEM_COUNT)) {
+		ZCBOR_FAIL();
+	}
+	if (state_copy.decode_state.indefinite_length_array) {
 		if (!array_end_expect(state)) {
 			ZCBOR_FAIL();
 		}
-		max_elem_count = ZCBOR_MAX_ELEM_COUNT;
-		state->decode_state.indefinite_length_array = false;
-	}
-	if (!zcbor_process_backup(state,
-			ZCBOR_FLAG_RESTORE | ZCBOR_FLAG_CONSUME | ZCBOR_FLAG_KEEP_PAYLOAD,
-			max_elem_count)) {
-		ZCBOR_FAIL();
+		state_copy.decode_state.indefinite_length_array = false;
+	} else {
+		if (state_copy.elem_count > 0) {
+			zcbor_log("%zu elements left in map or array (should be 0).\r\n", state_copy.elem_count);
+			ZCBOR_ERR(ZCBOR_ERR_HIGH_ELEM_COUNT);
+		}
 	}
 
 	return true;

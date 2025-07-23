@@ -10,6 +10,9 @@
   You are recommended to use it on any function pointer that is passed as an argument to a zcbor function.
   See the macro documentation in zcbor_common.h for more info.
 
+* [Deprecation] In the function `zcbor_process_backup()` and the new `zcbor_process_backup_num()`, it is deprecated to use the argument `max_elem_count` with values other than `ZCBOR_MAX_ELEM_COUNT`.
+  Using `ZCBOR_MAX_ELEM_COUNT` means the internal check on the `max_elem_count` has no effect, and the argument (and check) may be removed altogether in later releases.
+
 * Code generation:
 
   * Integers whose values are known to be within 8 or 16 bytes now use the corresponding integer types (`uint8_t`/`int8_t`/`uint16_t`/`int16_t`) instead of larger types.

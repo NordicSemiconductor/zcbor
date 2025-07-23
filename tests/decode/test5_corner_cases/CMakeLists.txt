@@ -65,6 +65,7 @@ set(py_command
     Choice5
     OptList
     UnicodeEscape
+    AmbigList
   --decode
   --git-sha-header
   --short-names
