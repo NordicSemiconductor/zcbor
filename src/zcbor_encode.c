@@ -283,7 +283,7 @@ bool zcbor_bstr_end_encode(zcbor_state_t *state, struct zcbor_string *result)
 		result = &dummy_value;
 	}
 
-	if (!zcbor_process_backup(state, ZCBOR_FLAG_RESTORE | ZCBOR_FLAG_CONSUME, 0xFFFFFFFF)) {
+	if (!zcbor_process_backup(state, ZCBOR_FLAG_RESTORE | ZCBOR_FLAG_CONSUME, ZCBOR_MAX_ELEM_COUNT)) {
 		ZCBOR_FAIL();
 	}
 
@@ -407,7 +407,7 @@ static bool list_map_end_encode(zcbor_state_t *state, size_t max_num,
 	size_t max_header_len = zcbor_header_len_ptr(&max_num, 4) - 1;
 	size_t header_len = zcbor_header_len_ptr(&list_count, 4) - 1;
 
-	if (!zcbor_process_backup(state, ZCBOR_FLAG_RESTORE | ZCBOR_FLAG_CONSUME, 0xFFFFFFFF)) {
+	if (!zcbor_process_backup(state, ZCBOR_FLAG_RESTORE | ZCBOR_FLAG_CONSUME, ZCBOR_MAX_ELEM_COUNT)) {
 		ZCBOR_FAIL();
 	}
 
@@ -464,8 +464,7 @@ bool zcbor_map_end_encode(zcbor_state_t *state, size_t max_num)
 bool zcbor_list_map_end_force_encode(zcbor_state_t *state)
 {
 #ifdef ZCBOR_CANONICAL
-	if (!zcbor_process_backup(state, ZCBOR_FLAG_RESTORE | ZCBOR_FLAG_CONSUME,
-			ZCBOR_MAX_ELEM_COUNT)) {
+	if (!zcbor_process_backup(state, ZCBOR_FLAG_RESTORE | ZCBOR_FLAG_CONSUME, ZCBOR_MAX_ELEM_COUNT)) {
 		ZCBOR_FAIL();
 	}
 #endif
