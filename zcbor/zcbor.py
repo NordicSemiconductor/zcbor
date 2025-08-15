@@ -352,6 +352,7 @@ class CddlParser:
         short_names=False,
         base_stem="",
     ):
+        super(CddlParser, self).__init__()
         self.id_prefix = "temp_" + str(counter())
         self.id_num = None  # Unique ID number. Only populated if needed.
         # The value of the data item. Has different meaning for different
@@ -3235,6 +3236,7 @@ class CodeRenderer:
         git_sha="",
         file_header="",
     ):
+        super(CodeRenderer, self).__init__()
         self.entry_types = entry_types
         self.print_time = print_time
         self.default_max_qty = default_max_qty
