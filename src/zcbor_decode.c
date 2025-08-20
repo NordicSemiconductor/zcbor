@@ -34,6 +34,7 @@ static size_t additional_len(uint8_t additional)
 
 static bool initial_checks(zcbor_state_t *state)
 {
+	ZCBOR_CHECK_NULL(state);
 	ZCBOR_CHECK_ERROR();
 	ZCBOR_CHECK_PAYLOAD();
 	return true;
@@ -138,13 +139,13 @@ static bool value_extract(zcbor_state_t *state,
 		void *const result, size_t result_len, bool *indefinite_length_array)
 {
 	zcbor_trace(state, "value_extract");
-	zcbor_assert_state(result_len != 0, "0-length result not supported.\r\n");
-	zcbor_assert_state(result_len <= 8, "result sizes above 8 bytes not supported.\r\n");
-	zcbor_assert_state(state != NULL, "state cannot be NULL.\r\n");
-	zcbor_assert_state(result != NULL, "result cannot be NULL.\r\n");
 
 	INITIAL_CHECKS();
 	ZCBOR_ERR_IF((state->elem_count == 0), ZCBOR_ERR_LOW_ELEM_COUNT);
+
+	zcbor_assert_state(result_len != 0, "0-length result not supported.\r\n");
+	zcbor_assert_state(result_len <= 8, "result sizes above 8 bytes not supported.\r\n");
+	zcbor_assert_state(result != NULL, "result cannot be NULL.\r\n");
 
 	uint8_t header_byte = *state->payload;
 	uint8_t additional = ZCBOR_ADDITIONAL(header_byte);
@@ -637,6 +638,7 @@ bool zcbor_bstr_start_decode(zcbor_state_t *state, struct zcbor_string *result)
 
 bool zcbor_bstr_end_decode(zcbor_state_t *state)
 {
+	ZCBOR_CHECK_NULL(state);
 	ZCBOR_ERR_IF(state->payload != state->payload_end, ZCBOR_ERR_PAYLOAD_NOT_CONSUMED);
 
 	if (!zcbor_process_backup(state,
@@ -1185,12 +1187,16 @@ static bool array_end_expect(zcbor_state_t *state)
 
 static bool list_map_end_decode(zcbor_state_t *state)
 {
+	ZCBOR_CHECK_NULL(state);
+
 	zcbor_state_t state_copy = *state;
+
 	if (!zcbor_process_backup(state,
 			ZCBOR_FLAG_RESTORE | ZCBOR_FLAG_CONSUME | ZCBOR_FLAG_KEEP_PAYLOAD,
 			ZCBOR_MAX_ELEM_COUNT)) {
 		ZCBOR_FAIL();
 	}
+
 	if (state_copy.decode_state.indefinite_length_array) {
 		if (!array_end_expect(state)) {
 			ZCBOR_FAIL();
@@ -1623,11 +1629,11 @@ bool zcbor_float_pexpect(zcbor_state_t *state, double *expected)
 bool zcbor_any_skip(zcbor_state_t *state, void *result)
 {
 	ZCBOR_PRINT_FUNC_NAME();
+	INITIAL_CHECKS();
 	zcbor_assert_state(result == NULL,
 			"'any' type cannot be returned, only skipped.\r\n");
 	(void)result;
 
-	INITIAL_CHECKS();
 	zcbor_major_type_t major_type = ZCBOR_MAJOR_TYPE(*state->payload);
 	uint64_t value = 0; /* In case of indefinite_length_array. */
 	zcbor_state_t state_copy;
@@ -1735,6 +1741,7 @@ bool zcbor_multi_decode(size_t min_decode,
 		size_t result_len)
 {
 	ZCBOR_PRINT_FUNC_NAME();
+	ZCBOR_CHECK_NULL(state);
 	ZCBOR_CHECK_ERROR();
 	for (size_t i = 0; i < max_decode; i++) {
 		uint8_t const *payload_bak = state->payload;
@@ -1763,6 +1770,7 @@ bool zcbor_present_decode(bool *present,
 		void *result)
 {
 	ZCBOR_PRINT_FUNC_NAME();
+	ZCBOR_CHECK_NULL(state);
 	size_t num_decode = 0;
 	bool retval = zcbor_multi_decode(0, 1, &num_decode, decoder, state, result, 0);
 

@@ -19,6 +19,7 @@ _Static_assert((sizeof(zcbor_state_t) >= sizeof(struct zcbor_state_constant)),
 
 bool zcbor_new_backup(zcbor_state_t *state, size_t new_elem_count)
 {
+	ZCBOR_CHECK_NULL(state);
 	ZCBOR_CHECK_ERROR();
 
 	if ((state->constant_state->current_backup)
@@ -50,6 +51,7 @@ bool zcbor_process_backup_num(zcbor_state_t *state, uint32_t flags,
 {
 	ZCBOR_PRINT_FUNC_NAME_ARGS("(flags=%u, backup_num=%zu)", flags, backup_num);
 	zcbor_log("\r\n");
+	ZCBOR_CHECK_NULL(state);
 	ZCBOR_CHECK_ERROR();
 
 	size_t i = backup_num - 1;
@@ -104,6 +106,8 @@ bool zcbor_process_backup_num(zcbor_state_t *state, uint32_t flags,
 bool zcbor_process_backup(zcbor_state_t *state, uint32_t flags, size_t max_elem_count)
 {
 	ZCBOR_PRINT_FUNC_NAME();
+	ZCBOR_CHECK_NULL(state);
+
 	if (state->constant_state->current_backup == 0) {
 		zcbor_log("No backups available.\r\n");
 		ZCBOR_ERR(ZCBOR_ERR_NO_BACKUP_ACTIVE);
@@ -127,6 +131,8 @@ static void update_backups(zcbor_state_t *state, uint8_t const *new_payload_end)
 bool zcbor_union_start_code(zcbor_state_t *state)
 {
 	ZCBOR_PRINT_FUNC_NAME();
+	ZCBOR_CHECK_NULL(state);
+
 	if (!zcbor_new_backup(state, state->elem_count)) {
 		ZCBOR_FAIL();
 	}
@@ -137,6 +143,8 @@ bool zcbor_union_start_code(zcbor_state_t *state)
 bool zcbor_union_elem_code(zcbor_state_t *state)
 {
 	ZCBOR_PRINT_FUNC_NAME();
+	ZCBOR_CHECK_NULL(state);
+
 	if (!zcbor_process_backup(state, ZCBOR_FLAG_RESTORE, ZCBOR_MAX_ELEM_COUNT)) {
 		ZCBOR_FAIL();
 	}
@@ -146,6 +154,8 @@ bool zcbor_union_elem_code(zcbor_state_t *state)
 bool zcbor_union_end_code(zcbor_state_t *state)
 {
 	ZCBOR_PRINT_FUNC_NAME();
+	ZCBOR_CHECK_NULL(state);
+
 	if (!zcbor_process_backup(state, ZCBOR_FLAG_CONSUME, ZCBOR_MAX_ELEM_COUNT)) {
 		ZCBOR_FAIL();
 	}
@@ -156,6 +166,10 @@ void zcbor_new_state(zcbor_state_t *state_array, size_t n_states,
 		const uint8_t *payload, size_t payload_len, size_t elem_count,
 		uint8_t *flags, size_t flags_bytes)
 {
+	if (state_array == NULL) {
+		return;
+	}
+
 	state_array[0].payload = payload;
 	state_array[0].payload_end = payload + payload_len;
 	state_array[0].elem_count = elem_count;
@@ -197,6 +211,10 @@ void zcbor_new_state(zcbor_state_t *state_array, size_t n_states,
 void zcbor_update_state(zcbor_state_t *state,
 		const uint8_t *payload, size_t payload_len)
 {
+	if (state == NULL) {
+		return;
+	}
+
 	state->payload = payload;
 	state->payload_end = payload + payload_len;
 
@@ -306,6 +324,8 @@ size_t zcbor_header_len_ptr(const void *const value, size_t value_len)
 
 size_t zcbor_remaining_str_len(zcbor_state_t *state)
 {
+	ZCBOR_CHECK_NULL(state);
+
 	size_t max_len = (size_t)state->payload_end - (size_t)state->payload;
 
 	if (max_len == 0) {
@@ -324,6 +344,8 @@ int zcbor_entry_function_with_elem_states(const uint8_t *payload, size_t payload
 	void *result, size_t *payload_len_out, zcbor_state_t *states, zcbor_decoder_t func,
 	size_t n_states, size_t elem_count, size_t n_elem_states)
 {
+	ZCBOR_CHECK_NULL(states);
+
 	uint8_t *flags = NULL;
 	size_t n_elem_state_bytes = 0;
 	size_t n_elem_state_states = 0;

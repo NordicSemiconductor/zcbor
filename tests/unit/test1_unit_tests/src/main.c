@@ -476,6 +476,130 @@ ZTEST(zcbor_unit_tests, test_stop_on_error)
 }
 
 
+/* Test that functions fail early when state is NULL. */
+ZTEST(zcbor_unit_tests, test_null_state)
+{
+	struct zcbor_string dummy_string;
+	uint8_t dummy_payload[10] = {0};
+
+	zassert_false(zcbor_int8_put(NULL, 16), NULL);
+	zassert_false(zcbor_int16_put(NULL, 17), NULL);
+	zassert_false(zcbor_int32_put(NULL, 1), NULL);
+	zassert_false(zcbor_int64_put(NULL, 2), NULL);
+	zassert_false(zcbor_uint8_put(NULL, 18), NULL);
+	zassert_false(zcbor_uint16_put(NULL, 19), NULL);
+	zassert_false(zcbor_uint32_put(NULL, 3), NULL);
+	zassert_false(zcbor_uint64_put(NULL, 4), NULL);
+	zassert_false(zcbor_size_put(NULL, 10), NULL);
+	zassert_false(zcbor_int8_put(NULL, 20), NULL);
+	zassert_false(zcbor_int16_put(NULL, 21), NULL);
+	zassert_false(zcbor_int32_put(NULL, 11), NULL);
+	zassert_false(zcbor_int64_put(NULL, 12), NULL);
+	zassert_false(zcbor_uint8_put(NULL, 22), NULL);
+	zassert_false(zcbor_uint16_put(NULL, 23), NULL);
+	zassert_false(zcbor_uint32_put(NULL, 13), NULL);
+	zassert_false(zcbor_uint64_put(NULL, 14), NULL);
+	zassert_false(zcbor_size_put(NULL, 15), NULL);
+	zassert_false(zcbor_int8_encode(NULL, &(int8_t){24}), NULL);
+	zassert_false(zcbor_int16_encode(NULL, &(int16_t){25}), NULL);
+	zassert_false(zcbor_int32_encode(NULL, &(int32_t){5}), NULL);
+	zassert_false(zcbor_int64_encode(NULL, &(int64_t){6}), NULL);
+	zassert_false(zcbor_uint8_encode(NULL, &(uint8_t){26}), NULL);
+	zassert_false(zcbor_uint16_encode(NULL, &(uint16_t){27}), NULL);
+	zassert_false(zcbor_uint32_encode(NULL, &(uint32_t){7}), NULL);
+	zassert_false(zcbor_uint64_encode(NULL, &(uint64_t){8}), NULL);
+	zassert_false(zcbor_size_encode(NULL, &(size_t){9}), NULL);
+	zassert_false(zcbor_bstr_put_lit(NULL, "Hello"), NULL);
+	zassert_false(zcbor_tstr_put_lit(NULL, "World"), NULL);
+	zassert_false(zcbor_tag_put(NULL, 9), NULL);
+	zassert_false(zcbor_tag_encode(NULL, &(uint32_t){10}));
+	zassert_false(zcbor_tag_put(NULL, 11), NULL);
+	zassert_false(zcbor_bool_put(NULL, true), NULL);
+	zassert_false(zcbor_bool_put(NULL, false), NULL);
+	zassert_false(zcbor_bool_encode(NULL, &(bool){false}), NULL);
+	zassert_false(zcbor_float32_put(NULL, 10.1), NULL);
+	zassert_false(zcbor_float32_put(NULL, 11.2), NULL);
+	zassert_false(zcbor_float32_encode(NULL, &(float){12.3}), NULL);
+	zassert_false(zcbor_float64_put(NULL, 13.4), NULL);
+	zassert_false(zcbor_float64_put(NULL, 14.5), NULL);
+	zassert_false(zcbor_float64_encode(NULL, &(double){15.6}), NULL);
+	zassert_false(zcbor_nil_put(NULL, NULL), NULL);
+	zassert_false(zcbor_undefined_put(NULL, NULL), NULL);
+	zassert_false(zcbor_bstr_start_encode(NULL), NULL);
+	zassert_false(zcbor_bstr_end_encode(NULL, NULL), NULL);
+	zassert_false(zcbor_list_start_encode(NULL, 1), NULL);
+	zassert_false(zcbor_map_start_encode(NULL, 0), NULL);
+	zassert_false(zcbor_map_end_encode(NULL, 0), NULL);
+	zassert_false(zcbor_list_end_encode(NULL, 1), NULL);
+	zassert_false(zcbor_multi_encode(1, ZCBOR_CAST_FP(zcbor_int32_encode), NULL, &(int32_t){14}, 0), NULL);
+	zassert_false(zcbor_multi_encode_minmax(1, 1, &(size_t){1}, ZCBOR_CAST_FP(zcbor_int32_encode), NULL, &(int32_t){15}, 0), NULL);
+
+	zassert_false(zcbor_int8_expect(NULL, 16), NULL);
+	zassert_false(zcbor_int16_expect(NULL, 17), NULL);
+	zassert_false(zcbor_int32_expect(NULL, 1), NULL);
+	zassert_false(zcbor_int64_expect(NULL, 2), NULL);
+	zassert_false(zcbor_uint8_expect(NULL, 18), NULL);
+	zassert_false(zcbor_uint16_expect(NULL, 19), NULL);
+	zassert_false(zcbor_uint32_expect(NULL, 3), NULL);
+	zassert_false(zcbor_uint64_expect(NULL, 4), NULL);
+	zassert_false(zcbor_size_expect(NULL, 10), NULL);
+	zassert_false(zcbor_int8_pexpect(NULL, &(int8_t){20}), NULL);
+	zassert_false(zcbor_int16_pexpect(NULL, &(int16_t){21}), NULL);
+	zassert_false(zcbor_int32_pexpect(NULL, &(int32_t){11}), NULL);
+	zassert_false(zcbor_int64_pexpect(NULL, &(int64_t){12}), NULL);
+	zassert_false(zcbor_uint8_pexpect(NULL, &(uint8_t){22}), NULL);
+	zassert_false(zcbor_uint16_pexpect(NULL, &(uint16_t){23}), NULL);
+	zassert_false(zcbor_uint32_pexpect(NULL, &(uint32_t){13}), NULL);
+	zassert_false(zcbor_uint64_pexpect(NULL, &(uint64_t){14}), NULL);
+	zassert_false(zcbor_size_pexpect(NULL, &(size_t){15}), NULL);
+	zassert_false(zcbor_int8_decode(NULL, &(int8_t){24}), NULL);
+	zassert_false(zcbor_int16_decode(NULL, &(int16_t){25}), NULL);
+	zassert_false(zcbor_int32_decode(NULL, &(int32_t){5}), NULL);
+	zassert_false(zcbor_int64_decode(NULL, &(int64_t){6}), NULL);
+	zassert_false(zcbor_uint8_decode(NULL, &(uint8_t){26}), NULL);
+	zassert_false(zcbor_uint16_decode(NULL, &(uint16_t){27}), NULL);
+	zassert_false(zcbor_uint32_decode(NULL, &(uint32_t){7}), NULL);
+	zassert_false(zcbor_uint64_decode(NULL, &(uint64_t){8}), NULL);
+	zassert_false(zcbor_size_decode(NULL, &(size_t){9}), NULL);
+	zassert_false(zcbor_bstr_expect_lit(NULL, "Hello"), NULL);
+	zassert_false(zcbor_tstr_expect_lit(NULL, "World"), NULL);
+	zassert_false(zcbor_tag_decode(NULL, &(uint32_t){9}), NULL);
+	zassert_false(zcbor_tag_expect(NULL, 10), NULL);
+	zassert_false(zcbor_tag_pexpect(NULL, &(uint32_t){11}), NULL);
+	zassert_false(zcbor_bool_expect(NULL, true), NULL);
+	zassert_false(zcbor_bool_pexpect(NULL, &(bool){false}), NULL);
+	zassert_false(zcbor_bool_decode(NULL, &(bool){false}), NULL);
+	zassert_false(zcbor_float32_expect(NULL, 10.1), NULL);
+	zassert_false(zcbor_float32_pexpect(NULL, &(float){11.2}), NULL);
+	zassert_false(zcbor_float32_decode(NULL, &(float){12.3}), NULL);
+	zassert_false(zcbor_float64_expect(NULL, 13.4), NULL);
+	zassert_false(zcbor_float64_pexpect(NULL, &(double){14.5}), NULL);
+	zassert_false(zcbor_float64_decode(NULL, &(double){15.6}), NULL);
+	zassert_false(zcbor_nil_expect(NULL, NULL), NULL);
+	zassert_false(zcbor_undefined_expect(NULL, NULL), NULL);
+	zassert_false(zcbor_bstr_start_decode(NULL, &dummy_string), NULL);
+	zassert_false(zcbor_bstr_end_decode(NULL), NULL);
+	zassert_false(zcbor_list_start_decode(NULL), NULL);
+	zassert_false(zcbor_map_start_decode(NULL), NULL);
+	zassert_false(zcbor_map_end_decode(NULL), NULL);
+	zassert_false(zcbor_list_end_decode(NULL), NULL);
+	zassert_false(zcbor_multi_decode(1, 1, &(size_t){1}, ZCBOR_CAST_FP(zcbor_int32_pexpect), NULL, &(int32_t){14}, 0), NULL);
+	zassert_false(zcbor_present_decode(&(bool){true}, ZCBOR_CAST_FP(zcbor_int32_pexpect), NULL, &(int32_t){15}), NULL);
+	zassert_false(zcbor_any_skip(NULL, NULL), NULL);
+
+
+	zassert_false(zcbor_new_backup(NULL, 0), NULL);
+	zassert_false(zcbor_process_backup(NULL, 0, 0), NULL);
+	zassert_false(zcbor_process_backup_num(NULL, 0, 0, 0), NULL);
+	zassert_false(zcbor_union_start_code(NULL), NULL);
+	zassert_false(zcbor_union_elem_code(NULL), NULL);
+	zassert_false(zcbor_union_end_code(NULL), NULL);
+	zcbor_new_state(NULL, 2, dummy_payload, sizeof(dummy_payload), 0, NULL, 0);
+	zassert_false(zcbor_entry_function_with_elem_states(dummy_payload, sizeof(dummy_payload), NULL, NULL, NULL, ZCBOR_CAST_FP(zcbor_int32_pexpect), 2, 0, 0), NULL);
+	zcbor_update_state(NULL, dummy_payload, sizeof(dummy_payload));
+}
+
+
 /** The string "HelloWorld" is split into 2 fragments, and a number of different
  * functions are called to test that they respond correctly to the situation.
 **/

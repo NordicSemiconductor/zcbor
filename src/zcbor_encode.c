@@ -43,6 +43,7 @@ static uint8_t get_additional(size_t len, uint8_t value0)
 static bool encode_header_byte(zcbor_state_t *state,
 	zcbor_major_type_t major_type, uint8_t additional)
 {
+	ZCBOR_CHECK_NULL(state);
 	ZCBOR_CHECK_ERROR();
 	ZCBOR_CHECK_PAYLOAD();
 
@@ -60,6 +61,8 @@ static bool encode_header_byte(zcbor_state_t *state,
 static bool value_encode_len(zcbor_state_t *state, zcbor_major_type_t major_type,
 		const void *const result, size_t result_len)
 {
+	ZCBOR_CHECK_NULL(state);
+
 	uint8_t *u8_result  = (uint8_t *)result;
 
 	if ((state->payload + 1 + result_len) > state->payload_end) {
@@ -273,6 +276,8 @@ bool zcbor_bstr_start_encode(zcbor_state_t *state)
 
 bool zcbor_bstr_end_encode(zcbor_state_t *state, struct zcbor_string *result)
 {
+	ZCBOR_CHECK_NULL(state);
+
 	const uint8_t *payload = state->payload;
 	struct zcbor_string dummy_value;
 
@@ -301,7 +306,9 @@ bool zcbor_bstr_end_encode(zcbor_state_t *state, struct zcbor_string *result)
 static bool str_encode(zcbor_state_t *state,
 		const struct zcbor_string *input, zcbor_major_type_t major_type)
 {
+	ZCBOR_CHECK_NULL(state);
 	ZCBOR_CHECK_PAYLOAD(); /* To make the size_t cast below safe. */
+
 	if (input->len > (size_t)(state->payload_end - state->payload)) {
 		ZCBOR_ERR(ZCBOR_ERR_NO_PAYLOAD);
 	}
@@ -398,6 +405,8 @@ static bool list_map_end_encode(zcbor_state_t *state, size_t max_num,
 			zcbor_major_type_t major_type)
 {
 #ifdef ZCBOR_CANONICAL
+	ZCBOR_CHECK_NULL(state);
+
 	size_t list_count = ((major_type == ZCBOR_MAJOR_TYPE_LIST) ?
 					state->elem_count
 					: (state->elem_count / 2));
@@ -615,7 +624,9 @@ bool zcbor_multi_encode_minmax(size_t min_encode, size_t max_encode,
 bool zcbor_multi_encode(const size_t num_encode, zcbor_encoder_t encoder,
 		zcbor_state_t *state, const void *input, size_t result_len)
 {
+	ZCBOR_CHECK_NULL(state);
 	ZCBOR_CHECK_ERROR();
+
 	for (size_t i = 0; i < num_encode; i++) {
 		if (!encoder(state, (const uint8_t *)input + i*result_len)) {
 			ZCBOR_FAIL();

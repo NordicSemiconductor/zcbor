@@ -24,9 +24,13 @@ extern "C" {
 #endif
 
 #ifdef ZCBOR_VERBOSE
-#define zcbor_trace_raw(state) (zcbor_do_print("rem: %zu, cur: 0x%x, ec: 0x%zx, err: %d",\
-	(size_t)state->payload_end - (size_t)state->payload, *state->payload, state->elem_count, \
-	state->constant_state ? state->constant_state->error : 0))
+#define zcbor_trace_raw(state) do { \
+	if (state != NULL) { \
+		zcbor_do_print("rem: %zu, cur: 0x%x, ec: 0x%zx, err: %d",\
+			(size_t)state->payload_end - (size_t)state->payload, *state->payload, state->elem_count, \
+			state->constant_state ? state->constant_state->error : 0); \
+	} \
+} while(0)
 #define zcbor_trace(state, appendix) do { \
 	zcbor_trace_raw(state); \
 	zcbor_do_print(", %s\n", appendix); \
