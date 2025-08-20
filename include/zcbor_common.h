@@ -233,6 +233,13 @@ do {\
 	} \
 } while(0)
 
+#define ZCBOR_CHECK_NULL(state) \
+do { \
+	if (state == NULL) { \
+		return false; \
+	} \
+} while(0)
+
 #define ZCBOR_CHECK_PAYLOAD() \
 	ZCBOR_ERR_IF(state->payload >= state->payload_end, ZCBOR_ERR_NO_PAYLOAD)
 
@@ -387,7 +394,7 @@ int zcbor_entry_function_with_elem_states(const uint8_t *payload, size_t payload
 static inline bool zcbor_check_error(const zcbor_state_t *state)
 {
 	struct zcbor_state_constant *cs = state->constant_state;
-	return !(cs && cs->stop_on_error && cs->error);
+	return !(state && cs && cs->stop_on_error && cs->error);
 }
 #endif
 
