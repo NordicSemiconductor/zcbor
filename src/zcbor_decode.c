@@ -34,6 +34,7 @@ static size_t additional_len(uint8_t additional)
 
 static bool initial_checks(zcbor_state_t *state)
 {
+	ZCBOR_CHECK_NULL_STATE(state);
 	ZCBOR_CHECK_ERROR();
 	ZCBOR_CHECK_PAYLOAD();
 	return true;
@@ -637,6 +638,7 @@ bool zcbor_bstr_start_decode(zcbor_state_t *state, struct zcbor_string *result)
 
 bool zcbor_bstr_end_decode(zcbor_state_t *state)
 {
+	ZCBOR_CHECK_NULL_STATE(state);
 	ZCBOR_ERR_IF(state->payload != state->payload_end, ZCBOR_ERR_PAYLOAD_NOT_CONSUMED);
 
 	if (!zcbor_process_backup(state,
@@ -1185,12 +1187,16 @@ static bool array_end_expect(zcbor_state_t *state)
 
 static bool list_map_end_decode(zcbor_state_t *state)
 {
+	ZCBOR_CHECK_NULL_STATE(state);
+
 	zcbor_state_t state_copy = *state;
+
 	if (!zcbor_process_backup(state,
-			ZCBOR_FLAG_RESTORE | ZCBOR_FLAG_CONSUME | ZCBOR_FLAG_KEEP_PAYLOAD,
-			ZCBOR_MAX_ELEM_COUNT)) {
-		ZCBOR_FAIL();
+		ZCBOR_FLAG_RESTORE | ZCBOR_FLAG_CONSUME | ZCBOR_FLAG_KEEP_PAYLOAD,
+		ZCBOR_MAX_ELEM_COUNT)) {
+			ZCBOR_FAIL();
 	}
+
 	if (state_copy.decode_state.indefinite_length_array) {
 		if (!array_end_expect(state)) {
 			ZCBOR_FAIL();
@@ -1735,6 +1741,7 @@ bool zcbor_multi_decode(size_t min_decode,
 		size_t result_len)
 {
 	ZCBOR_PRINT_FUNC_NAME();
+	ZCBOR_CHECK_NULL_STATE(state);
 	ZCBOR_CHECK_ERROR();
 	for (size_t i = 0; i < max_decode; i++) {
 		uint8_t const *payload_bak = state->payload;
