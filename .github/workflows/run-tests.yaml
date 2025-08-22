@@ -7,8 +7,8 @@ on:
 
 
 env:
-  ZEPHYR_SDK_VERSION: 0.17.0
-  ZEPHYR_REV: 3142c51d87a11e54a0eb4381f22ab377e3b8bdb0
+  ZEPHYR_SDK_VERSION: 0.17.4
+  ZEPHYR_REV: 80ab4b810021cef2185d62f6fa63593b6972f628
 
 jobs:
   merge-test-1:
@@ -71,7 +71,7 @@ jobs:
       run: |
         $ErrorActionPreference="Stop"
         west init -l zephyr-clone; if($LastExitCode -ne 0) {Write-Error "$LastExitCode"};
-        west update cmsis
+        west update cmsis_6
 
     - name: Install Zephyr SDK (ARM)
       run: |
