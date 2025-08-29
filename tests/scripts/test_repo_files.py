@@ -153,6 +153,35 @@ DEFAULT_MAX_ATTEMPTS = 5
 class LinkTester:
     """Test the links in the documentation files."""
 
+    known_good_urls = {
+        "https://github.com/NordicSemiconductor/zcbor/issues",
+        "https://github.com/zephyrproject-rtos/zephyr",
+        "https://en.wikipedia.org/wiki/CBOR",
+        "https://zephyrproject.org/",
+        "https://github.com/NordicSemiconductor/cddl-gen/issues",
+        "https://docs.python.org/3/library/json.html",
+        "https://pypi.org/project/PyYAML/",
+        "https://github.com/zephyrproject-rtos/zephyr/blob/main/subsys/net/lib/lwm2m/lwm2m_rw_senml_cbor.c",
+        "https://github.com/mcu-tools/mcuboot/blob/main/boot/boot_serial/src/boot_serial.c",
+        "https://github.com/zephyrproject-rtos/zephyr/blob/main/modules/zcbor/Kconfig",
+        "https://datatracker.ietf.org/doc/html/rfc9682",
+        "https://datatracker.ietf.org/doc/html/rfc8610",
+        "https://datatracker.ietf.org/doc/draft-ietf-suit-manifest/",
+        "https://datatracker.ietf.org/doc/rfc8610/",
+        "https://github.com/zephyrproject-rtos/zephyr/blob/main/subsys/mgmt/mcumgr/grp/img_mgmt/src/img_mgmt.c",
+        "https://github.com/nrfconnect/sdk-nrfxlib/blob/main/nrf_rpc/nrf_rpc_cbor.c",
+        "https://github.com/NordicSemiconductor/zcbor",
+        "https://pypi.org/project/cbor2/",
+        "https://github.com/zephyrproject-rtos/zephyr/blob/v3.6.0/doc/releases/migration-guide-3.6.rst",
+        "https://pypi.org/project/zcbor/",
+        "https://docs.zephyrproject.org/latest/kconfig.html#CONFIG_ZCBOR",
+        "https://datatracker.ietf.org/doc/html/rfc9165",
+        "https://docs.zephyrproject.org/latest/getting_started/index.html",
+        "https://datatracker.ietf.org/doc/html/rfc9090",
+        "https://www.iana.org/assignments/cbor-tags/cbor-tags.xhtml",
+        "https://github.com/nrfconnect/sdk-nrf/blob/main/subsys/mgmt/fmfu/src/fmfu_mgmt.c",
+    }
+
     def __init__(self, *args, **kwargs):
         super(LinkTester, self).__init__()
         self.repo_info = GitRepoInfo()
@@ -160,7 +189,6 @@ class LinkTester:
         self.check_all = (
             self.repo_info.current_branch == "main" or "release/" in self.repo_info.current_branch
         )
-        self.check_all = True  # Always check all files for now
 
     @staticmethod
     def _get_relative_path(file_path: Path) -> str:
@@ -177,7 +205,7 @@ class LinkTester:
         else:
             return relative_path + link
 
-    def extract_links(self, file_path: Path) -> Tuple[List[str], List[str]]:
+    def extract_links(self, file_path: Path) -> Tuple[List[str], List[str], List[str]]:
         """Extract URLs and local links from a file."""
         text = file_path.read_text(encoding="utf-8")
         matches = self.link_regex.findall(text)
@@ -207,7 +235,7 @@ class LinkTester:
     @staticmethod
     def _check_url_status(
         url: str, backoff_time: int = DEFAULT_BACKOFF_TIME, max_attempts: int = DEFAULT_MAX_ATTEMPTS
-    ) -> int:
+    ) -> Tuple[int, Optional[str]]:
         """Check the HTTP status code of a URL with retry logic."""
         for attempt in range(max_attempts):
             try:
@@ -224,10 +252,10 @@ class LinkTester:
                 return e.code, None
             except URLError as e:
                 return HTTPStatus.SERVICE_UNAVAILABLE, None
-        return HTTPStatus.TOO_MANY_REQUESTS
+        return HTTPStatus.TOO_MANY_REQUESTS, None
 
     @classmethod
-    def check_urls_async(cls, urls: List[str]) -> List[Tuple[str, int]]:
+    def check_urls_async(cls, urls: set[str]) -> List[Tuple[str, int, Optional[str]]]:
         """Check multiple URLs asynchronously and return status codes."""
         with ThreadPoolExecutor() as executor:
             results = [(url, *executor.submit(cls._check_url_status, url).result()) for url in urls]
@@ -280,11 +308,11 @@ class TestSamples(TestCase):
 
     @skipIf(platform.startswith("win"), "Skip on Windows because requires a Unix shell.")
     def test_hello_world(self):
-        output = self.cmake_build_run(p_hello_world_sample, p_hello_world_build)
+        self.cmake_build_run(p_hello_world_sample, p_hello_world_build)
 
     @skipIf(platform.startswith("win"), "Skip on Windows because requires a Unix shell.")
     def test_pet(self):
-        output = self.cmake_build_run(p_pet_sample, p_pet_build)
+        self.cmake_build_run(p_pet_sample, p_pet_build)
 
     def test_pet_regenerate(self):
         """Check the zcbor-generated code for the "pet" sample"""
@@ -312,27 +340,37 @@ class TestSamples(TestCase):
 class TestDocs(TestCase, LinkTester):
     """Run tests on the documentation in the repo."""
 
+    files_to_check = [
+        (p_readme, True),
+        (p_architecture, True),
+        (p_release_notes, True),
+        (p_migration_guide, True),
+        (p_hello_world_sample / "README.md", True),
+        (p_pet_sample / "README.md", True),
+        (p_pypi_readme, False),
+    ]
+
     def __init__(self, *args, **kwargs):
         TestCase.__init__(self, *args, **kwargs)
         LinkTester.__init__(self, *args, **kwargs)
 
-    def _validate_local_links(self, local_links: List[str]) -> None:
+    def _validate_local_links(
+        self, local_links: List[str], processed_links, allow_local: bool
+    ) -> None:
         """Validate that local file links exist."""
+        all_locals = local_links + processed_links
+        self.assertTrue(
+            allow_local or not all_locals,
+            f"Local link(s) ({all_locals}) found (not allowed).",
+        )
+
         for link in local_links:
             resolved_link = (p_root / link).resolve()
             self.assertTrue(p_root in resolved_link.parents, f"Link '{link}' is outside the repo.")
             self.assertTrue(resolved_link.exists(), f"Local file '{link}' does not exist")
 
-    def _validate_urls(self, urls: List[str]) -> None:
-        """Validate that URLs return successful status codes."""
-        if not urls:
-            return
-
-        self.assertTrue(
-            all(u.startswith("https://") for u in urls), "All URLs must start with 'https://'"
-        )
-
-        results = self.check_urls_async(urls)
+    def _check_results(self, results: List[Tuple]) -> None:
+        """Check the results of URL checks."""
         for url, status_code, response in results:
             self.assertEqual(
                 status_code, HTTPStatus.OK, f"'{url}' returned status code {status_code}"
@@ -343,34 +381,38 @@ class TestDocs(TestCase, LinkTester):
                 html_content = response.read().decode("utf-8")
                 self.assertTrue(anchor in html_content, f"Anchor '{anchor}' not found at '{url}'")
 
-    def _validate_all_links(self, file_path: Path, allow_local: bool) -> set:
-        """Validate all links in a file."""
-        urls, processed_links, local_links = self.extract_links(file_path)
+    def _validate_urls(self, urls: set[str]) -> None:
+        """Validate that URLs return successful status codes."""
+        if not urls:
+            return
 
-        all_locals = local_links + processed_links
-        self.assertTrue(
-            allow_local or not all_locals,
-            f"Local link(s) ({all_locals}) found in {file_path} (not allowed).",
-        )
+        self.assertTrue(all(u.startswith("https://") for u in urls), "All URLs must be https")
 
-        # Validate local links immediately
-        self._validate_local_links(local_links)
+        check_urls = urls - self.known_good_urls
 
-        # Collect URLs for batch validation
-        return urls + processed_links
+        inv_urls = list(u for u in check_urls if not self.repo_info.base_url in u or "#" not in u)
+        self.assertFalse(inv_urls, "URLs not added to known good list:\n" + "\n".join(inv_urls))
+
+        results = self.check_urls_async(check_urls)
+        self._check_results(results)
 
     def do_test_doc_links(self, files_to_parse) -> None:
         """Main method to test documentation links."""
+        # Collate URLs from all files to avoid duplicates
         all_urls = set()
 
         for file_path, allow_local in files_to_parse:
             if self.should_check_file(file_path):
-                all_urls.update(self._validate_all_links(file_path, allow_local))
+                urls, processed_links, local_links = self.extract_links(file_path)
+                self._validate_local_links(local_links, processed_links, allow_local)
+                all_urls.update(urls + processed_links)
             else:
                 print(f"Skipping link checking of {file_path} (not changed in this PR)")
 
-        # Validate all URLs at once to avoid duplicates
-        self._validate_urls(list(all_urls))
+        self._validate_urls(all_urls)
+
+    def test_doc_links(self) -> None:
+        self.do_test_doc_links(self.files_to_check)
 
     def test_doc_links_fail(self) -> None:
         if not p_script in self.repo_info.affected_files:
@@ -385,25 +427,25 @@ class TestDocs(TestCase, LinkTester):
 
         assertAssert(self.do_test_doc_links, [(p_readme, False)])
         assertAssert(self.do_test_doc_links, [(p_release_notes, False)])
-        with patch("urllib.request.urlopen", side_effect=URLError("Could not connect to server")):
-            assertAssert(self.do_test_doc_links, [(p_doc_fail_cases / "fail1.md", True)])
+        assertAssert(self.do_test_doc_links, [(p_doc_fail_cases / "fail1.md", True)])
         assertAssert(self.do_test_doc_links, [(p_doc_fail_cases / "fail2.md", True)])
         assertAssert(self.do_test_doc_links, [(p_doc_fail_cases / "fail3.md", True)])
+        with patch("urllib.request.urlopen", side_effect=URLError("Could not connect to server")):
+            results = self.check_urls_async({"https://google.com"})
+        assertAssert(self._check_results, results)
 
         self.check_all = check_all  # Restore original check_all state
 
-    def test_doc_links(self) -> None:
-        self.do_test_doc_links(
-            [
-                (p_readme, True),
-                (p_architecture, True),
-                (p_release_notes, True),
-                (p_migration_guide, True),
-                (p_hello_world_sample / "README.md", True),
-                (p_pet_sample / "README.md", True),
-                (p_pypi_readme, False),
-            ]
-        )
+    def test_known_good_urls(self) -> None:
+        if not self.check_all:
+            self.skipTest("Skipping known good URL tests (not on main or release branch).")
+        ext_urls = (sum(self.extract_links(fp)[0:2], []) for fp, _ in self.files_to_check)
+        all_urls = set(sum(ext_urls, []))
+        unused_urls = self.known_good_urls - all_urls
+        self.assertFalse(unused_urls, "Known good URLs not in the docs:\n" + "\n".join(unused_urls))
+
+        results = self.check_urls_async(self.known_good_urls)
+        self._check_results(results)
 
     @skipIf(
         list(map(version_int, python_version_tuple())) < [3, 10, 0],
