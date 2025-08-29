@@ -52,6 +52,7 @@ runs:
       if: ${{ inputs.zephyr_toolchain == 'zephyr' }}
       shell: sh
       run: |
+        ZEPHYR_SDK_VERSION=$(head -1 $(pwd)/zephyr-clone/SDK_VERSION)
         wget -nv https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v$ZEPHYR_SDK_VERSION/zephyr-sdk-${ZEPHYR_SDK_VERSION}_linux-x86_64_minimal.tar.xz
         wget -nv -O - https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v$ZEPHYR_SDK_VERSION/sha256.sum | shasum --check --ignore-missing
         tar -xf zephyr-sdk-${ZEPHYR_SDK_VERSION}_linux-x86_64_minimal.tar.xz
@@ -62,6 +63,7 @@ runs:
       if: ${{ inputs.zephyr_toolchain == 'zephyr' && contains(inputs.zephyr_toolchain_arch, 'arm') }}
       shell: sh
       run: |
+        ZEPHYR_SDK_VERSION=$(head -1 $(pwd)/zephyr-clone/SDK_VERSION)
         sudo apt install qemu-system-arm
         wget -nv https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v$ZEPHYR_SDK_VERSION/toolchain_linux-x86_64_arm-zephyr-eabi.tar.xz
         wget -nv -O - https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v$ZEPHYR_SDK_VERSION/sha256.sum | shasum --check --ignore-missing
@@ -71,6 +73,7 @@ runs:
       if: ${{ inputs.zephyr_toolchain == 'zephyr' && contains(inputs.zephyr_toolchain_arch, 'mips') }}
       shell: sh
       run: |
+        ZEPHYR_SDK_VERSION=$(head -1 $(pwd)/zephyr-clone/SDK_VERSION)
         sudo apt install qemu-system-mips
         wget -nv https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v$ZEPHYR_SDK_VERSION/toolchain_linux-x86_64_mips-zephyr-elf.tar.xz
         wget -nv -O - https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v$ZEPHYR_SDK_VERSION/sha256.sum | shasum --check --ignore-missing
