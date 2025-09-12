@@ -24,6 +24,7 @@
 	bool(*)(zcbor_state_t *, const struct Pet *): ((zcbor_encoder_t *)func), \
 	default: ZCBOR_CAST_FP(func))
 
+
 #define log_result(state, result, func) do { \
 	if (!result) { \
 		zcbor_trace_file(state); \
