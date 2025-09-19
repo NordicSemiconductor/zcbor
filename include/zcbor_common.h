@@ -118,22 +118,43 @@ struct {
 #ifdef ZCBOR_MAP_SMART_SEARCH
 	bool elem_state_backed_up; /**< Is set to true if the map elements have been backed up.
 	                                This flag is used internally by the backup process. */
-	uint8_t *map_search_elem_state; /**< Optional flags to use when searching unordered
-	                                     maps. If this is not NULL and map_elem_count
-	                                     is non-zero, this consists of one flag per element
-	                                     in the current map. The n-th bit can be set to 0
-	                                     to indicate that the n-th element in the
-	                                     map should not be searched. These are manipulated
-	                                     via zcbor_elem_processed() or
-	                                     zcbor_unordered_map_search(), and should not be
-	                                     manipulated directly. */
+	uint8_t *map_search_elem_state; /**< This buffer is a single continuous array of bytes,
+	which are all used as 1 bit flags. If flag n is cleared, element n of the current unordered
+	map is skipped when searching the map with @ref zcbor_unordered_map_search.
+
+	These flags are manipulated via @ref zcbor_elem_processed, or (when manually_process_elem is
+	set) automatically by @ref zcbor_unordered_map_search, and should not be manipulated directly.
+	The current active buffer size is given by map_elem_count, and the end of the entire
+	allocated buffer is found at map_search_elem_state_end.
+
+	The following paragraphs describe internal processes, not actions that can be taken by the
+	end user. However, when creating the state variable, the provided elem_state buffer must be
+	large enough to	accomodate all this, nested unordered maps and rollback points within the
+	unordered maps.
+
+	If a nested unordered map is entered, @ref map_search_elem_state is advanced to accomodate
+	the new map while leaving the previous map's state intact. The previous map's state is
+	returned to when restoring the backup made at the start of the nested map.
+
+	The current flags can also be fully backed up if a rollback point is needed while processing
+	the map. The backup is created by advancing @ref map_search_elem_state, and copying the current
+	state to the new location. The new location becomes the active state, which allows it to
+	continue to grow.
+
+	If the backup is restored, @ref map_search_elem_state is moved back to the previous location.
+	If the backup is discarded, the active state is memmoved back to the previous location.
+
+	Such a rollback point is created automatically when starting a union with
+	@ref zcbor_union_start_code, and also when decoding with @ref zcbor_multi_decode_w_backup or
+	@ref zcbor_present_decode_w_backup. Restoring/discarding the backup is also handled
+	automatically in those cases. */
 #else
 	size_t map_elems_processed; /**< The number of elements of an unordered map
 	                                 that have been processed. */
 #endif
 	size_t map_start_backup_num; /** The index of the backup made at the start of the current map.
 	                                 This is used to move to the start of the map when searching
-					 unordered maps. */
+	                                 unordered maps. */
 	size_t map_elem_count; /**< Number of elements in the current unordered map.
 	                            This also serves as the number of bits (not bytes)
 	                            in the map_search_elem_state array (when applicable). */
