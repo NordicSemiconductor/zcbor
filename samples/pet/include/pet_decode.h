@@ -25,6 +25,11 @@ extern "C" {
 #error "The type file was generated with a different default_max_qty than this file"
 #endif
 
+#define PET_NAME_NAMES_MAX_REP (3)
+#define PET_NAME_NAMES_MIN_REP (1)
+#define TIMESTAMP_SIZE (8)
+
+
 
 int cbor_decode_Pet(
 		const uint8_t *payload, size_t payload_len,

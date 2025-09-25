@@ -41,12 +41,12 @@ static bool encode_Pet(
 {
 	zcbor_log("%s\r\n", __func__);
 
-	bool res = (((zcbor_list_start_encode(state, 3) && ((((zcbor_list_start_encode(state, 3) && ((zcbor_multi_encode_minmax(1, 3, &(*input).names_count, ZCBOR_CUSTOM_CAST_FP(zcbor_tstr_encode), state, (*&(*input).names), sizeof(struct zcbor_string))) || (zcbor_list_map_end_force_encode(state), false)) && zcbor_list_end_encode(state, 3)))
-	&& (((((((*input).birthday.len == 8)) || (zcbor_error(state, ZCBOR_ERR_WRONG_RANGE), false))) || (zcbor_error(state, ZCBOR_ERR_WRONG_RANGE), false))
+	bool res = (((zcbor_list_start_encode(state, 3) && ((((zcbor_list_start_encode(state, 3) && ((zcbor_multi_encode_minmax(PET_NAME_NAMES_MIN_REP, PET_NAME_NAMES_MAX_REP, &(*input).names_count, ZCBOR_CUSTOM_CAST_FP(zcbor_tstr_encode), state, (*&(*input).names), sizeof(struct zcbor_string))) || (zcbor_list_map_end_force_encode(state), false)) && zcbor_list_end_encode(state, 3)))
+	&& (((((((*input).birthday.len == TIMESTAMP_SIZE)) || (zcbor_error(state, ZCBOR_ERR_WRONG_RANGE), false))) || (zcbor_error(state, ZCBOR_ERR_WRONG_RANGE), false))
 	&& (zcbor_bstr_encode(state, (&(*input).birthday))))
-	&& ((((*input).species_choice == Pet_species_cat_c) ? ((zcbor_uint8_put(state, (1))))
-	: (((*input).species_choice == Pet_species_dog_c) ? ((zcbor_uint8_put(state, (2))))
-	: (((*input).species_choice == Pet_species_other_c) ? ((zcbor_uint8_put(state, (3))))
+	&& ((((*input).species_choice == Pet_species_cat_c) ? ((zcbor_uint8_put(state, (PET_SPECIES_CAT_VAL))))
+	: (((*input).species_choice == Pet_species_dog_c) ? ((zcbor_uint8_put(state, (PET_SPECIES_DOG_VAL))))
+	: (((*input).species_choice == Pet_species_other_c) ? ((zcbor_uint8_put(state, (PET_SPECIES_OTHER_VAL))))
 	: false))))) || (zcbor_list_map_end_force_encode(state), false)) && zcbor_list_end_encode(state, 3))));
 
 	if (false) {
