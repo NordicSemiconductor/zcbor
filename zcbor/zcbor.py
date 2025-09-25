@@ -168,8 +168,11 @@ def val_or_null(value, var_name):
 
 def tmp_str_or_null(value):
     """Assign the min_value variable."""
-    value_str = f'"{value}"' if value is not None else "NULL"
-    len_str = f"""sizeof({f'"{value}"'}) - 1, &tmp_str)"""
+    if value is None:
+        value_str = "NULL"
+    else:
+        value_str = value
+    len_str = f"""sizeof({value_str}) - 1, &tmp_str)"""
     return f"(tmp_str.value = (uint8_t *){value_str}, tmp_str.len = {len_str}"
 
 
@@ -2769,9 +2772,9 @@ class CodeGenerator(CddlXcoder):
         elif not self.is_unambiguous_value():
             arg = deref_if_not_null(access)
         elif self.type in ["BSTR", "TSTR"]:
-            arg = tmp_str_or_null(self.value)
+            arg = tmp_str_or_null(self.val_define_name("VAL"))
         elif self.type in ["UINT", "INT", "NINT", "FLOAT", "BOOL"]:
-            value = val_to_str(self.value)
+            value = self.val_define_name("VAL")
             arg = f"&({self.val_type_name()}){{{value}}}" if ptr_result else value
         else:
             assert False, "Should not come here."
@@ -2999,8 +3002,8 @@ class CodeGenerator(CddlXcoder):
 
     def xcode_tags(self):
         return [
-            f"zcbor_tag_{'put' if (self.mode == 'encode') else 'expect'}(state, {tag})"
-            for tag in self.tags
+            f"zcbor_tag_{'put' if (self.mode == 'encode') else 'expect'}(state, {self.val_define_name(f'TAG{i+1}')})"
+            for i in range(len(self.tags))
         ]
 
     def value_suffix(self, value_str):
@@ -3017,6 +3020,98 @@ class CodeGenerator(CddlXcoder):
 
         return ""
 
+    define_suffixes = [
+        "MIN_VAL",
+        "MAX_VAL",
+        "DEFAULT_VAL",
+        "VAL",
+        "MSK",
+        "MIN_SIZE",
+        "MAX_SIZE",
+        "SIZE",
+        "MIN_REP",
+        "MAX_REP",
+        "REP",
+        r"TAG\d+",
+    ]
+    define_suffixes_regex = r"(" + "|".join(define_suffixes) + r")"
+
+    def val_define_name(self, val_type):
+        """Return the name to use for a #define for a value of this type."""
+        assert getrp(self.define_suffixes_regex).fullmatch(
+            val_type
+        ), f"Invalid define suffix: {val_type}."
+        return f"{self.var_name(with_prefix=True).upper()}_{val_type}"
+
+    def val_define_value(self, value):
+        """Return the value to use for a #define for a value of this type."""
+        return f"{val_to_str(value)}{self.value_suffix(val_to_str(value))}"
+
+    def val_defines(self):
+        """Return all #defines needed for this element."""
+        defines = []
+
+        def _define(n, v):
+            return defines.append((self.val_define_name(n), self.val_define_value(v)))
+
+        if self.type in ["INT", "UINT", "NINT", "FLOAT", "BOOL"]:
+            if self.value is not None:
+                _define("VAL", self.value)
+            elif self.min_value is not None and self.min_value == self.max_value:
+                _define("VAL", self.min_value)
+            else:
+                if self.min_value is not None:
+                    _define("MIN_VAL", self.min_value)
+                if self.max_value is not None:
+                    _define("MAX_VAL", self.max_value)
+            if self.bits:
+                msk = " | ".join(
+                    f"(1 << {c.enum_var_name()})" for c in self.my_control_groups[self.bits].value
+                )
+                _define("MSK", msk)
+        elif self.type in ["BSTR", "TSTR"]:
+            if self.value is not None:
+                _define("VAL", f'"{self.value}"')
+            if self.min_size is not None and self.min_size == self.max_size:
+                _define("SIZE", self.min_size)
+            else:
+                if self.min_size is not None:
+                    _define("MIN_SIZE", self.min_size)
+                if self.max_size is not None:
+                    _define("MAX_SIZE", self.max_size)
+        if self.count_var_condition():
+            if self.min_qty is not None and self.min_qty == self.max_qty:
+                _define("REP", self.min_qty)
+            else:
+                if self.min_qty is not None:
+                    _define("MIN_REP", self.min_qty)
+                if self.max_qty is not None:
+                    _define("MAX_REP", self.max_qty)
+        if self.tags:
+            for i, tag in enumerate(self.tags):
+                _define(f"TAG{i+1}", str(tag))
+        if self.default is not None:
+            default_value = (
+                f'"{self.default}"' if self.type in ["TSTR", "BSTR"] else val_to_str(self.default)
+            )
+            _define("DEFAULT_VAL", default_value)
+        return defines
+
+    def val_defines_recursive(self):
+        """Return all #defines needed for this element and its children."""
+        defines = []
+        if self.type in ["LIST", "MAP", "GROUP", "UNION"]:
+            for child in self.value:
+                defines.extend(child.val_defines_recursive())
+        if self.type == "OTHER" and self.value not in self.entry_type_names:
+            defines.extend(self.my_types[self.value].val_defines_recursive())
+        if self.cbor is not None:
+            defines.extend(self.cbor.val_defines_recursive())
+        if self.key is not None:
+            defines.extend(self.key.val_defines_recursive())
+        defines.extend(self.val_defines())
+        return defines
+
     def range_checks(self, access):
         """Return the code needed to check the size/value bounds of this element."""
         if self.type != "OTHER" and self.value is not None:
@@ -3031,40 +3126,22 @@ class CodeGenerator(CddlXcoder):
 
         if self.type in ["INT", "UINT", "NINT", "FLOAT", "BOOL"]:
             if min_val is not None and min_val == max_val:
-                range_checks.append(
-                    f"({access} == {val_to_str(min_val)}"
-                    f"{self.value_suffix(val_to_str(min_val))})"
-                )
+                range_checks.append(f"({access} == {self.val_define_name('VAL')})")
             else:
                 if min_val is not None:
-                    range_checks.append(
-                        f"({access} >= {val_to_str(min_val)}"
-                        f"{self.value_suffix(val_to_str(min_val))})"
-                    )
+                    range_checks.append(f"({access} >= {self.val_define_name('MIN_VAL')})")
                 if max_val is not None:
-                    range_checks.append(
-                        f"({access} <= {val_to_str(max_val)}"
-                        f"{self.value_suffix(val_to_str(max_val))})"
-                    )
+                    range_checks.append(f"({access} <= {self.val_define_name('MAX_VAL')})")
             if self.bits:
-                range_checks.append(
-                    f"!({access} & ~("
-                    + " | ".join(
-                        [
-                            f"(1 << {c.enum_var_name()})"
-                            for c in self.my_control_groups[self.bits].value
-                        ]
-                    )
-                    + "))"
-                )
+                range_checks.append(f"!({access} & ~({self.val_define_name('MSK')}))")
         elif self.type in ["BSTR", "TSTR"]:
             if self.min_size is not None and self.min_size == self.max_size:
-                range_checks.append(f"({access}.len == {val_to_str(self.min_size)})")
+                range_checks.append(f"({access}.len == {self.val_define_name('SIZE')})")
             else:
                 if self.min_size is not None:
-                    range_checks.append(f"({access}.len >= {val_to_str(self.min_size)})")
+                    range_checks.append(f"({access}.len >= {self.val_define_name('MIN_SIZE')})")
                 if self.max_size is not None:
-                    range_checks.append(f"({access}.len <= {val_to_str(self.max_size)})")
+                    range_checks.append(f"({access}.len <= {self.val_define_name('MAX_SIZE')})")
         elif self.type == "OTHER":
             if not self.my_types[self.value].single_func_impl_condition():
                 range_checks.extend(self.my_types[self.value].range_checks(access))
@@ -3146,10 +3223,11 @@ class CodeGenerator(CddlXcoder):
                 assign = not self.repeated_single_func_impl_condition()
                 default_assignment = None
                 if self.default is not None:
+                    default_define = self.val_define_name("DEFAULT_VAL")
                     default_value = (
-                        f"*({tmp_str_or_null(self.default)})"
+                        f"*({tmp_str_or_null(default_define)})"
                         if self.type in ["TSTR", "BSTR"]
-                        else val_to_str(self.default)
+                        else val_to_str(default_define)
                     )
                     access = self.val_access() if assign else self.repeated_val_access()
                     default_assignment = f"({access} = {default_value})"
@@ -3174,9 +3252,10 @@ class CodeGenerator(CddlXcoder):
 
             minmax = "_minmax" if self.mode == "encode" else ""
             mode = self.mode
+            equal = self.min_qty == self.max_qty and self.min_qty is not None
             return f"zcbor_multi_{mode}{minmax}(%s, %s, &%s, ZCBOR_CUSTOM_CAST_FP(%s), %s, %s)" % (
-                self.min_qty,
-                self.max_qty,
+                self.val_define_name("MIN_REP" if not equal else "REP"),
+                self.val_define_name("MAX_REP" if not equal else "REP"),
                 self.count_var_access(),
                 func,
                 xcode_args("*" + arg if arg != "NULL" and self.result_len() != "0" else arg),
@@ -3244,6 +3323,7 @@ class CodeRenderer:
         self.sorted_types = dict()
         self.functions = dict()
         self.type_defs = dict()
+        self.defines = dict()
 
         if isinstance(modes, str):
             modes = [modes]
@@ -3259,6 +3339,7 @@ class CodeRenderer:
             self.functions[mode] = self.unique_funcs(mode)
             self.functions[mode] = self.used_funcs(mode)
             self.type_defs[mode] = self.unique_types(mode)
+            self.defines[mode] = self.used_defines(mode)
 
         self.version = __version__
 
@@ -3335,6 +3416,20 @@ and
                 full_code += func_type[0]
                 out_types.append(func_type)
         return list(reversed(out_types))
+
+    def used_defines(self, mode):
+        """Return a list of #defines for all defined types, with unused #defines removed."""
+        full_code = "".join([func_type[0] for func_type in self.functions[mode]])
+        out_defines = set()
+        names = set()
+
+        for name, body in chain(
+            *[xcoder.val_defines_recursive() for xcoder in self.sorted_types[mode]]
+        ):
+            if name not in names and name in full_code:
+                out_defines.add(f"#define {name} ({body})")
+                names.add(name)
+        return list(sorted(out_defines))
 
     def render_forward_declaration(self, xcoder, mode):
         """Render a single decoding function with signature and body."""
@@ -3477,6 +3572,9 @@ extern "C" {{
 #if DEFAULT_MAX_QTY != {self.default_max_qty}
 #error "The type file was generated with a different default_max_qty than this file"
 #endif
+
+{(linesep).join(self.defines[mode])}
+
 
 {(linesep * 2).join([f"{xcoder.public_xcode_func_sig()};" for xcoder in self.entry_types[mode]])}
 
