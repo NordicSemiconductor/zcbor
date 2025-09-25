@@ -305,6 +305,8 @@ do { \
 /** Initial value for elem_count for when it just needs to be large. */
 #define ZCBOR_LARGE_ELEM_COUNT (ZCBOR_MAX_ELEM_COUNT - 15)
 
+#define ZCBOR_EXTRA_STATES 2 ///! The number of extra states always needed (e.g. for the constant state), i.e. in addition to the optional ones for backups and flags.
+
 
 /** Take a backup of the current state. Overwrite the current elem_count. */
 bool zcbor_new_backup(zcbor_state_t *state, size_t new_elem_count);

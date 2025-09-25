@@ -21,6 +21,10 @@ extern "C" {
 #endif
 
 
+
+
+
+
 int cbor_encode_Pet(
 		uint8_t *payload, size_t payload_len,
 		const struct Pet *input,
