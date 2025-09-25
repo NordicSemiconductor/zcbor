@@ -44,7 +44,7 @@ void zcbor_new_decode_state(zcbor_state_t *state_array, size_t n_states,
  *                            including elements in nested unordered maps.
  */
 #define ZCBOR_STATE_D(name, num_backups, payload, payload_size, elem_count, n_flags) \
-zcbor_state_t name[((num_backups) + 2 + ZCBOR_FLAG_STATES(n_flags))]; \
+zcbor_state_t name[((num_backups) + ZCBOR_EXTRA_STATES + ZCBOR_FLAG_STATES(n_flags))]; \
 do { \
 	zcbor_new_decode_state(name, ZCBOR_ARRAY_SIZE(name), payload, payload_size, elem_count, \
 			(uint8_t *)&name[(num_backups) + 1], ZCBOR_FLAG_STATES(n_flags) * sizeof(zcbor_state_t)); \
