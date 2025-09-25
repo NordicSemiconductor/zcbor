@@ -40,7 +40,7 @@ void zcbor_new_encode_state(zcbor_state_t *state_array, size_t n_states,
  *  @param[in]  elem_count    The starting elem_count (typically 1).
  */
 #define ZCBOR_STATE_E(name, num_backups, payload, payload_size, elem_count) \
-zcbor_state_t name[((num_backups) + 2)]; \
+zcbor_state_t name[((num_backups) + ZCBOR_EXTRA_STATES)]; \
 do { \
 	zcbor_new_encode_state(name, ZCBOR_ARRAY_SIZE(name), payload, payload_size, elem_count); \
 } while(0)

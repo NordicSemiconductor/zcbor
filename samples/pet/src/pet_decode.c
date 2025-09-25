@@ -61,7 +61,7 @@ int cbor_decode_Pet(
 		struct Pet *result,
 		size_t *payload_len_out)
 {
-	zcbor_state_t states[4];
+	zcbor_state_t states[2 + ZCBOR_EXTRA_STATES];
 
 	if (false) {
 		/* For testing that the types of the arguments are correct.
