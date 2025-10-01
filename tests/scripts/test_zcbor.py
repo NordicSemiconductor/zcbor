@@ -1105,7 +1105,6 @@ file header"""
 #
 # Generated using zcbor version {p_VERSION.read_text(encoding="utf-8")}
 # https://github.com/NordicSemiconductor/zcbor
-# Generated with a --default-max-qty of 5
 #""".splitlines()
         exp_c_header = f"""/*
  * Sample
@@ -1114,11 +1113,10 @@ file header"""
  *
  * Generated using zcbor version {p_VERSION.read_text(encoding="utf-8")}
  * https://github.com/NordicSemiconductor/zcbor
- * Generated with a --default-max-qty of 5
  */""".splitlines()
         self.assertEqual(
             exp_cmake_header,
-            (self.tempd / "pet.cmake").read_text(encoding="utf-8").splitlines()[:9],
+            (self.tempd / "pet.cmake").read_text(encoding="utf-8").splitlines()[:8],
         )
         for p in (
             self.tempd / "src" / "pet_decode.c",
@@ -1127,7 +1125,7 @@ file header"""
             self.tempd / "include" / "pet_encode.h",
             self.tempd / "include" / "pet_types.h",
         ):
-            self.assertEqual(exp_c_header, p.read_text(encoding="utf-8").splitlines()[:9])
+            self.assertEqual(exp_c_header, p.read_text(encoding="utf-8").splitlines()[:8])
 
     def test_file_header(self):
         self.do_test_file_header()
@@ -1516,7 +1514,6 @@ class TestExceptions(TestCase):
             zcbor.CodeGenerator.from_cddl(
                 cddl_string=cddl_string,
                 mode="decode",
-                default_max_qty=16,
                 entry_type_names=["test"],
                 default_bit_size=32,
             )
