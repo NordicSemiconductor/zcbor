@@ -19,6 +19,10 @@
     In certain specific cases, the type of an argument to a `cbor_decode_*` or `cbor_decode_*` can change when regenerating the code, requiring changes in your non-generated code.
     More commonly, struct members will change to use smaller int types.
 
+  * Certain CDDL expressions with double quantifiers and parentheses (single-member groups) would previously be generated with a maximum count of default-max-qty^n (where n is the number of nested quantifiers). This has now been changed to always be default-max-qty.
+    Example: `foo = +(+bar)`
+    With default-max-qty of 3, the above would previously have a max count of 9, but is now 3.
+
 
 # zcbor v. 0.9.0
 
