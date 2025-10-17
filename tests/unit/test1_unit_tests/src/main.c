@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/ztest.h>
+#include <zephyr/sys/util.h>
 #include "zcbor_decode.h"
 #include "zcbor_encode.h"
 #include "zcbor_print.h"
@@ -901,8 +902,6 @@ ZTEST(zcbor_unit_tests, test_canonical_list)
 	for (int i = 0; i < 30; i++) {
 		zassert_true(zcbor_uint32_put(state_e1, i), NULL);
 	}
-	zassert_false(zcbor_list_end_encode(state_e1, 10), NULL);
-	zassert_equal(ZCBOR_ERR_HIGH_ELEM_COUNT, zcbor_pop_error(state_e1), NULL);
 
 	zassert_true(zcbor_list_start_encode(state_e2, 1000), NULL);
 	for (int i = 0; i < 10; i++) {
@@ -1904,5 +1903,122 @@ ZTEST(zcbor_unit_tests, test_entry_function)
 	zassert_equal(dummy_entry_func_result, 42, NULL);
 }
 
+
+#ifdef ZCBOR_CANONICAL
+/* Allocate a large enough buffer for 65540 elements + header */
+static uint8_t huge_payload[66000];
+#endif
+
+/**
+ * Test that size hints in zcbor_list_start_encode can be different than the encoded size.
+ *
+ * This test verifies the behavior described in the zcbor_encode.h documentation:
+ * "Can be 0 if unknown, but note that using a smaller size_hint than the actual
+ * number of elements will risk the _end_encode function failing because the
+ * payload buffer is exhausted."
+ *
+ * The test checks both success and failure cases when the size hint is smaller
+ * than the actual encoded size.
+ */
+ZTEST(zcbor_unit_tests, test_size_hint)
+{
+#ifndef ZCBOR_CANONICAL
+	printf("Skip on non-canonical builds.\n");
+#else
+
+#ifdef ZCBOR_VERBOSE
+	/* If printing is enabled, reduce the scope of the test to reduce the time taken for printing. */
+	size_t num_elems[] = {1, 24, 256};
+#else
+	size_t num_elems[] = {1, 24, 256, 65539};
+#endif
+
+#if SIZE_MAX == UINT32_MAX
+	/* 4-byte size_t cannot contain the biggest size hint. */
+	size_t size_hints[] = {10, 32, 260, 100000};
+#else
+	size_t size_hints[] = {10, 32, 260, 100000, 0x100000010};
+#endif
+
+	size_t num_hints = ARRAY_SIZE(size_hints);
+	size_t num_num_elems = ARRAY_SIZE(num_elems);
+
+	size_t header_sizes[] = {1, 2, 3, 5, 9};
+
+	/* Successful header size change from 1, 2, 3, 5, (9) bytes to 1, 2, 3, 5 bytes */
+	for (int i = 0; i < num_num_elems; i++) {
+		for (int j = 0; j < num_hints; j++) {
+
+			ZCBOR_STATE_E(state_e, 1, huge_payload, sizeof(huge_payload), 0);
+
+			/* Use size hint from the list to trigger a 1, 2, 3, or 5 byte preliminary header. */
+			zassert_true(zcbor_list_start_encode(state_e, size_hints[j]),
+				"Failed to start list with size hint %zu", size_hints[j]);
+
+			/* Encode a number of elements to trigger 1, 2, 3, or 5 byte actual header. */
+			for (int k = 0; k < num_elems[i]; k++) {
+				zassert_true(zcbor_uint32_put(state_e, k % 24),
+					"Failed to encode element %d", k);
+			}
+
+			const uint8_t *payload_before = state_e->payload;
+
+			/* This will cause a memmove if i != j, i.e. if the preliminary header size
+			 * is different from the actual header size. */
+			zassert_true(zcbor_list_end_encode(state_e, size_hints[j]));
+
+			size_t header_size_before = header_sizes[j];
+			size_t header_size_after = header_sizes[i];
+			zassert_equal(state_e->payload - payload_before, header_size_after - header_size_before);
+
+			if (i == 0) {
+				/* Element count value in header */
+				zassert_equal(huge_payload[0], 0x80 | num_elems[i]);
+			} else {
+				/* Element count size in header */
+				zassert_equal(huge_payload[0], 0x97 + i);
+			}
+
+			/* Decode and verify the encoded data */
+			ZCBOR_STATE_D(state_d, 1, huge_payload, sizeof(huge_payload), 1, 0);
+
+			zassert_true(zcbor_list_start_decode(state_d));
+			zassert_equal(num_elems[i], state_d->elem_count);
+
+			for (int k = 0; k < num_elems[i]; k++) {
+				zassert_true(zcbor_uint32_expect(state_d, k % 24),
+					"Failed to decode element %d", k);
+			}
+
+			zassert_true(zcbor_list_end_decode(state_d));
+		}
+	}
+
+	/* Unsuccessful header size change from 1, 2, 3 bytes to 2, 3, 5 bytes with insufficient buffer */
+	for (int i = 1; i < num_num_elems; i++) {
+		for (int j = 0; j < num_hints && size_hints[j] < num_elems[i]; j++) {
+			/* Create a buffer that's just barely too small for the expansion needed */
+			ZCBOR_STATE_E(state_e, 1, huge_payload, num_elems[i] + header_sizes[i] - 1, 0);
+
+			/* Use size hint from list */
+			zassert_true(zcbor_list_start_encode(state_e, size_hints[j]),
+				"Failed to start list with size hint %zu", size_hints[j]);
+
+			/* Encode elements (should be successful because size hint is smaller than actual) */
+			for (int k = 0; k < num_elems[i]; k++) {
+				zassert_true(zcbor_uint32_put(state_e, k % 24),
+					"Failed to encode element %d", k);
+			}
+
+			/* This should fail due to insufficient buffer space for 4-byte expansion */
+			zassert_false(zcbor_list_end_encode(state_e, size_hints[j]),
+				"Expected failure: buffer too small for header expansion");
+
+			zassert_equal(ZCBOR_ERR_NO_PAYLOAD, zcbor_peek_error(state_e),
+				"Expected ZCBOR_ERR_NO_PAYLOAD when buffer exhausted during large header expansion");
+		}
+	}
+#endif
+}
 
 ZTEST_SUITE(zcbor_unit_tests, NULL, NULL, NULL, NULL, NULL);
