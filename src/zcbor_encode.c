@@ -309,6 +309,7 @@ static bool str_encode(zcbor_state_t *state,
 	ZCBOR_CHECK_NULL(state);
 	ZCBOR_CHECK_PAYLOAD(); /* To make the size_t cast below safe. */
 
+	/* Overflow check with header length is done in str_start_encode() */
 	if (input->len > (size_t)(state->payload_end - state->payload)) {
 		ZCBOR_ERR(ZCBOR_ERR_NO_PAYLOAD);
 	}
