@@ -105,16 +105,22 @@ bool zcbor_float64_encode(zcbor_state_t *state, const double *input); /* IEEE754
  * When all members have been encoded, call @ref zcbor_list_end_encode /
  * @ref zcbor_map_end_encode to close the list/map.
  *
- * @param[inout] state    The current state of the encoding.
- * @param[in]    max_num  The maximum number of members in the list/map.
- *                        This serves as a size hint for the header. Must be
- *                        equal to the max_num provided to the corresponding
- *                        @ref zcbor_list_end_encode / @ref zcbor_map_end_encode
- *                        call.
- *                        Only used when ZCBOR_CANONICAL is defined.
+ * @param[inout] state      The current state of the encoding.
+ * @param[in]    size_hint  A size hint for the header. Must be equal to the
+ *                          size_hint provided to the corresponding
+ *                          @ref zcbor_list_end_encode / @ref zcbor_map_end_encode call.
+ *                          The size_hint is ignored unless ZCBOR_CANONICAL is defined.
+ *                          The size_hint can be 0 if unknown or unneeded.
+ *                          The following is only relevant if ZCBOR_CANONICAL is defined:
+ *                          Note that using a smaller size_hint than the actual
+ *                          number of elements will introduce a new possible failure mode
+ *                          to the _end_encode function: Failing because the payload buffer
+ *                          is exhausted.
+ *                          With a correct or larger size_hint, the failure will instead
+ *                          happen while encoding an element.
  */
-bool zcbor_list_start_encode(zcbor_state_t *state, size_t max_num);
-bool zcbor_map_start_encode(zcbor_state_t *state, size_t max_num);
+bool zcbor_list_start_encode(zcbor_state_t *state, size_t size_hint);
+bool zcbor_map_start_encode(zcbor_state_t *state, size_t size_hint);
 
 /** Encode the end of a list/map. Do some checks and deallocate backup.
  *
@@ -127,14 +133,10 @@ bool zcbor_map_start_encode(zcbor_state_t *state, size_t max_num);
  * Use @ref zcbor_list_map_end_force_encode to forcibly consume the backup if
  * something has gone wrong.
  *
- * @param[inout] state    The current state of the encoding.
- * @param[in]    max_num  The maximum number of members in the list/map. Must be
- *                        equal to the max_num provided to the corresponding
- *                        @ref zcbor_list_start_encode call.
- *                        Only used when ZCBOR_CANONICAL is defined.
+ * See @ref zcbor_list_start_encode for param docs.
  */
-bool zcbor_list_end_encode(zcbor_state_t *state, size_t max_num);
-bool zcbor_map_end_encode(zcbor_state_t *state, size_t max_num);
+bool zcbor_list_end_encode(zcbor_state_t *state, size_t size_hint);
+bool zcbor_map_end_encode(zcbor_state_t *state, size_t size_hint);
 bool zcbor_list_map_end_force_encode(zcbor_state_t *state);
 
 /** Encode 0 or more elements with the same type and constraints.
