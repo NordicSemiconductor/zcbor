@@ -222,6 +222,23 @@ ZTEST(zcbor_unit_tests, test_string_macros)
 }
 
 
+ZTEST(zcbor_unit_tests, test_string_overflow)
+{
+	uint8_t payload[50];
+	ZCBOR_STATE_E(state_e1, 0, payload, 6, 0);
+	ZCBOR_STATE_E(state_e2, 0, payload, 32, 0);
+
+	bool ret = zcbor_tstr_put_lit(state_e1, "hello!");
+	zassert_false(ret, NULL);
+	printf("%s\n", zcbor_error_str(state_e1->constant_state->error));
+	zassert_true(zcbor_tstr_put_lit(state_e1, "hello"), NULL);
+	zassert_true(state_e1->payload_end == state_e1->payload, NULL);
+	zassert_false(zcbor_bstr_put_lit(state_e2, "hello world and everyone in it!"), NULL);
+	zassert_true(zcbor_bstr_put_lit(state_e2, "hello world and everyone in it"), NULL);
+	zassert_true(state_e2->payload_end == state_e2->payload, NULL);
+}
+
+
 ZTEST(zcbor_unit_tests, test_stop_on_error)
 {
 	uint8_t payload[100];
