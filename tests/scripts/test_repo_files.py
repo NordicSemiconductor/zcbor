@@ -334,7 +334,6 @@ class TestSamples(TestCase):
                 f.readline()  # discard
                 self.assertIn("Generated using zcbor version", f.readline())
                 self.assertIn("https://github.com/NordicSemiconductor/zcbor", f.readline())
-                self.assertIn("Generated with a --default-max-qty of", f.readline())
 
 
 class TestDocs(TestCase, LinkTester):

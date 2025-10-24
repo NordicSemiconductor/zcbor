@@ -347,7 +347,6 @@ class CddlParser:
         *,
         my_types,
         my_control_groups,
-        default_max_qty=defaults["default_max_qty"],
         base_name=None,
         short_names=False,
         base_stem="",
@@ -398,7 +397,6 @@ class CddlParser:
 
         self.my_types = my_types
         self.my_control_groups = my_control_groups
-        self.default_max_qty = default_max_qty  # args.default_max_qty
         self.base_name = base_name  # Used as default for self.get_base_name()
         # Stem which can be used when generating an id.
         self.base_stem = base_stem.replace("-", "_")
@@ -609,7 +607,6 @@ class CddlParser:
         Note: This is used for reinitializing self, as well as instantiating new instances.
         """
         return {
-            "default_max_qty": self.default_max_qty,
             "my_types": self.my_types,
             "my_control_groups": self.my_control_groups,
             "short_names": self.short_names,
@@ -682,7 +679,11 @@ class CddlParser:
             and (not (self.key and self.value[0].key))
         ):
             self.value[0].min_qty *= self.min_qty
-            self.value[0].max_qty *= self.max_qty
+            self.value[0].max_qty = (
+                self.value[0].max_qty * self.max_qty
+                if None not in (self.value[0].max_qty, self.max_qty)
+                else None
+            )
             if not self.value[0].label:
                 self.value[0].label = self.label
             if not self.value[0].key:
@@ -812,8 +813,6 @@ class CddlParser:
             match_obj = getrp(reg).match(quantifier)
             if match_obj:
                 (self.min_qty, self.max_qty) = handler(match_obj)
-                if self.max_qty is None:
-                    self.max_qty = self.default_max_qty
                 return
         raise ValueError("invalid quantifier: %s" % quantifier)
 
@@ -890,7 +889,7 @@ class CddlParser:
             )
         self.cbor = cbor
         if cborseq:
-            self.cbor.max_qty = self.default_max_qty
+            self.cbor.max_qty = None
 
     def set_bits(self, bits):
         """Set the self.bits of this element. For use during CDDL parsing."""
@@ -1551,7 +1550,7 @@ class CddlXcoder(CddlParser):
 
     def count_var_condition(self):
         """Whether to include a "count" variable for this element."""
-        return isinstance(self.max_qty, str) or self.max_qty > 1
+        return (not isinstance(self.max_qty, int)) or self.max_qty > 1
 
     def is_cbor(self):
         """Whether to include a "cbor" variable for this element."""
@@ -1776,7 +1775,15 @@ class DataTranslator(CddlXcoder):
 
     def __init__(self, default_max_qty=defaults["default_max_qty_validate"], **kwargs):
         """Redefinition to give different default for default_max_qty."""
-        super(DataTranslator, self).__init__(default_max_qty=default_max_qty, **kwargs)
+        self.default_max_qty = default_max_qty
+        super(DataTranslator, self).__init__(**kwargs)
+
+    def init_kwargs(self):
+        """Override the init_kwargs() function."""
+        return {
+            **(super().init_kwargs()),
+            "default_max_qty": self.default_max_qty,
+        }
 
     @staticmethod
     def format_obj(obj):
@@ -2146,7 +2153,10 @@ CBOR-formatted bstr, all elements must be bstrs. If not, it is a programmer erro
                 it, retval = self._decode_obj(it, do_decode)
                 retvals.append(retval if not self.is_unambiguous_repeated() else None)
             try:
-                for i in range(self.max_qty - self.min_qty):
+                for i in range(
+                    (self.max_qty if self.max_qty is not None else self.default_max_qty)
+                    - self.min_qty
+                ):
                     it, it_copy = tee(it)
                     it, retval = self._decode_obj(it, do_decode)
                     retvals.append(retval if not self.is_unambiguous_repeated() else None)
@@ -2322,12 +2332,19 @@ class CodeGenerator(CddlXcoder):
     """Class for generating C code that encode/decodes CBOR and validates it according to the CDDL."""
 
     def __init__(
-        self, *, mode, entry_type_names, default_bit_size=defaults["default_bit_size"], **kwargs
+        self,
+        *,
+        mode,
+        entry_type_names,
+        default_bit_size=defaults["default_bit_size"],
+        default_max_qty_define="ZCBOR_DEFAULT_MAX_QTY",
+        **kwargs,
     ):
         super(CodeGenerator, self).__init__(**kwargs)
         self.mode = mode
         self.entry_type_names = entry_type_names
         self.default_bit_size = default_bit_size
+        self.default_max_qty_define = default_max_qty_define
 
     @classmethod
     def from_cddl(cddl_class, *, mode, **kwargs):
@@ -2359,7 +2376,7 @@ class CodeGenerator(CddlXcoder):
             "mode": self.mode,
             "entry_type_names": self.entry_type_names,
             "default_bit_size": self.default_bit_size,
-            "default_max_qty": self.default_max_qty,
+            "default_max_qty_define": self.default_max_qty_define,
         }
 
     def delegate_type_condition(self):
@@ -2536,7 +2553,11 @@ class CodeGenerator(CddlXcoder):
             ), f"Expected single var: {var_type!r}"
             if not anonymous or var_type[-1][-1] != "}":
                 var_name = self.var_name()
-                array_part = f"[{self.max_qty}]" if full and self.max_qty != 1 else ""
+                array_part = (
+                    f"[{self.max_qty if self.max_qty is not None else self.default_max_qty_define}]"
+                    if full and self.max_qty != 1
+                    else ""
+                )
                 var_type[-1] += f" {var_name}{array_part}"
             var_type = add_semicolon(var_type)
         return var_type
@@ -2841,6 +2862,27 @@ class CodeGenerator(CddlXcoder):
 
     def list_counts(self):
         """Recursively sum the total minimum and maximum element count for this element."""
+
+        def or_none(it, op):
+            it_list = list(it)
+            if None in it_list:
+                return None
+            return op(it_list)
+
+        def sum_or_none(it):
+            return or_none(it, sum)
+
+        def min_or_none(it):
+            return or_none(it, min)
+
+        def max_or_none(it):
+            return or_none(it, max)
+
+        def mult_or_none(fac1, fac2):
+            if fac1 is None or fac2 is None:
+                return None
+            return fac1 * fac2
+
         retval = {
             "INT": lambda: (self.min_qty, self.max_qty),
             "UINT": lambda: (self.min_qty, self.max_qty),
@@ -2857,16 +2899,24 @@ class CodeGenerator(CddlXcoder):
             # Maps are their own element
             "MAP": lambda: (self.min_qty, self.max_qty),
             "GROUP": lambda: (
-                self.min_qty * sum((child.list_counts()[0] for child in self.value)),
-                self.max_qty * sum((child.list_counts()[1] for child in self.value)),
+                mult_or_none(
+                    self.min_qty, sum_or_none((child.list_counts()[0] for child in self.value))
+                ),
+                mult_or_none(
+                    self.max_qty, sum_or_none((child.list_counts()[1] for child in self.value))
+                ),
             ),
             "UNION": lambda: (
-                self.min_qty * min((child.list_counts()[0] for child in self.value)),
-                self.max_qty * max((child.list_counts()[1] for child in self.value)),
+                mult_or_none(
+                    self.min_qty, min_or_none((child.list_counts()[0] for child in self.value))
+                ),
+                mult_or_none(
+                    self.max_qty, max_or_none((child.list_counts()[1] for child in self.value))
+                ),
             ),
             "OTHER": lambda: (
-                self.min_qty * self.my_types[self.value].list_counts()[0],
-                self.max_qty * self.my_types[self.value].list_counts()[1],
+                mult_or_none(self.min_qty, self.my_types[self.value].list_counts()[0]),
+                mult_or_none(self.max_qty, self.my_types[self.value].list_counts()[1]),
             ),
         }[self.type]()
         return retval
@@ -2892,7 +2942,8 @@ class CodeGenerator(CddlXcoder):
         _, max_counts = (
             zip(*(child.list_counts() for child in self.value)) if self.value else ((0,), (0,))
         )
-        count_arg = f", {str(sum(max_counts))}" if self.mode == "encode" else ""
+        max_count = str(sum(max_counts)) if None not in max_counts else "0"
+        count_arg = f", {max_count}" if self.mode == "encode" else ""
         with_children = "(%s && ((%s) || (%s, false)) && %s)" % (
             f"{start_func}(state{count_arg})",
             f"{newl_ind}&& ".join(child.full_xcode() for child in self.value),
@@ -3176,7 +3227,7 @@ class CodeGenerator(CddlXcoder):
             mode = self.mode
             return f"zcbor_multi_{mode}{minmax}(%s, %s, &%s, ZCBOR_CUSTOM_CAST_FP(%s), %s, %s)" % (
                 self.min_qty,
-                self.max_qty,
+                self.max_qty if self.max_qty is not None else self.default_max_qty_define,
                 self.count_var_access(),
                 func,
                 xcode_args("*" + arg if arg != "NULL" and self.result_len() != "0" else arg),
@@ -3235,11 +3286,13 @@ class CodeRenderer:
         default_max_qty=defaults["default_max_qty"],
         git_sha="",
         file_header="",
+        default_max_qty_define="ZCBOR_DEFAULT_MAX_QTY",
     ):
         super(CodeRenderer, self).__init__()
         self.entry_types = entry_types
         self.print_time = print_time
         self.default_max_qty = default_max_qty
+        self.default_max_qty_define = default_max_qty_define
 
         self.sorted_types = dict()
         self.functions = dict()
@@ -3268,8 +3321,7 @@ class CodeRenderer:
         self.file_header = file_header.strip() + "\n\n" if file_header.strip() else ""
         self.file_header += f"""Generated using zcbor version {self.version}
 https://github.com/NordicSemiconductor/zcbor{'''
-at: ''' + datetime.now().strftime('%Y-%m-%d %H:%M:%S') if self.print_time else ''}
-Generated with a --default-max-qty of {self.default_max_qty}"""
+at: ''' + datetime.now().strftime('%Y-%m-%d %H:%M:%S') if self.print_time else ''}"""
 
     def header_guard(self, file_name):
         return path.basename(file_name).replace(".", "_").replace("-", "_").upper() + "__"
@@ -3405,14 +3457,14 @@ static bool {xcoder.func_name}(
     def render_entry_function(self, xcoder, mode):
         """Render a single entry function (API function) with signature and body."""
         func_name, func_arg = (xcoder.xcode_func_name(), struct_ptr_name(mode))
+        elem_count = "ZCBOR_LARGE_ELEM_COUNT" if mode == "decode" else "0"
         return f"""
 {xcoder.public_xcode_func_sig()}
 {{
 	zcbor_state_t states[{xcoder.num_backups() + 2}];
 {self.render_arg_check(((func_name, "states", func_arg),))}
 	return zcbor_entry_function(payload, payload_len, (void *){func_arg}, payload_len_out, states,
-		(zcbor_decoder_t *)ZCBOR_CUSTOM_CAST_FP({func_name}), sizeof(states) / sizeof(zcbor_state_t), {
-            xcoder.list_counts()[1]});
+		(zcbor_decoder_t *)ZCBOR_CUSTOM_CAST_FP({func_name}), sizeof(states) / sizeof(zcbor_state_t), {elem_count});
 }}"""
 
     def render_file_header(self, line_prefix):
@@ -3441,10 +3493,6 @@ do { \\
 #include "{header_file_name}"
 #include "zcbor_print.h"
 
-#if DEFAULT_MAX_QTY != {self.default_max_qty}
-#error "The type file was generated with a different default_max_qty than this file"
-#endif
-
 {self.render_cast_macro(mode)}
 
 {log_result_define}
@@ -3472,10 +3520,6 @@ do { \\
 
 #ifdef __cplusplus
 extern "C" {{
-#endif
-
-#if DEFAULT_MAX_QTY != {self.default_max_qty}
-#error "The type file was generated with a different default_max_qty than this file"
 #endif
 
 {(linesep * 2).join([f"{xcoder.public_xcode_func_sig()};" for xcoder in self.entry_types[mode]])}
@@ -3525,12 +3569,11 @@ extern "C" {{
 
 /** Which value for --default-max-qty this file was created with.
  *
- *  The define is used in the other generated file to do a build-time
- *  compatibility check.
+ *  This can be safely edited.
  *
  *  See `zcbor --help` for more information about --default-max-qty
  */
-#define DEFAULT_MAX_QTY {self.default_max_qty}
+#define {self.default_max_qty_define} {self.default_max_qty}
 
 {body}
 
@@ -3990,6 +4033,13 @@ def process_code(args):
         args.file_header = Path(args.file_header).read_text(encoding="utf-8")
 
     print_unless_quiet("Parsing files: " + ", ".join((c.name for c in args.cddl)))
+    if args.output_cmake:
+        call_name = Path(args.output_cmake).parts[-1].replace(".cmake", "")
+    else:
+        call_name = Path(args.cddl[0].name).parts[-1].replace(".cddl", "")
+    call_name = getrp(r"[^\w\d]+").sub("_", call_name).strip("_")
+
+    default_max_qty_define = f"ZCBOR_{call_name.upper()}_DEFAULT_MAX_QTY"
 
     cddl_contents = linesep.join((c.read() for c in args.cddl))
 
@@ -3999,10 +4049,10 @@ def process_code(args):
             cddl_res[mode] = CodeGenerator.from_cddl(
                 mode=mode,
                 cddl_string=cddl_contents,
-                default_max_qty=args.default_max_qty,
                 entry_type_names=args.entry_types,
                 default_bit_size=args.default_bit_size,
                 short_names=args.short_names,
+                default_max_qty_define=default_max_qty_define,
             )
         except CddlParsingError as e:
             print(format_parsing_error(e))
@@ -4075,6 +4125,7 @@ def process_code(args):
         default_max_qty=args.default_max_qty,
         git_sha=git_sha,
         file_header=args.file_header,
+        default_max_qty_define=default_max_qty_define,
     )
 
     c_code_dir = C_SRC_PATH
