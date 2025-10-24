@@ -3,11 +3,11 @@ name: Run tests
 on:
  pull_request: {}
  schedule:
-  - cron: '0 0 * * 0' # every sunday
+  - cron: '0 0 1,15 * ?' # twice a month
 
 
 env:
-  ZEPHYR_REV: 80ab4b810021cef2185d62f6fa63593b6972f628
+  ZEPHYR_REV: 0876b5a2ded100ccc50af797c24f09eae70e4556
 
 jobs:
   merge-test-1:
@@ -19,7 +19,7 @@ jobs:
     name: Merge test 1 - Twister (Ubuntu) (${{ matrix.platform }}${{ matrix.asserts != '' && ' with asserts' || '' }})
     steps:
     - name: Checkout the code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Install zcbor
       uses: ./.github/actions/install_zcbor
@@ -40,12 +40,12 @@ jobs:
     name: Merge test 1 - Twister (Windows) (${{ matrix.platform }}${{ matrix.asserts != '' && ' with asserts' || '' }} - build only)
     steps:
     - name: Checkout the code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Setup Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
-        python-version: "3.x"
+        python-version: "3.13"  # Because of issues with some packages in 3.14. Change back to 3.x when fixed.
 
     - name: Checkout Zephyr
       run: |
@@ -100,13 +100,13 @@ jobs:
     name: Merge tests 2 - Python (${{ matrix.python-version }}) functional tests (Ubuntu)
     steps:
     - name: Checkout the code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Setup Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.python-version }}
-        allow-prereleases: true
+        allow-prereleases: false
 
     - name: Install zcbor
       uses: ./.github/actions/install_zcbor
@@ -123,10 +123,10 @@ jobs:
     name: Merge tests 2 - Python (latest) functional tests (Windows)
     steps:
     - name: Checkout the code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Setup Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: '3.x'
 
@@ -158,10 +158,10 @@ jobs:
     name: Merge tests 3 - Check repo files (Ubuntu)
     steps:
     - name: Checkout the code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Setup Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: '3.x'
         check-latest: true
@@ -188,7 +188,7 @@ jobs:
     if: "startswith(github.head_ref, 'release/')"
     steps:
     - name: Checkout the code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Install zcbor
       uses: ./.github/actions/install_zcbor
@@ -208,7 +208,7 @@ jobs:
     - release-test-1
     steps:
     - name: Checkout the code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Read zcbor version
       run: echo "ZCBOR_VERSION=$(cat zcbor/VERSION)" >> $GITHUB_ENV
@@ -271,13 +271,13 @@ jobs:
     if: "github.event_name == 'schedule' || (github.event_name == 'pull_request' && startswith(github.head_ref, 'release/'))"
     steps:
     - name: Checkout the code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Setup Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.python-version }}
-        allow-prereleases: true
+        allow-prereleases: false
 
     - name: Install zcbor
       uses: ./.github/actions/install_zcbor
@@ -307,13 +307,13 @@ jobs:
     if: "github.event_name == 'schedule' || (github.event_name == 'pull_request' && startswith(github.head_ref, 'release/'))"
     steps:
     - name: Checkout the code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Setup Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.python-version }}
-        allow-prereleases: true
+        allow-prereleases: false
 
     - name: Install zcbor
       uses: ./.github/actions/install_zcbor
