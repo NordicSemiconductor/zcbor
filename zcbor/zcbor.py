@@ -432,8 +432,8 @@ class CddlParser:
             except CddlParsingError as e:
                 e.zcbor_add_note(f"  while parsing type {my_type}")
                 raise
-            parsed = parsed.flatten()[0]
             if my_type in my_types:
+                parsed = parsed.flatten()[0]
                 my_types[my_type] = parsed
             elif my_type in my_control_groups:
                 my_control_groups[my_type] = parsed
