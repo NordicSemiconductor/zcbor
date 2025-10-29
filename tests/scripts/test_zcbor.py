@@ -1624,10 +1624,6 @@ Cannot have size before type: 3
             str(exc),
         )
 
-    def test_control_group_type(self):
-        exc = self.do_test_exception("foo = &(int)")
-        self.assertEqual("control groups must be of GROUP type.", str(exc))
-
     def test_control_group_member_type(self):
         exc = self.do_test_exception("foo = &(1, int)")
         self.assertEqual("control group members must be literal positive integers.", str(exc))
@@ -1733,6 +1729,24 @@ class TestFuncPointer(PopenTest, TempdTest):
 
         check_file(output_c_d, "decode")
         check_file(output_c_e, "encode")
+
+
+class TestControlGroups(TestCase):
+    def test_single_member(self):
+        """Test that control groups with a single member don't cause an exception,
+
+        and that they decode data correctly"""
+        cddl_res = zcbor.DataTranslator.from_cddl(
+            cddl_string="""
+                single_member_cg = &(foo: 3)
+                bar = uint .bits single_member_cg
+            """,
+        )
+        cddl = cddl_res.my_types["bar"]
+        self.assertEqual(0, cddl.decode_str_yaml("0"))
+        self.assertEqual(8, cddl.decode_str_yaml("8"))
+        with self.assertRaises(zcbor.CddlValidationError):
+            cddl.decode_str_yaml("1")
 
 
 if __name__ == "__main__":
