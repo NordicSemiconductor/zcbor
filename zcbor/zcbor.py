@@ -168,8 +168,11 @@ def val_or_null(value, var_name):
 
 def tmp_str_or_null(value):
     """Assign the min_value variable."""
-    value_str = f'"{value}"' if value is not None else "NULL"
-    len_str = f"""sizeof({f'"{value}"'}) - 1, &tmp_str)"""
+    if value is None:
+        value_str = "NULL"
+    else:
+        value_str = value
+    len_str = f"""sizeof({value_str}) - 1, &tmp_str)"""
     return f"(tmp_str.value = (uint8_t *){value_str}, tmp_str.len = {len_str}"
 
 
@@ -347,7 +350,6 @@ class CddlParser:
         *,
         my_types,
         my_control_groups,
-        default_max_qty=defaults["default_max_qty"],
         base_name=None,
         short_names=False,
         base_stem="",
@@ -398,7 +400,6 @@ class CddlParser:
 
         self.my_types = my_types
         self.my_control_groups = my_control_groups
-        self.default_max_qty = default_max_qty  # args.default_max_qty
         self.base_name = base_name  # Used as default for self.get_base_name()
         # Stem which can be used when generating an id.
         self.base_stem = base_stem.replace("-", "_")
@@ -506,7 +507,7 @@ class CddlParser:
             # Name an integer by its expected value:
             or (
                 f"{self.type.lower()}{abs(self.value)}"
-                if self.type in ["UINT", "NINT"] and self.value is not None
+                if self.type in ["UINT", "NINT", "BOOL"] and self.value is not None
                 else None
             )
             # Name a type by its type name
@@ -609,7 +610,6 @@ class CddlParser:
         Note: This is used for reinitializing self, as well as instantiating new instances.
         """
         return {
-            "default_max_qty": self.default_max_qty,
             "my_types": self.my_types,
             "my_control_groups": self.my_control_groups,
             "short_names": self.short_names,
@@ -682,7 +682,11 @@ class CddlParser:
             and (not (self.key and self.value[0].key))
         ):
             self.value[0].min_qty *= self.min_qty
-            self.value[0].max_qty *= self.max_qty
+            self.value[0].max_qty = (
+                self.value[0].max_qty * self.max_qty
+                if None not in (self.value[0].max_qty, self.max_qty)
+                else None
+            )
             if not self.value[0].label:
                 self.value[0].label = self.label
             if not self.value[0].key:
@@ -812,8 +816,6 @@ class CddlParser:
             match_obj = getrp(reg).match(quantifier)
             if match_obj:
                 (self.min_qty, self.max_qty) = handler(match_obj)
-                if self.max_qty is None:
-                    self.max_qty = self.default_max_qty
                 return
         raise ValueError("invalid quantifier: %s" % quantifier)
 
@@ -890,7 +892,7 @@ class CddlParser:
             )
         self.cbor = cbor
         if cborseq:
-            self.cbor.max_qty = self.default_max_qty
+            self.cbor.max_qty = None
 
     def set_bits(self, bits):
         """Set the self.bits of this element. For use during CDDL parsing."""
@@ -1551,7 +1553,7 @@ class CddlXcoder(CddlParser):
 
     def count_var_condition(self):
         """Whether to include a "count" variable for this element."""
-        return isinstance(self.max_qty, str) or self.max_qty > 1
+        return (not isinstance(self.max_qty, int)) or self.max_qty > 1
 
     def is_cbor(self):
         """Whether to include a "cbor" variable for this element."""
@@ -1776,7 +1778,15 @@ class DataTranslator(CddlXcoder):
 
     def __init__(self, default_max_qty=defaults["default_max_qty_validate"], **kwargs):
         """Redefinition to give different default for default_max_qty."""
-        super(DataTranslator, self).__init__(default_max_qty=default_max_qty, **kwargs)
+        self.default_max_qty = default_max_qty
+        super(DataTranslator, self).__init__(**kwargs)
+
+    def init_kwargs(self):
+        """Override the init_kwargs() function."""
+        return {
+            **(super().init_kwargs()),
+            "default_max_qty": self.default_max_qty,
+        }
 
     @staticmethod
     def format_obj(obj):
@@ -2146,7 +2156,10 @@ CBOR-formatted bstr, all elements must be bstrs. If not, it is a programmer erro
                 it, retval = self._decode_obj(it, do_decode)
                 retvals.append(retval if not self.is_unambiguous_repeated() else None)
             try:
-                for i in range(self.max_qty - self.min_qty):
+                for i in range(
+                    (self.max_qty if self.max_qty is not None else self.default_max_qty)
+                    - self.min_qty
+                ):
                     it, it_copy = tee(it)
                     it, retval = self._decode_obj(it, do_decode)
                     retvals.append(retval if not self.is_unambiguous_repeated() else None)
@@ -2322,11 +2335,18 @@ class CodeGenerator(CddlXcoder):
     """Class for generating C code that encode/decodes CBOR and validates it according to the CDDL."""
 
     def __init__(
-        self, *, mode, entry_type_names, default_bit_size=defaults["default_bit_size"], **kwargs
+        self,
+        *,
+        mode,
+        entry_type_names,
+        add_defines,
+        default_bit_size=defaults["default_bit_size"],
+        **kwargs,
     ):
         super(CodeGenerator, self).__init__(**kwargs)
         self.mode = mode
         self.entry_type_names = entry_type_names
+        self.add_defines = add_defines
         self.default_bit_size = default_bit_size
 
     @classmethod
@@ -2358,8 +2378,8 @@ class CodeGenerator(CddlXcoder):
             **(super().init_kwargs()),
             "mode": self.mode,
             "entry_type_names": self.entry_type_names,
+            "add_defines": self.add_defines,
             "default_bit_size": self.default_bit_size,
-            "default_max_qty": self.default_max_qty,
         }
 
     def delegate_type_condition(self):
@@ -2536,7 +2556,11 @@ class CodeGenerator(CddlXcoder):
             ), f"Expected single var: {var_type!r}"
             if not anonymous or var_type[-1][-1] != "}":
                 var_name = self.var_name()
-                array_part = f"[{self.max_qty}]" if full and self.max_qty != 1 else ""
+                array_part = (
+                    f"[{self.max_qty if self.max_qty is not None else 'DEFAULT_MAX_QTY'}]"
+                    if full and self.max_qty != 1
+                    else ""
+                )
                 var_type[-1] += f" {var_name}{array_part}"
             var_type = add_semicolon(var_type)
         return var_type
@@ -2769,9 +2793,9 @@ class CodeGenerator(CddlXcoder):
         elif not self.is_unambiguous_value():
             arg = deref_if_not_null(access)
         elif self.type in ["BSTR", "TSTR"]:
-            arg = tmp_str_or_null(self.value)
+            arg = tmp_str_or_null(self.val_define_name_or_lit("VAL"))
         elif self.type in ["UINT", "INT", "NINT", "FLOAT", "BOOL"]:
-            value = val_to_str(self.value)
+            value = self.val_define_name_or_lit("VAL")
             arg = f"&({self.val_type_name()}){{{value}}}" if ptr_result else value
         else:
             assert False, "Should not come here."
@@ -2841,6 +2865,27 @@ class CodeGenerator(CddlXcoder):
 
     def list_counts(self):
         """Recursively sum the total minimum and maximum element count for this element."""
+
+        def or_none(it, op):
+            it_list = list(it)
+            if None in it_list:
+                return None
+            return op(it_list)
+
+        def sum_or_none(it):
+            return or_none(it, sum)
+
+        def min_or_none(it):
+            return or_none(it, min)
+
+        def max_or_none(it):
+            return or_none(it, max)
+
+        def mult_or_none(fac1, fac2):
+            if fac1 is None or fac2 is None:
+                return None
+            return fac1 * fac2
+
         retval = {
             "INT": lambda: (self.min_qty, self.max_qty),
             "UINT": lambda: (self.min_qty, self.max_qty),
@@ -2857,16 +2902,24 @@ class CodeGenerator(CddlXcoder):
             # Maps are their own element
             "MAP": lambda: (self.min_qty, self.max_qty),
             "GROUP": lambda: (
-                self.min_qty * sum((child.list_counts()[0] for child in self.value)),
-                self.max_qty * sum((child.list_counts()[1] for child in self.value)),
+                mult_or_none(
+                    self.min_qty, sum_or_none((child.list_counts()[0] for child in self.value))
+                ),
+                mult_or_none(
+                    self.max_qty, sum_or_none((child.list_counts()[1] for child in self.value))
+                ),
             ),
             "UNION": lambda: (
-                self.min_qty * min((child.list_counts()[0] for child in self.value)),
-                self.max_qty * max((child.list_counts()[1] for child in self.value)),
+                mult_or_none(
+                    self.min_qty, min_or_none((child.list_counts()[0] for child in self.value))
+                ),
+                mult_or_none(
+                    self.max_qty, max_or_none((child.list_counts()[1] for child in self.value))
+                ),
             ),
             "OTHER": lambda: (
-                self.min_qty * self.my_types[self.value].list_counts()[0],
-                self.max_qty * self.my_types[self.value].list_counts()[1],
+                mult_or_none(self.min_qty, self.my_types[self.value].list_counts()[0]),
+                mult_or_none(self.max_qty, self.my_types[self.value].list_counts()[1]),
             ),
         }[self.type]()
         return retval
@@ -2892,7 +2945,8 @@ class CodeGenerator(CddlXcoder):
         _, max_counts = (
             zip(*(child.list_counts() for child in self.value)) if self.value else ((0,), (0,))
         )
-        count_arg = f", {str(sum(max_counts))}" if self.mode == "encode" else ""
+        max_count = str(sum(max_counts)) if None not in max_counts else "0"
+        count_arg = f", {max_count}" if self.mode == "encode" else ""
         with_children = "(%s && ((%s) || (%s, false)) && %s)" % (
             f"{start_func}(state{count_arg})",
             f"{newl_ind}&& ".join(child.full_xcode() for child in self.value),
@@ -2999,8 +3053,8 @@ class CodeGenerator(CddlXcoder):
 
     def xcode_tags(self):
         return [
-            f"zcbor_tag_{'put' if (self.mode == 'encode') else 'expect'}(state, {tag})"
-            for tag in self.tags
+            f"zcbor_tag_{'put' if (self.mode == 'encode') else 'expect'}(state, {self.val_define_name_or_lit('TAG', i)})"
+            for i in range(len(self.tags))
         ]
 
     def value_suffix(self, value_str):
@@ -3017,6 +3071,122 @@ class CodeGenerator(CddlXcoder):
 
         return ""
 
+    def val_to_lit(self, value):
+        """Convert a value to a string for use in a #define."""
+        return f'"{value}"' if self.type in ["TSTR", "BSTR"] else value
+
+    defines = {
+        "MIN_VAL": lambda m_self: m_self.min_value,
+        "MAX_VAL": lambda m_self: m_self.max_value,
+        "DEFAULT_VAL": lambda m_self: m_self.val_to_lit(m_self.default),
+        "VAL": lambda m_self: m_self.val_to_lit(m_self.value),
+        "MSK": lambda m_self: " | ".join(
+            f"(1 << {c.enum_var_name()})" for c in m_self.my_control_groups[m_self.bits].value
+        ),
+        "MIN_SIZE": lambda m_self: m_self.min_size,
+        "MAX_SIZE": lambda m_self: m_self.max_size,
+        "SIZE": lambda m_self: m_self.min_size,
+        "MIN_QTY": lambda m_self: m_self.min_qty,
+        "MAX_QTY": lambda m_self: (
+            m_self.max_qty if m_self.max_qty is not None else "DEFAULT_MAX_QTY"
+        ),
+        "QTY": lambda m_self: m_self.min_qty,
+        "TAG": lambda m_self, i: str(m_self.tags[i]),
+        "NUM_BACKUPS": lambda m_self: m_self.num_backups(),
+    }
+    define_suffixes_regex = r"(" + "|".join(defines) + r")"
+
+    def val_define_name(self, val_type, i=None):
+        """Return the name to use for a #define for a value of this type."""
+        val_type_i = val_type if i is None else f"{val_type}{i}"
+        assert i is None or (
+            val_type == "TAG" and isinstance(i, int)
+        ), "arg i must be an int index for TAG."
+        assert getrp(self.define_suffixes_regex).fullmatch(
+            val_type
+        ), f"Invalid define suffix: {val_type} with i: {i}."
+        return f"{self.var_name(with_prefix=True).upper()}_{val_type_i}"
+
+    def add_defines_condition(self):
+        """Whether to use #defines for values or literals directly in code."""
+        return self.add_defines
+
+    def val_define_name_or_lit(self, val_type, i=None):
+        if self.add_defines_condition():
+            return self.val_define_name(val_type, i)
+        else:
+            return self.val_define_value(val_type, i)
+
+    def val_define_value(self, val_type, i=None):
+        """Return the value to use for a #define for a value of this type."""
+        value_args = (self,) if i is None else (self, i)
+        value = self.defines[val_type](*value_args)
+        return f"{val_to_str(value)}{self.value_suffix(val_to_str(value))}"
+
+    def val_defines(self, entry_types):
+        """Return all #defines needed for this element."""
+        if not self.add_defines_condition():
+            return []
+
+        defines = []
+
+        def _define(n, i=None):
+            return defines.append((self.val_define_name(n, i), self.val_define_value(n, i)))
+
+        if self.type in ["INT", "UINT", "NINT", "FLOAT", "BOOL"]:
+            if self.value is not None:
+                _define("VAL")
+            else:
+                if self.min_value is not None:
+                    assert (
+                        self.min_value != self.max_value
+                    ), "Should not have min_val == max_val without explicit value."
+                    _define("MIN_VAL")
+                if self.max_value is not None:
+                    _define("MAX_VAL")
+            if self.bits:
+                _define("MSK")
+        elif self.type in ["BSTR", "TSTR"]:
+            if self.value is not None:
+                _define("VAL")
+            if self.min_size is not None and self.min_size == self.max_size:
+                _define("SIZE")
+            else:
+                if self.min_size is not None:
+                    _define("MIN_SIZE")
+                if self.max_size is not None:
+                    _define("MAX_SIZE")
+        if self.count_var_condition():
+            if self.min_qty is not None and self.min_qty == self.max_qty:
+                _define("QTY")
+            else:
+                if self.min_qty is not None:
+                    _define("MIN_QTY")
+                _define("MAX_QTY")
+        if self.tags:
+            for i in range(len(self.tags)):
+                _define(f"TAG", i)
+        if self.default is not None:
+            _define("DEFAULT_VAL")
+        if self in entry_types:
+            _define("NUM_BACKUPS")
+        return defines
+
+    def val_defines_recursive(self, entry_types):
+        """Return all #defines needed for this element and its children."""
+        defines = []
+        if self.type in ["LIST", "MAP", "GROUP", "UNION"]:
+            for child in self.value:
+                defines.extend(child.val_defines_recursive(entry_types))
+        if self.type == "OTHER" and self.value not in self.entry_type_names:
+            defines.extend(self.my_types[self.value].val_defines_recursive(entry_types))
+        if self.cbor is not None:
+            defines.extend(self.cbor.val_defines_recursive(entry_types))
+        if self.key is not None:
+            defines.extend(self.key.val_defines_recursive(entry_types))
+        defines.extend(self.val_defines(entry_types))
+        return defines
+
     def range_checks(self, access):
         """Return the code needed to check the size/value bounds of this element."""
         if self.type != "OTHER" and self.value is not None:
@@ -3031,40 +3201,26 @@ class CodeGenerator(CddlXcoder):
 
         if self.type in ["INT", "UINT", "NINT", "FLOAT", "BOOL"]:
             if min_val is not None and min_val == max_val:
-                range_checks.append(
-                    f"({access} == {val_to_str(min_val)}"
-                    f"{self.value_suffix(val_to_str(min_val))})"
-                )
+                range_checks.append(f"({access} == {self.val_define_name_or_lit('VAL')})")
             else:
                 if min_val is not None:
-                    range_checks.append(
-                        f"({access} >= {val_to_str(min_val)}"
-                        f"{self.value_suffix(val_to_str(min_val))})"
-                    )
+                    range_checks.append(f"({access} >= {self.val_define_name_or_lit('MIN_VAL')})")
                 if max_val is not None:
-                    range_checks.append(
-                        f"({access} <= {val_to_str(max_val)}"
-                        f"{self.value_suffix(val_to_str(max_val))})"
-                    )
+                    range_checks.append(f"({access} <= {self.val_define_name_or_lit('MAX_VAL')})")
             if self.bits:
-                range_checks.append(
-                    f"!({access} & ~("
-                    + " | ".join(
-                        [
-                            f"(1 << {c.enum_var_name()})"
-                            for c in self.my_control_groups[self.bits].value
-                        ]
-                    )
-                    + "))"
-                )
+                range_checks.append(f"!({access} & ~({self.val_define_name_or_lit('MSK')}))")
         elif self.type in ["BSTR", "TSTR"]:
             if self.min_size is not None and self.min_size == self.max_size:
-                range_checks.append(f"({access}.len == {val_to_str(self.min_size)})")
+                range_checks.append(f"({access}.len == {self.val_define_name_or_lit('SIZE')})")
             else:
                 if self.min_size is not None:
-                    range_checks.append(f"({access}.len >= {val_to_str(self.min_size)})")
+                    range_checks.append(
+                        f"({access}.len >= {self.val_define_name_or_lit('MIN_SIZE')})"
+                    )
                 if self.max_size is not None:
-                    range_checks.append(f"({access}.len <= {val_to_str(self.max_size)})")
+                    range_checks.append(
+                        f"({access}.len <= {self.val_define_name_or_lit('MAX_SIZE')})"
+                    )
         elif self.type == "OTHER":
             if not self.my_types[self.value].single_func_impl_condition():
                 range_checks.extend(self.my_types[self.value].range_checks(access))
@@ -3146,17 +3302,18 @@ class CodeGenerator(CddlXcoder):
                 assign = not self.repeated_single_func_impl_condition()
                 default_assignment = None
                 if self.default is not None:
+                    default_define = self.val_define_name_or_lit("DEFAULT_VAL")
                     default_value = (
-                        f"*({tmp_str_or_null(self.default)})"
+                        f"*({tmp_str_or_null(default_define)})"
                         if self.type in ["TSTR", "BSTR"]
-                        else val_to_str(self.default)
+                        else val_to_str(default_define)
                     )
                     access = self.val_access() if assign else self.repeated_val_access()
                     default_assignment = f"({access} = {default_value})"
                 if assign:
                     decode_str = self.repeated_xcode(union_int)
                     return comma_operator(
-                        default_assignment, f"{self.present_var_access()} = {decode_str}", "1"
+                        default_assignment, f"{self.present_var_access()} = {decode_str}", "true"
                     )
                 func, *arguments = self.repeated_single_func(ptr_result=True)
                 return comma_operator(
@@ -3174,9 +3331,10 @@ class CodeGenerator(CddlXcoder):
 
             minmax = "_minmax" if self.mode == "encode" else ""
             mode = self.mode
+            equal = self.min_qty == self.max_qty and self.min_qty is not None
             return f"zcbor_multi_{mode}{minmax}(%s, %s, &%s, ZCBOR_CUSTOM_CAST_FP(%s), %s, %s)" % (
-                self.min_qty,
-                self.max_qty,
+                self.val_define_name_or_lit("MIN_QTY" if not equal else "QTY"),
+                self.val_define_name_or_lit("MAX_QTY" if not equal else "QTY"),
                 self.count_var_access(),
                 func,
                 xcode_args("*" + arg if arg != "NULL" and self.result_len() != "0" else arg),
@@ -3244,6 +3402,7 @@ class CodeRenderer:
         self.sorted_types = dict()
         self.functions = dict()
         self.type_defs = dict()
+        self.defines = dict()
 
         if isinstance(modes, str):
             modes = [modes]
@@ -3259,6 +3418,7 @@ class CodeRenderer:
             self.functions[mode] = self.unique_funcs(mode)
             self.functions[mode] = self.used_funcs(mode)
             self.type_defs[mode] = self.unique_types(mode)
+            self.defines[mode] = self.used_defines(mode)
 
         self.version = __version__
 
@@ -3268,8 +3428,7 @@ class CodeRenderer:
         self.file_header = file_header.strip() + "\n\n" if file_header.strip() else ""
         self.file_header += f"""Generated using zcbor version {self.version}
 https://github.com/NordicSemiconductor/zcbor{'''
-at: ''' + datetime.now().strftime('%Y-%m-%d %H:%M:%S') if self.print_time else ''}
-Generated with a --default-max-qty of {self.default_max_qty}"""
+at: ''' + datetime.now().strftime('%Y-%m-%d %H:%M:%S') if self.print_time else ''}"""
 
     def header_guard(self, file_name):
         return path.basename(file_name).replace(".", "_").replace("-", "_").upper() + "__"
@@ -3335,6 +3494,29 @@ and
                 full_code += func_type[0]
                 out_types.append(func_type)
         return list(reversed(out_types))
+
+    def used_defines(self, mode):
+        """Return a list of #defines for all defined types, with unused #defines removed."""
+        full_code = "".join([func_type[0] for func_type in self.functions[mode]])
+        out_defines = set()
+        existing = dict()
+
+        for name, body in chain(
+            *[
+                xcoder.val_defines_recursive(self.entry_types[mode])
+                for xcoder in self.sorted_types[mode]
+            ]
+        ):
+            if name in full_code or name.endswith("NUM_BACKUPS"):
+                if name not in existing:
+                    out_defines.add(f"#define {name} ({body})")
+                    existing[name] = body
+                elif existing[name] != body:
+                    print(full_code)
+                    raise ValueError(
+                        f"Two different values for #define {name} ({body} != {existing[name]})."
+                    )
+        return list(sorted(out_defines))
 
     def render_forward_declaration(self, xcoder, mode):
         """Render a single decoding function with signature and body."""
@@ -3405,14 +3587,14 @@ static bool {xcoder.func_name}(
     def render_entry_function(self, xcoder, mode):
         """Render a single entry function (API function) with signature and body."""
         func_name, func_arg = (xcoder.xcode_func_name(), struct_ptr_name(mode))
+        elem_count = "ZCBOR_LARGE_ELEM_COUNT" if mode == "decode" else "0"
         return f"""
 {xcoder.public_xcode_func_sig()}
 {{
-	zcbor_state_t states[{xcoder.num_backups() + 2}];
+	zcbor_state_t states[{xcoder.val_define_name_or_lit("NUM_BACKUPS")} + ZCBOR_EXTRA_STATES];
 {self.render_arg_check(((func_name, "states", func_arg),))}
 	return zcbor_entry_function(payload, payload_len, (void *){func_arg}, payload_len_out, states,
-		(zcbor_decoder_t *)ZCBOR_CUSTOM_CAST_FP({func_name}), sizeof(states) / sizeof(zcbor_state_t), {
-            xcoder.list_counts()[1]});
+		(zcbor_decoder_t *)ZCBOR_CUSTOM_CAST_FP({func_name}), sizeof(states) / sizeof(zcbor_state_t), {elem_count});
 }}"""
 
     def render_file_header(self, line_prefix):
@@ -3440,10 +3622,6 @@ do { \\
 #include "zcbor_{mode}.h"
 #include "{header_file_name}"
 #include "zcbor_print.h"
-
-#if DEFAULT_MAX_QTY != {self.default_max_qty}
-#error "The type file was generated with a different default_max_qty than this file"
-#endif
 
 {self.render_cast_macro(mode)}
 
@@ -3474,9 +3652,9 @@ do { \\
 extern "C" {{
 #endif
 
-#if DEFAULT_MAX_QTY != {self.default_max_qty}
-#error "The type file was generated with a different default_max_qty than this file"
-#endif
+
+{(linesep).join(self.defines[mode])}
+
 
 {(linesep * 2).join([f"{xcoder.public_xcode_func_sig()};" for xcoder in self.entry_types[mode]])}
 
@@ -3525,8 +3703,7 @@ extern "C" {{
 
 /** Which value for --default-max-qty this file was created with.
  *
- *  The define is used in the other generated file to do a build-time
- *  compatibility check.
+ *  This can be safely edited.
  *
  *  See `zcbor --help` for more information about --default-max-qty
  */
@@ -3843,6 +4020,15 @@ from the corresponding union members.""",
 Can be a string or a path to a file. If interpreted as a path to an existing file,
 the file's contents will be used.""",
     )
+    code_parser.add_argument(
+        "--defines",
+        required=False,
+        action="store_true",
+        default=False,
+        help="""Make #defines for all magic numbers in generated code, and place them in the
+generated header file. This is off by default because it may create naming conflicts that don't
+show up otherwise.""",
+    )
     code_parser.set_defaults(process=process_code)
 
     validate_parent_parser = ArgumentParser(add_help=False)
@@ -3999,8 +4185,8 @@ def process_code(args):
             cddl_res[mode] = CodeGenerator.from_cddl(
                 mode=mode,
                 cddl_string=cddl_contents,
-                default_max_qty=args.default_max_qty,
                 entry_type_names=args.entry_types,
+                add_defines=args.defines,
                 default_bit_size=args.default_bit_size,
                 short_names=args.short_names,
             )

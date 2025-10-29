@@ -492,7 +492,7 @@ usage: zcbor code [-h] -c CDDL [--no-prelude] [-v] [-q]
                   -t ENTRY_TYPES [ENTRY_TYPES ...] [-d] [-e] [--time-header]
                   [--git-sha-header] [-b {8,16,32,64}]
                   [--include-prefix INCLUDE_PREFIX] [-s]
-                  [--file-header FILE_HEADER]
+                  [--file-header FILE_HEADER] [--defines]
 
 Parse a CDDL file and produce C code that validates and xcodes CBOR.
 The output from this script is a C file and a header file. The header file
@@ -595,6 +595,10 @@ options:
                         generated files, e.g. copyright. Can be a string or a
                         path to a file. If interpreted as a path to an
                         existing file, the file's contents will be used.
+  --defines             Make #defines for all magic numbers in generated code,
+                        and place them in the generated header file. This is
+                        off by default because it may create naming conflicts
+                        that don't show up otherwise.
 
 ```
 

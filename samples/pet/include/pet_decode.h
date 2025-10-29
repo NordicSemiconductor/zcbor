@@ -5,7 +5,6 @@
  *
  * Generated using zcbor version 0.9.99
  * https://github.com/NordicSemiconductor/zcbor
- * Generated with a --default-max-qty of 3
  */
 
 #ifndef PET_DECODE_H__
@@ -21,9 +20,9 @@
 extern "C" {
 #endif
 
-#if DEFAULT_MAX_QTY != 3
-#error "The type file was generated with a different default_max_qty than this file"
-#endif
+
+
+
 
 
 int cbor_decode_Pet(

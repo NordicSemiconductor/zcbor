@@ -11,8 +11,8 @@ project(test1_unit_tests)
 include(../../cmake/test_template.cmake)
 
 FILE(GLOB zcbor_sources ../../../src/*.c)
-zephyr_library_named(zcbor)
-zephyr_library_sources(${zcbor_sources})
+add_library(zcbor)
+target_sources(zcbor PUBLIC ${zcbor_sources})
 
 target_include_directories(app PRIVATE ../../../include)
 target_include_directories(zcbor PRIVATE ../../../include)

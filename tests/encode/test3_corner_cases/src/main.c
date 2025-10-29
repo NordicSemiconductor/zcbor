@@ -454,7 +454,7 @@ ZTEST(cbor_encode_test3, test_optional)
 	struct Optional optional7 = {.boolval = true, .optbool_present = true,
 				.opttwo_present = true, .manduint = 2,
 				.multi8_count = 3};
-	uint8_t output[10];
+	uint8_t output[20];
 	size_t out_len;
 
 	zassert_equal(ZCBOR_SUCCESS, cbor_encode_Optional(output,
@@ -885,7 +885,7 @@ ZTEST(cbor_encode_test3, test_range)
 		.multi0to10 = {0},
 	};
 
-	uint8_t output[25];
+	uint8_t output[50];
 	size_t out_len;
 
 	zassert_equal(ZCBOR_SUCCESS, cbor_encode_Range(output, sizeof(output), &input1,
@@ -1210,7 +1210,7 @@ ZTEST(cbor_encode_test3, test_floats)
 
 	struct Floats input;
 	size_t num_encode;
-	uint8_t output[70];
+	uint8_t output[80];
 
 	input.float_16 = (float)0.0;
 	input.float_32 = (float)0.0;
@@ -1485,7 +1485,7 @@ ZTEST(cbor_encode_test3, test_intmax)
 	struct Intmax2 intput2;
 	struct Intmax4 intput4;
 	size_t num_encode;
-	uint8_t output[60];
+	uint8_t output[70];
 
 	zassert_equal(ZCBOR_SUCCESS, cbor_encode_Intmax1(output,
 		sizeof(output), NULL, &num_encode), NULL);
