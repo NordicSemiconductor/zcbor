@@ -1630,6 +1630,33 @@ Cannot have size before type
         exc = self.do_test_exception("foo = float .size 2..9")
         self.assertEqual("Floats must have 2, 4 or 8 bytes of precision.", str(exc))
 
+    def test_default_type_mismatch(self):
+        exc = self.do_test_exception("foo = ?uint .default -1")
+        self.assertEqual(
+            "Type of .default value does not match type of element. (UINT != NINT)", str(exc)
+        )
+
+    def test_default_type_unsupported(self):
+        exc = self.do_test_exception("foo = ?[uint] .default 1")
+        self.assertEqual("zcbor does not support .default values for the LIST type", str(exc))
+
+    def test_default_union_no_match(self):
+        exc = self.do_test_exception(
+            "foo = ?(10 / nint / bstr / 'hello1' / \"hello\") .default 'hello'"
+        )
+        self.assertEqual(".default value does not match any member of the union.", str(exc))
+
+    def test_double_default(self):
+        exc = self.do_test_exception("foo = ?(?uint .default 1) .default 2")
+        self.assertEqual("Cannot have multiple defaults ('2' and '1')", str(exc))
+
+    def test_ambigouous_default(self):
+        exc = self.do_test_exception(
+            """three_to_four = (3..4)
+               foo = ?int .default three_to_four"""
+        )
+        self.assertEqual(".default value must be unambiguous.", str(exc))
+
 
 class TestUnicodeEscape(TestCase):
     def test_unicode_escape0(self):
