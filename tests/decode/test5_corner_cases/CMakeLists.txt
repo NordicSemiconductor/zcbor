@@ -90,7 +90,4 @@ if (TEST_INDEFINITE_LENGTH_ARRAYS)
   target_compile_definitions(app PUBLIC TEST_INDEFINITE_LENGTH_ARRAYS)
 endif()
 
-if (NOT VERBOSE AND CONFIG_MINIMAL_LIBC)
-  # VERBOSE means including printk which doesn't build with these options.
-  target_compile_options(corner_cases PRIVATE -Wpedantic -Wconversion -Wdouble-promotion)
-endif()
+target_compile_options(corner_cases PRIVATE -Wall -Wpedantic -Wconversion -Wdouble-promotion -Wshadow -Wnull-dereference -Wduplicated-cond -Wlogical-op -Wstrict-overflow=2 -Wpointer-arith)
