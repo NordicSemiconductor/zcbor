@@ -143,6 +143,24 @@ def counter(reset=False):
     return global_counter
 
 
+def is_int(n):
+    """Check if a string can be converted to an integer."""
+    try:
+        int(n)
+        return True
+    except ValueError:
+        return False
+
+
+def is_float(n):
+    """Check if a string can be converted to a float."""
+    try:
+        float(n)
+        return True
+    except ValueError:
+        return False
+
+
 def list_replace_if_not_null(lst, i, r):
     """Replace an element in a list or tuple and return the list."""
     if lst[i] == "NULL":
@@ -3005,15 +3023,16 @@ class CodeGenerator(CddlXcoder):
 
     def value_suffix(self, value_str):
         """Appends ULL or LL if a value exceeding 32-bits is used"""
-        if not value_str.isdigit():
-            return ""
-        value = int(value_str)
-        if self.type == "INT" or self.type == "NINT":
-            if value > INT32_MAX or value <= INT32_MIN:
-                return "LL"
-        elif self.type == "UINT":
-            if value > UINT32_MAX:
-                return "ULL"
+        if self.type in ["INT", "NINT", "UINT"]:
+            if not is_int(value_str):
+                return ""
+            if self.bit_size() == 64:
+                return "ULL" if self.type == "UINT" else "LL"
+        elif self.type == "FLOAT":
+            if not is_float(value_str):
+                return ""
+            if self.float_type() == "float":
+                return "f"
 
         return ""
 
@@ -3149,7 +3168,7 @@ class CodeGenerator(CddlXcoder):
                     default_value = (
                         f"*({tmp_str_or_null(self.default)})"
                         if self.type in ["TSTR", "BSTR"]
-                        else val_to_str(self.default)
+                        else val_to_str(self.default) + self.value_suffix(val_to_str(self.default))
                     )
                     access = self.val_access() if assign else self.repeated_val_access()
                     default_assignment = f"({access} = {default_value})"
