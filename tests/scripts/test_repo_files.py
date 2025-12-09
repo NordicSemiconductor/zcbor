@@ -182,12 +182,18 @@ class LinkTester:
         "https://github.com/nrfconnect/sdk-nrf/blob/main/subsys/mgmt/fmfu/src/fmfu_mgmt.c",
     }
 
-    def __init__(self, *args, **kwargs):
+    urls_never_check = {
+        "https://en.wikipedia.org/wiki/CBOR",  # Returns 403 for runs on GitHub Actions
+    }
+
+    def __init__(self, *args, force_check_all=False, **kwargs):
         super(LinkTester, self).__init__()
         self.repo_info = GitRepoInfo()
         self.link_regex = compile(r"\[.*?\]\((?P<link>.*?)\)")
         self.check_all = (
-            self.repo_info.current_branch == "main" or "release/" in self.repo_info.current_branch
+            (self.repo_info.current_branch == "main")
+            or ("release/" in self.repo_info.current_branch)
+            or (force_check_all)
         )
 
     @staticmethod
@@ -443,7 +449,7 @@ class TestDocs(TestCase, LinkTester):
         unused_urls = self.known_good_urls - all_urls
         self.assertFalse(unused_urls, "Known good URLs not in the docs:\n" + "\n".join(unused_urls))
 
-        results = self.check_urls_async(self.known_good_urls)
+        results = self.check_urls_async(self.known_good_urls - self.urls_never_check)
         self._check_results(results)
 
     @skipIf(
