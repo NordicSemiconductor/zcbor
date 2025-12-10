@@ -1294,7 +1294,7 @@ class TestInvalidIdentifiers(CornerCaseTest):
 
 
 class TestIntSize(PopenTest, TempdTest):
-    def do_test_int_size(self, mode, bit_size):
+    def do_test_int_size(self, mode, defines_arg, bit_size):
         self.popen_test(
             [
                 "zcbor",
@@ -1314,6 +1314,7 @@ class TestIntSize(PopenTest, TempdTest):
                 "--output-cmake",
                 self.tempd / "intmax.cmake",
             ]
+            + defines_arg
         )
 
         expected_output_types = [
@@ -1335,22 +1336,58 @@ class TestIntSize(PopenTest, TempdTest):
             f"uint{bit_size}_t DefaultInt_uint",
         ]
 
+        expected_defines = {
+            "INTMAX1_INT_8_MIN_VAL": "INT8_MIN",
+            "INTMAX1_INT_8_MAX_VAL": "INT8_MAX",
+            "INTMAX1_UINT_8_MAX_VAL": "UINT8_MAX",
+            "INTMAX1_INT_16_MIN_VAL": "INT16_MIN",
+            "INTMAX1_INT_16_MAX_VAL": "INT16_MAX",
+            "INTMAX1_UINT_16_MAX_VAL": "UINT16_MAX",
+            "INTMAX1_INT_32_MIN_VAL": "INT32_MIN",
+            "INTMAX1_INT_32_MAX_VAL": "INT32_MAX",
+            "INTMAX1_UINT_32_MAX_VAL": "UINT32_MAX",
+            "INTMAX1_INT_64_MIN_VAL": "INT64_MIN",
+            "INTMAX1_INT_64_MAX_VAL": "INT64_MAX",
+            "INTMAX1_UINT_64_MAX_VAL": "UINT64_MAX",
+            "INTMAX4_INT_8_MIN_VAL": "INT8_MIN",
+            "INTMAX4_INT_8_MAX_VAL": "INT8_MAX",
+            "INTMAX4_UINT_8_MAX_VAL": "UINT8_MAX",
+            "INTMAX4_INT_16_MIN_VAL": "INT16_MIN",
+            "INTMAX4_INT_16_MAX_VAL": "INT16_MAX",
+            "INTMAX4_UINT_16_MAX_VAL": "UINT16_MAX",
+            "INTMAX4_INT_32_MIN_VAL": "INT32_MIN",
+            "INTMAX4_INT_32_MAX_VAL": "INT32_MAX",
+            "INTMAX4_UINT_32_MAX_VAL": "UINT32_MAX",
+            "INTMAX4_INT_64_MIN_VAL": "INT64_MIN",
+            "INTMAX4_INT_64_MAX_VAL": "INT64_MAX",
+            "INTMAX4_UINT_64_MAX_VAL": "UINT64_MAX",
+            "INTMAX5_INT_8_MIN_PLUS1_VAL": "-129",
+            "INTMAX5_INT_8_MAX_PLUS1_VAL": "128",
+            "INTMAX5_UINT_8_MAX_PLUS1_VAL": "256",
+            "INTMAX5_INT_16_MIN_PLUS1_VAL": "-32769",
+            "INTMAX5_INT_16_MAX_PLUS1_VAL": "32768",
+            "INTMAX5_UINT_16_MAX_PLUS1_VAL": "65536",
+            "INTMAX5_INT_32_MIN_PLUS1_VAL": "-2147483649LL",
+            "INTMAX5_INT_32_MAX_PLUS1_VAL": "2147483648",
+            "INTMAX5_UINT_32_MAX_PLUS1_VAL": "4294967296ULL",
+        }
+
         lit_func = "put" if mode == "encode" else "expect"
         lit_p_func = "encode" if mode == "encode" else "pexpect"
         result_var = "input" if mode == "encode" else "result"
         expected_output_code = [
-            f"zcbor_int8_{lit_func}(state, (INT8_MIN))",
-            f"zcbor_uint8_{lit_func}(state, (INT8_MAX))",
-            f"zcbor_uint8_{lit_func}(state, (UINT8_MAX))",
-            f"zcbor_int16_{lit_func}(state, (INT16_MIN))",
-            f"zcbor_uint16_{lit_func}(state, (INT16_MAX))",
-            f"zcbor_uint16_{lit_func}(state, (UINT16_MAX))",
-            f"zcbor_int32_{lit_func}(state, (INT32_MIN))",
-            f"zcbor_uint32_{lit_func}(state, (INT32_MAX))",
-            f"zcbor_uint32_{lit_func}(state, (UINT32_MAX))",
-            f"zcbor_int64_{lit_func}(state, (INT64_MIN))",
-            f"zcbor_uint64_{lit_func}(state, (INT64_MAX))",
-            f"zcbor_uint64_{lit_func}(state, (UINT64_MAX))",
+            f"zcbor_int8_{lit_func}(state, (INTMAX1_INT_8_MIN_VAL)",
+            f"zcbor_uint8_{lit_func}(state, (INTMAX1_INT_8_MAX_VAL)",
+            f"zcbor_uint8_{lit_func}(state, (INTMAX1_UINT_8_MAX_VAL)",
+            f"zcbor_int16_{lit_func}(state, (INTMAX1_INT_16_MIN_VAL)",
+            f"zcbor_uint16_{lit_func}(state, (INTMAX1_INT_16_MAX_VAL)",
+            f"zcbor_uint16_{lit_func}(state, (INTMAX1_UINT_16_MAX_VAL)",
+            f"zcbor_int32_{lit_func}(state, (INTMAX1_INT_32_MIN_VAL)",
+            f"zcbor_uint32_{lit_func}(state, (INTMAX1_INT_32_MAX_VAL)",
+            f"zcbor_uint32_{lit_func}(state, (INTMAX1_UINT_32_MAX_VAL)",
+            f"zcbor_int64_{lit_func}(state, (INTMAX1_INT_64_MIN_VAL)",
+            f"zcbor_uint64_{lit_func}(state, (INTMAX1_INT_64_MAX_VAL)",
+            f"zcbor_uint64_{lit_func}(state, (INTMAX1_UINT_64_MAX_VAL)",
             f"zcbor_int8_{mode}(state, (&(*{result_var}).Intmax2_INT_8)",
             f"zcbor_uint8_{mode}(state, (&(*{result_var}).Intmax2_UINT_8)",
             f"zcbor_int16_{mode}(state, (&(*{result_var}).Intmax2_INT_16)",
@@ -1359,27 +1396,27 @@ class TestIntSize(PopenTest, TempdTest):
             f"zcbor_uint32_{mode}(state, (&(*{result_var}).Intmax2_UINT_32)",
             f"zcbor_int64_{mode}(state, (&(*{result_var}).Intmax2_INT_64)",
             f"zcbor_uint64_{mode}(state, (&(*{result_var}).Intmax2_UINT_64)",
-            f"&(*{result_var}).Intmax4_INT_8_MIN_count, ZCBOR_CUSTOM_CAST_FP(zcbor_int8_{lit_p_func}), state, (&(int8_t){{INT8_MIN}})",
-            f"&(*{result_var}).Intmax4_INT_8_MAX_count, ZCBOR_CUSTOM_CAST_FP(zcbor_uint8_{lit_p_func}), state, (&(uint8_t){{INT8_MAX}})",
-            f"&(*{result_var}).Intmax4_UINT_8_MAX_count, ZCBOR_CUSTOM_CAST_FP(zcbor_uint8_{lit_p_func}), state, (&(uint8_t){{UINT8_MAX}})",
-            f"&(*{result_var}).Intmax4_INT_16_MIN_count, ZCBOR_CUSTOM_CAST_FP(zcbor_int16_{lit_p_func}), state, (&(int16_t){{INT16_MIN}})",
-            f"&(*{result_var}).Intmax4_INT_16_MAX_count, ZCBOR_CUSTOM_CAST_FP(zcbor_uint16_{lit_p_func}), state, (&(uint16_t){{INT16_MAX}})",
-            f"&(*{result_var}).Intmax4_UINT_16_MAX_count, ZCBOR_CUSTOM_CAST_FP(zcbor_uint16_{lit_p_func}), state, (&(uint16_t){{UINT16_MAX}})",
-            f"&(*{result_var}).Intmax4_INT_32_MIN_count, ZCBOR_CUSTOM_CAST_FP(zcbor_int32_{lit_p_func}), state, (&(int32_t){{INT32_MIN}})",
-            f"&(*{result_var}).Intmax4_INT_32_MAX_count, ZCBOR_CUSTOM_CAST_FP(zcbor_uint32_{lit_p_func}), state, (&(uint32_t){{INT32_MAX}})",
-            f"&(*{result_var}).Intmax4_UINT_32_MAX_count, ZCBOR_CUSTOM_CAST_FP(zcbor_uint32_{lit_p_func}), state, (&(uint32_t){{UINT32_MAX}})",
-            f"&(*{result_var}).Intmax4_INT_64_MIN_count, ZCBOR_CUSTOM_CAST_FP(zcbor_int64_{lit_p_func}), state, (&(int64_t){{INT64_MIN}})",
-            f"&(*{result_var}).Intmax4_INT_64_MAX_count, ZCBOR_CUSTOM_CAST_FP(zcbor_uint64_{lit_p_func}), state, (&(uint64_t){{INT64_MAX}})",
-            f"&(*{result_var}).Intmax4_UINT_64_MAX_count, ZCBOR_CUSTOM_CAST_FP(zcbor_uint64_{lit_p_func}), state, (&(uint64_t){{UINT64_MAX}}),",
-            f"zcbor_int16_{lit_func}(state, (-129))",
-            f"zcbor_uint8_{lit_func}(state, (128))",
-            f"zcbor_uint16_{lit_func}(state, (256))",
-            f"zcbor_int32_{lit_func}(state, (-32769))",
-            f"zcbor_uint16_{lit_func}(state, (32768))",
-            f"zcbor_uint32_{lit_func}(state, (65536))",
-            f"zcbor_int64_{lit_func}(state, (-2147483649))",
-            f"zcbor_uint32_{lit_func}(state, (2147483648))",
-            f"zcbor_uint64_{lit_func}(state, (4294967296))",
+            f"&(*{result_var}).Intmax4_INT_8_MIN_count, ZCBOR_CUSTOM_CAST_FP(zcbor_int8_{lit_p_func}), state, (&(int8_t){{INTMAX4_INT_8_MIN_VAL}})",
+            f"&(*{result_var}).Intmax4_INT_8_MAX_count, ZCBOR_CUSTOM_CAST_FP(zcbor_uint8_{lit_p_func}), state, (&(uint8_t){{INTMAX4_INT_8_MAX_VAL}})",
+            f"&(*{result_var}).Intmax4_UINT_8_MAX_count, ZCBOR_CUSTOM_CAST_FP(zcbor_uint8_{lit_p_func}), state, (&(uint8_t){{INTMAX4_UINT_8_MAX_VAL}})",
+            f"&(*{result_var}).Intmax4_INT_16_MIN_count, ZCBOR_CUSTOM_CAST_FP(zcbor_int16_{lit_p_func}), state, (&(int16_t){{INTMAX4_INT_16_MIN_VAL}})",
+            f"&(*{result_var}).Intmax4_INT_16_MAX_count, ZCBOR_CUSTOM_CAST_FP(zcbor_uint16_{lit_p_func}), state, (&(uint16_t){{INTMAX4_INT_16_MAX_VAL}})",
+            f"&(*{result_var}).Intmax4_UINT_16_MAX_count, ZCBOR_CUSTOM_CAST_FP(zcbor_uint16_{lit_p_func}), state, (&(uint16_t){{INTMAX4_UINT_16_MAX_VAL}})",
+            f"&(*{result_var}).Intmax4_INT_32_MIN_count, ZCBOR_CUSTOM_CAST_FP(zcbor_int32_{lit_p_func}), state, (&(int32_t){{INTMAX4_INT_32_MIN_VAL}})",
+            f"&(*{result_var}).Intmax4_INT_32_MAX_count, ZCBOR_CUSTOM_CAST_FP(zcbor_uint32_{lit_p_func}), state, (&(uint32_t){{INTMAX4_INT_32_MAX_VAL}})",
+            f"&(*{result_var}).Intmax4_UINT_32_MAX_count, ZCBOR_CUSTOM_CAST_FP(zcbor_uint32_{lit_p_func}), state, (&(uint32_t){{INTMAX4_UINT_32_MAX_VAL}})",
+            f"&(*{result_var}).Intmax4_INT_64_MIN_count, ZCBOR_CUSTOM_CAST_FP(zcbor_int64_{lit_p_func}), state, (&(int64_t){{INTMAX4_INT_64_MIN_VAL}})",
+            f"&(*{result_var}).Intmax4_INT_64_MAX_count, ZCBOR_CUSTOM_CAST_FP(zcbor_uint64_{lit_p_func}), state, (&(uint64_t){{INTMAX4_INT_64_MAX_VAL}})",
+            f"&(*{result_var}).Intmax4_UINT_64_MAX_count, ZCBOR_CUSTOM_CAST_FP(zcbor_uint64_{lit_p_func}), state, (&(uint64_t){{INTMAX4_UINT_64_MAX_VAL}}),",
+            f"zcbor_int16_{lit_func}(state, (INTMAX5_INT_8_MIN_PLUS1_VAL))",
+            f"zcbor_uint8_{lit_func}(state, (INTMAX5_INT_8_MAX_PLUS1_VAL))",
+            f"zcbor_uint16_{lit_func}(state, (INTMAX5_UINT_8_MAX_PLUS1_VAL))",
+            f"zcbor_int32_{lit_func}(state, (INTMAX5_INT_16_MIN_PLUS1_VAL))",
+            f"zcbor_uint16_{lit_func}(state, (INTMAX5_INT_16_MAX_PLUS1_VAL))",
+            f"zcbor_uint32_{lit_func}(state, (INTMAX5_UINT_16_MAX_PLUS1_VAL))",
+            f"zcbor_int64_{lit_func}(state, (INTMAX5_INT_32_MIN_PLUS1_VAL))",
+            f"zcbor_uint32_{lit_func}(state, (INTMAX5_INT_32_MAX_PLUS1_VAL))",
+            f"zcbor_uint64_{lit_func}(state, (INTMAX5_UINT_32_MAX_PLUS1_VAL))",
             f"zcbor_int16_{mode}(state, (&(*{result_var}).Intmax6_INT_8_PLUS1)",
             f"zcbor_int16_{mode}(state, (&(*{result_var}).Intmax6_UINT_8_PLUS1)",
             f"zcbor_int32_{mode}(state, (&(*{result_var}).Intmax6_INT_16_PLUS1)",
@@ -1390,20 +1427,41 @@ class TestIntSize(PopenTest, TempdTest):
             f"zcbor_uint{bit_size}_{mode}(state, (&(*{result_var}).DefaultInt_uint)",
         ]
 
+        if defines_arg == []:
+            # Create expected_output_code_lit for use when not using --defines
+            # Replace usage of defined constants with their literal values
+            expected_output_code_lit = []
+            for e in expected_output_code:
+                e2 = e
+                for n, v in expected_defines.items():
+                    e2 = e2.replace(n, v)
+                expected_output_code_lit.append(e2)
+
         output_c = (self.tempd / "src" / f"intmax_{mode}.c").read_text()
+        output_h = (self.tempd / "include" / f"intmax_{mode}.h").read_text()
         output_h_types = (self.tempd / "include" / "intmax_types.h").read_text()
 
         for e in expected_output_types:
             self.assertIn(e, output_h_types, f"Expected '{e}' in output_h_types")
-        for e in expected_output_code:
-            self.assertIn(e, output_c, f"Expected '{e}' in output_c")
+
+        if defines_arg == []:
+            for n, v in expected_defines.items():
+                self.assertNotIn(f"#define {n} ({v})", output_h, f"Expected no '{e}' in output_h")
+            for e in expected_output_code_lit:
+                self.assertIn(e, output_c, f"Expected '{e}' in output_c")
+        else:
+            for n, v in expected_defines.items():
+                self.assertIn(f"#define {n} ({v})", output_h, f"Expected '{e}' in output_h")
+            for e in expected_output_code:
+                self.assertIn(e, output_c, f"Expected '{e}' in output_c")
 
     def test_int_size(self):
         """Test that the correct integer types are generated for different bit sizes."""
 
         for mode in ("decode", "encode"):
-            for bit_size in (8, 16, 32, 64):
-                self.do_test_int_size(mode, bit_size)
+            for defines_arg in ([], ["--defines"]):
+                for bit_size in (8, 16, 32, 64):
+                    self.do_test_int_size(mode, defines_arg, bit_size)
 
 
 class TestCanonical(PopenTest):
@@ -1515,6 +1573,7 @@ class TestExceptions(TestCase):
                 cddl_string=cddl_string,
                 mode="decode",
                 entry_type_names=["test"],
+                add_defines=False,
                 default_bit_size=32,
             )
         return cm.exception
