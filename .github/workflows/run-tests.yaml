@@ -7,7 +7,7 @@ on:
 
 
 env:
-  ZEPHYR_REV: 0876b5a2ded100ccc50af797c24f09eae70e4556
+  ZEPHYR_REV: e6fd157a93db7297583d7b93f9a74c0e0977bc95
 
 jobs:
   merge-test-1:
