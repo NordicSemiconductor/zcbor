@@ -37,6 +37,7 @@ jobs:
       matrix:
         platform: ["mps2/an521/cpu0"]
         asserts: [""]
+        subset: ["1/2", "2/2"]
     name: Merge test 1 - Twister (Windows) (${{ matrix.platform }}${{ matrix.asserts != '' && ' with asserts' || '' }} - build only)
     steps:
     - name: Checkout the code
@@ -89,7 +90,7 @@ jobs:
         set ZEPHYR_BASE=%cd%\zephyr-clone
         set ZEPHYR_TOOLCHAIN_VARIANT=zephyr
         set ZEPHYR_SDK_INSTALL_DIR=%cd%\zephyr-sdk
-        python %ZEPHYR_BASE%\scripts\twister -i -v -T tests -W --timestamps --platform ${{ matrix.platform }} ${{ matrix.asserts }} --exclude-tag release --build-only
+        python %ZEPHYR_BASE%\scripts\twister -i -v -T tests -W --timestamps --platform ${{ matrix.platform }} ${{ matrix.asserts }} --exclude-tag release --build-only --subset ${{ matrix.subset }}
 
 
   merge-test-2:
