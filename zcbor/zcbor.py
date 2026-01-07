@@ -4214,7 +4214,7 @@ def read_data(args, cddl, canonical=False):
             f = sys.stdin if args.input == "-" else open(args.input, "r", encoding="utf-8")
             cbor_str = bytes.fromhex(f.read().replace("\n", ""))
         else:
-            f = sys.stdin.buffer if args.input == "-" else open(args.input, "rb", encoding="utf-8")
+            f = sys.stdin.buffer if args.input == "-" else open(args.input, "rb")
             cbor_str = f.read()
 
         cddl.validate_str(cbor_str)
