@@ -4,6 +4,7 @@ on:
  pull_request: {}
  schedule:
   - cron: '0 0 1,15 * ?' # twice a month
+ workflow_dispatch: {}
 
 
 env:
