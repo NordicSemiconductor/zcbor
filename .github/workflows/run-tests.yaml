@@ -4,7 +4,12 @@ on:
  pull_request: {}
  schedule:
   - cron: '0 0 1,15 * ?' # twice a month
- workflow_dispatch: {}
+ workflow_dispatch:
+  inputs:
+    fuzz-tests:
+      description: 'Run fuzz tests (1 hour)'
+      required: true
+      default: false
 
 
 env:
@@ -181,13 +186,7 @@ jobs:
   release-test-1:
     runs-on: ubuntu-24.04
     name: Release tests 1 - Check versions
-    needs:
-    - merge-test-1
-    - merge-test-1-win
-    - merge-test-2
-    - merge-test-2-win
-    - merge-test-3
-    if: "startswith(github.head_ref, 'release/')"
+    if: "(github.event_name == 'pull_request' && startswith(github.head_ref, 'release/'))"
     steps:
     - name: Checkout the code
       uses: actions/checkout@v5
@@ -207,7 +206,12 @@ jobs:
     runs-on: ubuntu-24.04
     name: Release tests 2 - Fuzz
     needs:
-    - release-test-1
+    - merge-test-1
+    - merge-test-1-win
+    - merge-test-2
+    - merge-test-2-win
+    - merge-test-3
+    if: "(github.event_name == 'workflow_dispatch' && github.event.inputs.fuzz-tests) || (github.event_name == 'pull_request' && startswith(github.head_ref, 'release/'))"
     steps:
     - name: Checkout the code
       uses: actions/checkout@v5
