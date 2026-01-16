@@ -320,7 +320,6 @@ do { \
 #define ZCBOR_ERR_CONSTANT_STATE_MISSING 22
 #define ZCBOR_ERR_BAD_ARG 23
 #define ZCBOR_ERR_NO_FLAG_MEM 24
-#define ZCBOR_ERR_UNSUPPORTED 25
 #define ZCBOR_ERR_UNKNOWN 31
 
 /** The largest possible elem_count. */

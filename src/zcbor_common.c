@@ -139,6 +139,12 @@ bool zcbor_process_backup_num(zcbor_state_t *state, uint32_t flags,
 		ZCBOR_ERR(ZCBOR_ERR_BAD_ARG);
 	}
 
+	if (flags & ZCBOR_FLAG_CONSUME) {
+		ZCBOR_ERR_IF((flags & ZCBOR_FLAG_KEEP_DECODE_STATE), ZCBOR_ERR_BAD_ARG);
+		ZCBOR_ERR_IF(backup_num != state->constant_state->current_backup, ZCBOR_ERR_BAD_ARG);
+	}
+
+
 	zcbor_state_t local_copy = *state;
 	zcbor_state_t *backup = &state->constant_state->backup_list[i];
 
@@ -159,8 +165,6 @@ bool zcbor_process_backup_num(zcbor_state_t *state, uint32_t flags,
 	}
 
 	if (flags & ZCBOR_FLAG_CONSUME) {
-		ZCBOR_ERR_IF(backup_num != state->constant_state->current_backup,
-			ZCBOR_ERR_UNSUPPORTED);
 #ifdef ZCBOR_MAP_SMART_SEARCH
 		if (!(flags & ZCBOR_FLAG_RESTORE) && backup->decode_state.elem_state_backed_up) {
 			discard_elem_state_backup(state, backup);
@@ -186,7 +190,6 @@ bool zcbor_process_backup_num(zcbor_state_t *state, uint32_t flags,
 	if (flags & ZCBOR_FLAG_KEEP_DECODE_STATE) {
 		/* Copy decode state */
 		state->decode_state = local_copy.decode_state;
-		ZCBOR_ERR_IF(flags & ZCBOR_FLAG_CONSUME, ZCBOR_ERR_UNSUPPORTED);
 	}
 
 	return true;
