@@ -41,7 +41,7 @@ if __name__ == "__main__":
         print(f"Usage: {argv[0]} <new zcbor version>")
         exit(1)
     version = argv[1]
-    (major, minor, bugfix) = version.split(".")
+    major, minor, bugfix = version.split(".")
 
     p_VERSION.write_text(version, encoding="utf-8")
     update_relnotes(p_RELEASE_NOTES, version, boilerplate=RELEASE_NOTES_boilerplate)

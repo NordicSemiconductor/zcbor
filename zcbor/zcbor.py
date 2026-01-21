@@ -873,7 +873,7 @@ class CddlParser:
         for reg, handler in quantifier_mapping:
             match_obj = getrp(reg).match(quantifier)
             if match_obj:
-                (self.min_qty, self.max_qty) = handler(match_obj)
+                self.min_qty, self.max_qty = handler(match_obj)
                 return
         raise ValueError("invalid quantifier: %s" % quantifier)
 
@@ -3360,9 +3360,7 @@ at: ''' + datetime.now().strftime('%Y-%m-%d %H:%M:%S') if self.print_time else '
                     type_names[type_name] = type_def[0]
                     out_types.append(type_def)
                 else:
-                    assert "".join(type_names[type_name]) == "".join(
-                        type_def[0]
-                    ), f"""
+                    assert "".join(type_names[type_name]) == "".join(type_def[0]), f"""
 Two elements share the type name {type_name}, but their implementations are not identical.
 Please change one or both names. They are
 {linesep.join(type_names[type_name])}
@@ -3471,9 +3469,7 @@ static bool {xcoder.func_name}(
 {self.render_arg_check(self.find_cast_func_calls(body))}
 	log_result(state, res, __func__);
 	return res;
-}}""".replace(
-            "	\n", ""
-        )  # call replace() to remove empty lines.
+}}""".replace("	\n", "")  # call replace() to remove empty lines.
 
     def render_entry_function(self, xcoder, mode):
         """Render a single entry function (API function) with signature and body."""
