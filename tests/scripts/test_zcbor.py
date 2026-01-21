@@ -17,17 +17,14 @@ from tempfile import mkdtemp, NamedTemporaryFile
 from shutil import rmtree
 from os import linesep
 
-
 try:
     import zcbor
 except ImportError:
-    print(
-        """
+    print("""
 The zcbor package must be installed to run these tests.
 During development, install with `pip3 install -e .` to install in a way
 that picks up changes in the files without having to reinstall.
-"""
-    )
+""")
     exit(1)
 
 

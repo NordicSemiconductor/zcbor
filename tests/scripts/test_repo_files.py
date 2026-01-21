@@ -20,7 +20,6 @@ from time import sleep
 from http import HTTPStatus
 from typing import List, Tuple, Optional
 
-
 p_script = Path(__file__).absolute()
 p_script_dir = p_script.parent
 p_root = p_script_dir.parents[1]
