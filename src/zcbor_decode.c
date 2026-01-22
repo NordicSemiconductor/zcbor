@@ -1801,6 +1801,7 @@ bool zcbor_multi_decode(size_t min_decode,
 	return multi_decode_backup(min_decode, max_decode, num_decode, decoder, state, result, result_len, false);
 }
 
+
 bool zcbor_multi_decode_w_backup(size_t min_decode,
 		size_t max_decode,
 		size_t *num_decode,

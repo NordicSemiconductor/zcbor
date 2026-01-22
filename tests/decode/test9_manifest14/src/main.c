@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/ztest.h>
+#include "zcbor_print.h"
 #ifdef MANIFEST16
 	#include "manifest16_decode.h"
 #else
@@ -103,8 +104,9 @@ ZTEST(cbor_decode_test9, test_suit14_ex0_common_sequence)
 
 	zassert_equal(ZCBOR_SUCCESS, cbor_decode_SUIT_Envelope_Tagged(example0, sizeof(example0), &envelope, &out_len), NULL);
 	zassert_equal(sizeof(example0), out_len, NULL);
-	zassert_equal(ZCBOR_SUCCESS, cbor_decode_SUIT_Manifest(envelope.SUIT_Envelope_suit_manifest.value,
-		envelope.SUIT_Envelope_suit_manifest.len, &manifest, &out_len), NULL);
+	int ret = cbor_decode_SUIT_Manifest(envelope.SUIT_Envelope_suit_manifest.value,
+		envelope.SUIT_Envelope_suit_manifest.len, &manifest, &out_len);
+	zassert_equal(ZCBOR_SUCCESS, ret, "%s\n", zcbor_error_str(ret));
 	zassert_equal(envelope.SUIT_Envelope_suit_manifest.len, out_len, NULL);
 	zassert_true(manifest.SUIT_Manifest_suit_common_cbor.SUIT_Common_suit_components_present, NULL);
 	zassert_true(manifest.SUIT_Manifest_suit_common_cbor.SUIT_Common_suit_common_sequence_present, NULL);
