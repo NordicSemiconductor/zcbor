@@ -96,6 +96,8 @@ Range = [
 	+multi0to10: 0..0x0A, ; Testing hexadecimal
 ]
 
+euler = (2.72)
+
 ValueRange = [
 	greater10: uint .gt 10,
 	less1000: int .lt 1000,
@@ -105,7 +107,7 @@ ValueRange = [
 	equalstrworld: tstr .eq "world",
 	default3: ?int .gt 2 .default 3,
 	defaulthello: ?bstr .default 'hello',
-	defaulte: ?float .size 4 .default 2.72,
+	defaulte: ?float .size 4 .default euler,
 	defaultfalse: ?bool .default false,
 ]
 
@@ -439,4 +441,12 @@ AmbigList = [
 	?emptylist: [],
 	intlist: *[+int],
 	tstrlist: [+int, +tstr],
+]
+
+Three = (3)
+
+UnionDefault = [
+	int,
+	foo: ?((FooA: 1) / (FooB: 2) / (FooC: Three)) .default (Three),
+	bar: ?((BarA: [+int]) / (noBar: nil)) .default nil,
 ]

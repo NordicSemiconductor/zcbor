@@ -2580,4 +2580,46 @@ ZTEST(cbor_decode_test5, test_ambiglist)
 }
 
 
+ZTEST(cbor_decode_test5, test_union_default)
+{
+	uint8_t union_default_payload1[] = {LIST(1), 1, END};
+	uint8_t union_default_payload2[] = {LIST(2), 2, 1, END};
+	uint8_t union_default_payload3[] = {LIST(3), 3, 2, 0xF6, END};
+	uint8_t union_default_payload4[] = {LIST(2), 4, LIST(1), 5, END END};
+	uint8_t union_default_payload5_inv[] = {LIST(2), 4, 4, END};
+	struct UnionDefault result;
+	size_t num_decode;
+
+	zassert_equal(ZCBOR_SUCCESS, cbor_decode_UnionDefault(union_default_payload1,
+		sizeof(union_default_payload1), &result, &num_decode));
+	zassert_equal(1, result.Int, NULL);
+	zassert_equal(UnionDefault_foo_FooC_c, result.foo.foo_choice, NULL); /* Not present, default value is reported. */
+	zassert_equal(UnionDefault_bar_noBar_c, result.bar.bar_choice, NULL); /* Not present, default value is reported. */
+
+	zassert_equal(ZCBOR_SUCCESS, cbor_decode_UnionDefault(union_default_payload2,
+		sizeof(union_default_payload2), &result, &num_decode));
+	zassert_equal(2, result.Int, NULL);
+	zassert_equal(UnionDefault_foo_FooA_c, result.foo.foo_choice, NULL);
+	zassert_equal(UnionDefault_bar_noBar_c, result.bar.bar_choice, NULL); /* Not present, default value is reported. */
+
+	zassert_equal(ZCBOR_SUCCESS, cbor_decode_UnionDefault(union_default_payload3,
+		sizeof(union_default_payload3), &result, &num_decode));
+	zassert_equal(3, result.Int, NULL);
+	zassert_equal(UnionDefault_foo_FooB_c, result.foo.foo_choice, NULL);
+	zassert_equal(UnionDefault_bar_noBar_c, result.bar.bar_choice, NULL);
+
+	zassert_equal(ZCBOR_SUCCESS, cbor_decode_UnionDefault(union_default_payload4,
+		sizeof(union_default_payload4), &result, &num_decode));
+	zassert_equal(4, result.Int, NULL);
+	zassert_equal(UnionDefault_foo_FooC_c, result.foo.foo_choice, NULL); /* Not present, default value is reported. */
+	zassert_equal(bar_BarA_c, result.bar.bar_choice, NULL);
+	zassert_equal(1, result.bar.Int_count, NULL);
+	zassert_equal(5, result.bar.Int[0], NULL);
+
+	int ret = cbor_decode_UnionDefault(union_default_payload5_inv,
+		sizeof(union_default_payload5_inv), &result, &num_decode);
+	zassert_equal(ARR_ERR1, ret, "%s\n", zcbor_error_str(ret));
+}
+
+
 ZTEST_SUITE(cbor_decode_test5, NULL, NULL, NULL, NULL, NULL);
