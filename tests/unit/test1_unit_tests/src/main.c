@@ -1933,28 +1933,39 @@ ZTEST(zcbor_unit_tests, test_elem_state_backup)
 ZTEST(zcbor_unit_tests, test_elem_state_backup2)
 {
 #ifdef ZCBOR_MAP_SMART_SEARCH
-	/* Test elem_state buffer overflow. */
-	uint8_t payload_2[2000];
+	/* Test elem_state buffer overflow.
+	 * The number of elements is tailored so that after decoding a number of elements, there's
+	 * enough flags to do one backup, but barely not two. I.e. num_decode is just above 1/3 of
+	 * the available flags.
+	 * Likewise, the total number of encoded elements is barely too large to be able to
+	 * allocate flags for all of them, after the successful backup. I.e. num_encode is just
+	 * above 2/3 of the available flags. */
+
+	static uint8_t payload_2[5000];
 	ZCBOR_STATE_E(state_e2, 1, payload_2, sizeof(payload_2), 0);
 	ZCBOR_STATE_D(state_d2, 5, payload_2, sizeof(payload_2), 1, 620);
 
-	zassert_equal(80, state_d2->constant_state->map_search_elem_state_end - state_d2->decode_state.map_search_elem_state, "%d\n",
-		      state_d2->constant_state->map_search_elem_state_end - state_d2->decode_state.map_search_elem_state);
+	size_t num_flag_bytes = state_d2->constant_state->map_search_elem_state_end - state_d2->decode_state.map_search_elem_state;
+	size_t num_decode = (num_flag_bytes / 3) * 8 + 1;
+	size_t num_encode = (num_flag_bytes / 3) * 2 * 8 + 1;
 
-	zassert_true(zcbor_map_start_encode(state_e2, 400), NULL);
-	for (int i = 1; i <= 400; i++) {
+	zassert_between_inclusive(num_flag_bytes, 78, 256, "%d\n", num_flag_bytes);
+
+	zassert_true(zcbor_map_start_encode(state_e2, num_encode), NULL);
+	for (int i = 1; i <= num_encode; i++) {
 		zassert_true(zcbor_uint32_put(state_e2, i), NULL);
 		zassert_true(zcbor_int32_put(state_e2, -i), NULL);
 	}
-	zassert_true(zcbor_map_end_encode(state_e2, 400), NULL);
+	zassert_true(zcbor_map_end_encode(state_e2, num_encode), NULL);
+
 
 	zassert_true(zcbor_unordered_map_start_decode(state_d2));
-	zassert_true(zcbor_unordered_map_search(ZCBOR_CAST_FP(zcbor_uint32_pexpect), state_d2, &((uint32_t){241})));
-	zassert_true(zcbor_int32_expect(state_d2, -241), NULL);
+	zassert_true(zcbor_unordered_map_search(ZCBOR_CAST_FP(zcbor_uint32_pexpect), state_d2, &((uint32_t){num_decode})));
+	zassert_true(zcbor_int32_expect(state_d2, -num_decode), NULL);
 	zassert_true(zcbor_new_backup_w_elem_state(state_d2, state_d2->elem_count, true));
 	zassert_false(zcbor_new_backup_w_elem_state(state_d2, state_d2->elem_count, true));
 	zassert_equal(ZCBOR_ERR_MAP_FLAGS_NOT_AVAILABLE, zcbor_peek_error(state_d2), "err: %d\n", zcbor_peek_error(state_d2));
-	zassert_false(zcbor_unordered_map_search(ZCBOR_CAST_FP(zcbor_uint32_pexpect), state_d2, &((uint32_t){120})));
+	zassert_false(zcbor_unordered_map_search(ZCBOR_CAST_FP(zcbor_uint32_pexpect), state_d2, &((uint32_t){2})));
 	zassert_equal(ZCBOR_ERR_MAP_FLAGS_NOT_AVAILABLE, zcbor_peek_error(state_d2), "err: %d\n", zcbor_peek_error(state_d2));
 #endif
 }
