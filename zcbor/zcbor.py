@@ -81,12 +81,15 @@ INT_MAX = {8: INT8_MAX, 16: INT16_MAX, 32: INT32_MAX, 64: INT64_MAX}
 class CddlParsingError(Exception):
     def zcbor_add_note(self, note):
         if hasattr(self, "add_note"):
+            if hasattr(self, "__notes__") and note in self.__notes__:
+                return
             self.add_note(note)
         else:
             # Workaround for Python versions before 3.11 where exceptions don't have add_note().
             if not hasattr(self, "zcbor_notes"):
                 self.zcbor_notes = []
-            self.zcbor_notes.append(note)
+            if note not in self.zcbor_notes:
+                self.zcbor_notes.append(note)
 
 
 def getrp(pattern, flags=0):
@@ -780,6 +783,11 @@ class CddlParser:
 
         value_generator must be a function that returns the value of the element."""
         value = value_generator()
+        if value is not None:
+            if self.value is not None:
+                raise CddlParsingError(
+                    f"Attempting to set value ({value}) when a value ({self.value}) already exists"
+                )
         self.value = value
 
         if self.type == "OTHER" and self.value.startswith("$"):
@@ -891,15 +899,20 @@ class CddlParser:
             if size < 0:
                 raise CddlParsingError("Size cannot be negative: %d" % size)
 
+    def enforce_sizeable(self):
+        if self.type is None:
+            raise CddlParsingError("Cannot have size before type")
+        if self.type not in ["BSTR", "TSTR", "INT", "UINT", "NINT", "FLOAT"]:
+            raise CddlParsingError(".size cannot be applied to %s" % self.type)
+
     def set_size(self, size):
         """Set the self.size of this element.
 
         This will also set the self.minValue and self.max_value of UINT types.
         """
+        self.enforce_sizeable()
         self.check_size(size)
-        if self.type is None:
-            raise CddlParsingError("Cannot have size before type: " + str(size))
-        elif self.type in ["INT", "UINT", "NINT"]:
+        if self.type in ["INT", "UINT", "NINT"]:
             value = 256**size
             if self.type == "INT":
                 self.max_value = int((value >> 1) - 1)
@@ -909,13 +922,12 @@ class CddlParser:
                 self.min_value = int(-1 * (value >> 1))
         elif self.type in ["BSTR", "TSTR", "FLOAT"]:
             self.set_size_range(size, size)
-        else:
-            raise CddlParsingError(".size cannot be applied to %s" % self.type)
 
     def set_size_range(self, min_size, max_size_in, inc_end=True):
         """Set the self.minValue and self.max_value or self.min_size and self.max_size of this
         element based on what values can be contained within an integer of a certain size.
         """
+        self.enforce_sizeable()
         max_size = max_size_in if inc_end else max_size_in - 1
 
         if (min_size and min_size < 0 or max_size and max_size < 0) or (
@@ -1256,7 +1268,7 @@ class CddlParser:
                     try:
                         handler(self, match_str)
                     except CddlParsingError as e:
-                        e.zcbor_add_note(f"  while parsing CDDL: '{match_str}'")
+                        e.zcbor_add_note(f"  while parsing CDDL: '{match_obj.group(0)}'")
                         raise
                     self.match_str += match_str
                     old_len = len(instr)
@@ -1377,9 +1389,14 @@ class CddlParser:
     def parse_one(self, instr):
         """Parses instr and returns one object, failing if instr wasn't fully consumed."""
         value = type(self)(**self.init_kwargs())
-        remainder = value.get_value(instr.strip())
-        if remainder != "":
-            raise CddlParsingError(f"Extra characters found: '{remainder}'")
+
+        try:
+            remainder = value.get_value(instr.strip())
+            if remainder != "":
+                raise CddlParsingError(f"Extra characters found: '{remainder}'")
+        except CddlParsingError as e:
+            e.zcbor_add_note(f"  while parsing CDDL: '{instr}'")
+            raise
         return value
 
     def __repr__(self):
