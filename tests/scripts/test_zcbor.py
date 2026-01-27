@@ -1790,6 +1790,12 @@ class TestParsingErrors(TestCase):
         )
 
         self.cddl_parsing_error_test(
+            "foo = 'hello'..2",
+            "foo = 1..2",
+            r"zcbor does not support type BSTR in ranges:\n'hello'\.\.2",
+        )
+
+        self.cddl_parsing_error_test(
             "foo = int .size -1 .. 2",
             "foo = int .size 1 .. 2",
             r"Size range must contain only non-negative integers\.",
