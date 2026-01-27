@@ -7,11 +7,12 @@
 One = 1
 Two = 2
 Three = 3
+Ten = 10
 
 Numbers = [
 	one: One,
 	minustwo: -2,
-	fourtoten: 4..10,
+	fourtoten: 4..Ten,
 	twobytes: uint .size Two,
 	onetofourbytes: uint .size 0b1..0o4, ; Testing binary and octal
 	minusfivektoplustwohundred: -5000..200,

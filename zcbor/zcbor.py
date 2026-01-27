@@ -975,10 +975,20 @@ class CddlParser:
         self.add_modifier(".default")
         self.default = value.value
 
-    def type_and_range(self, new_type, min_val, max_val, inc_end=True):
+    def type_and_range(self, range_str):
         """Set the self.type and self.minValue and self.max_value (or self.min_size and
         self.max_size depending on the type) of this element. For use during CDDL parsing.
         """
+        min_val_obj, max_val_obj, inc_end = self.extract_range(range_str)
+
+        types = {min_val_obj.type, max_val_obj.type}
+        new_type = (
+            "FLOAT" if "FLOAT" in types else "INT" if types == {"UINT", "NINT"} else types.pop()
+        )
+        assert len(types) in (0, 2), f"Unexpected state of 'types': {types}"
+
+        min_val, max_val = min_val_obj.value, max_val_obj.value
+
         if not inc_end:
             max_val -= 1
         if new_type not in ["INT", "UINT", "NINT"]:
@@ -1235,6 +1245,10 @@ class CddlParser:
                 ),
             ),
             (
+                match_paren_or_symbol2 + r" ?\.\.\.? ?" + match_paren_or_symbol2,
+                lambda m_self, _range: m_self.type_and_range(_range),
+            ),
+            (
                 r"(?P<paren>\((?P<item>(?>[^\(\)]+|(?&paren))*)\))",
                 lambda m_self, group_str: m_self.type_and_value(
                     "GROUP", lambda: m_self.parse(group_str)
@@ -1288,42 +1302,6 @@ class CddlParser:
             (
                 r"\-?\d*\.\d+",
                 lambda m_self, num: m_self.type_and_value("FLOAT", lambda: float(num)),
-            ),
-            (
-                match_uint + r"\.\." + match_uint,
-                lambda m_self, _range: m_self.type_and_range(
-                    "UINT", *map(lambda num: int(num, 0), _range.split(".."))
-                ),
-            ),
-            (
-                match_nint + r"\.\." + match_uint,
-                lambda m_self, _range: m_self.type_and_range(
-                    "INT", *map(lambda num: int(num, 0), _range.split(".."))
-                ),
-            ),
-            (
-                match_nint + r"\.\." + match_nint,
-                lambda m_self, _range: m_self.type_and_range(
-                    "NINT", *map(lambda num: int(num, 0), _range.split(".."))
-                ),
-            ),
-            (
-                match_uint + r"\.\.\." + match_uint,
-                lambda m_self, _range: m_self.type_and_range(
-                    "UINT", *map(lambda num: int(num, 0), _range.split("...")), inc_end=False
-                ),
-            ),
-            (
-                match_nint + r"\.\.\." + match_uint,
-                lambda m_self, _range: m_self.type_and_range(
-                    "INT", *map(lambda num: int(num, 0), _range.split("...")), inc_end=False
-                ),
-            ),
-            (
-                match_nint + r"\.\.\." + match_nint,
-                lambda m_self, _range: m_self.type_and_range(
-                    "NINT", *map(lambda num: int(num, 0), _range.split("...")), inc_end=False
-                ),
             ),
             (match_nint, lambda m_self, num: m_self.type_and_value("NINT", lambda: int(num, 0))),
             (match_uint, lambda m_self, num: m_self.type_and_value("UINT", lambda: int(num, 0))),
