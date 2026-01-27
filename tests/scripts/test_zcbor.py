@@ -1520,9 +1520,9 @@ class TestExceptions(TestCase):
         failing_cddl_string = 'test = [foo: .size 3 "bar"]'
         expected_error = """
 CDDL parsing error:
-Cannot have size before type: 3
-  while parsing CDDL: '3'
-  while parsing CDDL: 'foo: .size 3 "bar"'
+Cannot have size before type
+  while parsing CDDL: '.size 3'
+  while parsing CDDL: '[foo: .size 3 "bar"]'
   while parsing type test""".strip()
         self.assertEqual(
             expected_error, zcbor.format_parsing_error(self.do_test_exception(failing_cddl_string))
@@ -1568,10 +1568,14 @@ Cannot have size before type: 3
 
     def test_size_placement(self):
         exc = self.do_test_exception("foo = .size 2 uint")
-        self.assertEqual("Cannot have size before type: 2", str(exc))
+        self.assertEqual("Cannot have size before type", str(exc))
 
     def test_size_type(self):
         exc = self.do_test_exception("foo = nil .size 2")
+        self.assertEqual(".size cannot be applied to NIL", str(exc))
+
+    def test_size_type(self):
+        exc = self.do_test_exception("foo = nil .size 2..4")
         self.assertEqual(".size cannot be applied to NIL", str(exc))
 
     def test_size_value(self):
