@@ -481,9 +481,8 @@ class CddlParser:
 
     @classmethod
     def from_cddl(cddl_class, *, cddl_string, **kwargs):
-        my_types = dict()
-
         type_strings = cddl_class.get_types(cddl_string)
+
         # Separate type_strings as keys in two dicts, one dict for strings that start with &( which
         # are special control operators for .bits, and one dict for all the regular types.
         my_types = {
@@ -493,14 +492,17 @@ class CddlParser:
             my_cg: val for my_cg, val in type_strings.items() if val.startswith("&(")
         }
 
+        # Template for parsing the types in my_types. All the parameters are passed on to the
+        # instances created from this prototype, except for base_stem, which is overridden.
+        prototype = cddl_class(
+            my_types=my_types, my_control_groups=my_control_groups, **kwargs, base_stem=""
+        )
+
         # Parse the definitions, replacing the each string with a
         # CodeGenerator instance.
         for my_type, cddl_string in type_strings.items():
-            parsed = cddl_class(
-                my_types=my_types, my_control_groups=my_control_groups, **kwargs, base_stem=my_type
-            )
             try:
-                parsed.get_value(cddl_string.replace("\n", " ").lstrip("&"))
+                parsed = prototype.parse_one(cddl_string, base_stem=my_type)
             except CddlParsingError as e:
                 e.zcbor_add_note(f"  while parsing type {my_type}")
                 raise
@@ -1386,12 +1388,18 @@ class CddlParser:
             values.append(value)
         return values
 
-    def parse_one(self, instr):
-        """Parses instr and returns one object, failing if instr wasn't fully consumed."""
-        value = type(self)(**self.init_kwargs())
+    def parse_one(self, instr, base_stem=None):
+        """Parses instr and returns one object, failing if instr wasn't fully consumed.
+
+        If base_stem is provided, it will be used instead of self.base_stem.
+        """
+        kwargs = self.init_kwargs()
+        if base_stem is not None:
+            kwargs["base_stem"] = base_stem
+        value = type(self)(**kwargs)
 
         try:
-            remainder = value.get_value(instr.strip())
+            remainder = value.get_value(instr.strip().replace("\n", " ").lstrip("&"))
             if remainder != "":
                 raise CddlParsingError(f"Extra characters found: '{remainder}'")
         except CddlParsingError as e:
