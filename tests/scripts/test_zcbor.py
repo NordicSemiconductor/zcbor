@@ -1747,5 +1747,120 @@ class TestControlGroups(TestCase):
             cddl.decode_str_yaml("1")
 
 
+def cp_from_cddl(cddl):
+    return zcbor.CddlParser.from_cddl(cddl_string=cddl)
+
+
+class TestParsingErrors(TestCase):
+    def cddl_parsing_error_test(self, invalid_cddl, valid_cddl, message_regex=None):
+        """Check that invalid CDDL raises an error and check that a valid CDDL variant passes."""
+        self.assertTrue(cp_from_cddl(valid_cddl))
+        if message_regex is not None:
+            self.assertRaisesRegex(
+                zcbor.CddlParsingError, message_regex, cp_from_cddl, invalid_cddl
+            )
+        else:
+            self.assertRaises(zcbor.CddlParsingError, cp_from_cddl, invalid_cddl)
+
+    def test_invalid_cddl(self):
+        """Check that certain CDDL formatting errors are caught."""
+
+        # Two values
+        self.cddl_parsing_error_test(
+            "foo = 1 .eq 2", "foo = int .eq 2", r".*Attempting to set value.*"
+        )
+
+        self.cddl_parsing_error_test(
+            "foo = float .eq 2",
+            "foo = float .eq 2.0",
+            r"Type of \.eq value does not match type of element",
+        )
+
+        self.cddl_parsing_error_test(
+            'foo = ?int .default "hello"',
+            'foo = ?tstr .default "hello"',
+            r"Type of \.default value does not match type of element",
+        )
+
+        self.cddl_parsing_error_test(
+            'foo = tstr .default "hello"',
+            'foo = ?tstr .default "hello"',
+            r"zcbor currently supports \.default only with the \? quantifier",
+        )
+
+        self.cddl_parsing_error_test("foo = {int}", "foo = {1 => int}", r"Missing map key")
+        self.cddl_parsing_error_test(
+            "bar = (int) foo = {bar}", "bar = (1 => int) foo = {bar}", r"Missing map key"
+        )
+
+        self.cddl_parsing_error_test(
+            "foo = 'hello'..2",
+            "foo = 1..2",
+            r"zcbor does not support type BSTR in ranges:\n'hello'\.\.2",
+        )
+
+        self.cddl_parsing_error_test(
+            "foo = int .size -1 .. 2",
+            "foo = int .size 1 .. 2",
+            r"Size range must contain only non-negative integers\.",
+        )
+        self.cddl_parsing_error_test(
+            f"foo = bool .size 1", f"foo = int .size 1", r"\.size cannot be applied to BOOL"
+        )
+        self.cddl_parsing_error_test(
+            f"foo = [] .size 1", f"foo = int .size 1", r"\.size cannot be applied to LIST"
+        )
+        self.cddl_parsing_error_test(
+            f"foo = int .size uint .. 2",
+            f"foo = int .size 1 .. 2",
+            r"Range values must be unambiguous\.",
+        )
+        self.cddl_parsing_error_test(
+            f"foo = int .size -2",
+            f"foo = int .size 2",
+            r"Value must be a non-negative integer, not NINT\.",
+        )
+
+        for ctrl_op in (".lt", ".gt", ".ge", ".le"):
+            self.cddl_parsing_error_test(
+                f"foo = bool {ctrl_op} 1",
+                f"foo = int {ctrl_op} 1",
+                r"Value range needs a number, got BOOL",
+            )
+            self.cddl_parsing_error_test(
+                f"foo = [] {ctrl_op} 1",
+                f"foo = int {ctrl_op} 1",
+                r"Value range needs a number, got LIST",
+            )
+            self.cddl_parsing_error_test(
+                f"foo = int {ctrl_op} 2.0",
+                f"foo = int {ctrl_op} 2",
+                r"Value must be an integer, not FLOAT\.",
+            )
+
+        for ctrl_op in (".size", ".lt", ".gt", ".ge", ".le"):
+            self.cddl_parsing_error_test(
+                f"foo = int {ctrl_op} uint",
+                f"foo = int {ctrl_op} 1",
+                r"Value must be unambiguous\.",
+            )
+            self.cddl_parsing_error_test(
+                f"foo = int {ctrl_op} 1 {ctrl_op} 2",
+                f"foo = int {ctrl_op} 1",
+                rf"Element already has {ctrl_op} modifier\.",
+            )
+            self.cddl_parsing_error_test(
+                f"""
+                foo = int {ctrl_op} bar
+                bar = +#6.123(3)
+                """,
+                f"""
+                foo = int {ctrl_op} bar
+                bar = 3
+                """,
+                r".*cannot have: (tag, quantifier|quantifier, tag)",
+            )
+
+
 if __name__ == "__main__":
     main()
