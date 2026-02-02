@@ -475,6 +475,7 @@ class CddlParser:
 
     def post_process(self):
         self.post_validate()
+        self.process_default()
 
     def post_process_control_group(self):
         self.post_validate_control_group()
@@ -640,6 +641,56 @@ class CddlParser:
         """Set an explicit base name for this element."""
         self.base_name = base_name.replace("-", "_")
 
+    def recurse(self, func, with_default=False):
+        """Recursively apply a function to this element and its children, key, and cbor elements."""
+        if self.type in ["LIST", "MAP", "GROUP", "UNION"]:
+            for child in self.value:
+                func(child)
+        if self.cbor:
+            func(self.cbor)
+        if self.key:
+            func(self.key)
+        if with_default and self.default:
+            func(self.default)
+
+    def process_default(self):
+        """Process the default value, if any.
+
+        Includes checking that can only happen once all types are known,
+        and flattening has happened."""
+
+        if self.default is not None:
+            if self.type not in ["INT", "UINT", "NINT", "BSTR", "TSTR", "FLOAT", "BOOL", "UNION"]:
+                raise CddlParsingError(
+                    f"zcbor does not support .default values for the {self.type} type"
+                )
+            if not self.default.is_unambiguous():
+                raise CddlParsingError(".default value must be unambiguous.")
+            while self.default.type == "OTHER":
+                self.default = self.my_types[self.default.value]
+            if self.type == "UNION":
+                matches = False
+                for c in self.value:
+                    if not c.is_unambiguous():
+                        continue
+                    child = c
+                    while child.type == "OTHER":
+                        child = self.my_types[child.value]
+                    if child.type == self.default.type and child.value == self.default.value:
+                        matches = c
+                        break
+                if not matches:
+                    raise CddlParsingError(".default value does not match any member of the union.")
+                self.default = matches
+            elif not self.type == self.default.type:
+                if not (self.type == "INT" and self.default.type in ["UINT", "NINT"]):
+                    raise CddlParsingError(
+                        f"Type of .default value does not match type of element. "
+                        f"({self.type} != {self.default.type})"
+                    )
+
+        self.recurse(self.__class__.process_default)
+
     def id(self, with_prefix=True):
         """Add uniqueness to the base name."""
         raw_name = self.get_base_name()
@@ -739,17 +790,23 @@ class CddlParser:
             self.key = self.key.flatten()[0]
         if self.cbor:
             self.cbor = self.cbor.flatten()[0]
+        if self.default:
+            self.default = self.default.flatten()[0]
 
     def flatten(self, allow_multi=False):
         """Remove unneccessary abstractions, like single-element groups or unions."""
         self._flatten()
         if self.type == "OTHER" and self.is_socket and self.value not in self.my_types:
             return []
-        if (
-            self.type in ["GROUP", "UNION"]
-            and (len(self.value) == 1)
-            and (not (self.key and self.value[0].key))
-        ):
+        if self.type in ["GROUP", "UNION"] and (len(self.value) == 1):
+            if self.key and self.value[0].key:
+                raise CddlParsingError(
+                    f"Cannot have multiple keys ({self.key} and {self.value[0].key})"
+                )
+            if self.default and self.value[0].default:
+                raise CddlParsingError(
+                    f"Cannot have multiple defaults ('{self.default.value}' and '{self.value[0].default.value}')"
+                )
             self.value[0].min_qty *= self.min_qty
             self.value[0].max_qty = mult_or_none((self.value[0].max_qty, self.max_qty))
             if not self.value[0].label:
@@ -758,6 +815,7 @@ class CddlParser:
                 self.value[0].key = self.key
             self.value[0].is_key = self.is_key
             self.value[0].tags.extend(self.tags)
+            self.value[0].default = self.default
             return self.value
         elif allow_multi and self.type in ["GROUP"] and self.min_qty == 1 and self.max_qty == 1:
             return self.value
@@ -809,24 +867,15 @@ class CddlParser:
             self.max_value = -1
 
     def set_default(self, value):
-        """Set the default value of this element (provided via '.default')."""
-        if self.type not in ["INT", "UINT", "NINT", "BSTR", "TSTR", "FLOAT", "BOOL"]:
-            raise CddlParsingError(
-                f"zcbor does not support .default values for the {self.type} type"
-            )
+        """Set the default value of this element (provided via '.default').
+
+        This function does only rudimentary checks. The full processing of the
+        default value happens after parsing, in process_default()."""
+
         if self.min_qty != 0 or self.max_qty != 1:
             raise CddlParsingError("zcbor currently supports .default only with the ? quantifier.")
-        if value.value is None:
-            raise CddlParsingError(".default value must be unambiguous.")
 
-        if not self.type == value.type:
-            if not (self.type == "INT" and value.type in ["UINT", "NINT"]):
-                raise CddlParsingError(
-                    f"Type of .default value does not match type of element. "
-                    f"({self.type} != {value.type})"
-                )
-
-        self.default = value.value
+        self.default = value
 
     def type_and_range(self, new_type, min_val, max_val, inc_end=True):
         """Set the self.type and self.minValue and self.max_value (or self.min_size and
@@ -1363,13 +1412,7 @@ class CddlParser:
                 )
 
         # Validation of child elements.
-        if self.type in ["MAP", "LIST", "UNION", "GROUP"]:
-            for child in self.value:
-                child.post_validate()
-        if self.key:
-            self.key.post_validate()
-        if self.cbor:
-            self.cbor.post_validate()
+        self.recurse(self.__class__.post_validate, with_default=True)
 
     def post_validate_control_group(self):
         if self.type != "GROUP":
@@ -1588,13 +1631,7 @@ class CddlXcoder(CddlParser):
         if self.key:
             self.key.set_base_name(self.var_name().strip("_") + "_key")
 
-        if self.type in ["LIST", "MAP", "GROUP", "UNION"]:
-            for child in self.value:
-                child.set_base_names()
-        if self.cbor:
-            self.cbor.set_base_names()
-        if self.key:
-            self.key.set_base_names()
+        self.recurse(self.__class__.set_base_names)
 
     def post_process(self):
         self.set_id_prefix()
@@ -1924,7 +1961,7 @@ class DataTranslator(CddlXcoder):
             self.stored_id = getrp(r"\A_").sub("f_", self.get_base_name())
         return self.stored_id
 
-    def var_name(self):
+    def var_name(self, with_prefix=False):
         """Override the var_name()"""
         return self.id()
 
@@ -3134,6 +3171,10 @@ class CodeGenerator(CddlXcoder):
 
         return ""
 
+    def val_to_str_with_suffix(self, value_str):
+        """Convert value to string with appropriate suffix."""
+        return f"{val_to_str(value_str)}{self.value_suffix(value_str)}"
+
     def range_checks(self, access):
         """Return the code needed to check the size/value bounds of this element."""
         if self.type != "OTHER" and self.value is not None:
@@ -3149,19 +3190,16 @@ class CodeGenerator(CddlXcoder):
         if self.type in ["INT", "UINT", "NINT", "FLOAT", "BOOL"]:
             if min_val is not None and min_val == max_val:
                 range_checks.append(
-                    f"({access} == {val_to_str(min_val)}"
-                    f"{self.value_suffix(val_to_str(min_val))})"
+                    f"({access} == {self.val_to_str_with_suffix(val_to_str(min_val))})"
                 )
             else:
                 if min_val is not None:
                     range_checks.append(
-                        f"({access} >= {val_to_str(min_val)}"
-                        f"{self.value_suffix(val_to_str(min_val))})"
+                        f"({access} >= {self.val_to_str_with_suffix(val_to_str(min_val))})"
                     )
                 if max_val is not None:
                     range_checks.append(
-                        f"({access} <= {val_to_str(max_val)}"
-                        f"{self.value_suffix(val_to_str(max_val))})"
+                        f"({access} <= {self.val_to_str_with_suffix(val_to_str(max_val))})"
                     )
             if self.bits:
                 range_checks.append(
@@ -3264,11 +3302,21 @@ class CodeGenerator(CddlXcoder):
                 default_assignment = None
                 if self.default is not None:
                     default_value = (
-                        f"*({tmp_str_or_null(self.default)})"
-                        if self.type in ["TSTR", "BSTR"]
-                        else val_to_str(self.default) + self.value_suffix(val_to_str(self.default))
+                        self.default.enum_var_name()
+                        if self.type == "UNION"
+                        else (
+                            f"*({tmp_str_or_null(self.default.value)})"
+                            if self.type in ["TSTR", "BSTR"]
+                            else self.val_to_str_with_suffix(self.default.value)
+                        )
                     )
-                    access = self.val_access() if assign else self.repeated_val_access()
+                    access = (
+                        self.access_append_delimiter(
+                            self.repeated_val_access(), ".", self.choice_var_name()
+                        )
+                        if self.type == "UNION"
+                        else self.val_access() if assign else self.repeated_val_access()
+                    )
                     default_assignment = f"({access} = {default_value})"
                 if assign:
                     decode_str = self.repeated_xcode(union_int)
