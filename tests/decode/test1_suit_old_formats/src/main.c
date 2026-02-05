@@ -7,6 +7,7 @@
 #include <zephyr/ztest.h>
 #include "manifest-moran3_decode.h"
 #include "manifest-moran4_decode.h"
+#include "zcbor_print.h"
 
 
 uint8_t test_vector2[] = {
@@ -156,10 +157,11 @@ ZTEST(cbor_decode_test, test_2)
 		"sed tincidunt ante, a sodales ligula. Phasellus ullamcorper "
 		"odio commodo ipsum egestas, vitae lacinia leo ornare. "
 		"Suspendisse posuere sed.";
-	zassert_equal(ZCBOR_SUCCESS, cbor_decode_OuterWrapper(test_vector3,
+
+	int ret = cbor_decode_OuterWrapper(test_vector3,
 				sizeof(test_vector3),
-				&outerwrapper, &decode_len),
-			"test_vector3 failed");
+				&outerwrapper, &decode_len);
+	zassert_equal(ZCBOR_SUCCESS, ret, "%s", zcbor_error_str(ret));
 	zassert_equal(sizeof(test_vector3), decode_len, NULL);
 	zassert_equal(2, outerwrapper
 			.OuterWrapper_manifest_cbor
