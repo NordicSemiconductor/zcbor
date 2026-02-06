@@ -3218,6 +3218,11 @@ class CodeGenerator(CddlXcoder):
 
         return ""
 
+    def val_to_str_with_suffix(self, value):
+        """Convert value to string with appropriate suffix."""
+        value_str = val_to_str(value)
+        return f"{value_str}{self.value_suffix(value_str)}"
+
     def range_checks(self, access):
         """Return the code needed to check the size/value bounds of this element."""
         if self.type != "OTHER" and self.value is not None:
@@ -3232,21 +3237,12 @@ class CodeGenerator(CddlXcoder):
 
         if self.type in ["INT", "UINT", "NINT", "FLOAT", "BOOL"]:
             if min_val is not None and min_val == max_val:
-                range_checks.append(
-                    f"({access} == {val_to_str(min_val)}"
-                    f"{self.value_suffix(val_to_str(min_val))})"
-                )
+                range_checks.append(f"({access} == {self.val_to_str_with_suffix(min_val)})")
             else:
                 if min_val is not None:
-                    range_checks.append(
-                        f"({access} >= {val_to_str(min_val)}"
-                        f"{self.value_suffix(val_to_str(min_val))})"
-                    )
+                    range_checks.append(f"({access} >= {self.val_to_str_with_suffix(min_val)})")
                 if max_val is not None:
-                    range_checks.append(
-                        f"({access} <= {val_to_str(max_val)}"
-                        f"{self.value_suffix(val_to_str(max_val))})"
-                    )
+                    range_checks.append(f"({access} <= {self.val_to_str_with_suffix(max_val)})")
             if self.bits:
                 range_checks.append(
                     f"!({access} & ~("
@@ -3350,7 +3346,7 @@ class CodeGenerator(CddlXcoder):
                     default_value = (
                         f"*({tmp_str_or_null(self.default)})"
                         if self.type in ["TSTR", "BSTR"]
-                        else val_to_str(self.default) + self.value_suffix(val_to_str(self.default))
+                        else self.val_to_str_with_suffix(self.default)
                     )
                     access = self.val_access() if assign else self.repeated_val_access()
                     default_assignment = f"({access} = {default_value})"
