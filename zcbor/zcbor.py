@@ -640,6 +640,29 @@ class CddlParser:
         """Set an explicit base name for this element."""
         self.base_name = base_name.replace("-", "_")
 
+    def recurse(self, func, with_default=False):
+        """Recursively apply a function to this element and its children, key, cbor and default."""
+
+        def func_wrapper(elem):
+            """Wrapper to add error context to any CddlParsingError raised by func."""
+            try:
+                func(elem)
+            except CddlParsingError as e:
+                e.zcbor_add_note(
+                    f"  while processing ({func.__name__}) element {elem.get_base_name()}"
+                )
+                raise
+
+        if self.type in ["LIST", "MAP", "GROUP", "UNION"]:
+            for child in self.value:
+                func_wrapper(child)
+        if self.cbor:
+            func_wrapper(self.cbor)
+        if self.key:
+            func_wrapper(self.key)
+        if with_default and self.default:
+            func_wrapper(self.default)
+
     def id(self, with_prefix=True):
         """Add uniqueness to the base name."""
         raw_name = self.get_base_name()
@@ -926,7 +949,7 @@ class CddlParser:
                     f"({self.type} != {value.type})"
                 )
 
-        self.default = value.value
+        self.default = value
 
     def type_and_range(self, new_type, min_val, max_val, inc_end=True):
         """Set the self.type and self.minValue and self.max_value (or self.min_size and
@@ -1447,13 +1470,7 @@ class CddlParser:
                 )
 
         # Validation of child elements.
-        if self.type in ["MAP", "LIST", "UNION", "GROUP"]:
-            for child in self.value:
-                child.post_validate()
-        if self.key:
-            self.key.post_validate()
-        if self.cbor:
-            self.cbor.post_validate()
+        self.recurse(self.__class__.post_validate, with_default=True)
 
     def post_validate_control_group(self):
         if self.type != "GROUP":
@@ -1672,13 +1689,7 @@ class CddlXcoder(CddlParser):
         if self.key:
             self.key.set_base_name(self.var_name().strip("_") + "_key")
 
-        if self.type in ["LIST", "MAP", "GROUP", "UNION"]:
-            for child in self.value:
-                child.set_base_names()
-        if self.cbor:
-            self.cbor.set_base_names()
-        if self.key:
-            self.key.set_base_names()
+        self.recurse(self.__class__.set_base_names)
 
     def post_process(self):
         self.set_id_prefix()
@@ -3344,9 +3355,9 @@ class CodeGenerator(CddlXcoder):
                 default_assignment = None
                 if self.default is not None:
                     default_value = (
-                        f"*({tmp_str_or_null(self.default)})"
+                        f"*({tmp_str_or_null(self.default.value)})"
                         if self.type in ["TSTR", "BSTR"]
-                        else self.val_to_str_with_suffix(self.default)
+                        else self.val_to_str_with_suffix(self.default.value)
                     )
                     access = self.val_access() if assign else self.repeated_val_access()
                     default_assignment = f"({access} = {default_value})"
