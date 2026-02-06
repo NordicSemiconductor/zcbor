@@ -1520,7 +1520,7 @@ class TestExceptions(TestCase):
         failing_cddl_string = 'test = [foo: .size 3 "bar"]'
         expected_error = """
 CDDL parsing error:
-Cannot have size before type
+Cannot have .size before type
   while parsing CDDL: '.size 3'
   while parsing CDDL: '[foo: .size 3 "bar"]'
   while parsing type test""".strip()
@@ -1568,7 +1568,7 @@ Cannot have size before type
 
     def test_size_placement(self):
         exc = self.do_test_exception("foo = .size 2 uint")
-        self.assertEqual("Cannot have size before type", str(exc))
+        self.assertEqual("Cannot have .size before type", str(exc))
 
     def test_size_type(self):
         exc = self.do_test_exception("foo = nil .size 2")
@@ -1588,7 +1588,7 @@ Cannot have size before type
 
     def test_cbor_bstr(self):
         exc = self.do_test_exception("foo = tstr .cbor int")
-        self.assertEqual(".cbor must be used with bstr.", str(exc))
+        self.assertEqual(".cbor and .cborseq must be used with bstr.", str(exc))
 
     def test_bits_int(self):
         exc = self.do_test_exception("foo = int .bits bar")
@@ -1765,6 +1765,9 @@ class TestParsingErrors(TestCase):
     def test_invalid_cddl(self):
         """Check that certain CDDL formatting errors are caught."""
 
+        self.cddl_parsing_error_test(
+            "foo = int .bar 1234", "foo = int .lt 1234", r"Invalid control operator: '\.bar'"
+        )
         # Two values
         self.cddl_parsing_error_test(
             "foo = 1 .eq 2", "foo = int .eq 2", r".*Attempting to set value.*"
