@@ -418,6 +418,7 @@ class CddlParser:
         base_name=None,
         short_names=False,
         base_stem="",
+        prototype=None,
     ):
         super(CddlParser, self).__init__()
         self.id_prefix = "temp_" + str(counter())
@@ -469,6 +470,7 @@ class CddlParser:
         # Stem which can be used when generating an id.
         self.base_stem = base_stem.replace("-", "_")
         self.short_names = short_names
+        self.prototype = prototype or self
 
         if type(self) not in type(self).cddl_regexes:
             self.cddl_regexes_init()
@@ -478,6 +480,24 @@ class CddlParser:
 
     def post_process_control_group(self):
         self.post_validate_control_group()
+
+    def parse_type(self, name):
+        """Parse an unparsed member in my_types or my_control_groups
+
+        Replace the CDDL string value in my_types or my_control_groups with the parsed element.
+        """
+        cddl_string = self.my_types[name] if name in self.my_types else self.my_control_groups[name]
+        assert isinstance(cddl_string, str), f"Type {name} has already been parsed."
+        try:
+            parsed = self.prototype.parse_one(cddl_string, base_stem=name)
+        except CddlParsingError as e:
+            e.zcbor_add_note(f"  while parsing type {name}")
+            raise
+        if name in self.my_types:
+            parsed = parsed.flatten()[0]
+            self.my_types[name] = parsed
+        elif name in self.my_control_groups:
+            self.my_control_groups[name] = parsed
 
     @classmethod
     def from_cddl(cddl_class, *, cddl_string, **kwargs):
@@ -500,17 +520,8 @@ class CddlParser:
 
         # Parse the definitions, replacing the each string with a
         # CodeGenerator instance.
-        for my_type, cddl_string in type_strings.items():
-            try:
-                parsed = prototype.parse_one(cddl_string, base_stem=my_type)
-            except CddlParsingError as e:
-                e.zcbor_add_note(f"  while parsing type {my_type}")
-                raise
-            if my_type in my_types:
-                parsed = parsed.flatten()[0]
-                my_types[my_type] = parsed
-            elif my_type in my_control_groups:
-                my_control_groups[my_type] = parsed
+        for my_type in type_strings:
+            prototype.parse_type(my_type)
 
         counter(True)
 
@@ -669,6 +680,7 @@ class CddlParser:
             "my_control_groups": self.my_control_groups,
             "short_names": self.short_names,
             "base_stem": self.base_stem,
+            "prototype": self.prototype,
         }
 
     def child_base_id(self):
