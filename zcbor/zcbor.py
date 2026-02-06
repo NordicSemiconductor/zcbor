@@ -479,6 +479,7 @@ class CddlParser:
             self.cddl_regexes_init()
 
     def post_process(self):
+        self.process_modifiers()
         self.post_validate()
 
     def post_process_control_group(self):
@@ -783,35 +784,61 @@ class CddlParser:
             self.key = self.key.flatten()[0]
         if self.cbor:
             self.cbor = self.cbor.flatten()[0]
+        if self.default:
+            self.default = self.default.flatten()[0]
 
     def flatten(self, allow_multi=False):
         """Remove unneccessary abstractions, like single-element groups or unions."""
         self._flatten()
         if self.type == "OTHER" and self.is_socket and self.value not in self.my_types:
             return []
-        if (
-            self.type in ["GROUP", "UNION"]
-            and (len(self.value) == 1)
-            and (not (self.key and self.value[0].key))
-        ):
+        if self.type in ["GROUP", "UNION"] and (len(self.value) == 1):
             self.value[0].min_qty *= self.min_qty
             self.value[0].max_qty = mult_or_none((self.value[0].max_qty, self.max_qty))
             if not self.value[0].label:
                 self.value[0].label = self.label
+            self.value[0].merge_modifiers(self)
             if not self.value[0].key:
                 self.value[0].key = self.key
             self.value[0].is_key = self.is_key
             self.value[0].tags.extend(self.tags)
-            self.value[0].merge_modifiers(self)
+            self.value[0].default = self.default
             return self.value
         elif allow_multi and self.type in ["GROUP"] and self.min_qty == 1 and self.max_qty == 1:
             return self.value
         else:
             return [self]
 
+    def enforce_no_modifier(self, name, exceptions=set()):
+        """Raise an error if any modifier is present."""
+        disallowed = set(self.modifiers.keys()) - exceptions
+        if len(disallowed) > 0:
+            raise CddlParsingError(f"{name} cannot have: {', '.join(disallowed)}.")
+
+    def unpack_value(self, value, name):
+        """Strip any indirections to get the actual value."""
+        value.enforce_no_modifier(name, exceptions={"value"})
+
+        already_unpacked = set()
+        while value.type == "OTHER" or (value.type == "GROUP" and len(value.value) == 1):
+            if value.type == "OTHER":
+                assert not isinstance(
+                    self.my_types[value.value], str
+                ), f"Type {value.value} hasn't been parsed yet."
+                value = self.my_types[value.value]
+            else:
+                value = value.value[0]
+            value.enforce_no_modifier(name, exceptions={"value"})
+            assert isinstance(value, CddlParser), f"Unknown type {value}."
+            if id(value) in already_unpacked:
+                raise CddlParsingError(f"Circular reference detected when unpacking {name}.")
+            already_unpacked.add(id(value))
+
+        return value
+
     def extract_unambiguous_val(self, in_obj, name, valid_types=("UINT",)):
         """Extract a number value (float or integer), and check its validity."""
-        obj = in_obj
+        obj = self.unpack_value(in_obj, name)
         if obj.value is None:
             raise CddlParsingError(f"{name} must be unambiguous.")
         if obj.type not in valid_types:
@@ -823,9 +850,7 @@ class CddlParser:
 
         On the form "min..max" or "min...max"."""
         if range_str.count("..") != 1:
-            raise CddlParsingError(
-                f"Must have exactly one range specifier '..' or '...': {range_str}"
-            )
+            raise CddlParsingError(f"Must have exactly one range specifier '..'/'...': {range_str}")
 
         def get_part(s):
             return self.extract_unambiguous_val(self.parse_one(s), "Range value")
@@ -869,7 +894,7 @@ class CddlParser:
     def enforce_no_duplicate_modifier(self, modifier):
         """Raise an error if the given modifier is already present."""
         if modifier in self.modifiers:
-            raise CddlParsingError(f"Element ({self}) already has {modifier} modifier.")
+            raise CddlParsingError(f"Element already has {modifier}.")
 
     def add_modifier(self, modifier, val=None, no_duplicates=True):
         """Add a modifier to this element. If no_duplicates, fail if modifier already exists."""
@@ -891,7 +916,8 @@ class CddlParser:
             raise CddlParsingError(f"Cannot have {mod} before type")
         modval = self.parse_one(modval)
         self.add_modifier(mod, modval)
-        self.mod_processors[mod](self, modval)
+        if mod not in self.deferred_mod_processors:
+            self.mod_processors[mod](self, modval)
 
     def set_size_values(self, range_str):
         """Set the .size modifier and update the size range."""
@@ -900,7 +926,6 @@ class CddlParser:
             raise CddlParsingError("Size range must contain only non-negative integers.")
         minsize, maxsize = min_val_obj.value, max_val_obj.value
         self.set_size_range(minsize, maxsize, inc_end)
-        self.add_modifier(".sizer", range_str)
 
     def type_and_value(self, new_type, value_generator=lambda: None):
         """Set the self.type and self.value of this element."""
@@ -944,7 +969,7 @@ class CddlParser:
             self.max_value = -1
 
     eq_types = ("INT", "UINT", "NINT", "BSTR", "TSTR", "FLOAT", "BOOL")
-    default_types = eq_types
+    default_types = eq_types + ("UNION",)
 
     def set_eq(self, value):
         """Set the value of this element (provided via '.eq')."""
@@ -991,6 +1016,14 @@ class CddlParser:
         ".cborseq": lambda m_self, v: m_self.set_cborseq(v),
         ".bits": lambda m_self, v: m_self.set_bits(v),
     }
+    deferred_mod_processors = {".gt", ".ge", ".lt", ".le", ".size", ".sizer", ".eq", ".default"}
+
+    def process_modifiers(self):
+        """Process the modifiers of this element, applying their effects to the element."""
+        for mod in set(self.deferred_mod_processors) & set(self.modifiers):
+            self.mod_processors[mod](self, self.modifiers[mod])
+
+        self.recurse(self.__class__.process_modifiers, with_default=True)
 
     def type_and_range(self, new_type, min_val, max_val, inc_end=True):
         """Set the self.type and self.minValue and self.max_value (or self.min_size and
@@ -1015,7 +1048,7 @@ class CddlParser:
             self.set_size_range(sizeof(abs(max_val)), sizeof(abs(min_val)))
         if new_type == "INT":
             self.set_size_range(None, max(sizeof(abs(max_val)), sizeof(abs(min_val))))
-        self.add_modifier("..")
+        self.add_modifier("range", f"{min_val}..{max_val}")
 
     def float_with_size(self, float_variant):
         """Set the type and size or size range of a float ("floatX" or "floatX-Y") element"""
@@ -1047,7 +1080,7 @@ class CddlParser:
         ]
 
         self.quantifier = quantifier
-        self.add_modifier("quantifier")
+        self.add_modifier("quantifier", quantifier)
         for reg, handler in quantifier_mapping:
             match_obj = getrp(reg).match(quantifier)
             if match_obj:
@@ -1068,8 +1101,6 @@ class CddlParser:
                 raise CddlParsingError("Size cannot be negative: %d" % size)
 
     def enforce_sizeable(self):
-        if self.type is None:
-            raise CddlParsingError("Cannot have size before type")
         if self.type not in ["BSTR", "TSTR", "INT", "UINT", "NINT", "FLOAT"]:
             raise CddlParsingError(".size cannot be applied to %s" % self.type)
         if self.value is not None and self.type != "FLOAT":
@@ -1354,7 +1385,7 @@ class CddlParser:
             (r"false(?!\w)", lambda m_self, _: m_self.type_and_value("BOOL", lambda: False)),
             (r"#6\.(?P<item>\d+)", self_type.add_tag),
             (r"(\$?\$?[\w-]+)", lambda m_self, oth: m_self.type_and_value("OTHER", lambda: oth)),
-            (rf"\.size\s+{paren_or_sym_range}", lambda m_self, sr: m_self.set_size_values(sr)),
+            (rf"\.size {paren_or_sym_range}", lambda m_self, sr: m_self.add_modifier(".sizer", sr)),
             (rf"\.[a-z]+\s+{paren_or_sym_no_name1}", self_type.add_control_op),
         ]
 
