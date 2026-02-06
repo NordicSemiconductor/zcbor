@@ -519,6 +519,8 @@ class TestEx1InvManifest14(TestManifest):
             self.decode_string(data, p_manifest14, p_cose)
         except (zcbor.CddlValidationError, cbor2.CBORDecodeEOF) as e:
             return
+        except:
+            raise
         else:
             assert False, "Should have failed validation"
 
@@ -1146,12 +1148,16 @@ class TestOptional(TestCase):
 class CornerCaseTest(TestCase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.cddl_res = zcbor.DataTranslator.from_cddl(
-            cddl_string=p_prelude.read_text(encoding="utf-8")
-            + "\n"
-            + p_corner_cases.read_text(encoding="utf-8"),
-            default_max_qty=16,
-        )
+        try:
+            self.cddl_res = zcbor.DataTranslator.from_cddl(
+                cddl_string=p_prelude.read_text(encoding="utf-8")
+                + "\n"
+                + p_corner_cases.read_text(encoding="utf-8"),
+                default_max_qty=16,
+            )
+        except zcbor.CddlParsingError as e:
+            print(zcbor.format_parsing_error(e))
+            raise
 
 
 class TestUndefined(CornerCaseTest):
@@ -1611,6 +1617,10 @@ Cannot have .size before type
             str(exc),
         )
 
+    def test_multiple_keys(self):
+        exc = self.do_test_exception("foo = 1 => (2 => tstr)")
+        self.assertEqual("Element already has key.", str(exc))
+
     def test_unparsed(self):
         exc = self.do_test_exception("foo = bar")
         self.assertEqual("bar has not been parsed.", str(exc))
@@ -1629,6 +1639,26 @@ Cannot have .size before type
     def test_float_size(self):
         exc = self.do_test_exception("foo = float .size 2..9")
         self.assertEqual("Floats must have 2, 4 or 8 bytes of precision.", str(exc))
+
+    def test_default_type_mismatch(self):
+        exc = self.do_test_exception("foo = ?uint .default -1")
+        self.assertEqual(
+            "Type of .default value does not match type of element. (UINT != NINT)", str(exc)
+        )
+
+    def test_default_type_unsupported(self):
+        exc = self.do_test_exception("foo = ?[uint] .default 1")
+        self.assertEqual("zcbor does not support .default values for the LIST type", str(exc))
+
+    def test_double_default(self):
+        exc = self.do_test_exception("foo = (?uint .default 1) .default 2")
+        self.assertEqual("Element already has .default.", str(exc))
+
+    def test_ambigouous_default(self):
+        exc = self.do_test_exception("""three_to_four = (3..4)
+               foo = ?int .default three_to_four""")
+        # self.assertEqual(".default value must be unambiguous.", str(exc))
+        self.assertEqual(".default cannot have: range.", str(exc))
 
 
 class TestUnicodeEscape(TestCase):
@@ -1798,6 +1828,16 @@ class TestParsingErrors(TestCase):
             'foo = ?tstr .default "hello"',
             r"zcbor currently supports \.default only with the \? quantifier",
         )
+        self.cddl_parsing_error_test(
+            "foo = ?tstr .default bar bar = baz baz = bar",
+            'foo = ?tstr .default "hello"',
+            r"Circular reference detected when unpacking .default",
+        )
+        self.cddl_parsing_error_test(
+            "foo = ?tstr .default bar bar = baz baz = bar",
+            'foo = ?tstr .default "hello"',
+            r"Circular reference detected when unpacking .default",
+        )
 
         self.cddl_parsing_error_test("foo = {int}", "foo = {1 => int}", r"Missing map key")
         self.cddl_parsing_error_test(
@@ -1828,12 +1868,12 @@ class TestParsingErrors(TestCase):
         self.cddl_parsing_error_test(
             f"foo = int .size 1..2..",
             f"foo = int .size 1..2",
-            r"Must have exactly one range specifier '..' or '...': 1..2..",
+            r"Must have exactly one range specifier '..'/'...': 1..2..",
         )
         self.cddl_parsing_error_test(
             f"foo = int .size 1....2",
             f"foo = int .size 1...2",
-            r"Must have exactly one range specifier '..' or '...': 1....2",
+            r"Must have exactly one range specifier '..'/'...': 1....2",
         )
         self.cddl_parsing_error_test(
             f"foo = int .size -2",
@@ -1881,6 +1921,22 @@ class TestParsingErrors(TestCase):
                 f"foo = int {ctrl_op} uint",
                 f"foo = int {ctrl_op} 1",
                 r"Inequality value must be unambiguous\.",
+            )
+            self.cddl_parsing_error_test(
+                f"foo = int {ctrl_op} 1 {ctrl_op} 2",
+                f"foo = int {ctrl_op} 1",
+                rf"Element already has {ctrl_op}\.",
+            )
+            self.cddl_parsing_error_test(
+                f"""
+                foo = int {ctrl_op} bar
+                bar = +#6.123(3)
+                """,
+                f"""
+                foo = int {ctrl_op} bar
+                bar = 3
+                """,
+                r"Inequality value cannot have: (tag, quantifier|quantifier, tag)",
             )
 
 
