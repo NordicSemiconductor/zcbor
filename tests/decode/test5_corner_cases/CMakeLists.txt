@@ -19,6 +19,7 @@ set(py_command
   --output-c ${PROJECT_BINARY_DIR}/src/corner_cases.c
   --output-h ${PROJECT_BINARY_DIR}/include/corner_cases.h
   --copy-sources
+  --defines
   -t NestedListMap NestedMapListMap
     Numbers
     Numbers2
