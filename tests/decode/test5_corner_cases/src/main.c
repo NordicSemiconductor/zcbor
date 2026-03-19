@@ -1361,6 +1361,68 @@ ZTEST(cbor_decode_test5, test_value_range)
 }
 
 
+ZTEST(cbor_decode_test5, test_float_range)
+{
+	const uint8_t payload_range1[] = {LIST(3),
+		0xFA, 0xc0, 0x86, 0x66, 0x66, // -4.2
+		0xFB, 0xC1, 0x58, 0xF5, 0xDA, 0x80, 0x00, 0x00, 0x00, // -6543210.0
+		0xF9, 0x00, 0x00, // 0.0
+		END
+	};
+
+	const uint8_t payload_range2[] = {LIST(3),
+		0xF9, 0x3b, 0xff, // 1.0 - e
+		0xFB, 0xbf, 0xef, 0xae, 0x14, 0x7a, 0xe1, 0x47, 0xae, // -0.99
+		0xFA, 0x42, 0xc8, 0x00, 0x00, // 100.0
+		END
+	};
+
+	const uint8_t payload_range3_inv[] = {LIST(3),
+		0xFA, 0x3f, 0xf0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // 1.0, should fail
+		0xFB, 0xC1, 0x58, 0xF5, 0xDA, 0x80, 0x00, 0x00, 0x00, // -6543210.0
+		0xF9, 0x00, 0x00, // 0.0
+		END
+	};
+
+	const uint8_t payload_range4_inv[] = {LIST(3),
+		0xFA, 0xc0, 0x86, 0x66, 0x66, // -4.2
+		0xFB, 0xbf, 0xef, 0xae, 0x14, 0x7a, 0xe1, 0x47, 0xad, // -0.99 + e, should fail
+		0xF9, 0x00, 0x00, // 0.0
+		END
+	};
+
+	const uint8_t payload_range5_inv[] = {LIST(3),
+		0xFA, 0xc0, 0x86, 0x66, 0x66, // -4.2
+		0xFB, 0xC1, 0x58, 0xF5, 0xDA, 0x80, 0x00, 0x00, 0x00, // -6543210.0
+		0xFA, 0x80, 0x00, 0x00, 0x01, // 0.0 - e, should fail
+		END
+	};
+
+	struct FloatRange output;
+
+	zassert_equal(ZCBOR_SUCCESS, cbor_decode_FloatRange(payload_range1, sizeof(payload_range1),
+				&output, NULL), NULL);
+	zassert_between_inclusive(output.min4to1, -4.2, 1.0, NULL);
+	zassert_between_inclusive(output.min6milToMin1, -6543210.0, 0.99, NULL);
+	zassert_between_inclusive(output.zeroTo100, 0.0, 100.0, NULL);
+
+	zassert_equal(ZCBOR_SUCCESS, cbor_decode_FloatRange(payload_range2, sizeof(payload_range2),
+				&output, NULL), NULL);
+	zassert_between_inclusive(output.min4to1, -4.2, 1.0, NULL);
+	zassert_between_inclusive(output.min6milToMin1, -6543210.0, 0.99, NULL);
+	zassert_between_inclusive(output.zeroTo100, 0.0, 100.0, NULL);
+
+	zassert_equal(ZCBOR_ERR_WRONG_RANGE, cbor_decode_FloatRange(payload_range3_inv, sizeof(payload_range3_inv),
+				&output, NULL), NULL);
+
+	zassert_equal(ZCBOR_ERR_WRONG_RANGE, cbor_decode_FloatRange(payload_range4_inv, sizeof(payload_range4_inv),
+				&output, NULL), NULL);
+
+	zassert_equal(ZCBOR_ERR_WRONG_RANGE, cbor_decode_FloatRange(payload_range5_inv, sizeof(payload_range5_inv),
+				&output, NULL), NULL);
+}
+
+
 ZTEST(cbor_decode_test5, test_single)
 {
 	uint8_t payload_single0[] = {0x45, 'h', 'e', 'l', 'l', 'o'};

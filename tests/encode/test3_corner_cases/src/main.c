@@ -1030,6 +1030,51 @@ ZTEST(cbor_encode_test3, test_value_range)
 				&out_len), NULL);
 }
 
+
+ZTEST(cbor_encode_test3, test_float_range)
+{
+	uint8_t output[35];
+	size_t out_len;
+
+	struct FloatRange input1 = {
+		.min4to1 = -4.2,
+		.min6milToMin1 = -6543210.0,
+		.zeroTo100 = 0.0,
+	};
+	struct FloatRange input2 = {
+		.min4to1 = 0.99999999999,
+		.min6milToMin1 = -0.99,
+		.zeroTo100 = 100.0,
+	};
+	struct FloatRange input3_inv = {
+		.min4to1 = 1.0, // Fails
+		.min6milToMin1 = -0.99,
+		.zeroTo100 = 100.0,
+	};
+	struct FloatRange input4_inv = {
+		.min4to1 = 0.99999999999,
+		.min6milToMin1 = -0.98999999999, // Fails
+		.zeroTo100 = 100.0,
+	};
+	struct FloatRange input5_inv = {
+		.min4to1 = 0.99999999999,
+		.min6milToMin1 = -0.99,
+		.zeroTo100 = *(double*)&(uint64_t){0x8000000000000001}, // Fails (smallest negative subnormal, less than 0)
+	};
+
+	zassert_equal(ZCBOR_SUCCESS, cbor_encode_FloatRange(output, sizeof(output), &input1,
+				&out_len), NULL);
+	zassert_equal(ZCBOR_SUCCESS, cbor_encode_FloatRange(output, sizeof(output), &input2,
+				&out_len), NULL);
+	zassert_equal(ZCBOR_ERR_WRONG_RANGE, cbor_encode_FloatRange(output, sizeof(output), &input3_inv,
+				&out_len), NULL);
+	zassert_equal(ZCBOR_ERR_WRONG_RANGE, cbor_encode_FloatRange(output, sizeof(output), &input4_inv,
+				&out_len), NULL);
+	zassert_equal(ZCBOR_ERR_WRONG_RANGE, cbor_encode_FloatRange(output, sizeof(output), &input5_inv,
+				&out_len), NULL);
+}
+
+
 ZTEST(cbor_encode_test3, test_single)
 {
 	uint8_t exp_payload_single0[] = {0x45, 'h', 'e', 'l', 'l', 'o'};

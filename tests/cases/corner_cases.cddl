@@ -43,10 +43,12 @@ NumberMap = {
 	? "opt_cbor" => bstr .size 5 .cbor (uint .size 4),
 }
 
+TenToThirty = 10..30
+
 Strings = [
 	hello: "hello",
 	threehundrebytebstr: bstr .size 300,
-	#6.0(tentothirtybytetstr: tstr .size 10..30),
+	#6.0(tentothirtybytetstr: tstr .size TenToThirty),
 	cborNumbers: bstr .cbor Numbers,
 	cborseqSimples: bstr .cborseq Simples,
 	?optCborStrings: bstr .cbor Strings,
@@ -115,6 +117,14 @@ ValueRange = [
 	defaulthello: ?bstr .default ((('hello'))),
 	defaulte: ?float .size 4 .default euler,
 	defaultfalse: ?bool .default false,
+]
+
+FloatOne = 1.0
+
+FloatRange = [
+	min4to1: -4.2...FloatOne,
+	min6milToMin1: -6543210.0..-0.99,
+	zeroTo100: 0.0..100.0,
 ]
 
 SingleBstr = bstr
