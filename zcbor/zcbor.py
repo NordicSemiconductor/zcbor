@@ -788,10 +788,9 @@ class CddlParser:
 
     def unpack_value(self, value, name):
         """Strip any indirections to get the actual value."""
-        value.enforce_no_modifier(name, exceptions={"value"})
-
         already_unpacked = set()
         while value.type == "OTHER" or (value.type == "GROUP" and len(value.value) == 1):
+            value.enforce_no_modifier(name, exceptions={"value"})
             if value.type == "OTHER":
                 assert not isinstance(
                     self.my_types[value.value], str
@@ -799,7 +798,6 @@ class CddlParser:
                 value = self.my_types[value.value]
             else:
                 value = value.value[0]
-            value.enforce_no_modifier(name, exceptions={"value"})
             assert isinstance(value, CddlParser), f"Unknown type {value}."
             if id(value) in already_unpacked:
                 raise CddlParsingError(f"Circular reference detected when unpacking {name}.")
@@ -810,26 +808,36 @@ class CddlParser:
     def extract_unambiguous_val(self, in_obj, name, valid_types=("UINT",)):
         """Extract a number value (float or integer), and check its validity."""
         obj = self.unpack_value(in_obj, name)
+        obj.enforce_no_modifier(name, exceptions={"value"})
         if obj.value is None:
             raise CddlParsingError(f"{name} must be unambiguous.")
         if obj.type not in valid_types:
             raise CddlParsingError(f"{name} must be one of {valid_types}, got {obj.type}.")
         return obj
 
-    def extract_range(self, range_str):
-        """Extract the minimum and maximum values from a range string.
+    def set_num_range(self, range_str):
+        """Extract the minimum and maximum values from a range string and populate self.
 
-        On the form "min..max" or "min...max"."""
+        Set the self.type and self.min_value and self.max_value based on the input string.
+        The range string is on the form "min..max" or "min...max".
+        """
         if range_str.count("..") != 1:
             raise CddlParsingError(f"Must have exactly one range specifier '..'/'...': {range_str}")
 
         def get_part(s):
-            return self.extract_unambiguous_val(self.parse_one(s), "Range value")
+            return self.extract_unambiguous_val(
+                self.parse_one(s), "Range value", valid_types=("UINT", "NINT", "FLOAT")
+            )
 
         min_val_obj, max_val_obj = map(get_part, range_str.replace("...", "..").split(".."))
         inc_end = "..." not in range_str
+        minv, maxv = min_val_obj.value, max_val_obj.value
 
-        return min_val_obj, max_val_obj, inc_end
+        if (min_val_obj.type, max_val_obj.type).count("FLOAT") == 1:
+            raise CddlParsingError(f"Range values must both be int or both float.")
+        new_type = min_val_obj.type if min_val_obj.type == max_val_obj.type else "INT"
+
+        self.type_and_range(new_type, minv, maxv, inc_end)
 
     def set_min_value(self, min_value, inclusive):
         self.min_value = min_value
@@ -891,14 +899,6 @@ class CddlParser:
         self.add_modifier(mod, modval)
         if mod not in self.deferred_mod_processors:
             self.mod_processors[mod](self, modval)
-
-    def set_size_values(self, range_str):
-        """Set the .size modifier and update the size range."""
-        min_val_obj, max_val_obj, inc_end = self.extract_range(range_str)
-        if {min_val_obj.type, max_val_obj.type} != {"UINT"}:
-            raise CddlParsingError("Size range must contain only non-negative integers.")
-        minsize, maxsize = min_val_obj.value, max_val_obj.value
-        self.set_size_range(minsize, maxsize, inc_end)
 
     def type_and_value(self, new_type, value_generator=lambda: None):
         """Set the self.type and self.value of this element."""
@@ -981,15 +981,14 @@ class CddlParser:
         ".ge": lambda m_self, v: m_self.set_min_value(m_self.extract_ineq_val(v).value, True),
         ".lt": lambda m_self, v: m_self.set_max_value(m_self.extract_ineq_val(v).value, False),
         ".le": lambda m_self, v: m_self.set_max_value(m_self.extract_ineq_val(v).value, True),
-        ".size": lambda m_self, v: m_self.set_size(m_self.extract_unambiguous_val(v, "Size").value),
-        ".sizer": lambda m_self, v: m_self.set_size_values(v),
+        ".size": lambda m_self, v: m_self.set_size_op(v),
         ".eq": lambda m_self, v: m_self.set_eq(v),
         ".default": lambda m_self, v: m_self.set_default(v),
         ".cbor": lambda m_self, v: m_self.set_cbor(v),
         ".cborseq": lambda m_self, v: m_self.set_cborseq(v),
         ".bits": lambda m_self, v: m_self.set_bits(v),
     }
-    deferred_mod_processors = {".gt", ".ge", ".lt", ".le", ".size", ".sizer", ".eq", ".default"}
+    deferred_mod_processors = {".gt", ".ge", ".lt", ".le", ".size", ".eq", ".default"}
 
     def process_modifiers(self):
         """Process the modifiers of this element, applying their effects to the element."""
@@ -1002,16 +1001,16 @@ class CddlParser:
         """Set the self.type and self.minValue and self.max_value (or self.min_size and
         self.max_size depending on the type) of this element. For use during CDDL parsing.
         """
-        if not inc_end:
-            max_val -= 1
-        if new_type not in ["INT", "UINT", "NINT"]:
+        if new_type not in ["INT", "UINT", "NINT", "FLOAT"]:
             raise ValueError("Only integers (not %s) can have range" % (new_type,))
         if min_val > max_val:
-            raise CddlParsingError(
-                "Range has larger minimum than maximum (min %d, max %d)" % (min_val, max_val)
-            )
+            raise CddlParsingError(f"Range has larger min ({min_val}) than max ({max_val})")
         if min_val == max_val:
-            return self.type_and_value(new_type, min_val)
+            if not inc_end:
+                raise CddlParsingError(
+                    f"Range with equal min and max must be inclusive (got {max_val}, exclusive)"
+                )
+            return self.type_and_value(new_type, lambda: min_val)
         self.type = new_type
         self.set_min_value(min_val, True)
         self.set_max_value(max_val, inc_end)
@@ -1108,10 +1107,26 @@ class CddlParser:
         if (min_size and min_size < 0 or max_size and max_size < 0) or (
             None not in [min_size, max_size] and min_size > max_size
         ):
-            raise CddlParsingError("Invalid size range (min %d, max %d)" % (min_size, max_size))
+            raise CddlParsingError(
+                f"Size range must be non-negative and min <= max (got: min {min_size}, max {max_size})"
+            )
 
         self.set_min_size(min_size)
         self.set_max_size(max_size)
+
+    def set_size_op(self, size_op):
+        """Set the size or size range of this element based on a parsed .size operator.
+
+        The size_op can be either a single value or a range.
+        """
+        sval = self.unpack_value(size_op, ".size operator value")
+        if "value" in sval.modifiers:
+            self.set_size(self.extract_unambiguous_val(sval, ".size").value)
+        elif "range" in sval.modifiers:
+            sval.enforce_no_modifier(".size range", exceptions={"range"})
+            self.set_size_range(sval.min_value, sval.max_value, inc_end=sval.max_value_inclusive)
+        else:
+            raise CddlParsingError(".size operator must have a literal value or range.")
 
     def set_min_size(self, min_size):
         """Set self.min_size, and self.minValue if type is UINT."""
@@ -1251,6 +1266,9 @@ class CddlParser:
         paren_or_sym_range = (
             rf"(?P<item>{paren_or_sym_no_name1}\s*\.\.\.?\s*{paren_or_sym_no_name2})"
         )
+        opt_paren_or_sym_range = (
+            rf"({paren_or_sym_no_name1}(\s*\.\.\.?\s*{paren_or_sym_no_name2})?)"
+        )
         self_type = type(self)
 
         # The "range_types" match the contents of brackets i.e. (), [], and {},
@@ -1312,54 +1330,15 @@ class CddlParser:
                 r"float(?P<item>(16|32|64|16-32|32-64))?(?![\w-])",
                 lambda m_self, float_variant: m_self.float_with_size(float_variant),
             ),
-            (
-                r"\-?\d*\.\d+",
-                lambda m_self, num: m_self.type_and_value("FLOAT", lambda: float(num)),
-            ),
-            (
-                match_uint + r"\.\." + match_uint,
-                lambda m_self, _range: m_self.type_and_range(
-                    "UINT", *map(lambda num: int(num, 0), _range.split(".."))
-                ),
-            ),
-            (
-                match_nint + r"\.\." + match_uint,
-                lambda m_self, _range: m_self.type_and_range(
-                    "INT", *map(lambda num: int(num, 0), _range.split(".."))
-                ),
-            ),
-            (
-                match_nint + r"\.\." + match_nint,
-                lambda m_self, _range: m_self.type_and_range(
-                    "NINT", *map(lambda num: int(num, 0), _range.split(".."))
-                ),
-            ),
-            (
-                match_uint + r"\.\.\." + match_uint,
-                lambda m_self, _range: m_self.type_and_range(
-                    "UINT", *map(lambda num: int(num, 0), _range.split("...")), inc_end=False
-                ),
-            ),
-            (
-                match_nint + r"\.\.\." + match_uint,
-                lambda m_self, _range: m_self.type_and_range(
-                    "INT", *map(lambda num: int(num, 0), _range.split("...")), inc_end=False
-                ),
-            ),
-            (
-                match_nint + r"\.\.\." + match_nint,
-                lambda m_self, _range: m_self.type_and_range(
-                    "NINT", *map(lambda num: int(num, 0), _range.split("...")), inc_end=False
-                ),
-            ),
+            (paren_or_sym_range, lambda m_self, srange: m_self.set_num_range(srange)),
+            (r"-?\d*\.\d+", lambda m_self, num: m_self.type_and_value("FLOAT", lambda: float(num))),
             (match_nint, lambda m_self, num: m_self.type_and_value("NINT", lambda: int(num, 0))),
             (match_uint, lambda m_self, num: m_self.type_and_value("UINT", lambda: int(num, 0))),
             (r"true(?!\w)", lambda m_self, _: m_self.type_and_value("BOOL", lambda: True)),
             (r"false(?!\w)", lambda m_self, _: m_self.type_and_value("BOOL", lambda: False)),
             (r"#6\.(?P<item>\d+)", self_type.add_tag),
             (r"(\$?\$?[\w-]+)", lambda m_self, oth: m_self.type_and_value("OTHER", lambda: oth)),
-            (rf"\.size {paren_or_sym_range}", lambda m_self, sr: m_self.add_modifier(".sizer", sr)),
-            (rf"\.[a-z]+\s+{paren_or_sym_no_name1}", self_type.add_control_op),
+            (rf"\.[a-z]+\s+{opt_paren_or_sym_range}", self_type.add_control_op),
         ]
 
     def get_value(self, instr):

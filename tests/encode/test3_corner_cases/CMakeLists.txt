@@ -31,6 +31,7 @@ set(py_command
   Level1
   Range
   ValueRange
+  FloatRange
   SingleBstr
   SingleInt
   SingleInt2

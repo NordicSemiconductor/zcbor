@@ -1560,10 +1560,6 @@ Cannot have .size before type
             "Type of .default value does not match type of element. (BSTR != UINT)", str(exc)
         )
 
-    def test_range(self):
-        exc = self.do_test_exception("foo = 2..1")
-        self.assertEqual("Range has larger minimum than maximum (min 2, max 1)", str(exc))
-
     def test_label(self):
         exc = self.do_test_exception("foo = uint bar:")
         self.assertEqual("Cannot have label after type: bar", str(exc))
@@ -1847,12 +1843,12 @@ class TestParsingErrors(TestCase):
         self.cddl_parsing_error_test(
             f"foo = int .size uint",
             f"foo = int .size 1",
-            r"Size must be unambiguous\.",
+            r".size operator must have a literal value or range\.",
         )
         self.cddl_parsing_error_test(
             "foo = int .size -1 .. 2",
             "foo = int .size 1 .. 2",
-            r"Range value must be one of \('UINT',\), got NINT\.",
+            r"Size range must be non-negative and min <= max \(got: min -1, max 2\)",
         )
         self.cddl_parsing_error_test(
             f"foo = bool .size 1", f"foo = int .size 1", r"\.size cannot be applied to BOOL"
@@ -1861,7 +1857,7 @@ class TestParsingErrors(TestCase):
             f"foo = [] .size 1", f"foo = int .size 1", r"\.size cannot be applied to LIST"
         )
         self.cddl_parsing_error_test(
-            f"foo = int .size uint .. 2",
+            f"foo = int .size 1 .. uint",
             f"foo = int .size 1 .. 2",
             r"Range value must be unambiguous\.",
         )
@@ -1878,12 +1874,12 @@ class TestParsingErrors(TestCase):
         self.cddl_parsing_error_test(
             f"foo = int .size -2",
             f"foo = int .size 2",
-            r"Size must be one of \('UINT',\), got NINT\.",
+            r".size must be one of \('UINT',\), got NINT\.",
         )
         self.cddl_parsing_error_test(
             "foo = float .size 2.0",
             "foo = float .size 2",
-            r"Size must be one of \('UINT',\), got FLOAT\.",
+            r".size must be one of \('UINT',\), got FLOAT\.",
         )
 
         for ctrl_op in (".lt", ".gt", ".ge", ".le"):
@@ -1938,6 +1934,37 @@ class TestParsingErrors(TestCase):
                 """,
                 r"Inequality value cannot have: (tag, quantifier|quantifier, tag)",
             )
+            self.cddl_parsing_error_test(
+                f"foo = int {ctrl_op} 3..4",
+                f"foo = int {ctrl_op} 3",
+                r"Inequality value cannot have: range.",
+            )
+
+    def test_num_range(self):
+        """Check that invalid CDDL with a range of numbers raises an error."""
+        self.cddl_parsing_error_test(
+            "foo = 1..0", "foo = 0..1", r"Range has larger min \(1\) than max \(0\)"
+        )
+        self.cddl_parsing_error_test(
+            "foo = 0..1..",
+            "foo = 0..1",
+            r"Must have exactly one range specifier '\.\.'/'\.\.\.': 0..1..",
+        )
+        self.cddl_parsing_error_test(
+            "foo = -1.0..2", "foo = -1.0..2.0", r"Range values must both be int or both float."
+        )
+        self.cddl_parsing_error_test(
+            "foo = 1..2.0", "foo = 1..2", r"Range values must both be int or both float."
+        )
+
+        self.cddl_parsing_error_test(
+            "foo = 2..1", "foo = 0..1", r"Range has larger min \(2\) than max \(1\)"
+        )
+        self.cddl_parsing_error_test(
+            "foo = 3.0...3.0",
+            "foo = 3.0..3.0",
+            r"Range with equal min and max must be inclusive \(got 3.0, exclusive\)",
+        )
 
 
 if __name__ == "__main__":
