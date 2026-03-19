@@ -13,7 +13,7 @@ on:
 
 
 env:
-  ZEPHYR_REV: e6fd157a93db7297583d7b93f9a74c0e0977bc95
+  ZEPHYR_REV: 59659ed7cbf3b84b4b62d3a7b904f2b8167a1cef
 
 jobs:
   merge-test-1:
@@ -86,8 +86,9 @@ jobs:
         $client.DownloadFile("https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v$ZEPHYR_SDK_VERSION/zephyr-sdk-${ZEPHYR_SDK_VERSION}_windows-x86_64_minimal.7z", "$pwd\zephyr-sdk-${ZEPHYR_SDK_VERSION}_windows-x86_64_minimal.7z")
         7z x $pwd\zephyr-sdk-${ZEPHYR_SDK_VERSION}_windows-x86_64_minimal.7z
         Rename-Item -Path zephyr-sdk-${ZEPHYR_SDK_VERSION} -NewName zephyr-sdk
-        cd zephyr-sdk
-        $client.DownloadFile("https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v$ZEPHYR_SDK_VERSION/toolchain_windows-x86_64_arm-zephyr-eabi.7z", "$pwd\toolchain_windows-x86_64_arm-zephyr-eabi.7z")
+        New-Item -ItemType Directory -Path zephyr-sdk\gnu
+        cd zephyr-sdk\gnu
+        $client.DownloadFile("https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v$ZEPHYR_SDK_VERSION/toolchain_gnu_windows-x86_64_arm-zephyr-eabi.7z", "$pwd\toolchain_windows-x86_64_arm-zephyr-eabi.7z")
         7z x $pwd\toolchain_windows-x86_64_arm-zephyr-eabi.7z
 
     - name: Run Twister
