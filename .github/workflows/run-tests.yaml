@@ -9,7 +9,7 @@ on:
     fuzz-tests:
       description: 'Run fuzz tests (1 hour)'
       required: true
-      default: false
+      default: "false"
 
 
 env:
@@ -212,7 +212,7 @@ jobs:
     - merge-test-2
     - merge-test-2-win
     - merge-test-3
-    if: "(github.event_name == 'workflow_dispatch' && github.event.inputs.fuzz-tests) || (github.event_name == 'pull_request' && startswith(github.head_ref, 'release/'))"
+    if: "(github.event_name == 'workflow_dispatch' && github.event.inputs.fuzz-tests == 'true') || (github.event_name == 'pull_request' && startswith(github.head_ref, 'release/'))"
     steps:
     - name: Checkout the code
       uses: actions/checkout@v5
