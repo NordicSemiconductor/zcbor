@@ -189,11 +189,7 @@ class LinkTester:
         super(LinkTester, self).__init__()
         self.repo_info = GitRepoInfo()
         self.link_regex = compile(r"\[.*?\]\((?P<link>.*?)\)")
-        self.check_all = (
-            (self.repo_info.current_branch == "main")
-            or ("release/" in self.repo_info.current_branch)
-            or (force_check_all)
-        )
+        self.check_all = ("release/" in self.repo_info.current_branch) or (force_check_all)
 
     @staticmethod
     def _get_relative_path(file_path: Path) -> str:
