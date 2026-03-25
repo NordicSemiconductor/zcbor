@@ -1501,12 +1501,14 @@ class TestExceptions(TestCase):
         return cm.exception
 
     def test_exception_formatting(self):
-        failing_cddl_string = 'test = [foo: .size 3 "bar"]'
+        failing_cddl_string = 'test = [foo: .size 3 "bar"] // int'
         expected_error = """
 CDDL parsing error:
 Cannot have .size before type
-  while parsing CDDL: '.size 3'
+  while parsing CDDL: '.size 3 "bar"'
+  while parsing CDDL: 'foo: .size 3 "bar"'
   while parsing CDDL: '[foo: .size 3 "bar"]'
+  while parsing CDDL: '[foo: .size 3 "bar"] // int'
   while parsing type test""".strip()
         self.assertEqual(
             expected_error, zcbor.format_parsing_error(self.do_test_exception(failing_cddl_string))
@@ -1540,7 +1542,7 @@ Cannot have .size before type
 
     def test_label(self):
         exc = self.do_test_exception("foo = uint bar:")
-        self.assertEqual("Cannot have label after type: bar", str(exc))
+        self.assertEqual("Cannot have two types: UINT, OTHER", str(exc))
 
     def test_quantifier_placement(self):
         exc = self.do_test_exception("foo = uint +")
@@ -1576,7 +1578,7 @@ Cannot have .size before type
 
     def test_duplicate_key(self):
         exc = self.do_test_exception("foo = 1 => 2 => tstr")
-        self.assertEqual("Cannot have two keys: //UINT1 and //UINT1 => //UINT2", str(exc))
+        self.assertEqual("Cannot have two keys: //UINT1 and //UINT2", str(exc))
 
     def test_group_key(self):
         exc = self.do_test_exception("foo = (1, 2) => tstr")
@@ -1587,7 +1589,7 @@ Cannot have .size before type
     def test_list_key(self):
         exc = self.do_test_exception("foo = [1 => tstr]")
         self.assertEqual(
-            f"""LIST[   //UINT1 => TSTR]{linesep}List member(s) cannot have key: [//UINT1 => TSTR] pointing to []""",
+            f"""LIST[   (//UINT1) => TSTR]{linesep}List member(s) cannot have key: [(//UINT1) => TSTR] pointing to []""",
             str(exc),
         )
 
@@ -1608,7 +1610,11 @@ Cannot have .size before type
 
     def test_control_group_member_type(self):
         exc = self.do_test_exception("foo = &(1, int)")
-        self.assertEqual("control group members must be literal positive integers.", str(exc))
+        self.assertEqual(
+            """control group member INT of GROUP[   //UINT1,
+        INT] must be literal positive integer.""",
+            str(exc),
+        )
 
     def test_float_size(self):
         exc = self.do_test_exception("foo = float .size 2..9")
@@ -1920,6 +1926,11 @@ class TestParsingErrors(TestCase):
             "foo = 1..0", "foo = 0..1", r"Range has larger min \(1\) than max \(0\)"
         )
         self.cddl_parsing_error_test(
+            "foo = int .gt 3 .size 2..9",
+            "foo = int .gt 3 .size 2..4",
+            "Integers must have size from 0 to 8, not 9.",
+        )
+        self.cddl_parsing_error_test(
             "foo = 0..1..",
             "foo = 0..1",
             r"Must have exactly one range specifier '\.\.'/'\.\.\.': 0..1..",
@@ -1939,6 +1950,39 @@ class TestParsingErrors(TestCase):
             "foo = 3.0..3.0",
             r"Range with equal min and max must be inclusive \(got 3.0, exclusive\)",
         )
+
+
+class TestRanges(TestCase):
+    def test_unions1(self):
+        parsed = cp_from_cddl("NestedUnion = (1 // (2 // 3))").my_types["NestedUnion"]
+        self.assertEqual(2, len(parsed.value))
+
+    def test_unions2(self):
+        parsed = cp_from_cddl("""NestedUnion2 = [#6.12345(bstr) // #6.23456("foo//bar")]""")
+        parsed = parsed.my_types["NestedUnion2"]
+        self.assertEqual(2, len(parsed.value[0].value))
+
+    def test_ctrl_ops1(self):
+        parsed = cp_from_cddl("foo = ?bstr .cbor [int, tstr] .default '' .size 0..50")
+        parsed = parsed.my_types["foo"]
+        self.assertEqual("BSTR", parsed.type)
+        self.assertEqual(0, parsed.min_qty)
+        self.assertEqual(1, parsed.max_qty)
+        self.assertEqual(0, parsed.min_size)
+        self.assertEqual(50, parsed.max_size)
+        self.assertEqual("BSTR", parsed.default.type)
+        self.assertEqual("", parsed.default.value)
+        self.assertEqual("LIST", parsed.cbor.type)
+        self.assertEqual(2, len(parsed.cbor.value))
+
+    def test_ctrl_ops2(self):
+        parsed = cp_from_cddl("foo = uint .size 2..4 .gt 3 .le 1000000").my_types["foo"]
+        parsed = parsed.my_types["foo"]
+        self.assertEqual("UINT", parsed.type)
+        self.assertEqual(2, parsed.min_size)
+        self.assertEqual(3, parsed.max_size)
+        self.assertEqual(2**8, parsed.min_value)
+        self.assertEqual(1000000, parsed.max_value)
 
 
 if __name__ == "__main__":

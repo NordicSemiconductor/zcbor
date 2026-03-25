@@ -694,7 +694,7 @@ class CddlParser:
         for tag in self.tags:
             reprstr += f"#6.{tag}"
         if self.key:
-            reprstr += repr(self.key) + " => "
+            reprstr += "(" + repr(self.key) + ") => "
         if self.is_unambiguous():
             reprstr += "/"
         if self.is_unambiguous_repeated():
@@ -1171,10 +1171,11 @@ class CddlParser:
             raise CddlParsingError(".bits value must be a type reference.")
         self.bits = bits
 
-    def set_key(self, key):
+    def set_key(self, keystr):
         """Set the self.key of this element. For use during CDDL parsing."""
+        key = self.parse_one(keystr)
         if self.key is not None:
-            raise CddlParsingError("Cannot have two keys: " + key)
+            raise CddlParsingError(f"Cannot have two keys: {self.key} and {key}")
         if key.type == "GROUP":
             raise CddlParsingError(
                 "A key cannot be a group because it might represent more than 1 type."
@@ -1191,7 +1192,7 @@ class CddlParser:
         If the string is recognized as a type, it is treated as a key. For use during CDDL parsing.
         """
         if key_or_label in self.my_types:
-            self.set_key(self.parse_one(key_or_label))
+            self.set_key(key_or_label)
             assert self.key.type == "OTHER", "This should only be able to produce an OTHER key."
             if self.label is None:
                 self.set_label(key_or_label)
@@ -1202,60 +1203,6 @@ class CddlParser:
         self.add_modifier("tag", no_duplicates=False)
         self.tags.append(int(tag))
 
-    def union_add_value(self, value, doubleslash=False):
-        """Append to the self.value of this element.
-
-        Used with the "UNION" type, which has a python list as self.value. The list represents the
-        "children" of the type. For use during CDDL parsing.
-
-        If self is not a "UNION" type, it will be copied, converted into "UNION", and the copy added
-        as a child.
-        """
-        if self.type != "UNION":
-            convert_val = copy(self)
-            self.__init__(**self.init_kwargs())
-            self.type_and_value("UNION", lambda: [convert_val])
-
-            self.base_name = convert_val.base_name
-            convert_val.base_name = None
-
-            if not doubleslash:
-                # Operator precendence dictates that for single-slash unions, the following values
-                # apply to the union, not to the element.
-                self.label = convert_val.label
-                self.key = convert_val.key
-                self.quantifier = convert_val.quantifier
-                self.max_qty = convert_val.max_qty
-                self.min_qty = convert_val.min_qty
-
-                convert_val.label = None
-                convert_val.key = None
-                convert_val.quantifier = None
-                convert_val.max_qty = 1
-                convert_val.min_qty = 1
-        self.value.append(value)
-
-    def convert_to_key(self):
-        """The current element is the key, so copy it to a new element and set the key to the new"""
-        if self.key is not None:
-            raise CddlParsingError(f"Cannot have two keys: {self.key} and {self}")
-        convert_val = copy(self)
-        self.__init__(**self.init_kwargs())
-        self.set_key(convert_val)
-
-        self.label = convert_val.label
-        self.quantifier = convert_val.quantifier
-        self.max_qty = convert_val.max_qty
-        self.min_qty = convert_val.min_qty
-        self.base_name = convert_val.base_name
-        self.base_stem = convert_val.base_stem
-
-        convert_val.label = None
-        convert_val.quantifier = None
-        convert_val.max_qty = 1
-        convert_val.min_qty = 1
-        convert_val.base_name = None
-
     # A dict with lists of regexes and their corresponding handlers.
     # This is a dict in case multiple inheritors of CddlParser are used at once, in which case
     # they may have slightly different handlers.
@@ -1263,98 +1210,115 @@ class CddlParser:
 
     def cddl_regexes_init(self):
         """Initialize the cddl_regexes dict"""
-        match_uint = r"(0x[0-9a-fA-F]+|0o[0-7]+|0b[01]+|\d+)"
+        match_uint = r"(0x[0-9a-fA-F]+|0o[0-7]+|0b[01]+|\d+)"  # Matches unsigned integers in decimal, hexadecimal, octal, or binary
         match_nint = r"(-" + match_uint + ")"
-        paren_or_sym = r"((?P<paren>\((?P<item>(?>[^\(\)]+|(?&paren))*)\))|(?P<item>[^\s,\(\)\[\]]+))"
-        paren_or_sym_no_name1 = paren_or_sym.replace(r"?P<item>", "")
-        paren_or_sym_no_name2 = paren_or_sym_no_name1.replace("paren", "paren2")
-        paren_or_sym_range = rf"(?P<item>{paren_or_sym_no_name1}\s*\.\.\.?\s*{paren_or_sym_no_name2})"
-        opt_paren_or_sym_range = rf"({paren_or_sym_no_name1}(\s*\.\.\.?\s*{paren_or_sym_no_name2})?)"
+
+        quotes = r"{startend}(?P<item>.*?)(?<!\\){startend}"  # Regex for string enclosed by quotes (start and end are the same)
+        parens = r"(?P<{name}>{start}(?P<item>(?>[^{start}{end}]+|(?&{name}))*){end})"  # Regex for string enclosed by parens/brackets (start and end are different)
+
+        quote = quotes.format(startend=r"\'")
+        dquote = quotes.format(startend=r"\"")
+        paren = parens.format(name="paren", start=r"\(", end=r"\)")
+        bracket = parens.format(name="bracket", start=r"\[", end=r"\]")
+        curly = parens.format(name="curly", start=r"{", end=r"}")
+
+        def delimited(delimiter, named=None):
+            """Regex for delimited item, which ignores delimiters inside parens/quotes.
+
+            Matches everything up to the first instance of the delimiter that is not inside parens
+            or quotes. `named` must be eiter "inside", "outside", or None.
+            If `named` is "inside", the item will be in a group named 'item', excluding the delimiter.
+            If `named` is "outside", the item will be in a group named 'item', including the delimiter.
+            """
+            name = rf"(?P<item>" if named == "inside" else rf"?P<item>(" if named == "outside" else "("
+            enclosed = rf"{quote}|{dquote}|{paren}|{bracket}|{curly}".replace(r"?P<item>", "")
+            return rf"""({name}(({enclosed})|[^\(\)\[\]{{}}"'])+?){delimiter})"""
+
         self_type = type(self)
 
-        # The "range_types" match the contents of brackets i.e. (), [], and {},
-        # and strings, i.e. ' or "
-        range_types = [
+        # The following regexes match different CDDL constructs. The order of the list
+        # implements the operator precendence defined in the CDDL spec (section 3.11).
+        self_type.cddl_regexes[self_type] = [
             (
-                r"(?P<bracket>\[(?P<item>(?>[^[\]]+|(?&bracket))*)\])",
-                lambda m_self, list_str: m_self.type_and_value("LIST", lambda: m_self.parse(list_str)),
-            ),
-            (
-                r"(?P<paren>\((?P<item>(?>[^\(\)]+|(?&paren))*)\))",
-                lambda m_self, group_str: m_self.type_and_value(
-                    "GROUP", lambda: m_self.parse(group_str)
+                # Union (//)
+                delimited(r"//.+"),
+                lambda m_self, s: m_self.type_and_value(
+                    "UNION",
+                    lambda: m_self.parse(s, delimited(r"(//|\Z)", named="inside")),
                 ),
             ),
             (
-                r"(?P<curly>{(?P<item>(?>[^{}]+|(?&curly))*)})",
-                lambda m_self, map_str: m_self.type_and_value("MAP", lambda: m_self.parse(map_str)),
-            ),
-            (
-                r"\'(?P<item>.*?)(?<!\\)\'",
-                lambda m_self, string: m_self.type_and_value("BSTR", lambda: string),
-            ),
-            (
-                r"\"(?P<item>.*?)(?<!\\)\"",
-                lambda m_self, string: m_self.type_and_value("TSTR", lambda: string),
-            ),
-        ]
-        range_types_regex = "|".join([regex for (regex, _) in range_types])
-        for i in range(range_types_regex.count("item")):
-            range_types_regex = range_types_regex.replace("item", "it%dem" % i, 1)
-
-        # The following regexes match different parts of the element. The order of the list is
-        # important because it implements the operator precendence defined in the CDDL spec.
-        # The range_types are separate because they are reused in one of the other regexes.
-        self_type.cddl_regexes[self_type] = range_types + [
-            (
-                r"\/\/\s*(?P<item>.+?)(?=\/\/|\Z)",
-                lambda m_self, union_str: m_self.union_add_value(
-                    m_self.parse_one("(%s)" % union_str if "," in union_str else union_str),
-                    doubleslash=True,
+                # Group (,)
+                delimited(r",.*"),
+                lambda m_self, s: m_self.type_and_value(
+                    "GROUP",
+                    lambda: m_self.parse(s, delimited(r"(,|\Z)", named="inside")),
                 ),
             ),
+            # Quantifiers (*, +, ?, n*m, n* or *m):
+            (r"(([+*?])|(" + match_uint + r"\*\*?" + match_uint + r"?))", self_type.set_quantifier),
+            # Simple key or label ('word:'):
             (r"(?P<item>[^\W\d][\w-]*)\s*:", self_type.set_key_or_label),
-            (r"((\=\>)|:)", lambda m_self, _: m_self.convert_to_key()),
-            (r"([+*?])", self_type.set_quantifier),
-            (r"(" + match_uint + r"\*\*?" + match_uint + r"?)", self_type.set_quantifier),
+            # All other key possibilities (anything followed by '=>' or ':'):
+            (delimited(r"(\s*(=>)|:)", named="inside"), self_type.set_key),
             (
-                r"\/\s*(?P<item>((" + range_types_regex + r")|[^,\[\]{}()])+?)(?=\/|\Z|,)",
-                lambda m_self, union_str: m_self.union_add_value(m_self.parse_one(union_str)),
+                # Union (/)
+                delimited(r"/.+"),
+                lambda m_self, s: m_self.type_and_value(
+                    "UNION",
+                    lambda: m_self.parse(s, delimited(r"(/|\Z)", named="inside")),
+                ),
             ),
+            # These 5 match contents enclosed by (), [], and {}, ' or ":
+            (bracket, lambda m_self, s: m_self.type_and_value("LIST", lambda: m_self.parse_members(s))),
+            (paren, lambda m_self, s: m_self.type_and_value("GROUP", lambda: m_self.parse_members(s))),
+            (curly, lambda m_self, s: m_self.type_and_value("MAP", lambda: m_self.parse_members(s))),
+            (quote, lambda m_self, s: m_self.type_and_value("BSTR", lambda: s)),
+            (dquote, lambda m_self, s: m_self.type_and_value("TSTR", lambda: s)),
             (
                 r"(uint|nint|int|float|bstr|tstr|bool|nil|undefined|any)(?![\w-])",
                 lambda m_self, type_str: m_self.type_and_value(type_str.upper()),
             ),
+            (r"float(?P<item>(16|32|64|16-32|32-64))?(?![\w-])", self_type.float_with_size),
             (
-                r"float(?P<item>(16|32|64|16-32|32-64))?(?![\w-])",
-                lambda m_self, float_variant: m_self.float_with_size(float_variant),
+                # Control operators with leading period (e.g. .size, .gt, etc)
+                rf"\.[a-z]+\s+.+",
+                lambda m_self, s: [
+                    m_self.add_control_op(m)
+                    for m in self.partition_str(s, delimited(r"(?=\.[a-z]|\Z)", named="outside"))
+                ],
             ),
-            (paren_or_sym_range, lambda m_self, srange: m_self.set_num_range(srange)),
+            (delimited(r"\.\.\.?.+"), lambda m_self, srange: m_self.set_num_range(srange)),
             (r"-?\d*\.\d+", lambda m_self, num: m_self.type_and_value("FLOAT", lambda: float(num))),
             (match_nint, lambda m_self, num: m_self.type_and_value("NINT", lambda: int(num, 0))),
             (match_uint, lambda m_self, num: m_self.type_and_value("UINT", lambda: int(num, 0))),
             (r"true(?!\w)", lambda m_self, _: m_self.type_and_value("BOOL", lambda: True)),
             (r"false(?!\w)", lambda m_self, _: m_self.type_and_value("BOOL", lambda: False)),
             (r"#6\.(?P<item>\d+)", self_type.add_tag),
+            # Reference to other type:
             (r"(\$?\$?[\w-]+)", lambda m_self, oth: m_self.type_and_value("OTHER", lambda: oth)),
-            (rf"\.[a-z]+\s+{opt_paren_or_sym_range}", self_type.add_control_op),
         ]
 
     def get_value(self, instr):
-        """Parse from the beginning of instr (string) until a full element has been parsed.
+        """Parse `instr` (string) as CDDL and apply it to self.
 
-        self will become that element. This function is recursive, so if a nested element
-        ("MAP"/"LIST"/"UNION"/"GROUP") is encountered, this function will create new instances and
-        add them to self.value as a list. Likewise, if a key or cbor definition is encountered, a
-        new element will be created and assigned to self.key or self.cbor. When new elements are
-        created, get_value() is called on those elements, via parse().
+        The parsing is done by iterating through the regexes in self.cddl_regexes in order,
+        and invoking the corresponding handler when a match is found.
+
+        This function is recursive, so if a nested element ("MAP"/"LIST"/"UNION"/"GROUP") is
+        encountered, the corresponding handler will directly or indirectly call parse_one(), which
+        creates new elements, and calls get_value on those elements with the appropriate substring
+        of `instr`. The resulting element(s) are added to self.value as a list.
+        Likewise, if a key or cbor definition is encountered, a new element will be created via
+        parse_one() and assigned to self.key or self.cbor.
         """
         types = type(self).cddl_regexes[type(self)]
 
         # Keep parsing until a comma, or to the end of the string.
-        while instr != "" and instr[0] != ",":
+        while instr != "":
             match_obj = None
             for reg, handler in types:
+                instr = instr.lstrip()
                 match_obj = getrp(reg).match(instr)
                 if match_obj:
                     try:
@@ -1376,7 +1340,6 @@ class CddlParser:
             if not match_obj:
                 raise CddlParsingError("Could not parse this: '%s'" % instr)
 
-        instr = instr[1:]
         if not self.type:
             raise CddlParsingError("No proper value while parsing: %s" % instr)
 
@@ -1459,20 +1422,30 @@ class CddlParser:
 
     def post_validate_control_group(self):
         if self.type != "GROUP":
-            raise CddlParsingError("control groups must be of GROUP type.")
+            raise CddlParsingError(f"control groups must be of GROUP type, got {self.type}.")
         for c in self.value:
             if c.type != "UINT" or c.value is None or c.value < 0:
-                raise CddlParsingError("control group members must be literal positive integers.")
+                raise CddlParsingError(
+                    f"control group member {c} of {self} must be literal positive integer."
+                )
 
-    def parse(self, instr):
-        """Parses entire instr and returns a list of instances."""
+    def partition_str(self, instr, elem_regex):
+        """Partition `instr` into a list of strings, each matching `elem_regex`"""
         instr = instr.strip()
-        values = []
-        while instr != "":
-            value = type(self)(**self.init_kwargs())
-            instr = value.get_value(instr)
-            values.append(value)
-        return values
+        parts = []
+        pos = 0
+        for m in getrp(elem_regex).finditer(instr):
+            if m.start() != pos:
+                raise CddlParsingError(f"Unexpected characters '{instr[pos:m.start()]}'")
+            pos = m.end()
+            parts.append(m.group("item").strip())
+        if pos != len(instr):
+            raise CddlParsingError(f"Unexpected characters '{instr[pos:]}'")
+        return parts
+
+    def parse(self, instr, elem_regex):
+        """Parses entire `instr` and returns a list of CddlParser instances."""
+        return [self.parse_one(elem) for elem in self.partition_str(instr, elem_regex)]
 
     def parse_one(self, instr, base_stem=None):
         """Parses instr and returns one object, failing if instr wasn't fully consumed.
@@ -1492,6 +1465,15 @@ class CddlParser:
             e.zcbor_add_note(f"  while parsing CDDL: '{instr}'")
             raise
         return value
+
+    def parse_members(self, instr):
+        """Parse the members of a GROUP, LIST, or MAP, which are separated by commas."""
+        if instr.strip() == "":
+            return []
+        child = self.parse_one(instr)
+        if child.type == "GROUP" and child.modifiers.keys() == {"value"}:
+            return child.value
+        return [child]
 
     def __repr__(self):
         return self.mrepr(False)
@@ -1677,8 +1659,8 @@ class CddlXcoder(CddlParser):
         self.set_base_names()
 
     def post_process_control_group(self):
-        self.set_id_prefix()
         super().post_process_control_group()
+        self.set_id_prefix()
 
     def multi_member(self):
         """Whether this type has multiple member variables."""

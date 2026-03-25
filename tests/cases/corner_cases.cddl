@@ -135,7 +135,7 @@ SingleInt2 = uint .lt 10
 
 Unabstracted = [
 	unabstractedunion1: (choice1: 1 // choice2: 2),
-	(unabstractedunion2: 3 / choice4: 4)
+	(unabstractedunion2: 3 / (choice4: 4))
 ]
 
 QuantityRange = (
