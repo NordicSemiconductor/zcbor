@@ -5,6 +5,10 @@
   Arguments have not changed otherwise.
   This was done to avoid ambiguity to do with positional arguments, and generally simplify passing arguments around inside zcbor.
 
+* CDDL parsing has been refactored, and the precedence rules of the CDDL spec are now more closely followed.
+  This means that zcbor might e.g. apply labels to a different level of abstraction than it did previously.
+  If you have problems, try adding parentheses to clarify the intention of the CDDL.
+
 * [Recommended] A new macro `ZCBOR_CAST_FP` has been added for casting function pointers for use in the zcbor API.
   The macro will first check that the function pointer has one of the supported signatures.
   You are recommended to use it on any function pointer that is passed as an argument to a zcbor function.
