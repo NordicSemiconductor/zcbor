@@ -961,22 +961,54 @@ class CddlParser:
                 )
         self.set_value(lambda: value.value)
 
+    def match_elem(self, other):
+        """Whether this element matches another element for the purposes of .default."""
+        self_unp = self.unpack_value(self, ".default")
+        if (self_unp.type != other.type) or (self_unp.modifiers.keys() != other.modifiers.keys()):
+            return False
+        if self_unp.type in ["INT", "UINT", "NINT", "FLOAT", "BSTR", "TSTR", "BOOL", "NIL", "UNDEF"]:
+            return self_unp.value == other.value
+        if self_unp.type in ["GROUP", "LIST", "MAP"]:
+            if len(self_unp.value) != len(other.value):
+                return False
+            return all((c1.match_elem(c2) for c1, c2 in zip(self_unp.value, other.value)))
+        return False
+
+    def find_matching_child(self, val_to_match):
+        """Find the child of this union/group that matches the given value.
+
+        Abstractions are removed for the purposes of comparing. The first matching child is returned
+        with abstractions in place, or None if no matching child is found."""
+
+        assert self.type in ["GROUP", "UNION", "MAP", "LIST"]
+        for c in self.value:
+            if c.is_unambiguous() and c.match_elem(val_to_match):
+                return c
+        return None
+
     def set_default(self, value):
         """Set the default value of this element (provided via '.default')."""
         if self.type not in self.default_types:
             raise CddlParsingError(f"zcbor does not support .default values for the {self.type} type")
         if self.min_qty != 0 or self.max_qty != 1:
             raise CddlParsingError("zcbor currently supports .default only with the ? quantifier.")
-        value = self.extract_unambiguous_val(value, ".default", valid_types=self.default_types)
 
-        if not self.type == value.type:
-            if not (self.type == "INT" and value.type in ["UINT", "NINT"]):
-                raise CddlParsingError(
-                    f"Type of .default value does not match type of element. "
-                    f"({self.type} != {value.type})"
-                )
+        if self.type == "UNION":
+            default = self.unpack_value(value, ".default")
+            default_child = self.find_matching_child(default)
+            if not default_child:
+                raise CddlParsingError(".default value does not match any member of the union.")
+            default = default_child
+        else:
+            default = self.extract_unambiguous_val(value, ".default", valid_types=self.default_types)
+            if self.type != default.type:
+                if not (self.type == "INT" and default.type in ["UINT", "NINT"]):
+                    raise CddlParsingError(
+                        f"Type of .default value does not match type of element. "
+                        f"({self.type} != {default.type})"
+                    )
 
-        self.default = value
+        self.default = default
 
     mod_processors = {
         ".gt": lambda m_self, v: m_self.set_min_value(m_self.extract_ineq_val(v).value, False),
@@ -1415,6 +1447,9 @@ class CddlParser:
                 raise CddlParsingError(
                     "'any' inside union is not supported since it would always be triggered."
                 )
+        if self.type == "BSTR":
+            if None not in (self.cbor, self.default):
+                raise CddlParsingError(f"zcbor does not support .default and .cbor(seq) together")
 
         # Validation of child elements.
         self.recurse(self.__class__.post_validate, with_default=True)
@@ -1642,6 +1677,8 @@ class CddlXcoder(CddlParser):
             self.cbor.set_id_prefix(self.child_base_id())
         if self.key:
             self.key.set_id_prefix(self.child_base_id())
+        if self.default:
+            self.default.set_id_prefix(self.child_base_id())
 
     def set_base_names(self):
         """Recursively set the base names of this element's children, keys, and cbor elements."""
@@ -1653,8 +1690,8 @@ class CddlXcoder(CddlParser):
         self.recurse(self.__class__.set_base_names)
 
     def post_process(self):
-        self.set_id_prefix()
         super().post_process()
+        self.set_id_prefix()
         self.set_base_names()
 
     def post_process_control_group(self):
@@ -3404,14 +3441,26 @@ class CodeGenerator(CddlXcoder):
                 assign = not self.repeated_single_func_impl_condition()
                 default_assignment = None
                 if self.default is not None:
-                    default_val = self.val_define_name_or_lit("DEFAULT_VAL")
-                    default_val_formatted = (
-                        f"*({assign_tmp_str(default_val)})"
-                        if self.type in ["TSTR", "BSTR"]
-                        else val_to_str(default_val)
+                    default_value = (
+                        self.default.enum_var_name()
+                        if self.type == "UNION"
+                        else (
+                            "*(" + assign_tmp_str(self.val_define_name_or_lit("DEFAULT_VAL")) + ")"
+                            if self.type in ["TSTR", "BSTR"]
+                            else val_to_str(self.val_define_name_or_lit("DEFAULT_VAL"))
+                        )
                     )
-                    access = self.val_access() if assign else self.repeated_val_access()
-                    default_assignment = f"({access} = {default_val_formatted})"
+                    access = (
+                        # The following is needed instead of choice_var_access() because we are
+                        # outside repeated_val_access() which is where repeated_single_func() is
+                        # usually added.
+                        self.access_append_delimiter(
+                            self.repeated_val_access(), ".", self.choice_var_name()
+                        )
+                        if self.type == "UNION"
+                        else self.val_access() if assign else self.repeated_val_access()
+                    )
+                    default_assignment = f"({access} = {default_value})"
                 if assign:
                     decode_str = self.repeated_xcode(union_int)
                     return comma_operator(

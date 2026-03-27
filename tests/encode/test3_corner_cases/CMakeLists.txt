@@ -56,6 +56,7 @@ set(py_command
   Choice4
   Choice5
   OptList
+  UnionDefault
   -e
   ${bit_arg}
   --short-names

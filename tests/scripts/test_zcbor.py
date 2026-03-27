@@ -1627,8 +1627,10 @@ Cannot have .size before type
         self.assertEqual("Integers must have size from 0 to 8, not 10.", str(exc))
 
     def test_cbor_bstr(self):
-        exc = self.do_test_exception("foo = tstr .cbor int")
-        self.assertEqual(".cbor and .cborseq must be used with bstr.", str(exc))
+        exc1 = self.do_test_exception("foo = tstr .cbor int")
+        exc2 = self.do_test_exception("foo = tstr .cborseq int")
+        self.assertEqual(".cbor and .cborseq must be used with bstr.", str(exc1))
+        self.assertEqual(".cbor and .cborseq must be used with bstr.", str(exc2))
 
     def test_bits_int(self):
         exc = self.do_test_exception("foo = int .bits bar")
@@ -1688,6 +1690,10 @@ Cannot have .size before type
         exc = self.do_test_exception("foo = ?[uint] .default 1")
         self.assertEqual("zcbor does not support .default values for the LIST type", str(exc))
 
+    def test_default_union_no_match(self):
+        exc = self.do_test_exception("foo = ?(10 / nint / bstr / 'hello1' / \"hello\") .default 'hello'")
+        self.assertEqual(".default value does not match any member of the union.", str(exc))
+
     def test_double_default(self):
         exc = self.do_test_exception("foo = (?uint .default 1) .default 2")
         self.assertEqual("Element already has .default.", str(exc))
@@ -1695,7 +1701,6 @@ Cannot have .size before type
     def test_ambigouous_default(self):
         exc = self.do_test_exception("""three_to_four = (3..4)
                foo = ?int .default three_to_four""")
-        # self.assertEqual(".default value must be unambiguous.", str(exc))
         self.assertEqual(".default cannot have: range.", str(exc))
 
 
@@ -1919,6 +1924,16 @@ class TestParsingErrors(TestCase):
             "foo = float .size 2",
             r".size must be one of \('UINT',\), got FLOAT\.",
         )
+        self.cddl_parsing_error_test(
+            "foo = ?bstr .size 0..10 .default '' .cborseq *int",
+            "foo = ?bstr .size 0..10 .default ''",
+            r"zcbor does not support \.default and \.cbor\(seq\) together",
+        )
+        self.cddl_parsing_error_test(
+            "foo = ?bstr .size 0..10 .default '' .cbor *int",
+            "foo = ?bstr .size 0..10 .default ''",
+            r"zcbor does not support \.default and \.cbor\(seq\) together",
+        )
 
         for ctrl_op in (".lt", ".gt", ".ge", ".le"):
             self.cddl_parsing_error_test(
@@ -2010,7 +2025,7 @@ class TestParsingErrors(TestCase):
         )
 
 
-class TestRanges(TestCase):
+class OtherTests(TestCase):
     def test_unions1(self):
         parsed = cp_from_cddl("NestedUnion = (1 // (2 // 3))").my_types["NestedUnion"]
         self.assertEqual(2, len(parsed.value))
@@ -2021,15 +2036,13 @@ class TestRanges(TestCase):
         self.assertEqual(2, len(parsed.value[0].value))
 
     def test_ctrl_ops1(self):
-        parsed = cp_from_cddl("foo = ?bstr .cbor [int, tstr] .default '' .size 0..50")
+        parsed = cp_from_cddl("foo = ?bstr .cbor [int, tstr] .size 0..50")
         parsed = parsed.my_types["foo"]
         self.assertEqual("BSTR", parsed.type)
         self.assertEqual(0, parsed.min_qty)
         self.assertEqual(1, parsed.max_qty)
         self.assertEqual(0, parsed.min_size)
         self.assertEqual(50, parsed.max_size)
-        self.assertEqual("BSTR", parsed.default.type)
-        self.assertEqual("", parsed.default.value)
         self.assertEqual("LIST", parsed.cbor.type)
         self.assertEqual(2, len(parsed.cbor.value))
 
@@ -2041,6 +2054,30 @@ class TestRanges(TestCase):
         self.assertEqual(3, parsed.max_size)
         self.assertEqual(2**8, parsed.min_value)
         self.assertEqual(1000000, parsed.max_value)
+
+    def test_default1(self):
+        parsed = cp_from_cddl("foo = ?int .default 42").my_types["foo"]
+        self.assertEqual("INT", parsed.type)
+        self.assertEqual(42, parsed.default.value)
+
+    def test_default2(self):
+        parsed = cp_from_cddl("foo = ?bool .default false").my_types["foo"]
+        self.assertEqual("BOOL", parsed.type)
+        self.assertEqual(False, parsed.default.value)
+
+    def test_default3(self):
+        parsed = cp_from_cddl("foo = ?([1, 2, 3] / [*tstr]) .default [1, 2, 3]").my_types["foo"]
+        self.assertEqual("UNION", parsed.type)
+        self.assertEqual("LIST", parsed.value[0].type)
+        self.assertEqual("LIST", parsed.default.type)
+        self.assertEqual(3, len(parsed.default.value))
+        self.assertEqual("UINT", parsed.default.value[2].type)
+        self.assertEqual(3, parsed.default.value[2].value)
+
+    def test_default4(self):
+        # Test that these don't raise an error
+        cp_from_cddl("foo = ?(false / 0) .default false").my_types["foo"]
+        cp_from_cddl("foo = ?(false / 0) .default 0").my_types["foo"]
 
 
 if __name__ == "__main__":
