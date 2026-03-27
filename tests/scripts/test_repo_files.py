@@ -23,6 +23,7 @@ from typing import List, Tuple, Optional
 p_script = Path(__file__).absolute()
 p_script_dir = p_script.parent
 p_root = p_script_dir.parents[1]
+p_zcbor_py = p_root / "zcbor" / "zcbor.py"
 p_tests = p_root / "tests"
 p_readme = p_root / "README.md"
 p_pypi_readme = p_root / "pypi_README.md"
@@ -269,6 +270,25 @@ class TestCodestyle(TestCase):
         black_res = Popen(["black", "--check", p_root, "-l", "100"], stdout=PIPE, stderr=PIPE)
         _, stderr = black_res.communicate()
         self.assertEqual(0, black_res.returncode, "black failed:\n" + stderr.decode("utf-8"))
+
+
+class TestUnusedFunctions(TestCase):
+    def do_test_unused_functions(self, file_path: Path) -> None:
+        """Check for unused functions in a given file."""
+        contents = file_path.read_text(encoding="utf-8")
+        func_pattern = compile(r"def\s+(?P<func_name>\w+)\(")
+        funcs = func_pattern.findall(contents)
+        unused = [
+            func
+            for func in funcs
+            if (not func.startswith("__")) and len(compile(rf"\W{func}\W").findall(contents)) < 2
+        ]
+        if len(unused) > 0:
+            self.fail(f"Unused functions in {file_path}:\n" + "\n".join(unused))
+
+    def test_unused_functions(self):
+        for file_path in [p_zcbor_py]:
+            self.do_test_unused_functions(file_path)
 
 
 def version_int(in_str):
