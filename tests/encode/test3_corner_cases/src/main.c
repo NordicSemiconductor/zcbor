@@ -1893,5 +1893,34 @@ ZTEST(cbor_encode_test3, test_optlist)
 }
 
 
+ZTEST(cbor_encode_test3, test_union_default)
+{
+	uint8_t union_default_exp_payload1[] = {LIST(2), 1, 0xF6, END};
+	uint8_t union_default_exp_payload2[] = {LIST(4), 2, 2, 0xF6, LIST(0), END END};
+	struct UnionDefault input;
+	uint8_t payload[20];
+
+	input.Int = 1;
+	input.foo_present = false;
+	input.bar_present = true;
+	input.baz_present = false;
+	input.bar.bar_choice = UnionDefault_bar_noBar_c;
+	zassert_equal(ZCBOR_SUCCESS, cbor_encode_UnionDefault(payload,
+		sizeof(payload), &input, NULL));
+	zassert_mem_equal(payload, union_default_exp_payload1, sizeof(union_default_exp_payload1));
+
+	input.Int = 2;
+	input.foo_present = true;
+	input.bar_present = true;
+	input.baz_present = true;
+	input.foo.foo_choice = UnionDefault_foo_FooB_c;
+	input.bar.bar_choice = UnionDefault_bar_noBar_c;
+	input.baz.baz_choice = UnionDefault_baz_BazA_c;
+	zassert_equal(ZCBOR_SUCCESS, cbor_encode_UnionDefault(payload,
+		sizeof(payload), &input, NULL));
+	zassert_mem_equal(payload, union_default_exp_payload2, sizeof(union_default_exp_payload2));
+}
+
+
 
 ZTEST_SUITE(cbor_encode_test3, NULL, NULL, NULL, NULL, NULL);

@@ -68,6 +68,8 @@ set(py_command
     OptList
     UnicodeEscape
     AmbigList
+    UnionDefault
+    OptUnion
   --decode
   --git-sha-header
   --short-names

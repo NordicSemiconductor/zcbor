@@ -458,3 +458,12 @@ AmbigList = [
 	intlist: *[+int],
 	tstrlist: [+int, +tstr],
 ]
+
+UnionDefault = [
+	int,
+	foo: ?((FooA: 1) / (FooB: 2) / (FooC: Three)) .default (Three),
+	bar: ?((BarA: [+int]) / (noBar: nil)) .default nil,
+	baz: ?((BazA: []) / (BazB: [+bstr] / (BazC: [+tstr]))) .default [],
+]
+
+OptUnion = [foo: ?((FooA: 1) / (FooB: 2) / (FooC: Three))]
