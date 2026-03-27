@@ -211,39 +211,11 @@ def mult_or_none(it, default=None):
     return or_none(it, prod, default=default)
 
 
-def list_replace_if_not_null(lst, i, r):
-    """Replace an element in a list or tuple and return the list."""
-    if lst[i] == "NULL":
-        return lst
-    if isinstance(lst, tuple):
-        convert = tuple
-        lst = list(lst)
-    else:
-        assert isinstance(lst, list)
-        convert = list
-    lst[i] = r
-    return convert(lst)
-
-
-def val_or_null(value, var_name):
-    """Return a code snippet that assigns to and the returns a variable
-
-    Return a code snippet that assigns the value to a variable var_name and
-    returns pointer to the variable, or returns NULL if the value is None.
-    """
-    return "(%s = %d, &%s)" % (var_name, value, var_name) if value is not None else "NULL"
-
-
 def tmp_str_or_null(value):
     """Assign the min_value variable."""
     value_str = f'"{value}"' if value is not None else "NULL"
     len_str = f"""sizeof({f'"{value}"'}) - 1, &tmp_str)"""
     return f"(tmp_str.value = (uint8_t *){value_str}, tmp_str.len = {len_str}"
-
-
-def min_bool_or_null(value):
-    """Assign the max_value variable."""
-    return f"(&(bool){{{int(value)}}})"
 
 
 def deref_if_not_null(access):
@@ -2024,7 +1996,9 @@ class DataTranslator(CddlXcoder):
 
     @staticmethod
     def format_obj(obj):
-        """Format a Python object for printing by adding newlines and indentation."""
+        """Format a Python object for printing by adding newlines and indentation.
+
+        format_obj can be used by the user."""
         formatted = pformat(obj)
         out_str = ""
         indent = 0
@@ -2417,7 +2391,7 @@ CBOR-formatted bstr, all elements must be bstrs. If not, it is a programmer erro
         return decoded
 
     def decode_str_yaml(self, yaml_str, yaml_compat=False, canonical=False):
-        """YAML => python object"""
+        """YAML => python object. decode_str_yaml can be used by the user."""
         yaml_obj = yaml_load(yaml_str)
         obj = self._from_yaml_obj(yaml_obj, canonical) if yaml_compat else yaml_obj
         self.validate_obj(obj)
