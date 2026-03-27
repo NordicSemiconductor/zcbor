@@ -11,7 +11,7 @@ from os import path, linesep, makedirs
 from collections import defaultdict, namedtuple
 from collections.abc import Hashable
 from typing import NamedTuple
-from argparse import ArgumentParser, ArgumentTypeError, RawDescriptionHelpFormatter, FileType
+from argparse import ArgumentParser, ArgumentTypeError, RawDescriptionHelpFormatter
 from datetime import datetime
 from copy import copy
 from itertools import tee, chain
@@ -23,18 +23,15 @@ from cbor2 import (
     CBORDecodeValueError,
     CBORDecodeEOF,
     undefined,
-    CBORSimpleValue,
 )
 from yaml import safe_load as yaml_load, dump as yaml_dump
 from json import loads as json_load, dumps as json_dump
 from io import BytesIO
 from subprocess import Popen, PIPE
-from pathlib import Path, PurePath, PurePosixPath
+from pathlib import Path, PurePosixPath
 from shutil import copyfile
 import sys
-from site import USER_BASE
 from textwrap import wrap, indent
-from importlib.metadata import version
 from codecs import decode as codec_decode
 from math import prod
 
@@ -3851,7 +3848,7 @@ def parse_args():
         "-c",
         "--cddl",
         required=True,
-        type=FileType("r", encoding="utf-8"),
+        type=str,
         action="append",
         help="""Path to one or more input CDDL file(s). Passing multiple files is equivalent to
 concatenating them.""",
@@ -4164,7 +4161,7 @@ entire declaration is a single line.""",
     args = parser.parse_args()
 
     if not args.no_prelude:
-        args.cddl.append(open(PRELUDE_PATH, "r", encoding="utf-8"))
+        args.cddl.append(str(PRELUDE_PATH))
 
     if hasattr(args, "decode") and not args.decode and not args.encode:
         parser.error("Please specify at least one of --decode or --encode.")
@@ -4198,17 +4195,15 @@ def process_code(args):
     if args.output_cmake:
         proj_name = Path(args.output_cmake).parts[-1].replace(".cmake", "")
     else:
-        proj_name = Path(args.cddl[0].name).parts[-1].replace(".cddl", "")
+        proj_name = Path(args.cddl[0]).parts[-1].replace(".cddl", "")
 
     proj_name_as_symbol = getrp(r"[^\w\d]+").sub("_", proj_name).strip("_")
     default_max_qty_define = f"ZCBOR_{proj_name_as_symbol.upper()}_DEFAULT_MAX_QTY"
     print_unless_quiet(
-        args.quiet,
-        f"Parsing CDDL file(s) for project '{proj_name}':\n"
-        + ",\n".join((c.name for c in args.cddl)),
+        args.quiet, f"Parsing CDDL file(s) for project '{proj_name}':\n" + ",\n".join(args.cddl)
     )
 
-    cddl_contents = linesep.join((c.read() for c in args.cddl))
+    cddl_contents = linesep.join((Path(c).read_text(encoding="utf-8") for c in args.cddl))
 
     cddl_res = dict()
     for mode in modes:
@@ -4327,7 +4322,7 @@ def process_code(args):
 
 
 def parse_cddl(args):
-    cddl_contents = linesep.join((c.read() for c in args.cddl))
+    cddl_contents = linesep.join((Path(c).read_text(encoding="utf-8") for c in args.cddl))
     try:
         cddl_res = DataTranslator.from_cddl(
             cddl_string=cddl_contents, default_max_qty=args.default_max_qty
