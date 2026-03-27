@@ -902,12 +902,14 @@ class CddlParser:
         self.set_size_range(minsize, maxsize, inc_end)
         self.add_modifier(".sizer", range_str)
 
-    def type_and_value(self, new_type, value_generator):
+    def type_and_value(self, new_type, value_generator=lambda: None):
         """Set the self.type and self.value of this element."""
         if self.type is not None:
             raise CddlParsingError("Cannot have two types: %s, %s" % (self.type, new_type))
         if new_type is None:
             raise TypeError("Cannot set None as type")
+        if new_type == "UNDEFINED":
+            new_type = "UNDEF"
 
         self.type = new_type
         self.set_value(value_generator)
@@ -1017,7 +1019,7 @@ class CddlParser:
 
     def float_with_size(self, float_variant):
         """Set the type and size or size range of a float ("floatX" or "floatX-Y") element"""
-        self.type_and_value("FLOAT", lambda: None)
+        self.type_and_value("FLOAT")
         if "-" in float_variant:
             self.set_size_range(*map(lambda numstr: int(numstr) // 8, float_variant.split("-")))
         else:
@@ -1299,10 +1301,9 @@ class CddlParser:
                 lambda m_self, union_str: m_self.union_add_value(m_self.parse_one(union_str)),
             ),
             (
-                r"(uint|nint|int|float|bstr|tstr|bool|nil|any)(?![\w-])",
-                lambda m_self, type_str: m_self.type_and_value(type_str.upper(), lambda: None),
+                r"(uint|nint|int|float|bstr|tstr|bool|nil|undefined|any)(?![\w-])",
+                lambda m_self, type_str: m_self.type_and_value(type_str.upper()),
             ),
-            (r"undefined(?!\w)", lambda m_self, _: m_self.type_and_value("UNDEF", lambda: None)),
             (
                 r"float(?P<item>(16|32|64|16-32|32-64))?(?![\w-])",
                 lambda m_self, float_variant: m_self.float_with_size(float_variant),
