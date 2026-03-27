@@ -397,6 +397,8 @@ class CddlParser:
         self.value = None
         self.max_value = None  # Maximum value. Only used for numbers and bools.
         self.min_value = None  # Minimum value. Only used for numbers and bools.
+        self.max_value_inclusive = True  # Whether the max value is inclusive. Only used for numbers
+        self.min_value_inclusive = True  # Whether the min value is inclusive. Only used for numbers
         # The readable label associated with the element in the CDDL.
         self.label = None
         self.min_qty = 1  # The minimum number of times this element is repeated.
@@ -829,11 +831,13 @@ class CddlParser:
 
         return min_val_obj, max_val_obj, inc_end
 
-    def set_min_value(self, min_value):
+    def set_min_value(self, min_value, inclusive):
         self.min_value = min_value
+        self.min_value_inclusive = inclusive
 
-    def set_max_value(self, max_value):
+    def set_max_value(self, max_value, inclusive):
         self.max_value = max_value
+        self.max_value_inclusive = inclusive
 
     def extract_ineq_val(self, obj):
         """Extract an inequality constraint (<, <=, >, >=) from a string.
@@ -932,8 +936,8 @@ class CddlParser:
         if self.type in ["UINT", "NINT"]:
             if value is not None:
                 self.size = sizeof(value)
-                self.set_min_value(value)
-                self.set_max_value(value)
+                self.set_min_value(value, True)
+                self.set_max_value(value, True)
         if self.type == "NINT":
             self.max_value = -1
 
@@ -973,10 +977,10 @@ class CddlParser:
         self.default = value
 
     mod_processors = {
-        ".gt": lambda m_self, v: m_self.set_min_value(m_self.extract_ineq_val(v).value + 1),
-        ".ge": lambda m_self, v: m_self.set_min_value(m_self.extract_ineq_val(v).value),
-        ".lt": lambda m_self, v: m_self.set_max_value(m_self.extract_ineq_val(v).value - 1),
-        ".le": lambda m_self, v: m_self.set_max_value(m_self.extract_ineq_val(v).value),
+        ".gt": lambda m_self, v: m_self.set_min_value(m_self.extract_ineq_val(v).value, False),
+        ".ge": lambda m_self, v: m_self.set_min_value(m_self.extract_ineq_val(v).value, True),
+        ".lt": lambda m_self, v: m_self.set_max_value(m_self.extract_ineq_val(v).value, False),
+        ".le": lambda m_self, v: m_self.set_max_value(m_self.extract_ineq_val(v).value, True),
         ".size": lambda m_self, v: m_self.set_size(m_self.extract_unambiguous_val(v, "Size").value),
         ".sizer": lambda m_self, v: m_self.set_size_values(v),
         ".eq": lambda m_self, v: m_self.set_eq(v),
@@ -1009,8 +1013,8 @@ class CddlParser:
         if min_val == max_val:
             return self.type_and_value(new_type, min_val)
         self.type = new_type
-        self.set_min_value(min_val)
-        self.set_max_value(max_val)
+        self.set_min_value(min_val, True)
+        self.set_max_value(max_val, inc_end)
         if new_type in "UINT":
             self.set_size_range(sizeof(min_val), sizeof(max_val))
         if new_type == "NINT":
@@ -2115,13 +2119,11 @@ class DataTranslator(CddlXcoder):
             )
         if self.type in ["UINT", "INT", "NINT", "FLOAT"]:
             if self.min_value is not None:
-                self._decode_assert(
-                    obj >= self.min_value, lambda: "Minimum value: " + str(self.min_value)
-                )
+                res = obj >= self.min_value if self.min_value_inclusive else obj > self.min_value
+                self._decode_assert(res, lambda: "Minimum value: " + str(self.min_value))
             if self.max_value is not None:
-                self._decode_assert(
-                    obj <= self.max_value, lambda: "Maximum value: " + str(self.max_value)
-                )
+                res = obj <= self.max_value if self.max_value_inclusive else obj < self.max_value
+                self._decode_assert(res, lambda: "Maximum value: " + str(self.max_value))
         if self.type == "UINT":
             if self.bits:
                 mask = sum(((1 << b.value) for b in self.my_control_groups[self.bits.value].value))
@@ -3258,9 +3260,15 @@ class CodeGenerator(CddlXcoder):
                 range_checks.append(f"({access} == {self.val_to_str_with_suffix(min_val)})")
             else:
                 if min_val is not None:
-                    range_checks.append(f"({access} >= {self.val_to_str_with_suffix(min_val)})")
+                    ineq_op = ">=" if self.min_value_inclusive else ">"
+                    range_checks.append(
+                        f"({access} {ineq_op} {self.val_to_str_with_suffix(min_val)})"
+                    )
                 if max_val is not None:
-                    range_checks.append(f"({access} <= {self.val_to_str_with_suffix(max_val)})")
+                    ineq_op = "<=" if self.max_value_inclusive else "<"
+                    range_checks.append(
+                        f"({access} {ineq_op} {self.val_to_str_with_suffix(max_val)})"
+                    )
             if self.bits:
                 range_checks.append(
                     f"!({access} & ~("
