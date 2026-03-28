@@ -11,6 +11,9 @@ on:
       required: true
       default: "false"
 
+concurrency:
+  group: run-tests-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   ZEPHYR_REV: 59659ed7cbf3b84b4b62d3a7b904f2b8167a1cef
