@@ -267,7 +267,7 @@ class LinkTester:
 
 class TestCodestyle(TestCase):
     def test_codestyle(self):
-        black_res = Popen(["black", "--check", p_root, "-l", "100"], stdout=PIPE, stderr=PIPE)
+        black_res = Popen(["black", "--check", p_root, "-l", "105"], stdout=PIPE, stderr=PIPE)
         _, stderr = black_res.communicate()
         self.assertEqual(0, black_res.returncode, "black failed:\n" + stderr.decode("utf-8"))
 
@@ -374,9 +374,7 @@ class TestDocs(TestCase, LinkTester):
         TestCase.__init__(self, *args, **kwargs)
         LinkTester.__init__(self, *args, **kwargs)
 
-    def _validate_local_links(
-        self, local_links: List[str], processed_links, allow_local: bool
-    ) -> None:
+    def _validate_local_links(self, local_links: List[str], processed_links, allow_local: bool) -> None:
         """Validate that local file links exist."""
         all_locals = local_links + processed_links
         self.assertTrue(
@@ -392,9 +390,7 @@ class TestDocs(TestCase, LinkTester):
     def _check_results(self, results: List[Tuple]) -> None:
         """Check the results of URL checks."""
         for url, status_code, response in results:
-            self.assertEqual(
-                status_code, HTTPStatus.OK, f"'{url}' returned status code {status_code}"
-            )
+            self.assertEqual(status_code, HTTPStatus.OK, f"'{url}' returned status code {status_code}")
             if "#" in url and "https://docs.zephyrproject.org/latest/kconfig.html" not in url:
                 # https://docs.zephyrproject.org/latest/kconfig.html works in a different way
                 anchor = url.split("#", 1)[1]

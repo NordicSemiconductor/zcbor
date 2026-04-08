@@ -480,12 +480,8 @@ class CddlParser:
 
         # Separate type_strings as keys in two dicts, one dict for strings that start with &( which
         # are special control operators for .bits, and one dict for all the regular types.
-        my_types = {
-            my_type: val for my_type, val in type_strings.items() if not val.startswith("&(")
-        }
-        my_control_groups = {
-            my_cg: val for my_cg, val in type_strings.items() if val.startswith("&(")
-        }
+        my_types = {my_type: val for my_type, val in type_strings.items() if not val.startswith("&(")}
+        my_control_groups = {my_cg: val for my_cg, val in type_strings.items() if val.startswith("&(")}
 
         # Template for parsing the types in my_types. All the parameters are passed on to the
         # instances created from this prototype, except for base_stem, which is overridden.
@@ -634,9 +630,7 @@ class CddlParser:
             try:
                 func(elem)
             except CddlParsingError as e:
-                e.zcbor_add_note(
-                    f"  while processing ({func.__name__}) element {elem.get_base_name()}"
-                )
+                e.zcbor_add_note(f"  while processing ({func.__name__}) element {elem.get_base_name()}")
                 raise
 
         if self.type in ["LIST", "MAP", "GROUP", "UNION"]:
@@ -854,9 +848,7 @@ class CddlParser:
         if self.type not in ("FLOAT", "INT", "UINT", "NINT"):
             raise CddlParsingError(f"Inequality value must be applied to a number, got {self.type}")
         if self.value is not None:
-            raise CddlParsingError(
-                f"Inequality value is not needed when value is known: {self.value}."
-            )
+            raise CddlParsingError(f"Inequality value is not needed when value is known: {self.value}.")
 
         ineq = self.extract_unambiguous_val(
             obj, "Inequality value", valid_types=("FLOAT", "UINT", "NINT")
@@ -960,9 +952,7 @@ class CddlParser:
     def set_default(self, value):
         """Set the default value of this element (provided via '.default')."""
         if self.type not in self.default_types:
-            raise CddlParsingError(
-                f"zcbor does not support .default values for the {self.type} type"
-            )
+            raise CddlParsingError(f"zcbor does not support .default values for the {self.type} type")
         if self.min_qty != 0 or self.max_qty != 1:
             raise CddlParsingError("zcbor currently supports .default only with the ? quantifier.")
         value = self.extract_unambiguous_val(value, ".default", valid_types=self.default_types)
@@ -1258,17 +1248,11 @@ class CddlParser:
         """Initialize the cddl_regexes dict"""
         match_uint = r"(0x[0-9a-fA-F]+|0o[0-7]+|0b[01]+|\d+)"
         match_nint = r"(-" + match_uint + ")"
-        paren_or_sym = (
-            r"((?P<paren>\((?P<item>(?>[^\(\)]+|(?&paren))*)\))|(?P<item>[^\s,\(\)\[\]]+))"
-        )
+        paren_or_sym = r"((?P<paren>\((?P<item>(?>[^\(\)]+|(?&paren))*)\))|(?P<item>[^\s,\(\)\[\]]+))"
         paren_or_sym_no_name1 = paren_or_sym.replace(r"?P<item>", "")
         paren_or_sym_no_name2 = paren_or_sym_no_name1.replace("paren", "paren2")
-        paren_or_sym_range = (
-            rf"(?P<item>{paren_or_sym_no_name1}\s*\.\.\.?\s*{paren_or_sym_no_name2})"
-        )
-        opt_paren_or_sym_range = (
-            rf"({paren_or_sym_no_name1}(\s*\.\.\.?\s*{paren_or_sym_no_name2})?)"
-        )
+        paren_or_sym_range = rf"(?P<item>{paren_or_sym_no_name1}\s*\.\.\.?\s*{paren_or_sym_no_name2})"
+        opt_paren_or_sym_range = rf"({paren_or_sym_no_name1}(\s*\.\.\.?\s*{paren_or_sym_no_name2})?)"
         self_type = type(self)
 
         # The "range_types" match the contents of brackets i.e. (), [], and {},
@@ -1276,9 +1260,7 @@ class CddlParser:
         range_types = [
             (
                 r"(?P<bracket>\[(?P<item>(?>[^[\]]+|(?&bracket))*)\])",
-                lambda m_self, list_str: m_self.type_and_value(
-                    "LIST", lambda: m_self.parse(list_str)
-                ),
+                lambda m_self, list_str: m_self.type_and_value("LIST", lambda: m_self.parse(list_str)),
             ),
             (
                 r"(?P<paren>\((?P<item>(?>[^\(\)]+|(?&paren))*)\))",
@@ -1431,9 +1413,7 @@ class CddlParser:
                     + "List member(s) cannot have key: "
                     + str(child_keys)
                     + " pointing to "
-                    + str(
-                        [self.my_types[elem.value] for elem in child_keys if elem.type == "OTHER"]
-                    )
+                    + str([self.my_types[elem.value] for elem in child_keys if elem.type == "OTHER"])
                 )
         if self.type == "OTHER":
             if self.value not in self.my_types.keys() or not isinstance(
@@ -1612,11 +1592,7 @@ class CddlXcoder(CddlParser):
         return False
 
     def set_skipped(self, skipped):
-        if (
-            self.range_check_condition()
-            and self.repeated_single_func_impl_condition()
-            and not self.key
-        ):
+        if self.range_check_condition() and self.repeated_single_func_impl_condition() and not self.key:
             self.skipped = True
         else:
             self.skipped = skipped
@@ -1641,8 +1617,7 @@ class CddlXcoder(CddlParser):
                     lambda child: child.set_access_prefix(
                         self.var_access(),
                         is_delegated=(
-                            self.delegate_type_condition()
-                            or (is_delegated and self.skip_condition())
+                            self.delegate_type_condition() or (is_delegated and self.skip_condition())
                         ),
                     ),
                     self.value,
@@ -1815,9 +1790,7 @@ class CddlXcoder(CddlParser):
             return True
         if self.type == "UINT" and self.bits:
             return True
-        if self.type in ["BSTR", "TSTR"] and (
-            self.min_size is not None or self.max_size is not None
-        ):
+        if self.type in ["BSTR", "TSTR"] and (self.min_size is not None or self.max_size is not None):
             return True
         return False
 
@@ -1932,9 +1905,7 @@ class CddlXcoder(CddlParser):
     def enum_var(self, int_val=False):
         """Enum entry for this element."""
         return (
-            f"{self.enum_var_name()} = {val_to_str(self.int_val())}"
-            if int_val
-            else self.enum_var_name()
+            f"{self.enum_var_name()} = {val_to_str(self.int_val())}" if int_val else self.enum_var_name()
         )
 
     def choice_var_access(self):
@@ -2028,9 +1999,7 @@ class DataTranslator(CddlXcoder):
         if not test:
             if callable(msg):
                 msg = msg()
-            raise CddlValidationError(
-                f"Data did not decode correctly {'(' + msg + ')' if msg else ''}"
-            )
+            raise CddlValidationError(f"Data did not decode correctly {'(' + msg + ')' if msg else ''}")
 
     def _check_tag(self, obj):
         """Check that no unexpected tags are attached to this data.
@@ -2729,9 +2698,7 @@ class CodeGenerator(CddlXcoder):
         Make it an array if the element is repeated.
         """
         if var_type:
-            assert (
-                var_type[-1][-1] == "}" or len(var_type) == 1
-            ), f"Expected single var: {var_type!r}"
+            assert var_type[-1][-1] == "}" or len(var_type) == 1, f"Expected single var: {var_type!r}"
             if not anonymous or var_type[-1][-1] != "}":
                 var_name = self.var_name()
                 max_qty = self.max_qty if self.max_qty is not None else self.default_max_qty_define
@@ -2981,9 +2948,7 @@ class CodeGenerator(CddlXcoder):
         if self.single_func_impl_condition():
             return (self.xcode_func_name(), deref_if_not_null(access or self.var_access()))
         else:
-            return self.single_func_prim(
-                access or self.val_access(), union_int, ptr_result=ptr_result
-            )
+            return self.single_func_prim(access or self.val_access(), union_int, ptr_result=ptr_result)
 
     def repeated_single_func(self, ptr_result=False):
         """Return the function name and arguments to call to encode/decode the repeated
@@ -3173,9 +3138,7 @@ class CodeGenerator(CddlXcoder):
 
     def xcode_bstr(self):
         if self.cbor and not self.cbor.is_entry_type():
-            access_arg = (
-                f", {deref_if_not_null(self.val_access())}" if self.mode == "decode" else ""
-            )
+            access_arg = f", {deref_if_not_null(self.val_access())}" if self.mode == "decode" else ""
             res_arg = f", &tmp_str" if self.mode == "encode" else ""
             xcode_cbor = "(%s)" % (
                 (newl_ind + "&& ").join(
@@ -3240,14 +3203,10 @@ class CodeGenerator(CddlXcoder):
             else:
                 if min_val is not None:
                     ineq_op = ">=" if self.min_value_inclusive else ">"
-                    range_checks.append(
-                        f"({access} {ineq_op} {self.val_to_str_with_suffix(min_val)})"
-                    )
+                    range_checks.append(f"({access} {ineq_op} {self.val_to_str_with_suffix(min_val)})")
                 if max_val is not None:
                     ineq_op = "<=" if self.max_value_inclusive else "<"
-                    range_checks.append(
-                        f"({access} {ineq_op} {self.val_to_str_with_suffix(max_val)})"
-                    )
+                    range_checks.append(f"({access} {ineq_op} {self.val_to_str_with_suffix(max_val)})")
             if self.bits:
                 range_checks.append(
                     f"!({access} & ~("
@@ -4217,10 +4176,7 @@ def process_code(args):
         if "zcbor.py" in sys.argv[0]:
             git_args = ["git", "rev-parse", "--verify", "--short", "HEAD"]
             git_sha = (
-                Popen(git_args, cwd=PACKAGE_PATH, stdout=PIPE)
-                .communicate()[0]
-                .decode("utf-8")
-                .strip()
+                Popen(git_args, cwd=PACKAGE_PATH, stdout=PIPE).communicate()[0].decode("utf-8").strip()
             )
         else:
             git_sha = __version__
@@ -4246,14 +4202,11 @@ def process_code(args):
     out_h = args.output_h if (len(modes) == 1 and args.output_h) else None
     for mode in modes:
         output_c[mode] = create_and_open(
-            out_c
-            or add_mode_to_fname(args.output_c or Path(cmake_dir, "src", f"{filenames}.c"), mode)
+            out_c or add_mode_to_fname(args.output_c or Path(cmake_dir, "src", f"{filenames}.c"), mode)
         )
         output_h[mode] = create_and_open(
             out_h
-            or add_mode_to_fname(
-                args.output_h or Path(cmake_dir, "include", f"{filenames}.h"), mode
-            )
+            or add_mode_to_fname(args.output_h or Path(cmake_dir, "include", f"{filenames}.h"), mode)
         )
 
     out_c_parent = Path(output_c[modes[0]].name).parent
@@ -4325,14 +4278,10 @@ def read_data(args, cddl, canonical=False):
     in_file_format = args.input_as or in_file_ext.strip(".")
     if in_file_format in ["yaml", "yml"]:
         f = sys.stdin if args.input == "-" else open(args.input, "r", encoding="utf-8")
-        cbor_str = cddl.from_yaml(
-            f.read(), yaml_compat=args.yaml_compatibility, canonical=canonical
-        )
+        cbor_str = cddl.from_yaml(f.read(), yaml_compat=args.yaml_compatibility, canonical=canonical)
     elif in_file_format == "json":
         f = sys.stdin if args.input == "-" else open(args.input, "r", encoding="utf-8")
-        cbor_str = cddl.from_json(
-            f.read(), yaml_compat=args.yaml_compatibility, canonical=canonical
-        )
+        cbor_str = cddl.from_json(f.read(), yaml_compat=args.yaml_compatibility, canonical=canonical)
     else:  # CBOR or CBORHEX
         if in_file_format == "cborhex":
             f = sys.stdin if args.input == "-" else open(args.input, "r", encoding="utf-8")
@@ -4360,9 +4309,7 @@ def write_data(args, cddl, cbor_str):
         f.write(cddl.str_to_json(cbor_str, yaml_compat=args.yaml_compatibility))
     elif out_file_format in ["c", "h", "c_code"]:
         f = sys.stdout if args.output == "-" else open(args.output, "w", encoding="utf-8")
-        assert (
-            args.c_code_var_name is not None
-        ), "Must specify --c-code-var-name when outputting c code."
+        assert args.c_code_var_name is not None, "Must specify --c-code-var-name when outputting c code."
         f.write(cddl.str_to_c_code(cbor_str, args.c_code_var_name, args.c_code_columns))
     elif out_file_format == "cborhex":
         f = sys.stdout if args.output == "-" else open(args.output, "w", encoding="utf-8")

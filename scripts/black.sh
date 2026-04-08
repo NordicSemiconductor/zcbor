@@ -1,1 +1,1 @@
-black $(dirname "$0")/.. -l 100
+black $(dirname "$0")/.. -l 105
