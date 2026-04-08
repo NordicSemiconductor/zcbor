@@ -25,9 +25,7 @@ def encode_test():
     num_end = 0x477FF000
 
     a = numpy.arange(num_start, num_end, dtype=numpy.uintc)
-    b = numpy.frombuffer(a.tobytes(), dtype=numpy.float32).astype(
-        "<e"
-    )  # <e is little endian float16
+    b = numpy.frombuffer(a.tobytes(), dtype=numpy.float32).astype("<e")  # <e is little endian float16
     c = numpy.where(b[1:] != b[:-1])[0].astype(numpy.uintc) + 1
     assert all(numpy.frombuffer((b[c].tobytes()), dtype=numpy.ushort) == numpy.arange(2, 31744))
 

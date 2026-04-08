@@ -65,9 +65,7 @@ class TestManifest(TestCase):
 
     def decode_string(self, data_string, *cddl_paths):
         cddl_str = " ".join((Path(p).read_text(encoding="utf-8") for p in cddl_paths))
-        self.my_types = zcbor.DataTranslator.from_cddl(
-            cddl_string=cddl_str, default_max_qty=16
-        ).my_types
+        self.my_types = zcbor.DataTranslator.from_cddl(cddl_string=cddl_str, default_max_qty=16).my_types
         cddl = self.my_types["SUIT_Envelope_Tagged"]
         self.decoded = cddl.decode_str(data_string)
 
@@ -144,9 +142,7 @@ class TestEx1Manifest12(TestManifest):
         self.decode_file(p_test_vectors12[1], p_manifest12)
 
     def test_components(self):
-        self.assertEqual(
-            [b"\x00"], self.decoded.suit_manifest.suit_common.suit_components[0][0].bstr
-        )
+        self.assertEqual([b"\x00"], self.decoded.suit_manifest.suit_common.suit_components[0][0].bstr)
 
     def test_uri(self):
         self.assertEqual(
@@ -296,11 +292,9 @@ class TestEx0Manifest14(TestManifest):
             .int,
         )
 
-        manifest_signature = (
-            self.decoded.suit_authentication_wrapper.SUIT_Authentication_Block_bstr[
-                0
-            ].COSE_Sign1_Tagged_m.signature
-        )
+        manifest_signature = self.decoded.suit_authentication_wrapper.SUIT_Authentication_Block_bstr[
+            0
+        ].COSE_Sign1_Tagged_m.signature
         signature_header = self.decoded.suit_authentication_wrapper.SUIT_Authentication_Block_bstr[
             0
         ].COSE_Sign1_Tagged_m.Headers_m.protected.header_map_bstr_bstr
@@ -417,9 +411,7 @@ class TestEx1Manifest14(TestManifest):
         self.assertEqual(
             3,
             len(
-                self.decoded.suit_manifest.suit_common.suit_common_sequence[
-                    0
-                ].suit_common_sequence.union
+                self.decoded.suit_manifest.suit_common.suit_common_sequence[0].suit_common_sequence.union
             ),
         )
         self.assertEqual(
@@ -644,15 +636,9 @@ class TestEx4Manifest14(TestManifest):
 
     def test_components(self):
         self.assertEqual(3, len(self.decoded.suit_manifest.suit_common.suit_components[0]))
-        self.assertEqual(
-            b"\x00", self.decoded.suit_manifest.suit_common.suit_components[0][0].bstr[0]
-        )
-        self.assertEqual(
-            b"\x02", self.decoded.suit_manifest.suit_common.suit_components[0][1].bstr[0]
-        )
-        self.assertEqual(
-            b"\x01", self.decoded.suit_manifest.suit_common.suit_components[0][2].bstr[0]
-        )
+        self.assertEqual(b"\x00", self.decoded.suit_manifest.suit_common.suit_components[0][0].bstr[0])
+        self.assertEqual(b"\x02", self.decoded.suit_manifest.suit_common.suit_components[0][1].bstr[0])
+        self.assertEqual(b"\x01", self.decoded.suit_manifest.suit_common.suit_components[0][2].bstr[0])
 
 
 class TestEx5Manifest14(TestManifest):
@@ -664,9 +650,7 @@ class TestEx5Manifest14(TestManifest):
         self.assertEqual(
             4,
             len(
-                self.decoded.suit_manifest.SUIT_Unseverable_Members.suit_validate[
-                    0
-                ].suit_validate.union
+                self.decoded.suit_manifest.SUIT_Unseverable_Members.suit_validate[0].suit_validate.union
             ),
         )
         self.assertEqual(
@@ -832,9 +816,7 @@ class TestEx1Manifest20(TestEx1Manifest16):
         self.assertEqual(
             3,
             len(
-                self.decoded.suit_manifest.suit_common.suit_shared_sequence[
-                    0
-                ].suit_shared_sequence.union
+                self.decoded.suit_manifest.suit_common.suit_shared_sequence[0].suit_shared_sequence.union
             ),
         )
         self.assertEqual(
@@ -979,15 +961,13 @@ class TestCLI1(CLI_Test):
 
         self.popen_test(self.get_std_args("-", cmd="validate") + ["--input-as", "cbor"], stdout3)
         stdout4, _ = self.popen_test(
-            self.get_std_args("-")
-            + ["--input-as", "cbor", "--output", "-", "--output-as", "cborhex"],
+            self.get_std_args("-") + ["--input-as", "cbor", "--output", "-", "--output-as", "cborhex"],
             stdout3,
         )
 
         self.popen_test(self.get_std_args("-", cmd="validate") + ["--input-as", "cborhex"], stdout4)
         stdout5, _ = self.popen_test(
-            self.get_std_args("-")
-            + ["--input-as", "cborhex", "--output", "-", "--output-as", "json"],
+            self.get_std_args("-") + ["--input-as", "cborhex", "--output", "-", "--output-as", "json"],
             stdout4,
         )
 
@@ -1250,9 +1230,7 @@ class TestYamlCompatibility(PopenTest):
             ],
             stdout1,
         )
-        self.assertEqual(
-            safe_load(stdout2), safe_load(p_yaml_compat_yaml.read_text(encoding="utf-8"))
-        )
+        self.assertEqual(safe_load(stdout2), safe_load(p_yaml_compat_yaml.read_text(encoding="utf-8")))
 
 
 class TestIntmax(CornerCaseTest):
@@ -1782,9 +1760,7 @@ class TestParsingErrors(TestCase):
         """Check that invalid CDDL raises an error and check that a valid CDDL variant passes."""
         self.assertTrue(cp_from_cddl(valid_cddl))
         if message_regex is not None:
-            self.assertRaisesRegex(
-                zcbor.CddlParsingError, message_regex, cp_from_cddl, invalid_cddl
-            )
+            self.assertRaisesRegex(zcbor.CddlParsingError, message_regex, cp_from_cddl, invalid_cddl)
         else:
             self.assertRaises(zcbor.CddlParsingError, cp_from_cddl, invalid_cddl)
 
@@ -1795,9 +1771,7 @@ class TestParsingErrors(TestCase):
             "foo = int .bar 1234", "foo = int .lt 1234", r"Invalid control operator: '\.bar'"
         )
         # Two values
-        self.cddl_parsing_error_test(
-            "foo = 1 .eq 2", "foo = int .eq 2", r".*Attempting to set value.*"
-        )
+        self.cddl_parsing_error_test("foo = 1 .eq 2", "foo = int .eq 2", r".*Attempting to set value.*")
         self.cddl_parsing_error_test(
             f"foo = int .eq uint",
             f"foo = int .eq 1000000",
