@@ -293,6 +293,11 @@ def val_to_str(val):
     return str(val)
 
 
+def divide_round_up(value, divisor):
+    """Divide an integer by another integer, rounding up to the nearest integer."""
+    return (value + divisor - 1) // divisor
+
+
 def create_unicode_escape(chr_num):
     """Create a unicode escape sequence for a given unicode code point.
 
@@ -834,15 +839,23 @@ class CddlParser:
         self.type_and_range(new_type, minv, maxv, inc_end)
 
     def set_min_value(self, min_value, inclusive):
+        if self.min_value is not None and self.min_value >= min_value:
+            return
         self.min_value = min_value
         self.min_value_inclusive = inclusive
+        if self.type in ("INT", "UINT", "NINT"):
+            self.set_min_size(divide_round_up(min_value.bit_length(), 8))
 
     def set_max_value(self, max_value, inclusive):
+        if self.max_value is not None and self.max_value <= max_value:
+            return
         self.max_value = max_value
         self.max_value_inclusive = inclusive
+        if self.type in ("INT", "UINT", "NINT"):
+            self.set_max_size(divide_round_up(max_value.bit_length(), 8))
 
     def extract_ineq_val(self, obj):
-        """Extract an inequality constraint (<, <=, >, >=) from a string.
+        """Extract an inequality constraint (<, <=, >, >=) from a parsed element.
 
         and check that it is valid and compatible with the current element."""
         if self.type not in ("FLOAT", "INT", "UINT", "NINT"):
@@ -1119,21 +1132,25 @@ class CddlParser:
             raise CddlParsingError(".size operator must have a literal value or range.")
 
     def set_min_size(self, min_size):
-        """Set self.min_size, and self.minValue if type is UINT."""
+        """Set self.min_size, and self.min_value if type is UINT."""
         if min_size is None:
             return
         self.check_size(min_size)
+        if self.min_size is not None and self.min_size >= min_size:
+            return
         if self.type == "UINT":
-            self.minValue = 256 ** min(0, abs(min_size - 1))
+            self.set_min_value(0 if min_size <= 1 else 256 ** (min_size - 1), True)
         self.min_size = min_size
 
     def set_max_size(self, max_size):
         """Set self.max_size, and self.max_value if type is UINT."""
         if max_size is None:
             return
+        if self.max_size is not None and self.max_size <= max_size:
+            return
         self.check_size(max_size)
         if self.type == "UINT" and max_size and self.max_value is None:
-            self.max_value = 256**max_size - 1
+            self.set_max_value(256**max_size - 1, True)
         self.max_size = max_size
 
     def set_cbor(self, cbor):
