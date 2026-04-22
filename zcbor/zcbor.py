@@ -1244,7 +1244,7 @@ class CddlParser:
         match_uint = r"(0x[0-9a-fA-F]+|0o[0-7]+|0b[01]+|\d+)"  # Matches unsigned integers in decimal, hexadecimal, octal, or binary
         match_nint = r"(-" + match_uint + ")"
 
-        quotes = r"{startend}(?P<item>.*?)(?<!\\){startend}"  # Regex for string enclosed by quotes (start and end are the same)
+        quotes = r"{startend}(?P<item>(\\{startend}|[^{startend}])*?)(?<!\\){startend}"  # Regex for string enclosed by quotes (start and end are the same)
         parens = r"(?P<{name}>{start}(?P<item>(?>[^{start}{end}]+|(?&{name}))*){end})"  # Regex for string enclosed by parens/brackets (start and end are different)
 
         quote = quotes.format(startend=r"\'")
