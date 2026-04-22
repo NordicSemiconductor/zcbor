@@ -2079,6 +2079,19 @@ class OtherTests(TestCase):
         cp_from_cddl("foo = ?(false / 0) .default false").my_types["foo"]
         cp_from_cddl("foo = ?(false / 0) .default 0").my_types["foo"]
 
+    def test_nested_map_tstr_keys(self):
+        cddl = """foo = {"map1": {"map2": uint, "map3": uint}}"""
+        parsed = cp_from_cddl(cddl).my_types["foo"]
+        self.assertEqual("MAP", parsed.type)
+        self.assertEqual(1, len(parsed.value))
+        self.assertEqual("MAP", parsed.value[0].type)
+        self.assertEqual(2, len(parsed.value[0].value))
+        self.assertEqual("map1", parsed.value[0].key.value)
+        self.assertEqual("UINT", parsed.value[0].value[0].type)
+        self.assertEqual("map2", parsed.value[0].value[0].key.value)
+        self.assertEqual("UINT", parsed.value[0].value[1].type)
+        self.assertEqual("map3", parsed.value[0].value[1].key.value)
+
 
 if __name__ == "__main__":
     main()
