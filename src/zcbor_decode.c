@@ -1788,6 +1788,7 @@ static bool multi_decode_backup(size_t min_decode,
 	for (size_t i = 0; i < max_decode; i++) {
 		uint8_t const *payload_bak;
 		size_t elem_count_bak;
+		size_t current_backup = 0xFFFFFFFF;
 
 		if (backup) {
 			if (!zcbor_new_backup_w_elem_state(state, state->elem_count, true)) {
@@ -1797,8 +1798,11 @@ static bool multi_decode_backup(size_t min_decode,
 			payload_bak = state->payload;
 			elem_count_bak = state->elem_count;
 		}
+		current_backup = state->constant_state->current_backup;
 
 		if (!decoder(state, (uint8_t *)result + i*result_len)) {
+			ZCBOR_ERR_IF(state->constant_state->current_backup != current_backup, ZCBOR_ERR_UNKNOWN);
+
 			*num_decode = i;
 
 			if (backup) {
@@ -1817,7 +1821,10 @@ static bool multi_decode_backup(size_t min_decode,
 			return true;
 		}
 
+		ZCBOR_ERR_IF(state->constant_state->current_backup != current_backup, ZCBOR_ERR_UNKNOWN);
+
 		if (backup) {
+			ZCBOR_ERR_IF(state->constant_state->current_backup != current_backup, ZCBOR_ERR_UNKNOWN);
 			if (!zcbor_process_backup(state, ZCBOR_FLAG_CONSUME, ZCBOR_MAX_ELEM_COUNT)) {
 				ZCBOR_FAIL();
 			}
