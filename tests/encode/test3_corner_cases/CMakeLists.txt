@@ -10,6 +10,10 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(test3_corner_cases)
 include(../../cmake/test_template.cmake)
 
+if (TEST_DEFINES)
+  set(defines_arg --defines)
+endif()
+
 set(py_command
   zcbor
   code
@@ -17,6 +21,7 @@ set(py_command
   --default-max-qty 6
   --output-cmake ${PROJECT_BINARY_DIR}/corner_cases.cmake
   --copy-sources
+  ${defines_arg}
   -t
   NestedListMap NestedMapListMap
   Numbers

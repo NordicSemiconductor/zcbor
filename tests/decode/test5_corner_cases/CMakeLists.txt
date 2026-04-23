@@ -10,6 +10,10 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(test5_corner_cases)
 include(../../cmake/test_template.cmake)
 
+if (TEST_DEFINES)
+  set(defines_arg --defines)
+endif()
+
 set(py_command
   ${PYTHON_EXECUTABLE}
   ${CMAKE_CURRENT_LIST_DIR}/../../../zcbor/zcbor.py
@@ -19,7 +23,7 @@ set(py_command
   --output-c ${PROJECT_BINARY_DIR}/src/corner_cases.c
   --output-h ${PROJECT_BINARY_DIR}/include/corner_cases.h
   --copy-sources
-  --defines
+  ${defines_arg}
   -t NestedListMap NestedMapListMap
     Numbers
     Numbers2
