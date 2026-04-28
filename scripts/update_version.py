@@ -16,7 +16,7 @@ p_MIGRATION_GUIDE = Path(p_root, "MIGRATION_GUIDE.md")
 p_common_h = Path(p_root, "include", "zcbor_common.h")
 
 RELEASE_NOTES_boilerplate = """
-Any new bugs, requests, or missing features should be reported as [Github issues](https://github.com/NordicSemiconductor/zcbor/issues).
+Any new bugs, requests, or missing features should be reported as [Github issues](https://github.com/nordicsemi/zcbor/issues).
 
 ## Improvements:
 

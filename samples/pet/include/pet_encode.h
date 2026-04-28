@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  * Generated using zcbor version 0.9.99
- * https://github.com/NordicSemiconductor/zcbor
+ * https://github.com/nordicsemi/zcbor
  */
 
 #ifndef PET_ENCODE_H__

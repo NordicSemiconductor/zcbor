@@ -1,6 +1,6 @@
 # zcbor v. 0.9.99
 
-Any new bugs, requests, or missing features should be reported as [Github issues](https://github.com/NordicSemiconductor/zcbor/issues).
+Any new bugs, requests, or missing features should be reported as [Github issues](https://github.com/nordicsemi/zcbor/issues).
 
 ## Improvements:
 

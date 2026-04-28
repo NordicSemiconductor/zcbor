@@ -29,7 +29,7 @@ maintainers = [{name = 'Øyvind Rønningstad', email = 'oyvind.ronningstad@nordi
 dynamic = ['dependencies', 'version']
 
 [project.urls]
-Homepage = 'https://github.com/NordicSemiconductor/zcbor'
+Homepage = 'https://github.com/nordicsemi/zcbor'
 
 [project.scripts]
 zcbor = 'zcbor:main'

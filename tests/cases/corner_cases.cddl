@@ -331,7 +331,7 @@ BstrSize = {
 }
 bstr12 = ("s" : bstr .size 12)
 
-; found in https://github.com/NordicSemiconductor/zcbor/pull/398
+; found in https://github.com/nordicsemi/zcbor/pull/398
 MapUnionPrimAlias = {
 	(0: 0) /
 	(1: int) /

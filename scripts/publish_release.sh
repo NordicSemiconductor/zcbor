@@ -49,9 +49,9 @@ git push $remote $commit:main
 mkdir zcbor-release-files-$version
 unzip $release_zip -d zcbor-release-files-$version
 # Create release on GitHub
-gh release create $version zcbor-release-files-$version/* --repo $(git remote get-url $remote) --title "zcbor v. $version" --notes "Release notes: [RELEASE_NOTES.md](https://github.com/NordicSemiconductor/zcbor/blob/$version/RELEASE_NOTES.md)
+gh release create $version zcbor-release-files-$version/* --repo $(git remote get-url $remote) --title "zcbor v. $version" --notes "Release notes: [RELEASE_NOTES.md](https://github.com/nordicsemi/zcbor/blob/$version/RELEASE_NOTES.md)
 
-Migration guide: [MIGRATION_GUIDE.md](https://github.com/NordicSemiconductor/zcbor/blob/$version/MIGRATION_GUIDE.md)
+Migration guide: [MIGRATION_GUIDE.md](https://github.com/nordicsemi/zcbor/blob/$version/MIGRATION_GUIDE.md)
 
 Pypi: https://pypi.org/project/zcbor/$version/"
 # Create release on Pypi
