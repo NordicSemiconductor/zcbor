@@ -42,7 +42,7 @@ p_pet_build = p_pet_sample / "build"
 
 
 DEFAULT_TARGET_REF = "main"
-DEFAULT_TARGET_REPO = "NordicSemiconductor/zcbor"
+DEFAULT_TARGET_REPO = "nordicsemi/zcbor"
 
 
 class GitRepoInfo:
@@ -154,6 +154,7 @@ class LinkTester:
     """Test the links in the documentation files."""
 
     known_good_urls = {
+        "https://github.com/nordicsemi/zcbor/issues",
         "https://github.com/NordicSemiconductor/zcbor/issues",
         "https://github.com/zephyrproject-rtos/zephyr",
         "https://en.wikipedia.org/wiki/CBOR",
@@ -170,6 +171,7 @@ class LinkTester:
         "https://datatracker.ietf.org/doc/rfc8610/",
         "https://github.com/zephyrproject-rtos/zephyr/blob/main/subsys/mgmt/mcumgr/grp/img_mgmt/src/img_mgmt.c",
         "https://github.com/nrfconnect/sdk-nrfxlib/blob/main/nrf_rpc/nrf_rpc_cbor.c",
+        "https://github.com/nordicsemi/zcbor",
         "https://github.com/NordicSemiconductor/zcbor",
         "https://pypi.org/project/cbor2/",
         "https://github.com/zephyrproject-rtos/zephyr/blob/v3.6.0/doc/releases/migration-guide-3.6.rst",
@@ -354,7 +356,7 @@ class TestSamples(TestCase):
                 self.assertEqual(f.readline().strip(" *#\n"), "SPDX-License-Identifier: Apache-2.0")
                 f.readline()  # discard
                 self.assertIn("Generated using zcbor version", f.readline())
-                self.assertIn("https://github.com/NordicSemiconductor/zcbor", f.readline())
+                self.assertIn("https://github.com/nordicsemi/zcbor", f.readline())
 
 
 class TestDocs(TestCase, LinkTester):

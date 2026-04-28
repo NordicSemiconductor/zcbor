@@ -3825,7 +3825,7 @@ class CodeRenderer:
 
         self.file_header = file_header.strip() + "\n\n" if file_header.strip() else ""
         self.file_header += f"""Generated using zcbor version {self.version}
-https://github.com/NordicSemiconductor/zcbor{'''
+https://github.com/nordicsemi/zcbor{'''
 at: ''' + datetime.now().strftime('%Y-%m-%d %H:%M:%S') if self.print_time else ''}"""
 
     def header_guard(self, file_name):

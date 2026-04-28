@@ -16,4 +16,4 @@ If zcbor is asked to generate a cmake file, the file will reference the C librar
 
 The C library also functions as a standalone CBOR C library, and is used in the [Zephyr RTOS](https://zephyrproject.org/).
 
-Please visit the [Github repository](https://github.com/NordicSemiconductor/zcbor) for more information about this Python package, and the C library.
+Please visit the [Github repository](https://github.com/nordicsemi/zcbor) for more information about this Python package, and the C library.

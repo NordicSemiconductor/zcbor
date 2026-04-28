@@ -1083,7 +1083,7 @@ file header"""
 # file header
 #
 # Generated using zcbor version {p_VERSION.read_text(encoding="utf-8")}
-# https://github.com/NordicSemiconductor/zcbor
+# https://github.com/nordicsemi/zcbor
 #""".splitlines()
         exp_c_header = f"""/*
  * Sample
@@ -1091,7 +1091,7 @@ file header"""
  * file header
  *
  * Generated using zcbor version {p_VERSION.read_text(encoding="utf-8")}
- * https://github.com/NordicSemiconductor/zcbor
+ * https://github.com/nordicsemi/zcbor
  */""".splitlines()
         self.assertEqual(
             exp_cmake_header,
