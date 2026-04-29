@@ -9,7 +9,7 @@ from regex import compile, S, M
 from pprint import pformat, pprint
 from os import path, linesep, makedirs
 from collections import defaultdict, namedtuple
-from collections.abc import Hashable
+from collections.abc import Hashable, Mapping
 from typing import NamedTuple
 from argparse import ArgumentParser, ArgumentTypeError, RawDescriptionHelpFormatter
 from datetime import datetime
@@ -24,6 +24,11 @@ from cbor2 import (
     CBORDecodeEOF,
     undefined,
 )
+
+try:
+    from cbor2 import frozendict as CBORFrozenDict
+except ImportError:
+    CBORFrozenDict = None
 from yaml import safe_load as yaml_load, dump as yaml_dump
 from json import loads as json_load, dumps as json_dump
 from io import BytesIO
@@ -2075,11 +2080,26 @@ class DataTranslator(CddlXcoder):
         "BSTR": (bytes,),
         "NIL": (type(None),),
         "UNDEF": (type(undefined),),
-        "ANY": (int, float, str, bytes, type(None), type(undefined), bool, list, dict),
+        "ANY": (
+            int,
+            float,
+            str,
+            bytes,
+            type(None),
+            type(undefined),
+            bool,
+            list,
+            tuple,
+            dict,
+        ),
         "BOOL": (bool,),
         "LIST": (tuple, list),
         "MAP": (dict,),
     }
+
+    if CBORFrozenDict is not None:
+        _exp_types["MAP"] = (dict, CBORFrozenDict)
+        _exp_types["ANY"] = _exp_types["ANY"] + (CBORFrozenDict,)
 
     def _expected_type(self):
         """Return our expected python type as returned by cbor2."""
@@ -2090,7 +2110,7 @@ class DataTranslator(CddlXcoder):
         if self.type not in ["OTHER", "GROUP", "UNION"]:
             exp_type = self._expected_type()
             self._decode_assert(
-                type(obj) in exp_type,
+                isinstance(obj, exp_type),
                 lambda: f"{str(self)}: Wrong type ({type(obj)}) of {str(obj)}, expected {str(exp_type)}",
             )
 
@@ -2435,7 +2455,7 @@ CBOR-formatted bstr, all elements must be bstrs. If not, it is a programmer erro
         """inverse of _from_yaml_obj"""
         if isinstance(obj, list) or isinstance(obj, tuple):
             return [self._to_yaml_obj(elem) for elem in obj]
-        elif isinstance(obj, dict):
+        elif isinstance(obj, Mapping):
             retval = dict()
             i = 0
             for key, val in obj.items():
