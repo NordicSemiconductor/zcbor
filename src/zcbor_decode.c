@@ -661,18 +661,38 @@ bool zcbor_bstr_start_decode(zcbor_state_t *state, struct zcbor_string *result)
 }
 
 
-bool zcbor_bstr_end_decode(zcbor_state_t *state)
+static bool exit_backup(zcbor_state_t *state)
 {
 	ZCBOR_CHECK_NULL(state);
-	ZCBOR_ERR_IF(state->payload != state->payload_end, ZCBOR_ERR_PAYLOAD_NOT_CONSUMED);
 
 	if (!zcbor_process_backup(state,
 			ZCBOR_FLAG_RESTORE | ZCBOR_FLAG_CONSUME | ZCBOR_FLAG_KEEP_PAYLOAD,
 			ZCBOR_MAX_ELEM_COUNT)) {
 		ZCBOR_FAIL();
 	}
-
 	return true;
+}
+
+
+bool zcbor_list_map_end_force_decode(zcbor_state_t *state)
+{
+	ZCBOR_PRINT_FUNC_NAME();
+	return exit_backup(state);
+}
+
+
+bool zcbor_bstr_end_force_decode(zcbor_state_t *state)
+{
+	ZCBOR_PRINT_FUNC_NAME();
+	return exit_backup(state);
+}
+
+
+bool zcbor_bstr_end_decode(zcbor_state_t *state)
+{
+	ZCBOR_CHECK_NULL(state);
+	ZCBOR_ERR_IF(state->payload != state->payload_end, ZCBOR_ERR_PAYLOAD_NOT_CONSUMED);
+	return exit_backup(state);
 }
 
 
@@ -1231,11 +1251,7 @@ static bool list_map_end_decode(zcbor_state_t *state)
 
 	zcbor_state_t state_copy = *state;
 
-	if (!zcbor_process_backup(state,
-			ZCBOR_FLAG_RESTORE | ZCBOR_FLAG_CONSUME | ZCBOR_FLAG_KEEP_PAYLOAD,
-			ZCBOR_MAX_ELEM_COUNT)) {
-		ZCBOR_FAIL();
-	}
+	exit_backup(state);
 
 	if (state_copy.decode_state.indefinite_length_array) {
 		if (!array_end_expect(state)) {
@@ -1297,18 +1313,6 @@ bool zcbor_unordered_map_end_decode(zcbor_state_t *state)
 		zcbor_any_skip(state, NULL);
 	}
 	return zcbor_map_end_decode(state);
-}
-
-
-bool zcbor_list_map_end_force_decode(zcbor_state_t *state)
-{
-	if (!zcbor_process_backup(state,
-			ZCBOR_FLAG_RESTORE | ZCBOR_FLAG_CONSUME | ZCBOR_FLAG_KEEP_PAYLOAD,
-			ZCBOR_MAX_ELEM_COUNT)) {
-		ZCBOR_FAIL();
-	}
-
-	return true;
 }
 
 
@@ -1788,6 +1792,7 @@ static bool multi_decode_backup(size_t min_decode,
 	for (size_t i = 0; i < max_decode; i++) {
 		uint8_t const *payload_bak;
 		size_t elem_count_bak;
+		size_t current_backup = 0xFFFFFFFF;
 
 		if (backup) {
 			if (!zcbor_new_backup_w_elem_state(state, state->elem_count, true)) {
@@ -1797,8 +1802,11 @@ static bool multi_decode_backup(size_t min_decode,
 			payload_bak = state->payload;
 			elem_count_bak = state->elem_count;
 		}
+		current_backup = state->constant_state->current_backup;
 
 		if (!decoder(state, (uint8_t *)result + i*result_len)) {
+			ZCBOR_ERR_IF(state->constant_state->current_backup != current_backup, ZCBOR_ERR_UNKNOWN);
+
 			*num_decode = i;
 
 			if (backup) {
@@ -1817,7 +1825,10 @@ static bool multi_decode_backup(size_t min_decode,
 			return true;
 		}
 
+		ZCBOR_ERR_IF(state->constant_state->current_backup != current_backup, ZCBOR_ERR_UNKNOWN);
+
 		if (backup) {
+			ZCBOR_ERR_IF(state->constant_state->current_backup != current_backup, ZCBOR_ERR_UNKNOWN);
 			if (!zcbor_process_backup(state, ZCBOR_FLAG_CONSUME, ZCBOR_MAX_ELEM_COUNT)) {
 				ZCBOR_FAIL();
 			}
