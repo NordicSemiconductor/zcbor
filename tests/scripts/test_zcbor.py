@@ -272,7 +272,28 @@ def dumps(obj):
 
 
 def loads(string):
-    return cbor2.loads(string)
+    """Load CBOR data and convert cbor2 6.x immutable types to mutable equivalents.
+
+    cbor2 6.x returns frozendict and tuple for maps and arrays inside tagged
+    structures. This wrapper converts them back to dict and list so the decoded
+    objects can be mutated (needed by tests that modify and re-encode CBOR).
+    """
+    from collections.abc import Mapping
+
+    def _make_mutable(obj):
+        if isinstance(obj, cbor2.CBORTag):
+            return cbor2.CBORTag(obj.tag, _make_mutable(obj.value))
+        elif isinstance(obj, Mapping) and not isinstance(obj, dict):
+            return {k: _make_mutable(v) for k, v in obj.items()}
+        elif isinstance(obj, dict):
+            return {k: _make_mutable(v) for k, v in obj.items()}
+        elif isinstance(obj, tuple):
+            return [_make_mutable(v) for v in obj]
+        elif isinstance(obj, list):
+            return [_make_mutable(v) for v in obj]
+        return obj
+
+    return _make_mutable(cbor2.loads(string))
 
 
 class TestEx0Manifest14(TestManifest):
@@ -477,7 +498,7 @@ class TestEx1InvManifest14(TestManifest):
         struct = loads(data)
         struct2 = loads(struct.value[2])  # authentication
         struct3 = loads(struct2[1])
-        struct3.tag = 99999  # invalid tag for COSE_Sign1
+        struct3 = cbor2.CBORTag(99999, struct3.value)  # invalid tag for COSE_Sign1
         struct2[1] = dumps(struct3)
         struct.value[2] = dumps(struct2)
         data = dumps(struct)
